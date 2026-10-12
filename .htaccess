@@ -1,0 +1,51 @@
+# Mindful Tattva · Apache configuration
+# --------------------------------------------------------------------------
+# Everything except real files and the uploads folder is handled by index.php.
+
+Options -Indexes
+DirectoryIndex index.php index.html
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Send existing files and folders (assets, uploads, favicon …) straight out.
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Everything else is a route: /gallery, /calendar, /awareness, /dashboard, /api/…
+  RewriteRule ^ index.php [L]
+</IfModule>
+
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# Protect the private data folder and the app folder.
+<IfModule mod_authz_core.c>
+  <FilesMatch "\.(json|lock|log|tmp)$">
+    Require all denied
+  </FilesMatch>
+</IfModule>
+
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType image/jpeg "access plus 30 days"
+  ExpiresByType image/png "access plus 30 days"
+  ExpiresByType image/webp "access plus 30 days"
+  ExpiresByType image/svg+xml "access plus 30 days"
+  ExpiresByType text/css "access plus 7 days"
+  ExpiresByType application/javascript "access plus 7 days"
+</IfModule>
+
+# Never execute scripts that arrive through the uploads folder: they are only
+# ever served as images or PDFs. (See uploads/.htaccess for the same rule.)
+<IfModule mod_rewrite.c>
+  RewriteRule ^uploads/.*\.(php|phtml|phar|cgi|pl|py|sh|html|htm)$ - [F,L]
+</IfModule>
+
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css text/plain text/xml application/javascript application/json image/svg+xml
+</IfModule>

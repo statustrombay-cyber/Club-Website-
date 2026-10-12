@@ -1,0 +1,5 @@
+# The PHP application files are never served directly.
+<IfModule mod_authz_core.c>
+  Require all denied
+</IfModule>
+Deny from all

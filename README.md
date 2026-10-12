@@ -1,50 +1,111 @@
-# Mindful Tattva
+# Mindful Tattva — psychology club website
 
-A polished, mobile-friendly psychology club website for **Mindful Tattva**, the psychology club under the **Department of Applied Social Science** at Chhatrapati Shivaji Maharaj University.
+The official website of **Mindful Tattva**, the psychology club under the
+**Department of Applied Social Science** at Chhatrapati Shivaji Maharaj University,
+Panvel.
 
-## Run it
+The site is a small, self-contained **PHP application**: a public website, a
+mental-health awareness section that moves with the page scroll, a photo album
+with a full-frame viewer and a password-protected club dashboard where the team
+edits everything — no build step, no database server, no framework.
+
+---
+
+## Running it
+
+### On this machine (no PHP installed)
+
+The project ships a small preview server that runs the very same PHP
+application through WebAssembly, so you can see and edit the real site from a
+plain Node.js install:
 
 ```bash
-npm start
+npm install     # once — installs php-wasm (PHP 8.4)
+npm run preview # http://localhost:4173
 ```
 
-Then open:
+### On any normal PHP host (recommended for the real launch)
 
-- Public website: `http://localhost:4173/`
-- Content Studio: `http://localhost:4173/admin.html`
+```bash
+php -S 0.0.0.0:4173 index.php
+```
 
-The server binds to `0.0.0.0` so it also works in the live preview environment.
+or drop the folder into `public_html` on shared hosting / Apache. Requirements:
+**PHP 8.0+** with the standard `json`, `session`, `fileinfo`/standard image
+functions. Nothing else.
 
-## What is included
+| Page | Address |
+| --- | --- |
+| Public website | `/` |
+| Photo gallery | `/gallery` |
+| Mental-health awareness | `/awareness` |
+| Club calendar | `/calendar` |
+| Club dashboard (backend) | `/dashboard` |
 
-- Warm editorial public website with sections for About, Psychology Lens, Club Details, History, Events, Calendar, Event Gallery, Core Team, Join and Contact.
-- Current-events banner that stays at “No new events are scheduled” until an admin publishes an event.
-- Year-round calendar with event date, time and location fields.
-- Editable site copy, detailed club information, university details, Instagram, email, club phone and homepage stats.
-- Editable history timeline, event cards, event publishing status, gallery photos and core team profiles.
-- Clickable member phone numbers, address/Google Maps link and Instagram links.
-- Membership / Join the Club form and Club/Event Registration form.
-- Password-protected Content Studio with a Form Submissions inbox.
-- JSON backend persisted in `data/site.json`.
-- Server-sent live updates: saved Content Studio changes appear on open public pages without a manual refresh.
-- Public and admin styles/scripts are embedded for reliable Arena preview rendering.
+**Dashboard password: `Csmu@MT`** — change it any time from
+*Dashboard → Settings → Change password*. The password is stored as a bcrypt
+hash in `data/config.php`, never in plain text.
 
-## Adding the club assets later
+---
 
-Open **Content Studio** and add:
+## What the site does
 
-1. Official logo or initials in the Brand & Story section.
-2. Core team names, roles, bios, phone numbers and portraits.
-3. Event details and event cover images.
-4. Gallery photos and captions.
-5. The live Instagram profile URL.
+- **Public website** — hero, about, the psychology lens, club details, history
+  timeline, events, calendar, gallery, awareness corner, core team, two
+  registration forms and contact details.
+- **Awareness corner that moves with the scroll** — four illustrated tiles on
+  two rails, sliding left to right as the page scrolls down, with the helplines
+  (Tele-MANAS 14416, KIRAN 1800-599-0019) always in view. Click any tile for the
+  full note.
+- **Photo gallery** — masonry album, event filters, caption search and a
+  full-frame viewer (arrow keys, swipe, click-outside to close). Captions appear
+  only when the club typed one; an event name on its own shows as a small badge.
+- **Two registration forms** — membership and club/event registration, stored in
+  the dashboard inbox. Uploaded photos appear in the gallery immediately.
+- **Club dashboard** — overview, site copy, statistics, team, events, gallery
+  photos, awareness tiles and the registration inbox, plus JSON export/import
+  and one-click backups. Everything the public site shows is edited from here.
+- **Backups** — every save writes a timestamped snapshot to `data/backups/`, so
+  any change can be reversed. Import/export keeps a copy outside the server too.
 
-The current Content Studio password is the one configured for this handoff. For a production launch, move the password to a deployment secret and add a proper user/session store before exposing the site publicly.
+The member roster lives inside the dashboard only: the public site never lists
+club members' phone numbers or e-mail addresses.
 
-## University address used
+---
 
-The address currently shown in the website is the exact wording from the university's official Contact page:
+## Project layout
 
-> Near Shedung Toll Plaza, Old Mumbai-Pune Highway, Panvel, Navi Mumbai, Maharashtra Pincode – 410206.
+```
+index.php              front controller (every request enters here)
+app/                   PHP application
+  bootstrap.php        config, session, CSRF, logging, sanitising helpers
+  store.php            JSON store: data/site.json + revisions + backups
+  api.php              the JSON API used by the dashboard and the public site
+  pages.php            page routing, asset inlining, ETag/gzip responses
+  cards.php            reusable markup (tiles, cards, forms)
+views/                 templates: layout.php, dashboard.php, public/*.php
+assets/                app.css, app.js, dashboard.css, dashboard.js, images
+data/                  site.json (content), config.php (password), backups/
+uploads/               photos uploaded from the dashboard
+tools/preview-server.mjs  local runner for machines without PHP
+tools/test.mjs           72 automated checks over pages, API, security, forms
+```
 
-Source: https://csmu.ac.in/contact-us/
+## Development
+
+```bash
+npm test          # runs the PHP app in isolation and checks 72 behaviours
+```
+
+The test suite boots the real application, then exercises pages, the JSON API,
+sign-in, CSRF protection, sanitising, uploads, the registration flow, password
+changes and backups — the same paths a browser would take.
+
+## Notes for the launch
+
+- Change the dashboard password before going live.
+- Keep `data/` and `uploads/` writable by PHP (both ship with `.htaccess` files
+  that block direct web access to the data folder and disable script execution
+  in the uploads folder).
+- To take a snapshot at any time: *Dashboard → Data → Download backup*, or copy
+  `data/site.json` and the `uploads/` folder.
