@@ -109,16 +109,37 @@ async function resyncChangedFiles() {
 
 /** Copy files the app changed inside the runtime back to the real project. */
 const WRITE_BACK = ['data/site.json', 'data/config.php'];
+
+/** The store numbers every save, so a lower number on this side means the copy
+ *  on disk is newer (edited while the preview was running, or written by hand).
+ *  In that case the runtime copy must never win. */
+function revisionOf(text) {
+  try {
+    const parsed = JSON.parse(text);
+    const value = Number(parsed && parsed.revision);
+    return Number.isFinite(value) ? value : null;
+  } catch (error) {
+    return null;
+  }
+}
+
 async function writeBackToDisk() {
   for (const rel of WRITE_BACK) {
     try {
       const bytes = await php.readFile(VFS + '/' + rel);
       const text = typeof bytes === 'string' ? bytes : Buffer.from(Object.values(bytes)).toString('utf8');
       const abs = path.join(ROOT, rel);
-      if (!fs.existsSync(abs) || fs.readFileSync(abs, 'utf8') !== text) {
-        fs.mkdirSync(path.dirname(abs), { recursive: true });
-        fs.writeFileSync(abs, text);
+      if (fs.existsSync(abs) && fs.readFileSync(abs, 'utf8') === text) continue;
+      if (rel.endsWith('site.json') && fs.existsSync(abs)) {
+        const onDisk = revisionOf(fs.readFileSync(abs, 'utf8'));
+        const inRuntime = revisionOf(text);
+        if (onDisk !== null && inRuntime !== null && inRuntime < onDisk) {
+          console.log(`preview: kept data/site.json on disk (revision ${onDisk} is newer than ${inRuntime})`);
+          continue;
+        }
       }
+      fs.mkdirSync(path.dirname(abs), { recursive: true });
+      fs.writeFileSync(abs, text);
     } catch (error) { /* file not written */ }
   }
   // backups + uploads are append-only, so mirror any new ones

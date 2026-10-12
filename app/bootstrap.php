@@ -62,6 +62,9 @@ if (!function_exists('mb_strtolower')) {
 
 require_once MT_APP . '/store.php';
 require_once MT_APP . '/health.php';
+require_once MT_APP . '/events.php';
+require_once MT_APP . '/qr.php';
+require_once MT_APP . '/passes.php';
 require_once MT_APP . '/cards.php';
 require_once MT_APP . '/pages.php';
 require_once MT_APP . '/api.php';
@@ -224,6 +227,23 @@ function mt_fail(int $status, string $message): void
 }
 
 /** Read the JSON body of a request (falls back to form encoding). */
+/** Send the visitor to another page and stop. */
+function mt_redirect(string $url, int $status = 303): void
+{
+    if (mt_headless()) {
+        $GLOBALS['MT_TEST_STATUS'] = $status;
+        $GLOBALS['MT_TEST_HEADERS'][] = ['Location', $url];
+        $GLOBALS['MT_HTML_SENT'] = true;
+        mt_stop();
+    }
+    if (!headers_sent()) {
+        http_response_code($status);
+        header('Location: ' . $url, true, $status);
+    }
+    echo 'Redirecting to ' . e($url) . '…';
+    mt_stop();
+}
+
 function mt_input(): array
 {
     if (isset($GLOBALS['MT_INPUT_CACHE']) && is_array($GLOBALS['MT_INPUT_CACHE'])) {

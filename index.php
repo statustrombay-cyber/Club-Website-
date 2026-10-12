@@ -8,7 +8,9 @@
  * Routes
  *   /                     public website (home)
  *   /gallery /calendar    public pages
- *   /awareness            mental health awareness corner
+ *   /members              the member directory
+ *   /register?event=…     event registration
+ *   /pass/<serial>        a student's own event pass
  *   /dashboard            password-protected club dashboard
  *   /api/…                JSON API used by the pages and the dashboard
  *   /uploads/…            files uploaded from the dashboard
@@ -33,6 +35,29 @@ if (PHP_SAPI === 'cli-server' && mt_is_static_file($route)) {
 if (str_starts_with($route, 'api/')) {
     mt_api_handle($route);
     return;
+}
+
+/* The club's old pages, printed on posters and past passes, still lead home. */
+$legacy = [
+    'index.html'    => '/',
+    'gallery.html'  => '/gallery',
+    'members.html'  => '/members',
+    'calendar.html' => '/calendar',
+    'admin.html'    => '/dashboard',
+];
+if (isset($legacy[$route])) {
+    mt_redirect($legacy[$route], 301);
+    return;
+}
+
+/* /pass/<serial> — the student's own pass, unlocked by its private token. */
+if (str_starts_with($route, 'pass/')) {
+    $_GET['serial'] = substr($route, 5);
+    $route = 'pass';
+}
+
+if (str_starts_with($route, 'register')) {
+    $route = 'register';
 }
 
 if ($route === 'dashboard' || $route === 'dashboard.php' || $route === 'admin' || $route === 'admin.php') {

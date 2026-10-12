@@ -20,7 +20,7 @@ function mt_health_assets(): array
 {
     return [
         'assets/app.css'                     => 'Main stylesheet — colours, type and layout',
-        'assets/app.js'                      => 'Main script — motion, awareness rails, photo viewer',
+        'assets/app.js'                      => 'Main script — bubbles, motion, gallery stage and the forms',
         'assets/dashboard.css'               => 'Dashboard stylesheet',
         'assets/dashboard.js'                => 'Dashboard script',
         'assets/img/favicon.svg'             => 'Browser tab icon',
@@ -29,10 +29,12 @@ function mt_health_assets(): array
         'assets/photos/mt-club-logo.jpg'     => 'Club logo',
         'assets/photos/campus.jpg'           => 'Campus photo',
         'assets/photos/team-mohd-shafiq.jpg' => 'Team photo',
-        'assets/awareness/tile-1.jpg'        => 'Awareness tile 1',
-        'assets/awareness/tile-2.jpg'        => 'Awareness tile 2',
-        'assets/awareness/tile-3.jpg'        => 'Awareness tile 3',
-        'assets/awareness/tile-4.jpg'        => 'Awareness tile 4',
+        'app/events.php'                     => 'Events, registrations and passes',
+        'app/qr.php'                         => 'QR codes for the UPI payment and the pass',
+        'app/passes.php'                     => 'The pass, as a PDF',
+        'views/layout.php'                   => 'The page shell — bubbles, navigation, footer',
+        'views/public/register.php'           => 'Event registration page',
+        'views/public/pass.php'               => 'The student’s pass page',
     ];
 }
 
@@ -136,7 +138,7 @@ function mt_health_report(): array
             'team'     => count($db['team']),
             'events'   => count($db['events']),
             'photos'   => count($db['gallery']),
-            'tiles'    => count($db['awareness']),
+            'registrations' => count($db['registrations'] ?? []),
             'forms'    => count($db['submissions']),
         ],
     ];

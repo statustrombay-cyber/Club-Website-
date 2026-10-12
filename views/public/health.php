@@ -86,7 +86,7 @@ $counts  = $report['counts'];
           Open the <b>assets</b> folder of the project, and copy its contents into the <code>assets</code>
           folder next to <code>index.php</code> on the server, keeping the same names:
           <code>app.css</code>, <code>app.js</code>, <code>dashboard.css</code>, <code>dashboard.js</code>
-          and the folders <code>img/</code>, <code>photos/</code> and <code>awareness/</code>.
+          and the folders <code>img/</code> and <code>photos/</code>.
         </p>
         <p>Folders <code>755</code>, files <code>644</code>. Then reload this page — the list below should turn green.</p>
       </div>
@@ -136,8 +136,8 @@ $counts  = $report['counts'];
         <span class="fact"><b><?= (int) $counts['team'] ?></b> team members</span>
         <span class="fact"><b><?= (int) $counts['events'] ?></b> events</span>
         <span class="fact"><b><?= (int) $counts['photos'] ?></b> photos</span>
-        <span class="fact"><b><?= (int) $counts['tiles'] ?></b> awareness tiles</span>
-        <span class="fact"><b><?= (int) $counts['forms'] ?></b> registrations</span>
+        <span class="fact"><b><?= (int) ($counts['registrations'] ?? 0) ?></b> event registrations</span>
+        <span class="fact"><b><?= (int) $counts['forms'] ?></b> form messages</span>
       </div>
     </div>
 

@@ -1,10 +1,9 @@
 <?php
 /**
- * Mindful Tattva · server-side card markup
- * ----------------------------------------
- * These helpers echo exactly the same markup the JavaScript uses for live
- * updates, so a page rendered by PHP and a page updated in the browser look
- * identical. Content is always visible before any script runs.
+ * Mindful Tattva · server-side cards
+ * ----------------------------------
+ * Every card on the site is written here, in the markup the original design
+ * used, so the page is complete before any script runs.
  *
  * @package MindfulTattva
  */
@@ -27,240 +26,277 @@ function mt_sorted(array $items): array
     return $items;
 }
 
-function mt_event_card(array $event): string
+/** An inline background-image declaration, or '' when there is no picture. */
+/** A headline the way the original design wrote it: one word carried in <em>. */
+function mt_emphasise(string $text): string
 {
-    $image = mt_safe_image($event['image'] ?? '');
-    ob_start(); ?>
-      <article class="event-card reveal">
-        <?php if ($image !== ''): ?>
-          <div class="event-media">
-            <img src="<?= e($image) ?>" alt="<?= e((string) ($event['title'] ?? 'Event')) ?>" loading="lazy">
-            <span class="kicker"><?= e((string) ($event['kicker'] ?? 'Mindful Tattva')) ?></span>
-          </div>
-        <?php endif; ?>
-        <div class="event-body">
-          <div class="event-date"><?= e((string) ($event['date'] ?? '') !== '' ? (string) $event['date'] : 'Date to be announced') ?></div>
-          <h3><?= e((string) ($event['title'] ?? 'Mindful Tattva activity')) ?></h3>
-          <?php if (!empty($event['description'])): ?><p><?= e((string) $event['description']) ?></p><?php endif; ?>
-          <div class="event-facts">
-            <?php if (!empty($event['time'])): ?><span>◷ <?= e((string) $event['time']) ?></span><?php endif; ?>
-            <?php if (!empty($event['location'])): ?><span>⌖ <?= e((string) $event['location']) ?></span><?php endif; ?>
-          </div>
-          <?php $link = mt_safe_url($event['registrationUrl'] ?? ''); ?>
-          <?php if ($link !== ''): ?>
-            <a class="event-link" href="<?= e($link) ?>" target="_blank" rel="noreferrer noopener">View details ↗</a>
-          <?php endif; ?>
-        </div>
-      </article>
-    <?php
-    return (string) ob_get_clean();
+    $clean = trim($text);
+    if ($clean === '') {
+        return '';
+    }
+    if (stripos($clean, '<em>') !== false) {
+        /* The club typed its own emphasis: keep exactly that. */
+        return strip_tags($clean, '<em>');
+    }
+    $escaped = e($clean);
+    $keywords = ['mind', 'minds', 'mindful', 'pause', 'notice', 'understand', 'circle', 'calm'];
+    foreach ($keywords as $keyword) {
+        $pattern = '/\b(' . preg_quote($keyword, '/') . ')\b/i';
+        if (preg_match($pattern, $escaped)) {
+            return preg_replace($pattern, '<em>$1</em>', $escaped, 1) ?? $escaped;
+        }
+    }
+    $words = preg_split('/\s+/', $escaped) ?: [];
+    $last = array_pop($words);
+    if ($last === null) {
+        return $escaped;
+    }
+    return implode(' ', $words) . ' <em>' . $last . '</em>';
 }
 
-function mt_team_card(array $member, bool $volunteersOnly = false): string
+function mt_background_style(string $image, string $alt = ''): string
 {
-    $image = mt_safe_image($member['image'] ?? '');
-    $name  = (string) ($member['name'] ?? 'Mindful Tattva member');
-    $role  = (string) ($member['role'] ?? ($volunteersOnly ? 'Volunteer' : 'Core team'));
-    $phone = (string) ($member['phone'] ?? '');
-    $email = (string) ($member['email'] ?? '');
-    ob_start(); ?>
-      <article class="team-card reveal">
-        <div class="team-avatar">
-          <?php if ($image !== ''): ?>
-            <img src="<?= e($image) ?>" alt="<?= e($name) ?>" loading="lazy">
-          <?php else: ?>
-            <?= e(mt_initials($name)) ?>
-          <?php endif; ?>
-        </div>
-        <h3><?= e($name) ?></h3>
-        <div class="team-role"><?= e($role !== '' ? $role : 'Core team') ?></div>
-        <?php if (!$volunteersOnly && !empty($member['bio'])): ?><p><?= e((string) $member['bio']) ?></p><?php endif; ?>
-        <?php if (($phone !== '' || $email !== '')): ?>
-          <div class="team-contact">
-            <?php if ($phone !== ''): ?>
-              <a href="tel:<?= e(preg_replace('/[^+\d]/', '', $phone) ?? '') ?>"><?= e($phone) ?></a>
-            <?php endif; ?>
-            <?php if ($email !== ''): ?>
-              <a href="mailto:<?= e($email) ?>"><?= e($email) ?></a>
-            <?php endif; ?>
-          </div>
-        <?php endif; ?>
-      </article>
-    <?php
-    return (string) ob_get_clean();
-}
-
-function mt_gallery_card(array $item, int $index): string
-{
-    $image   = mt_safe_image($item['image'] ?? '');
     if ($image === '') {
         return '';
     }
-    // A caption is shown only when the club typed one for this photo. The event
-    // or date on its own becomes a small badge instead of a caption block.
-    $caption = trim((string) ($item['caption'] ?? ''));
-    $meta    = trim((string) ($item['event'] ?? '') !== '' ? (string) $item['event'] : (string) ($item['date'] ?? ''));
-    $alt     = trim((string) ($item['alt'] ?? ''));
+    return ' style="background-image:url(\'' . str_replace(["'", '</style'], ['%27', ''], $image) . '\')"';
+}
+
+/**
+ * An event card: the club's own visual, the date, the facts, and — when the
+ * backend has opened registration — the way in.
+ */
+function mt_event_card(array $event, ?array $registration = null): string
+{
+    $db = mt_db();
+    $image = mt_safe_image($event['image'] ?? '');
+    $fee = mt_event_fee($event);
+    $state = mt_event_registration_state($db, $event);
+    $seats = mt_event_seats_left($db, $event);
+    $label = trim((string) ($event['kicker'] ?? '')) !== '' ? (string) $event['kicker'] : 'Club gathering';
+    $facts = array_filter([
+        trim((string) ($event['time'] ?? '')),
+        trim((string) ($event['location'] ?? '')),
+    ], static fn($part) => $part !== '');
     ob_start(); ?>
-      <figure class="gallery-card reveal">
-        <button type="button" data-gallery-open="<?= $index ?>" aria-label="Open photo<?= $caption !== '' ? ': ' . e($caption) : '' ?>">
-          <img src="<?= e($image) ?>" alt="<?= e($alt !== '' ? $alt : ($caption !== '' ? $caption : 'Mindful Tattva photo')) ?>" loading="lazy" decoding="async">
-        </button>
-        <?php if ($caption !== ''): ?>
-          <figcaption>
-            <strong><?= e($caption) ?></strong>
-            <?php if ($meta !== ''): ?><span><?= e($meta) ?></span><?php endif; ?>
-          </figcaption>
-        <?php elseif ($meta !== ''): ?>
-          <span class="gallery-badge"><?= e($meta) ?></span>
+      <article class="event-card">
+        <div class="card-visual<?= $image !== '' ? ' has-image' : '' ?>"<?= mt_background_style($image) ?>>
+          <span class="visual-label"><?= e($label) ?></span>
+        </div>
+        <div class="event-body">
+          <div class="event-date"><?= e(mt_event_date_display($event)) ?></div>
+          <h3><?= e((string) ($event['title'] ?? 'Mindful Tattva activity')) ?></h3>
+          <?php if (trim((string) ($event['description'] ?? '')) !== ''): ?>
+            <p><?= e((string) $event['description']) ?></p>
+          <?php endif; ?>
+          <?php if ($facts): ?>
+            <span class="event-link"><?= e(implode(' · ', $facts)) ?></span>
+          <?php endif; ?>
+
+          <div class="event-actions">
+            <span class="event-fee<?= $fee > 0 ? '' : ' is-free' ?>"><?= e($fee > 0 ? mt_money($fee) : 'Free entry') ?></span>
+            <?php if ($state['open']): ?>
+              <?php if ($registration): ?>
+                <a class="solid-button" href="/pass/<?= e(rawurlencode((string) $registration['serial'])) ?>?token=<?= e(rawurlencode((string) $registration['token'])) ?>">Your pass ↗</a>
+              <?php else: ?>
+                <a class="solid-button" href="/register?event=<?= e((string) $event['id']) ?>">Register ↗</a>
+              <?php endif; ?>
+            <?php else: ?>
+              <span class="status-chip is-closed">Registration closed</span>
+            <?php endif; ?>
+            <?php if ($seats !== null): ?>
+              <span class="event-window"><?= (int) $seats ?> seat<?= $seats === 1 ? '' : 's' ?> left</span>
+            <?php endif; ?>
+          </div>
+          <span class="event-window<?= $state['open'] ? '' : ' is-closed' ?>"><?= e($state['label']) ?></span>
+        </div>
+      </article>
+    <?php
+    return (string) ob_get_clean();
+}
+
+/** A core team card on the home page. */
+function mt_team_card(array $member): string
+{
+    $image = mt_safe_image($member['image'] ?? '');
+    $name = (string) ($member['name'] ?? 'Mindful Tattva member');
+    $role = trim((string) ($member['role'] ?? ''));
+    $phone = trim((string) ($member['phone'] ?? ''));
+    ob_start(); ?>
+      <article class="team-card">
+        <div class="team-avatar<?= $image !== '' ? ' has-image' : '' ?>" role="img"
+             aria-label="<?= e($name) ?> <?= $image !== '' ? 'photo' : 'placeholder' ?>"<?= mt_background_style($image) ?>><span><?= e(mt_initials($name)) ?></span></div>
+        <h3><?= e($name) ?></h3>
+        <?php if ($role !== ''): ?><div class="team-role"><?= e($role) ?></div><?php endif; ?>
+        <?php if (trim((string) ($member['bio'] ?? '')) !== ''): ?>
+          <p class="team-bio"><?= e((string) $member['bio']) ?></p>
         <?php endif; ?>
+        <?php if ($phone !== ''): ?>
+          <a class="team-phone" href="tel:<?= e(preg_replace('/[^+\d]/', '', $phone) ?? '') ?>"><?= e($phone) ?> ↗</a>
+        <?php endif; ?>
+      </article>
+    <?php
+    return (string) ob_get_clean();
+}
+
+/** One frame in the home page gallery grid. */
+function mt_gallery_item(array $item): string
+{
+    $image = mt_safe_image($item['image'] ?? '');
+    $caption = trim((string) ($item['caption'] ?? 'Mindful Tattva memory'));
+    $alt = trim((string) ($item['alt'] ?? '')) !== '' ? (string) $item['alt'] : $caption;
+    ob_start(); ?>
+      <figure class="gallery-item">
+        <?php if ($image !== ''): ?>
+          <div class="gallery-visual has-image" role="img" aria-label="<?= e($alt) ?>"<?= mt_background_style($image, $alt) ?>></div>
+        <?php else: ?>
+          <div class="gallery-visual" role="img" aria-label="<?= e($alt) ?>"><span class="gallery-placeholder">Photo placeholder</span></div>
+        <?php endif; ?>
+        <figcaption class="gallery-caption"><?= e($caption) ?></figcaption>
       </figure>
     <?php
     return (string) ob_get_clean();
 }
 
-function mt_tile(array $tile, int $index): string
+/** A card inside the gallery page's archive grid. */
+function mt_archive_card(array $item): string
 {
-    $image = mt_safe_image($tile['image'] ?? '');
+    $image = mt_safe_image($item['image'] ?? '');
+    $caption = trim((string) ($item['caption'] ?? 'Mindful Tattva memory'));
+    $alt = trim((string) ($item['alt'] ?? '')) !== '' ? (string) $item['alt'] : $caption;
     ob_start(); ?>
-        <article class="tile<?= $image === '' ? ' tile-plain' : '' ?>" data-awareness-open="<?= $index ?>" tabindex="0" role="button" aria-label="Read more: <?= e((string) ($tile['title'] ?? 'Mental health note')) ?>">
-          <?php if ($image !== ''): ?>
-            <img src="<?= e($image) ?>" alt="<?= e((string) ($tile['title'] ?? 'Awareness illustration')) ?>" loading="lazy" decoding="async">
-          <?php else: ?>
-            <span class="tile-pattern" aria-hidden="true"></span>
-          <?php endif; ?>
-          <span class="tile-open" aria-hidden="true">+</span>
-          <div class="tile-copy">
-            <small><?= e((string) ($tile['eyebrow'] ?? 'Awareness')) ?></small>
-            <strong><?= e((string) ($tile['title'] ?? '')) ?></strong>
-            <?php if (!empty($tile['stat'])): ?>
-              <em><?= e((string) $tile['stat']) ?></em>
-            <?php endif; ?>
-          </div>
-        </article>
+      <article class="archive-card">
+        <div class="archive-image" role="img" aria-label="<?= e($alt) ?>"<?= mt_background_style($image, $alt) ?>></div>
+        <div class="archive-caption"><?= e($caption) ?></div>
+      </article>
     <?php
     return (string) ob_get_clean();
 }
 
-/** Two rails of tiles; small sets are repeated so the rails never look empty. */
-function mt_awareness_rails(array $tiles, int $minPerRail = 2): string
+/** The four-part "what the gallery will hold" list, drawn when there is nothing yet. */
+function mt_gallery_empty(string $title, string $note): string
 {
-    $tiles = array_values($tiles);
-    if (!$tiles) {
-        return '';
-    }
-
-    // Alternate the tiles between two rails, so four tiles give two unique
-    // tiles per rail and the page scroll can slide the rails sideways.
-    $rails = [[], []];
-    foreach ($tiles as $index => $tile) {
-        $rails[$index % 2][] = [$index, $tile];
-    }
-
-    $html = '';
-    foreach ($rails as $railIndex => $railTiles) {
-        if (!$railTiles) {
-            // An odd tile count can leave a rail empty: mirror the other one.
-            $railTiles = $rails[$railIndex === 0 ? 1 : 0];
-        }
-        if (count($railTiles) < $minPerRail) {
-            $repeat = (int) ceil($minPerRail / max(1, count($railTiles)));
-            $railTiles = array_merge(...array_fill(0, $repeat, $railTiles));
-        }
-        $cards = '';
-        foreach ($railTiles as $entry) {
-            $cards .= mt_tile($entry[1], (int) $entry[0]);
-        }
-        $html .= '<div class="rail" data-rail="' . $railIndex . '">' . $cards . '</div>';
-    }
-
-    return $html;
+    ob_start(); ?>
+      <div class="gallery-empty">
+        <div><strong><?= e($title) ?></strong><p><?= e($note) ?></p></div>
+      </div>
+    <?php
+    return (string) ob_get_clean();
 }
 
+/** A month block on the calendar page: the frame is fixed, the events are the club's. */
 function mt_month_card(int $index, string $month, array $events): string
 {
     ob_start(); ?>
-        <article class="month-card<?= $events ? ' has-events' : '' ?> reveal">
-          <div class="month-head">
-            <span><?= str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) ?></span>
-            <h3><?= e($month) ?></h3>
-          </div>
-          <div class="month-events">
-            <?php if ($events): ?>
-              <?php foreach ($events as $event): ?>
-                <div class="month-event">
-                  <strong><?= e((string) $event['title']) ?></strong>
-                  <span><?= e((string) $event['date']) ?><?= !empty($event['time']) ? ' · ' . e((string) $event['time']) : '' ?></span>
-                  <?php if (!empty($event['location'])): ?><small>⌖ <?= e((string) $event['location']) ?></small><?php endif; ?>
-                </div>
-              <?php endforeach; ?>
-            <?php else: ?>
-              <span class="month-empty">Open for new ideas</span>
-            <?php endif; ?>
-          </div>
-        </article>
+      <article class="calendar-month<?= $events ? ' has-event' : '' ?>">
+        <div class="calendar-month-head">
+          <span class="calendar-month-number"><?= str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) ?></span>
+          <h3><?= e($month) ?></h3>
+        </div>
+        <div class="calendar-event-list">
+          <?php if ($events): ?>
+            <?php foreach ($events as $event): ?>
+              <article class="calendar-event">
+                <div class="calendar-event-date"><?= e(mt_event_date_display($event)) ?></div>
+                <h4><?= e((string) ($event['title'] ?? 'Mindful Tattva activity')) ?></h4>
+                <p><?= e(trim((string) ($event['time'] ?? '')) !== '' ? (string) $event['time'] : 'Time to be confirmed') ?>
+                  · <?= e(trim((string) ($event['location'] ?? '')) !== '' ? (string) $event['location'] : 'Location to be confirmed') ?></p>
+                <?php if (trim((string) ($event['description'] ?? '')) !== ''): ?>
+                  <p><?= e((string) $event['description']) ?></p>
+                <?php endif; ?>
+                <?php $brochure = mt_safe_url($event['brochureUrl'] ?? ''); ?>
+                <?php if ($brochure !== ''): ?>
+                  <a class="calendar-event-brochure" href="<?= e($brochure) ?>" target="_blank" rel="noreferrer noopener">View brochure / poster ↗</a>
+                <?php endif; ?>
+              </article>
+            <?php endforeach; ?>
+          <?php else: ?>
+            <div class="calendar-empty-note">No activities planned yet.<br>Check back for the next thread.</div>
+          <?php endif; ?>
+        </div>
+      </article>
     <?php
     return (string) ob_get_clean();
 }
 
-function mt_month_index(string $value): int
+/** One person in the members directory. */
+function mt_member_card(array $person, int $number, bool $volunteersOnly = false): string
 {
-    $value = trim($value);
-    if ($value === '') {
-        return -1;
-    }
-    $timestamp = strtotime($value);
-    if ($timestamp !== false) {
-        return (int) date('n', $timestamp) - 1;
-    }
-    foreach (['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'] as $index => $month) {
-        if (stripos($value, $month) !== false) {
-            return $index;
-        }
-    }
-    return -1;
+    $image = mt_safe_image($person['image'] ?? '');
+    $name = (string) ($person['name'] ?? 'Mindful Tattva member');
+    $role = trim((string) ($person['role'] ?? ''));
+    $phone = trim((string) ($person['phone'] ?? ''));
+    $showPhoto = !$volunteersOnly;
+    ob_start(); ?>
+      <article class="member-card<?= $showPhoto && $image !== '' ? ' has-photo' : '' ?>">
+        <span class="member-number"><?= str_pad((string) $number, 2, '0', STR_PAD_LEFT) ?></span>
+        <?php if ($showPhoto): ?>
+          <?php if ($image !== ''): ?>
+            <div class="member-photo" role="img" aria-label="<?= e($name) ?> photo"<?= mt_background_style($image) ?>></div>
+          <?php else: ?>
+            <div class="member-photo member-photo-placeholder" role="img" aria-label="Mindful Tattva placeholder">MT</div>
+          <?php endif; ?>
+        <?php endif; ?>
+        <h4><?= e($name) ?></h4>
+        <?php if ($showPhoto && $role !== ''): ?><div class="member-role"><?= e($role) ?></div><?php endif; ?>
+        <?php if ($phone !== ''): ?>
+          <a class="member-phone" href="tel:<?= e(preg_replace('/[^+\d]/', '', $phone) ?? '') ?>"><?= e($phone) ?> ↗</a>
+        <?php endif; ?>
+      </article>
+    <?php
+    return (string) ob_get_clean();
 }
 
-function mt_form(string $type, array $options = []): void
+/** The empty state of a members group. */
+function mt_member_empty(string $title, string $note): string
 {
-    $fields = $options['fields'] ?? [];
-    ?>
-    <form class="club-form<?= !empty($options['dark']) ? ' dark' : '' ?>" data-form="<?= e($type) ?>" novalidate>
-      <div class="form-kicker"><?= e($options['kicker'] ?? '') ?></div>
-      <h3><?= e($options['title'] ?? '') ?></h3>
-      <p><?= e($options['note'] ?? '') ?></p>
-
-      <div class="field-row">
-        <label>Full name<input name="name" required autocomplete="name" placeholder="Your name"></label>
-        <label>Email<input name="email" type="email" required autocomplete="email" placeholder="you@example.com"></label>
+    ob_start(); ?>
+      <div class="member-empty">
+        <div><strong><?= e($title) ?></strong><p><?= e($note) ?></p></div>
       </div>
-
-      <div class="field-row">
-        <label>Phone / WhatsApp<input name="phone" type="tel" required autocomplete="tel" placeholder="+91 …"></label>
-        <?php if (in_array('course', $fields, true)): ?>
-          <label>Course / programme<input name="course" placeholder="Your programme"></label>
-        <?php else: ?>
-          <label>Event or activity<input name="event" placeholder="Event name, or general registration"></label>
-        <?php endif; ?>
-      </div>
-
-      <?php if (in_array('course', $fields, true)): ?>
-        <div class="field-row">
-          <label>Year of study<input name="year" placeholder="First year"></label>
-          <label>What interests you?<input name="interests" placeholder="Workshops, wellbeing, research…"></label>
-        </div>
-      <?php endif; ?>
-
-      <label><?= in_array('course', $fields, true) ? 'Anything you would like to add?' : 'Message' ?>
-        <textarea name="message" rows="3" placeholder="Tell the team a little more…"></textarea>
-      </label>
-
-      <div class="honeypot" aria-hidden="true">
-        <label>Website<input name="website" tabindex="-1" autocomplete="off"></label>
-      </div>
-
-      <button class="btn btn-solid" type="submit"><?= e($options['button'] ?? 'Send') ?></button>
-      <div class="form-status" role="status" aria-live="polite"></div>
-    </form>
     <?php
+    return (string) ob_get_clean();
+}
+
+/**
+ * A whole members group: heading, then either cards or the empty state.
+ *
+ * @param array $people Members in this group, already sorted.
+ */
+function mt_member_group(string $group, array $people): string
+{
+    $labels = [
+        'management' => ['kicker' => '01 · Core', 'label' => 'Core Committee'],
+        'heads'      => ['kicker' => '02 · Organizing team', 'label' => 'Head Committee'],
+        'volunteers' => ['kicker' => '03 · Community', 'label' => 'Volunteers'],
+    ];
+    $empty = [
+        'management' => ['Core Committee members will appear here.', 'Members can be added from the club dashboard.'],
+        'heads'      => ['Head Committee will be added soon.', 'Members can be added from the club dashboard.'],
+        'volunteers' => ['The circle is open.', 'Volunteers can be added from the club dashboard.'],
+    ];
+    $info = $labels[$group] ?? $labels['management'];
+    $empties = $empty[$group] ?? $empty['management'];
+    $volunteersOnly = $group === 'volunteers';
+
+    ob_start(); ?>
+      <section class="member-group">
+        <div class="member-group-head">
+          <div>
+            <div class="member-group-kicker"><?= e($info['kicker']) ?></div>
+            <h3><?= e($info['label']) ?></h3>
+          </div>
+        </div>
+        <?php if ($people): ?>
+          <div class="member-cards">
+            <?php foreach (array_values($people) as $index => $person): ?>
+              <?= mt_member_card($person, $index + 1, $volunteersOnly) ?>
+            <?php endforeach; ?>
+          </div>
+        <?php else: ?>
+          <?= mt_member_empty($empties[0], $empties[1]) ?>
+        <?php endif; ?>
+      </section>
+    <?php
+    return (string) ob_get_clean();
 }

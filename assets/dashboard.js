@@ -27,7 +27,7 @@
     team: [],
     events: [],
     gallery: [],
-    awareness: [],
+    registrations: [],
     submissions: [],
     backups: [],
   };
@@ -143,12 +143,12 @@
 
   /* ----------------------------------------------------------------- data */
   async function loadAll() {
-    const [site, team, events, gallery, awareness, submissions, backups] = await Promise.all([
+    const [site, team, events, gallery, registrations, submissions, backups] = await Promise.all([
       api('/api/site'),
       api('/api/team'),
       api('/api/events'),
       api('/api/gallery'),
-      api('/api/awareness'),
+      api('/api/registrations'),
       api('/api/submissions'),
       api('/api/backups').catch(() => ({ items: [] })),
     ]);
@@ -157,7 +157,7 @@
     state.team = team.items || [];
     state.events = events.items || [];
     state.gallery = gallery.items || [];
-    state.awareness = awareness.items || [];
+    state.registrations = registrations.items || [];
     state.submissions = submissions.items || [];
     state.backups = backups.items || [];
     updateRevision(site.revision || state.revision);
@@ -170,7 +170,7 @@
     renderTeam();
     renderEvents();
     renderGallery();
-    renderAwareness();
+    renderRegistrations();
     renderSubmissions();
     renderBackups();
     renderOverview();
@@ -200,8 +200,9 @@
         ['Photo album', state.gallery.length],
         ['Team members', state.team.length],
         ['Events', state.events.length],
-        ['Awareness tiles', state.awareness.length],
-        ['New registrations', state.submissions.length],
+        ['Event registrations', state.registrations.length],
+        ['Passes ready', state.registrations.filter((item) => item.passReady).length],
+        ['Form messages', state.submissions.length],
       ].map(([label, value]) => `<div class="stat-card"><strong>${esc(value)}</strong><span>${esc(label)}</span></div>`).join('');
     }
 
@@ -210,13 +211,13 @@
       const latest = state.submissions[0];
       note.innerHTML = latest
         ? `<strong>Latest registration:</strong> ${esc(latest.name)} (${esc(latest.email)}) — ${esc(latest.type === 'membership' ? 'membership interest' : 'event registration')} on ${esc(new Date(latest.submittedAt).toLocaleString())}.`
-        : '<strong>No registrations yet.</strong> Membership and event forms from the website will appear in the Registrations tab.';
+        : '<strong>Nothing in the form inbox yet.</strong> Membership and general messages from the website appear under “Forms inbox”.';
     }
 
     const recent = $('#overviewRecent');
     if (recent) {
       recent.innerHTML = state.submissions.slice(0, 3).map(submissionCard).join('')
-        || '<div class="editor-card"><h3>Getting started</h3><p class="muted" style="font-size:.86rem">Add team members, publish an event, upload a few photos and write your first awareness tile. Every change appears on the website immediately.</p></div>';
+        || '<div class="editor-card"><h3>Getting started</h3><p class="muted" style="font-size:.86rem">Publish an event with its fee and registration window, add team members and upload a few photos. Every change appears on the website immediately.</p></div>';
     }
   }
 
@@ -224,7 +225,6 @@
   const COPY_GROUPS = [
     { id: 'brand', title: 'Brand & hero', fields: [['clubName', 'Club name'], ['shortName', 'Short name (initials)'], ['eyebrow', 'Eyebrow line'], ['tagline', 'Hero headline'], ['intro', 'Hero introduction', 'textarea'], ['announcement', 'Announcement strip']] },
     { id: 'about', title: 'About, mission & vision', fields: [['aboutHeading', 'About heading'], ['aboutBody', 'About paragraph', 'textarea'], ['clubDescription', 'Club description', 'textarea'], ['mission', 'Mission', 'textarea'], ['vision', 'Vision', 'textarea'], ['memberBenefits', 'What members experience', 'textarea']] },
-    { id: 'awareness', title: 'Awareness corner', fields: [['awarenessEyebrow', 'Eyebrow'], ['awarenessHeading', 'Heading'], ['awarenessIntro', 'Introduction', 'textarea'], ['awarenessNote', 'Helpline note', 'textarea']] },
     { id: 'gallery', title: 'Photo album copy', fields: [['galleryHeading', 'Album heading'], ['galleryIntro', 'Album note', 'textarea']] },
     { id: 'forms', title: 'Join forms & contact note', fields: [['joiningIntro', 'Membership form note', 'textarea'], ['registrationIntro', 'Registration form note', 'textarea'], ['contactNote', 'Contact section note', 'textarea']] },
     { id: 'contact', title: 'Contact, social & university', fields: [['email', 'Club email'], ['clubPhone', 'Club phone (optional)'], ['instagramHandle', 'Instagram handle'], ['instagramUrl', 'Instagram URL'], ['universityName', 'University name'], ['department', 'Department'], ['address', 'Campus address', 'textarea'], ['universityWebsite', 'University website']] },
@@ -392,11 +392,36 @@
           <label>Day<input data-field="day" value="${esc(parts.day)}" placeholder="24" inputmode="numeric"></label>
           <label>Year<input data-field="year" value="${esc(parts.year)}" placeholder="2026" inputmode="numeric"></label>
           <label>Time<input data-field="time" value="${esc(item.time)}" placeholder="4:00 PM"></label>
-          <label>Location<input data-field="location" value="${esc(item.location)}" placeholder="CSMU campus · Seminar Hall"></label>
+          <label class="span-2">Venue (type it — it is printed on the pass)<input data-field="location" value="${esc(item.location)}" placeholder="CSMU campus · Seminar Hall"></label>
           <label>Label<input data-field="kicker" value="${esc(item.kicker)}" placeholder="Workshop"></label>
+          <label>Seats / capacity <span class="muted" style="font-weight:400">(0 = no limit)</span><input data-field="capacity" type="number" min="0" value="${esc(item.capacity ?? 0)}"></label>
           <label class="span-2">Description<textarea data-field="description" rows="3">${esc(item.description)}</textarea></label>
-          <label class="span-2">External registration link (optional)<input data-field="registrationUrl" value="${esc(item.registrationUrl)}" placeholder="https://…"></label>
-          <label class="span-2"><span><input type="checkbox" data-field="published" ${item.published === true ? 'checked' : ''}> Publish on the home page banner</span></label>
+          <label class="span-2">Brochure / poster link (optional)<input data-field="brochureUrl" value="${esc(item.brochureUrl || '')}" placeholder="https://… or /uploads/…"></label>
+        </div>
+
+        <div class="editor-card-head" style="margin-top:14px"><span>Registration &amp; pass</span></div>
+        <div class="form-grid">
+          <label>Registration fee in rupees <span class="muted" style="font-weight:400">(0 = free entry)</span>
+            <input data-field="fee" type="number" min="0" step="1" value="${esc(item.fee ?? 0)}">
+          </label>
+          <label>UPI ID <span class="muted" style="font-weight:400">(the QR shows only when a fee is set)</span>
+            <input data-field="upiId" value="${esc(item.upiId || '')}" placeholder="clubname@upi">
+          </label>
+          <label>UPI payee name<input data-field="upiName" value="${esc(item.upiName || '')}" placeholder="Mindful Tattva"></label>
+          <label>Registration window
+            <select data-field="windowMode">
+              <option value="date" ${(item.windowMode || 'date') === 'date' ? 'selected' : ''}>Until a date &amp; time</option>
+              <option value="hours" ${item.windowMode === 'hours' ? 'selected' : ''}>A number of hours after opening</option>
+            </select>
+          </label>
+          <label>Closes at <span class="muted" style="font-weight:400">(used by “until a date”)</span>
+            <input data-field="closesAt" type="datetime-local" value="${esc(item.closesAt || '')}">
+          </label>
+          <label>Open for how many hours <span class="muted" style="font-weight:400">(1–24)</span>
+            <input data-field="openHours" type="number" min="1" max="24" value="${esc(item.openHours ?? 24)}">
+          </label>
+          <label class="span-2"><span><input type="checkbox" data-field="registrationOpen" ${item.registrationOpen ? 'checked' : ''}> Registration is open (closes by itself at the time above)</span></label>
+          <label class="span-2"><span><input type="checkbox" data-field="published" ${item.published === true ? 'checked' : ''}> Publish on the home page and the calendar</span></label>
         </div>
         ${uploadField('image', 'event photo', item.image)}`);
     }).join('') || '<div class="editor-card"><h3>No events yet.</h3><p class="muted">Use “+ Add event” to plan the next activity.</p></div>';
@@ -423,23 +448,6 @@
       || '<div class="editor-card"><h3>No photos yet.</h3><p class="muted">Use “+ Add photo” and upload the first picture — the album fills itself.</p></div>';
   }
 
-  function renderAwareness() {
-    const wrap = $('#awarenessEditors');
-    if (!wrap) return;
-    wrap.innerHTML = sorted(state.awareness).map((item, index) => cardShell('awareness', item.id, 'Tile', index, `
-      <div class="form-grid">
-        <label>Eyebrow<input data-field="eyebrow" value="${esc(item.eyebrow)}" placeholder="Everyday truth · 01"></label>
-        <label>Display order<input data-field="order" type="number" value="${esc(item.order ?? 0)}"></label>
-        <label class="span-2">Title<input data-field="title" value="${esc(item.title)}" placeholder="A short, honest headline"></label>
-        <label class="span-2">One-line fact or number<input data-field="stat" value="${esc(item.stat)}" placeholder="About 1 in 7 young people…"></label>
-        <label class="span-2">Source (optional)<input data-field="source" value="${esc(item.source)}" placeholder="WHO / UNICEF"></label>
-        <label class="span-2">Full note<textarea data-field="body" rows="4">${esc(item.body)}</textarea></label>
-        <label class="span-2">Takeaway line<textarea data-field="takeaway" rows="2">${esc(item.takeaway)}</textarea></label>
-      </div>
-      ${uploadField('image', 'tile illustration', item.image)}`)).join('')
-      || '<div class="editor-card"><h3>No awareness tiles yet.</h3><p class="muted">Add a tile to start the awareness corner.</p></div>';
-  }
-
   /* -------------------------------------------------- item save and delete */
   function readItem(card) {
     const type = card.dataset.type;
@@ -449,11 +457,9 @@
     });
 
     if (type === 'events') {
-      const month = Number(body.month);
-      const name = months[month];
-      if (name) {
-        body.date = [String(body.day || '').trim(), name, String(body.year || '').trim()].filter(Boolean).join(' ');
-      }
+      /* The month, day and year go to the backend as they are: the backend keeps
+         the month for the calendar and builds the printed date itself. */
+      return body;
     }
     delete body.month;
     delete body.day;
@@ -496,9 +502,8 @@
   async function addItem(type) {
     const defaults = {
       team: { name: 'New member', role: 'Core team', group: 'management', phone: '', bio: '', image: '', showOnHome: true, order: (state.team.length + 1) * 10 },
-      events: { title: 'New activity', month: '', day: '', year: '', time: 'Time to be announced', location: 'CSMU campus', kicker: 'Mindful Tattva', description: '', image: '', published: false, order: (state.events.length + 1) * 10 },
+      events: { title: 'New activity', month: 1, day: '', year: '', time: 'Time to be announced', location: 'CSMU campus', kicker: 'Mindful Tattva', description: '', image: '', brochureUrl: '', fee: 0, upiId: '', upiName: 'Mindful Tattva', registrationOpen: false, windowMode: 'date', closesAt: '', openHours: 24, capacity: 0, published: false, order: (state.events.length + 1) * 10 },
       gallery: { caption: '', alt: '', event: '', date: '', image: '', order: (state.gallery.length + 1) * 10 },
-      awareness: { eyebrow: 'Everyday truth', title: 'New awareness tile', stat: '', source: '', body: '', takeaway: '', image: '', order: (state.awareness.length + 1) * 10 },
     };
     try {
       await api(`/api/${type}`, { method: 'POST', body: JSON.stringify(defaults[type]) });
@@ -536,6 +541,151 @@
     } finally {
       input.value = '';
     }
+  }
+
+  /* -------------------------------------------------------- event registers */
+  function eventTitle(id) {
+    const event = state.events.find((item) => item.id === id);
+    return event ? event.title : 'Event removed';
+  }
+
+  function registrationCard(item) {
+    const paid = Number(item.eventFee || 0) > 0;
+    const status = item.paymentStatus || 'pending';
+    const chipClass = {
+      verified: 'is-verified', submitted: 'is-submitted', rejected: 'is-rejected',
+      'not-required': 'is-free', pending: 'is-pending',
+    }[status] || 'is-pending';
+    const link = (path, label, extra = '') => `<a class="btn-sm" href="${esc(path)}"${extra}>${esc(label)}</a>`;
+    return `
+      <article class="submission" data-registration="${esc(item.id)}">
+        <div class="submission-head">
+          <div>
+            <strong>${esc(item.name)}</strong>
+            <div class="muted" style="font-size:.8rem">${esc(item.serial)} · ${esc(item.eventTitle || eventTitle(item.eventId))} · ${esc(item.createdAt || '')}</div>
+          </div>
+          <div class="row-actions">
+            <span class="status-chip ${esc(chipClass)}">${esc(item.paymentLabel || '')}</span>
+          </div>
+        </div>
+        <dl>
+          <div><dt>Phone</dt><dd>${esc(item.phone)}</dd></div>
+          <div><dt>Email</dt><dd>${esc(item.email)}</dd></div>
+          ${item.course ? `<div><dt>Course</dt><dd>${esc(item.course)}</dd></div>` : ''}
+          ${item.year ? `<div><dt>Year</dt><dd>${esc(item.year)}</dd></div>` : ''}
+          <div><dt>Fee</dt><dd>${paid ? esc('Rs. ' + Number(item.eventFee).toFixed(0)) : 'Free entry'}</dd></div>
+          <div><dt>Status</dt><dd>${esc(item.status || 'confirmed')}</dd></div>
+          ${item.note ? `<div><dt>Note</dt><dd>${esc(item.note)}</dd></div>` : ''}
+          ${item.adminNote ? `<div><dt>Club note</dt><dd>${esc(item.adminNote)}</dd></div>` : ''}
+        </dl>
+        <div class="links">
+          ${item.passReady ? link(`/api/pass/${encodeURIComponent(item.id)}`, 'Pass PDF ↗', ' target="_blank" rel="noreferrer"') : ''}
+          ${item.proofPath ? link(item.proofPath, 'Payment proof ↗', ' target="_blank" rel="noreferrer"') : ''}
+          ${link(item.passUrl || '#', 'Student pass page ↗', ' target="_blank" rel="noreferrer"')}
+          ${link(`mailto:${esc(item.email)}`, 'Reply by email ↗')}
+        </div>
+        <div class="row-actions" style="margin-top:10px">
+          ${paid && status !== 'verified' ? `<button class="btn-sm primary" type="button" data-payment="verified" data-id="${esc(item.id)}">Payment verified</button>` : ''}
+          ${paid && status !== 'rejected' ? `<button class="btn-sm" type="button" data-payment="rejected" data-id="${esc(item.id)}">Proof not accepted</button>` : ''}
+          <button class="btn-sm" type="button" data-registration-status="cancelled" data-id="${esc(item.id)}">Cancel &amp; refund</button>
+          <button class="btn-sm danger" type="button" data-delete-registration data-id="${esc(item.id)}">Delete</button>
+        </div>
+      </article>`;
+  }
+
+  function renderRegistrations() {
+    const wrap = $('#registrationGroups');
+    if (!wrap) return;
+    if (!state.registrations.length) {
+      wrap.innerHTML = '<div class="editor-card"><h3>No registrations yet.</h3><p class="muted">Every registration sent from the website lands here with its pass serial, payment state and proof.</p></div>';
+      return;
+    }
+
+    const groups = new Map();
+    state.registrations.forEach((item) => {
+      const key = item.eventId || 'unknown';
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(item);
+    });
+
+    wrap.innerHTML = Array.from(groups.entries()).map(([eventId, items]) => {
+      const paidCount = items.filter((item) => Number(item.eventFee || 0) > 0).length;
+      const collected = items.reduce((total, item) => total + (item.passReady ? Number(item.eventFee || 0) : 0), 0);
+      return `
+        <div class="editor-card" style="margin-bottom:16px">
+          <div class="editor-card-head">
+            <span>${esc(items[0].eventTitle || eventTitle(eventId))}</span>
+            <span class="muted" style="font-size:.8rem">${items.length} registered · ${paidCount} paid · Rs. ${collected.toFixed(0)} collected</span>
+          </div>
+          <div style="display:grid;gap:14px">
+            ${items.map(registrationCard).join('')}
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  async function setPayment(id, paymentStatus) {
+    try {
+      const result = await api(`/api/registrations/${encodeURIComponent(id)}`, {
+        method: 'PUT',
+        body: JSON.stringify({ paymentStatus }),
+      });
+      const index = state.registrations.findIndex((item) => item.id === id);
+      if (index >= 0 && result.item) state.registrations[index] = Object.assign({}, state.registrations[index], result.item);
+      toast(paymentStatus === 'verified' ? 'Payment marked as verified ✓' : 'Payment proof marked as not accepted');
+      renderAll();
+    } catch (error) {
+      toast(error.message, true);
+    }
+  }
+
+  async function setRegistrationStatus(id, status) {
+    if (!window.confirm('Cancel this registration? The fee is returned within 12 working days — the pass stops being valid at the door.')) return;
+    try {
+      const result = await api(`/api/registrations/${encodeURIComponent(id)}`, {
+        method: 'PUT',
+        body: JSON.stringify({ status, paymentStatus: 'rejected' }),
+      });
+      const index = state.registrations.findIndex((item) => item.id === id);
+      if (index >= 0 && result.item) state.registrations[index] = Object.assign({}, state.registrations[index], result.item);
+      toast('Registration cancelled — refund within 12 working days');
+      renderAll();
+    } catch (error) {
+      toast(error.message, true);
+    }
+  }
+
+  async function deleteRegistration(id) {
+    if (!window.confirm('Delete this registration row? The pass serial disappears from the register.')) return;
+    try {
+      await api(`/api/registrations/${encodeURIComponent(id)}`, { method: 'DELETE' });
+      state.registrations = state.registrations.filter((item) => item.id !== id);
+      toast('Registration deleted');
+      renderAll();
+    } catch (error) {
+      toast(error.message, true);
+    }
+  }
+
+  /** The door list: every serial number, ready to match entries at the gate. */
+  function exportPassCsv() {
+    if (!state.registrations.length) {
+      toast('There is nothing to export yet.');
+      return;
+    }
+    const columns = ['serial', 'name', 'phone', 'email', 'course', 'year', 'eventTitle', 'eventDate', 'eventTime', 'eventVenue', 'eventFee', 'paymentStatus', 'status', 'proofPath', 'createdAt'];
+    const cell = (value) => '"' + String(value == null ? '' : value).replaceAll('"', '""') + '"';
+    const csv = [columns.join(',')].concat(
+      state.registrations.map((item) => columns.map((column) => cell(item[column])).join(','))
+    ).join('\r\n');
+
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'mindful-tattva-passes.csv';
+    link.click();
+    URL.revokeObjectURL(link.href);
+    toast('Door list downloaded ✓');
   }
 
   /* ----------------------------------------------------------- submissions */
@@ -727,6 +877,15 @@
         return;
       }
 
+      const paymentButton = target.closest('[data-payment]');
+      if (paymentButton) return setPayment(paymentButton.dataset.id, paymentButton.dataset.payment);
+
+      const registrationStatus = target.closest('[data-registration-status]');
+      if (registrationStatus) return setRegistrationStatus(registrationStatus.dataset.id, registrationStatus.dataset.registrationStatus);
+
+      const registrationDelete = target.closest('[data-delete-registration]');
+      if (registrationDelete) return deleteRegistration(registrationDelete.dataset.id);
+
       const restoreButton = target.closest('[data-restore]');
       if (restoreButton) return restore(restoreButton.dataset.restore);
     });
@@ -739,10 +898,10 @@
     $('#addTeam')?.addEventListener('click', () => addItem('team'));
     $('#addEvent')?.addEventListener('click', () => addItem('events'));
     $('#addPhoto')?.addEventListener('click', () => addItem('gallery'));
-    $('#addTile')?.addEventListener('click', () => addItem('awareness'));
     $('#exportCsv')?.addEventListener('click', exportCsv);
     $('#clearInbox')?.addEventListener('click', clearInbox);
     $('#importButton')?.addEventListener('click', importFile);
+    $('#exportPassCsv')?.addEventListener('click', exportPassCsv);
     $('#changePassword')?.addEventListener('click', changePassword);
     $('#logoutButton')?.addEventListener('click', logout);
     $('#refreshButton')?.addEventListener('click', () => loadAll().then(() => toast('Refreshed ✓')).catch((error) => toast(error.message, true)));

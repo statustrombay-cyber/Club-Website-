@@ -145,10 +145,9 @@ h3 { font-size:1.2rem; } p { margin:0 0 1em; } a { color:var(--plum); }
 .site-nav { display:flex; flex-wrap:wrap; gap:14px; align-items:center; }
 .site-nav a { text-decoration:none; font-size:.92rem; font-weight:500; }
 .menu-toggle { display:none; }
-.btn,.nav-pill,.awareness-tab { display:inline-block; padding:11px 20px; border-radius:999px; text-decoration:none;
+.nav-action,.solid-button,.outline-button { display:inline-block; padding:11px 20px; border-radius:999px; text-decoration:none;
   font-weight:600; font-size:.92rem; border:1px solid var(--line); background:var(--paper); color:var(--plum-deep); }
-.btn-solid { background:var(--plum-deep); color:#fff; border-color:var(--plum-deep); }
-.btn-ghost { background:transparent; }
+.solid-button { background:var(--plum-deep); color:#fff; border-color:var(--plum-deep); }
 .btn-row { display:flex; flex-wrap:wrap; gap:12px; }
 .site-footer { background:var(--paper); border-top:1px solid var(--line); margin-top:48px; padding:34px 0; }
 .footer-grid,.footer-base { display:flex; flex-wrap:wrap; gap:22px; justify-content:space-between; }
@@ -161,10 +160,9 @@ h3 { font-size:1.2rem; } p { margin:0 0 1em; } a { color:var(--plum); }
 form label { display:block; font-size:.84rem; font-weight:600; margin-bottom:6px; }
 .card,.gallery-card,.team-card,.event-card,.month-card,.tile,.editor-card { background:var(--paper);
   border:1px solid var(--line); border-radius:18px; padding:18px; }
-.grid,.card-grid,.team-grid,.gallery-grid,.month-grid,.awareness-grid { display:grid; gap:18px;
+.grid,.team-grid,.gallery-grid,.detail-grid,.event-grid,.calendar-months { display:grid; gap:18px;
   grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); }
 .announcement { background:var(--plum-deep); color:#fff; text-align:center; font-size:.9rem; padding:8px 0; }
-.ambient,.scroll-progress,.lightbox,.honeypot { display:none; }
 .honeypot { position:absolute; left:-9999px; }
 CSS;
 }
@@ -224,8 +222,6 @@ function mt_send_html(string $html, int $status = 200, array $headers = []): voi
 /** Public pages. Keeps the router readable. */
 function mt_public_page(string $route): void
 {
-    $db = mt_db();
-
     switch ($route) {
         case 'home':
         case 'index.php':
@@ -234,28 +230,27 @@ function mt_public_page(string $route): void
 
         case 'gallery':
         case 'gallery.php':
-            mt_send_html(mt_page('public/gallery', [
-                'pageTitle'  => 'Photo gallery',
-                'pageIntro'  => 'Moments, workshops and quiet circles from Mindful Tattva.',
-            ]));
+            mt_send_html(mt_page('public/gallery', ['pageTitle' => 'Event gallery', 'bodyClass' => 'gallery-page']));
             return;
-
-        /* The member roster is intentionally kept inside the dashboard.
-         * To publish the page again, restore these two lines:
-         *   case 'members':
-         *   case 'members.php':
-         *       mt_send_html(mt_page('public/members', ['pageTitle' => 'Our members']));
-         *       return;
-         */
 
         case 'calendar':
         case 'calendar.php':
-            mt_send_html(mt_page('public/calendar', ['pageTitle' => 'Club calendar']));
+            mt_send_html(mt_page('public/calendar', ['pageTitle' => 'Yearly activities', 'bodyClass' => 'calendar-page']));
             return;
 
-        case 'awareness':
-        case 'awareness.php':
-            mt_send_html(mt_page('public/awareness', ['pageTitle' => 'Mental health awareness']));
+        case 'members':
+        case 'members.php':
+            mt_send_html(mt_page('public/members', ['pageTitle' => 'Our members', 'bodyClass' => 'members-page']));
+            return;
+
+        case 'register':
+        case 'register.php':
+            mt_public_register();
+            return;
+
+        case 'pass':
+        case 'pass.php':
+            mt_public_pass();
             return;
 
         /* Deployment check. Handy right after an upload: it lists every design
@@ -277,7 +272,7 @@ function mt_public_page(string $route): void
         case 'robots.txt':
             mt_json_raw(
                 200,
-                "User-agent: *\nAllow: /\nDisallow: /dashboard\nDisallow: /health\nSitemap: /sitemap.xml\n",
+                "User-agent: *\nAllow: /\nDisallow: /dashboard\nDisallow: /health\nDisallow: /pass/\nSitemap: /sitemap.xml\n",
                 ['Content-Type' => 'text/plain; charset=utf-8']
             );
             return;
@@ -287,10 +282,157 @@ function mt_public_page(string $route): void
     }
 }
 
+/**
+ * The registration form for one event.
+ *
+ * The event comes from the query string, the window and the fee come from the
+ * backend, and the whole thing posts back here when JavaScript is switched off.
+ */
+function mt_public_register(): void
+{
+    $db = mt_db();
+    $eventId = trim((string) ($_GET['event'] ?? ''));
+    $event = $eventId !== '' ? mt_event_find($db, $eventId) : null;
+
+    if ($event === null) {
+        $open = mt_open_events($db);
+        if (count($open) === 1) {
+            $event = $open[0];
+        } elseif ($open) {
+            mt_send_html(mt_page('public/register-list', [
+                'pageTitle'  => 'Event registration',
+                'openEvents' => $open,
+            ]));
+            return;
+        } else {
+            mt_send_html(mt_page('public/not-found', [
+                'pageTitle' => 'No event is open',
+                'message'   => 'No event is open for registration at the moment. The club calendar has everything that is planned.',
+            ]), 404);
+            return;
+        }
+    }
+
+    $errors = [];
+    $values = [];
+
+    if (mt_method() === 'POST') {
+        $values = mt_input();
+        if (trim((string) ($values['website'] ?? '')) !== '') {
+            // A bot filled the hidden field: pretend it worked and keep the register clean.
+            mt_send_html(mt_page('public/register', [
+                'pageTitle'  => 'Event registration',
+                'event'      => $event,
+                'csrf'       => mt_csrf_token(),
+                'errors'     => [],
+                'values'     => [],
+                'openEvents' => mt_open_events($db),
+            ]));
+            return;
+        }
+        if (!mt_csrf_ok((string) ($values['csrf'] ?? ''))) {
+            $errors['form'] = 'The form expired. Please send it again.';
+        } else {
+            $state = mt_event_registration_state($db, $event);
+            if (!$state['open']) {
+                $errors['form'] = $state['label'];
+            } else {
+                $result = mt_registration_new($db, $event, $values);
+                if ($result['error'] !== null) {
+                    $errors['form'] = $result['error'];
+                } else {
+                    $record = $result['record'];
+                    mt_db_transaction(static function (array &$database) use ($record): bool {
+                        $database['registrations'][] = $record;
+                        return true;
+                    });
+                    $passUrl = '/pass/' . rawurlencode((string) $record['serial'])
+                        . '?token=' . rawurlencode((string) $record['token']) . '&new=1';
+                    mt_redirect($passUrl);
+                    return;
+                }
+            }
+        }
+    }
+
+    mt_send_html(mt_page('public/register', [
+        'pageTitle'  => 'Register · ' . (string) $event['title'],
+        'event'      => $event,
+        'csrf'       => mt_csrf_token(),
+        'errors'     => $errors,
+        'values'     => $values,
+        'openEvents' => mt_open_events($db),
+    ]));
+}
+
+/** The student's pass page, unlocked by its private token. */
+function mt_public_pass(): void
+{
+    $db = mt_db();
+    $serial = trim((string) ($_GET['serial'] ?? ''));
+    $token = trim((string) ($_GET['token'] ?? ''));
+    $message = null;
+
+    $registration = null;
+    if ($serial !== '') {
+        $bySerial = mt_registration_by_serial($db, $serial);
+        if ($bySerial !== null) {
+            $registration = mt_registration_by_token($db, (string) $bySerial['id'], $token);
+        }
+    }
+    if ($registration === null) {
+        mt_send_html(mt_page('public/not-found', [
+            'pageTitle' => 'Pass not found',
+            'message'   => 'That pass link is not valid any more, or the token is missing. Check the link the club sent you, or write to the club team.',
+        ]), 404);
+        return;
+    }
+
+    if (mt_method() === 'POST') {
+        $input = mt_input();
+        if (!mt_csrf_ok((string) ($input['csrf'] ?? ''))) {
+            $message = 'The upload expired. Please choose the screenshot again.';
+        } else {
+            $upload = mt_registration_receive_proof($registration);
+            if ($upload['error'] !== null) {
+                $message = $upload['error'];
+            } else {
+                mt_db_transaction(static function (array &$database) use ($registration, $upload): bool {
+                    foreach ($database['registrations'] as $index => $existing) {
+                        if ((string) ($existing['id'] ?? '') === (string) $registration['id']) {
+                            $database['registrations'][$index]['paymentStatus'] = 'submitted';
+                            $database['registrations'][$index]['proofPath'] = $upload['path'];
+                            $database['registrations'][$index]['proofUploadedAt'] = mt_now_iso();
+                            $database['registrations'][$index]['passIssuedAt'] = mt_now_iso();
+                            $database['registrations'][$index]['updatedAt'] = mt_now_iso();
+                        }
+                    }
+                    return true;
+                });
+                mt_redirect('/pass/' . rawurlencode((string) $registration['serial'])
+                    . '?token=' . rawurlencode($token));
+                return;
+            }
+        }
+        $registration = mt_registration_by_token(mt_db(), $serial, $token) ?? $registration;
+    }
+
+    $event = mt_event_find(mt_db(), (string) ($registration['eventId'] ?? ''));
+
+    mt_send_html(mt_page('public/pass', [
+        'pageTitle'     => 'Your pass · ' . (string) $registration['serial'],
+        'registration'  => $registration,
+        'event'         => $event ?? [],
+        'token'         => $token,
+        'message'       => $message,
+        'justRegistered' => !empty($_GET['new']),
+    ]));
+}
+
 function mt_public_sitemap(): void
 {
     $base = mt_base_url();
-    $urls = ['', 'gallery', 'calendar', 'awareness'];
+    $urls = ['', 'gallery', 'calendar', 'members'];
     $xml  = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n";
     foreach ($urls as $url) {
         $loc = $url === '' ? $base . '/' : $base . '/' . $url;

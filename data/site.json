@@ -1,6 +1,6 @@
 {
-  "revision": 5,
-  "updatedAt": "2026-10-12T11:09:56+00:00",
+  "revision": 6,
+  "updatedAt": "2026-10-12T13:59:53+00:00",
   "site": {
     "clubName": "Mindful Tattva",
     "shortName": "MT",
@@ -42,12 +42,8 @@
         "label": "student-led"
       }
     ],
-    "awarenessEyebrow": "Awareness corner",
-    "awarenessHeading": "Mental health is not a theory. It is somebody’s ordinary Tuesday.",
-    "awarenessIntro": "Four quiet truths about how stress, pressure and loneliness actually show up around us on campus — and what genuinely helps. The club team keeps this corner updated with new words, numbers and pictures.",
-    "awarenessNote": "If you or a friend are struggling right now: Tele-MANAS 14416 (free, 24×7, Government of India) · KIRAN 1800-599-0019 · or your campus counsellor. Reaching out is not an overreaction.",
-    "galleryHeading": "Every gathering leaves a trace.",
-    "galleryIntro": "Captions are added by the club team, so some photos arrive without a note. Click any photo to open it full frame."
+    "galleryHeading": "Small moments. Big meaning.",
+    "galleryIntro": "Photos from your events will turn this space into a living scrapbook of the club."
   },
   "history": [
     {
@@ -97,14 +93,24 @@
     {
       "id": "event-welcome-circle",
       "title": "Mindful Tattva Welcome Circle",
-      "date": "24 October 2026",
+      "kicker": "Club gathering",
+      "month": 10,
+      "day": 24,
+      "year": 2026,
       "time": "4:00 PM",
       "location": "CSMU campus · Seminar Hall",
-      "kicker": "Club gathering",
       "description": "A warm first circle to meet the club, share intentions and begin the new chapter together.",
       "published": true,
       "image": "",
-      "registrationUrl": ""
+      "fee": 0,
+      "upiId": "",
+      "upiName": "Mindful Tattva",
+      "registrationOpen": true,
+      "windowMode": "date",
+      "closesAt": "2026-10-23T18:00",
+      "openHours": 0,
+      "capacity": 0,
+      "brochureUrl": ""
     }
   ],
   "gallery": [
@@ -115,57 +121,39 @@
       "image": "/assets/photos/mt-club-logo.jpg",
       "event": "",
       "date": "",
-      "showInHero": true
-    }
-  ],
-  "awareness": [
-    {
-      "id": "awareness-1",
-      "order": 1,
-      "image": "/assets/awareness/tile-1.jpg",
-      "eyebrow": "Everyday truth · 01",
-      "title": "Not everyone who looks fine, is fine.",
-      "stat": "About 1 in 7 people aged 10–19 lives with a mental health condition.",
-      "source": "World Health Organization",
-      "body": "Most struggles do not arrive as a crisis. They arrive as a student who stopped replying in the group chat, skipped two lectures, or laughs a little too hard to avoid a question. On a campus this size, that student is almost always sitting within three seats of us.",
-      "takeaway": "Notice the quiet changes in the people around you, and ask once — properly."
+      "order": 1
     },
     {
-      "id": "awareness-2",
-      "order": 2,
-      "image": "/assets/awareness/tile-2.jpg",
-      "eyebrow": "In the body · 02",
-      "title": "Stress arrives in the body before it arrives in words.",
-      "stat": "Half of all mental health conditions begin by the age of 14.",
-      "source": "WHO / UNICEF",
-      "body": "A racing heart, tight shoulders, a headache that returns every evening, food that either disappears or becomes a comfort, sleep that never really rests. When the nervous system stays switched on for months, attention, memory and patience pay the bill — and we usually blame ourselves instead.",
-      "takeaway": "Long, slow breathing and an early conversation with a counsellor are not extra. They are the basics."
+      "id": "gallery-2",
+      "caption": "",
+      "event": "",
+      "date": "",
+      "alt": "",
+      "image": "",
+      "order": 2
     },
     {
-      "id": "awareness-3",
-      "order": 3,
-      "image": "/assets/awareness/tile-3.jpg",
-      "eyebrow": "Connection · 03",
-      "title": "Being heard by one person changes the weight of a day.",
-      "stat": "Students who feel connected on campus report better mental health than those who feel alone.",
-      "source": "CDC, adolescent connectedness research",
-      "body": "Not advice, not a lecture, not a comparison — just someone who stays in the room while you say the difficult sentence out loud. That is why the club exists: a bench, a chai, a five-minute honest conversation. Talking about mental health is not attention-seeking. It is maintenance.",
-      "takeaway": "You do not need the right words. You only need to start."
+      "id": "gallery-3",
+      "caption": "",
+      "event": "",
+      "date": "",
+      "alt": "",
+      "image": "",
+      "order": 3
     },
     {
-      "id": "awareness-4",
-      "order": 4,
-      "image": "/assets/awareness/tile-4.jpg",
-      "eyebrow": "Everyday care · 04",
-      "title": "Small habits, repeated gently, keep us steady.",
-      "stat": "Sleep, movement, sunlight, water, one honest journal line and one real conversation a day.",
-      "source": "Mindful Tattva care list",
-      "body": "None of these is a cure, and none of them replaces professional help — but together they make the hard weeks shorter. Pick one, keep it small enough that you cannot fail it, and let it be enough for today. Progress is rarely dramatic; it is usually boring, and it works.",
-      "takeaway": "Ask for help early. Everybody needs it sometimes."
+      "id": "gallery-4",
+      "caption": "",
+      "event": "",
+      "date": "",
+      "alt": "",
+      "image": "",
+      "order": 4
     }
   ],
   "submissions": [],
   "settings": {
     "frontendRegistration": true
-  }
+  },
+  "registrations": []
 }

@@ -24,6 +24,14 @@ function mt_api_handle(string $route): void
     $resource = $parts[1] ?? '';
     $id       = $parts[2] ?? null;
 
+    /* /api/registrations.csv reads as one readable address, not a folder. */
+    if (str_contains($resource, '.')) {
+        [$resource, $suffix] = explode('.', $resource, 2);
+        if ($id === null) {
+            $id = $suffix;
+        }
+    }
+
     switch ($resource) {
         case 'health':
             $report = mt_health_report();
@@ -82,6 +90,18 @@ function mt_api_handle(string $route): void
 
         case 'upload':
             mt_api_upload();
+            return;
+
+        case 'registrations':
+            if ($id === 'csv') {
+                mt_api_registrations_csv();
+                return;
+            }
+            mt_api_registrations($method, $id);
+            return;
+
+        case 'pass':
+            mt_api_pass($id);
             return;
 
         case 'password':
@@ -216,8 +236,7 @@ function mt_site_field_whitelist(): array
         'aboutHeading', 'aboutBody', 'clubDescription', 'mission', 'vision', 'memberBenefits',
         'joiningIntro', 'registrationIntro', 'contactNote', 'instagramHandle', 'instagramUrl',
         'email', 'clubPhone', 'universityName', 'department', 'address', 'universityWebsite',
-        'addressSource', 'stats', 'awarenessEyebrow', 'awarenessHeading', 'awarenessIntro',
-        'awarenessNote', 'galleryHeading', 'galleryIntro', 'membersHeading', 'membersIntro',
+        'addressSource', 'stats', 'galleryHeading', 'galleryIntro', 'membersHeading', 'membersIntro',
         'calendarHeading', 'calendarIntro', 'joinHeading', 'formsHeading', 'footerNote',
     ];
 }
@@ -388,6 +407,236 @@ function mt_api_submissions(string $method, ?string $id): void
     }
 
     mt_fail(405, 'Method not allowed.');
+}
+
+/* -------------------------------------------------------------------------
+ * Event registrations
+ * ---------------------------------------------------------------------- */
+
+/**
+ * POST /api/registrations          a visitor registers for an event
+ * GET  /api/registrations          the club reads the register (signed in)
+ * PUT  /api/registrations/{id}     the club confirms, rejects or cancels (signed in)
+ * DELETE /api/registrations/{id}   the club removes a row (signed in)
+ */
+function mt_api_registrations(string $method, ?string $id): void
+{
+    if ($method === 'POST' && $id === null) {
+        mt_api_registration_create();
+        return;
+    }
+
+    mt_require_auth();
+
+    if ($method === 'GET') {
+        $db = mt_db();
+        $eventFilter = trim((string) ($_GET['event'] ?? ''));
+        $items = [];
+        foreach ($db['registrations'] as $registration) {
+            if ($eventFilter !== '' && (string) ($registration['eventId'] ?? '') !== $eventFilter) {
+                continue;
+            }
+            $registration['paymentLabel'] = mt_payment_label((string) ($registration['paymentStatus'] ?? 'pending'));
+            $registration['passReady'] = mt_registration_pass_ready($registration);
+            $registration['passUrl'] = '/pass/' . rawurlencode((string) ($registration['serial'] ?? ''))
+                . '?token=' . rawurlencode((string) ($registration['token'] ?? ''));
+            $items[] = $registration;
+        }
+        mt_json(200, [
+            'ok'      => true,
+            'items'   => $items,
+            'count'   => count($items),
+            'total'   => count($db['registrations']),
+            'revenue' => array_sum(array_map(
+                static fn(array $registration): float => mt_registration_pass_ready($registration) ? (float) ($registration['eventFee'] ?? 0) : 0,
+                $db['registrations']
+            )),
+        ]);
+        return;
+    }
+
+    if (($method === 'PUT' || $method === 'PATCH') && $id !== null) {
+        $input = mt_input();
+        $patch = [];
+        if (isset($input['paymentStatus'])) {
+            $status = (string) $input['paymentStatus'];
+            if (!in_array($status, ['pending', 'submitted', 'verified', 'rejected', 'not-required'], true)) {
+                mt_fail(422, 'That payment status is not one of the options.');
+                return;
+            }
+            $patch['paymentStatus'] = $status;
+        }
+        if (isset($input['status'])) {
+            $status = (string) $input['status'];
+            if (!in_array($status, ['confirmed', 'cancelled', 'refunded'], true)) {
+                mt_fail(422, 'That registration status is not one of the options.');
+                return;
+            }
+            $patch['status'] = $status;
+        }
+        if (isset($input['note'])) {
+            $patch['adminNote'] = mt_clean_text($input['note'], 600);
+        }
+        if (!$patch) {
+            mt_fail(400, 'Nothing to save.');
+            return;
+        }
+        $patch['updatedAt'] = mt_now_iso();
+
+        $found = false;
+        $result = mt_db_transaction(function (array &$db) use ($id, $patch, &$found) {
+            foreach ($db['registrations'] as $index => $registration) {
+                if ((string) ($registration['id'] ?? '') !== $id) {
+                    continue;
+                }
+                $found = true;
+                $db['registrations'][$index] = array_replace($registration, $patch);
+                return $db['registrations'][$index];
+            }
+            return false;
+        });
+        if (!$found) {
+            mt_fail(404, 'That registration was not found.');
+            return;
+        }
+        $result['paymentLabel'] = mt_payment_label((string) ($result['paymentStatus'] ?? 'pending'));
+        mt_json(200, ['ok' => true, 'item' => $result, 'revision' => mt_db(true)['revision']]);
+        return;
+    }
+
+    if ($method === 'DELETE' && $id !== null) {
+        $removed = false;
+        mt_db_transaction(function (array &$db) use ($id, &$removed) {
+            foreach ($db['registrations'] as $index => $registration) {
+                if ((string) ($registration['id'] ?? '') === $id) {
+                    array_splice($db['registrations'], $index, 1);
+                    $removed = true;
+                    break;
+                }
+            }
+            return true;
+        });
+        if (!$removed) {
+            mt_fail(404, 'That registration was not found.');
+            return;
+        }
+        mt_ok(['revision' => mt_db(true)['revision']]);
+        return;
+    }
+
+    mt_fail(405, 'Method not allowed.');
+}
+
+/** The public half: a student registers, and gets their pass address back. */
+function mt_api_registration_create(): void
+{
+    if (!mt_throttle_check('register', 12, 300)) {
+        mt_fail(429, 'That is a lot of registrations at once — please try again shortly.');
+        return;
+    }
+
+    $input = mt_input();
+    if (trim((string) ($input['website'] ?? '')) !== '') {
+        mt_ok(['ok' => true, 'ignored' => true]);
+        return;
+    }
+
+    $token = (string) ($input['csrf'] ?? '');
+    if ($token !== '' && !mt_csrf_ok($token)) {
+        mt_fail(422, 'The form expired. Please reload the page and send it again.');
+        return;
+    }
+
+    $db = mt_db();
+    $eventId = trim((string) ($input['eventId'] ?? ''));
+    $event = $eventId !== '' ? mt_event_find($db, $eventId) : null;
+    if ($event === null) {
+        mt_fail(404, 'That event is no longer listed.');
+        return;
+    }
+
+    $state = mt_event_registration_state($db, $event);
+    if (!$state['open']) {
+        mt_fail(409, $state['label']);
+        return;
+    }
+
+    $result = mt_registration_new($db, $event, $input);
+    if ($result['error'] !== null) {
+        mt_fail(422, $result['error']);
+        return;
+    }
+
+    mt_throttle_hit('register');
+    $record = $result['record'];
+    mt_db_transaction(static function (array &$database) use ($record): bool {
+        $database['registrations'][] = $record;
+        return true;
+    });
+
+    $passUrl = '/pass/' . rawurlencode((string) $record['serial']) . '?token=' . rawurlencode((string) $record['token']) . '&new=1';
+    mt_json(201, [
+        'ok'        => true,
+        'id'        => $record['id'],
+        'serial'    => $record['serial'],
+        'passUrl'   => $passUrl,
+        'event'     => $record['eventTitle'],
+        'fee'       => $record['eventFee'],
+        'payment'   => $record['paymentStatus'],
+        'message'   => $record['eventFee'] > 0
+            ? 'Registered. Pay ' . mt_money((float) $record['eventFee']) . ' and upload the screenshot to get your pass.'
+            : 'Registered. Your pass is ready.',
+        'revision'  => mt_db(true)['revision'],
+    ]);
+}
+
+/** GET /api/registrations/csv — the door list, serial numbers and all. */
+function mt_api_registrations_csv(): void
+{
+    mt_require_auth();
+    $db = mt_db();
+    $csv = mt_registrations_csv($db);
+    mt_json_raw(200, $csv, [
+        'Content-Type'        => 'text/csv; charset=utf-8',
+        'Content-Disposition' => 'attachment; filename="mindful-tattva-registrations-' . date('Y-m-d-His') . '.csv"',
+        'Cache-Control'       => 'no-store',
+    ]);
+}
+
+/* -------------------------------------------------------------------------
+ * The pass itself
+ * ---------------------------------------------------------------------- */
+
+/** GET /api/pass/{registration id}?token=… — the PDF the student keeps. */
+function mt_api_pass(?string $id): void
+{
+    if (mt_method() !== 'GET') {
+        mt_fail(405, 'Method not allowed.');
+        return;
+    }
+    if ($id === null || $id === '') {
+        mt_fail(404, 'Which pass?');
+        return;
+    }
+
+    $db = mt_db();
+    $token = trim((string) ($_GET['token'] ?? ''));
+    $registration = mt_registration_by_token($db, $id, $token);
+    if ($registration === null && mt_authenticated()) {
+        // The club can reprint any pass from the dashboard.
+        $registration = mt_registration_find($db, $id);
+    }
+    if ($registration === null) {
+        mt_fail(404, 'That pass link is not valid.');
+        return;
+    }
+    if (!mt_registration_pass_ready($registration)) {
+        mt_fail(409, 'The pass is issued once the payment proof is uploaded.');
+        return;
+    }
+
+    $event = mt_event_find($db, (string) ($registration['eventId'] ?? '')) ?? [];
+    mt_pass_send($registration, $event, $db['site'], !empty($_GET['view']));
 }
 
 /* -------------------------------------------------------------------------

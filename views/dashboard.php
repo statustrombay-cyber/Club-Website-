@@ -15,9 +15,9 @@ $sections = [
     ['copy', 'Site copy'],
     ['team', 'Team members'],
     ['events', 'Events &amp; calendar'],
+    ['events-register', 'Event registrations'],
     ['gallery', 'Photo album'],
-    ['awareness', 'Awareness tiles'],
-    ['inbox', 'Registrations'],
+    ['inbox', 'Forms inbox'],
     ['data', 'Backups &amp; settings'],
 ];
 ?>
@@ -85,7 +85,7 @@ $sections = [
     <main class="dash-main">
       <div class="dash-top">
         <div>
-          <span class="eyebrow plain">Mindful Tattva · admin</span>
+          <span class="eyebrow plain">Mindful Tattva · club dashboard</span>
           <h1 id="panelTitle">Overview</h1>
         </div>
         <div class="dash-status">
@@ -121,10 +121,23 @@ $sections = [
 
       <section class="panel" id="panel-events">
         <div class="panel-head">
-          <div><h2>Events &amp; calendar</h2><p>Pick a month and type the day and year — the yearly calendar places the event automatically. Tick “Publish” to feature it on the home page.</p></div>
+          <div><h2>Events &amp; calendar</h2><p>Pick the month (it places the event in the yearly calendar) and type the day and year, the time and the venue.
+            Set a fee and the UPI ID and the registration form shows the payment QR code; set the window and registration closes by itself.</p></div>
           <button class="btn-sm primary" type="button" id="addEvent">+ Add event</button>
         </div>
         <div class="editor-grid" id="eventEditors"></div>
+      </section>
+
+      <section class="panel" id="panel-events-register">
+        <div class="panel-head">
+          <div><h2>Event registrations</h2><p>Every student who registers from the website, grouped by event, with their pass serial, payment state and uploaded proof.
+            Check a payment here, cancel with a refund, or download the door list — it carries every serial number for matching entries at the gate.</p></div>
+          <div class="row-actions">
+            <a class="btn-sm primary" href="/api/registrations.csv">Download registrations CSV (serials)</a>
+            <button class="btn-sm" type="button" id="exportPassCsv">Download door list</button>
+          </div>
+        </div>
+        <div id="registrationGroups" style="display:grid;gap:14px"></div>
       </section>
 
       <section class="panel" id="panel-gallery">
@@ -135,17 +148,9 @@ $sections = [
         <div class="editor-grid" id="galleryEditors"></div>
       </section>
 
-      <section class="panel" id="panel-awareness">
-        <div class="panel-head">
-          <div><h2>Awareness tiles</h2><p>These tiles scroll with the page on the home page. Write your own numbers, notes and pictures — the artwork can be replaced with any image you upload.</p></div>
-          <button class="btn-sm primary" type="button" id="addTile">+ Add tile</button>
-        </div>
-        <div class="editor-grid" id="awarenessEditors"></div>
-      </section>
-
       <section class="panel" id="panel-inbox">
         <div class="panel-head">
-          <div><h2>Registrations</h2><p>Every membership and event registration sent from the website lands here — this inbox is never shown on the public site.</p></div>
+          <div><h2>Forms inbox</h2><p>Membership interest and general messages sent from the website. Event registrations live in their own tab, with their passes.</p></div>
           <div class="row-actions">
             <button class="btn-sm" type="button" id="exportCsv">Download CSV</button>
             <button class="btn-sm danger" type="button" id="clearInbox">Clear all</button>
@@ -172,7 +177,7 @@ $sections = [
           <div class="editor-card">
             <div class="editor-card-head"><span>Import</span></div>
             <h3>Upload a backup file</h3>
-            <p class="muted" style="font-size:.84rem">Restores content, team, events, photos and awareness tiles from a <code>.json</code> backup.</p>
+            <p class="muted" style="font-size:.84rem">Restores the site copy, team, events, photos and registrations from a <code>.json</code> backup.</p>
             <div class="upload-row">
               <input type="file" accept="application/json,.json" id="importFile">
               <button class="btn-sm primary" type="button" id="importButton">Import file</button>
