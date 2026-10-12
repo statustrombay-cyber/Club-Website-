@@ -77,7 +77,7 @@ function mt_pdf_wrap(string $text, float $size, float $maxWidth, bool $bold = fa
  * /verify/<id> and shows whether the pass is real, without an app, a login or
  * any personal detail beyond the holder's masked name.
  */
-function mt_pass_code(array $registration): string
+function mt_pass_qr_link(array $registration): string
 {
     return mt_verify_url($registration);
 }
@@ -182,7 +182,7 @@ function mt_pass_pdf(array $registration, array $event, array $site): string
     $rect($qrX - 8, $qrY - 8, $qrSize + 16, $qrSize + 16, [1, 1, 1]);
     $ops[] = sprintf('%.3f %.3f %.3f RG 0.8 w %.2f %.2f %.2f %.2f re S', 0.85, 0.83, 0.82, $qrX - 8, $qrY - 8, $qrSize + 16, $qrSize + 16);
     try {
-        $qr = mt_qr_matrix(mt_pass_code($registration));
+        $qr = mt_qr_matrix(mt_pass_qr_link($registration));
         $modules = $qr['size'];
         $module = $qrSize / $modules;
         for ($row = 0; $row < $modules; $row++) {

@@ -414,6 +414,35 @@ ok('the private code is nowhere in the pass page', !paidPassAfter.body.includes(
 ok('the proof is recorded with the registration', /proof|Payment proof received|payment proof is with the club/i.test(paidPassAfter.body));
 const issuedSerial = (/MTP-\d{4}-\d{4}/.exec(paidPassAfter.body) || [''])[0];
 ok('the serial appears only now, with the pass', /^MTP-\d{4}-\d{4}$/.test(issuedSerial), issuedSerial);
+/* The pass QR is what the door reads: rebuild the matrix the page ships and
+   make sure it is a real QR symbol — three finders, timing rows, right size —
+   and that it never carries the private code. */
+const qrSvg = (/<svg[^>]*aria-label="Verification code[^"]*"[^>]*viewBox="0 0 (\d+) \d+"[^>]*>(.*?)<\/svg>/.exec(paidPassAfter.body) || []);
+const qrGrid = (() => {
+  if (!qrSvg[2]) return null;
+  const total = Number(qrSvg[1]);
+  const size = total - 8;                       // 4 quiet modules on every side
+  const grid = Array.from({ length: size }, () => new Array(size).fill(0));
+  for (const rect of qrSvg[2].matchAll(/<rect x="(\d+)" y="(\d+)" width="(\d+)" height="(\d+)"\/>/g)) {
+    const [x, y, w, h] = rect.slice(1).map(Number);
+    for (let dx = 0; dx < w; dx++) for (let dy = 0; dy < h; dy++) {
+      if (grid[y + dy - 4] && grid[y + dy - 4][x + dx - 4] !== undefined) grid[y + dy - 4][x + dx - 4] = 1;
+    }
+  }
+  return { size, grid };
+})();
+const finder = (grid, row, col) => [0, 1, 2, 3, 4, 5, 6].every((dy) => [0, 1, 2, 3, 4, 5, 6].every((dx) => {
+  const ring = dy === 0 || dy === 6 || dx === 0 || dx === 6;
+  const core = dy >= 2 && dy <= 4 && dx >= 2 && dx <= 4;
+  return grid[row + dy][col + dx] === (ring || core ? 1 : 0);
+}));
+ok('the pass carries a real QR symbol',
+  qrGrid !== null && (qrGrid.size - 21) % 4 === 0 && qrGrid.size >= 21
+    && finder(qrGrid.grid, 0, 0) && finder(qrGrid.grid, 0, qrGrid.size - 7) && finder(qrGrid.grid, qrGrid.size - 7, 0)
+    && qrGrid.grid.flat().filter(Boolean).length > qrGrid.size * 2,
+  qrGrid ? qrGrid.size + ' modules' : 'no QR');
+ok('the QR is not a picture of the private code', !paidPassAfter.body.includes(paidCode));
+
 const paidPdf = await get('/api/pass/' + encodeURIComponent(issuedSerial || paidRegistration.id), { session: paidPassAfter.session || {} });
 ok('the paid pass downloads as a PDF', paidPdf.status === 200 && String(paidPdf.body).startsWith('%PDF-1.4'), 'status ' + paidPdf.status);
 const paidRow = ((JSON.parse((await get('/api/registrations', AUTH)).body).items) || []).find((item) => item.id === paidRegistration.id) || {};

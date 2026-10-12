@@ -153,7 +153,7 @@ $pdfPath = '/api/pass/' . rawurlencode($serial !== '' ? $serial : (string) $regi
             </dl>
           </div>
           <div class="pass-qr">
-            <?= mt_qr_svg(mt_pass_code($registration), 148, 'Verification code for pass ' . $serial) ?>
+            <?= mt_qr_svg(mt_pass_qr_link($registration), 148, 'Verification code for pass ' . $serial) ?>
             <span class="pass-qr-note">Scan to check</span>
           </div>
         </div>
