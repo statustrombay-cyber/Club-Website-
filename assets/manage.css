@@ -32,15 +32,18 @@
 }
 .dash-side .brand { color: #fff8ef; }
 .dash-side .brand small { color: rgba(247, 238, 230, .6); }
+.dash-where { margin: 0; color: var(--ink-soft); font-size: .95rem; font-weight: 600; }
+.dash-main .panel > .panel-head h2 { margin-bottom: 4px; }
 .dash-nav { display: grid; gap: 4px; }
-.dash-nav button {
+.dash-nav a {
   display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
   padding: 11px 13px; border: 0; border-radius: 13px; background: transparent;
   color: rgba(247, 238, 230, .78); font-size: .87rem; font-weight: 600;
+  text-decoration: none;
   transition: background .2s var(--ease), color .2s var(--ease);
 }
-.dash-nav button:hover { background: rgba(255, 248, 239, .1); color: #fff8ef; }
-.dash-nav button.is-active { background: rgba(255, 248, 239, .16); color: #fff8ef; }
+.dash-nav a:hover { background: rgba(255, 248, 239, .1); color: #fff8ef; }
+.dash-nav a.is-active { background: rgba(255, 248, 239, .16); color: #fff8ef; }
 .dash-nav .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--coral); }
 .dash-side-foot { display: grid; gap: 10px; font-size: .78rem; color: rgba(247, 238, 230, .62); }
 .dash-side-foot a, .dash-side-foot button {

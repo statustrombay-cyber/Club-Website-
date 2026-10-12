@@ -161,10 +161,18 @@ function mt_api_login(): void
 
     mt_throttle_clear('login');
     mt_login_success();
+    /* A bookmarked section link drops the club on the sign-in page; this tells
+       the browser where to carry on once the password is right. */
+    $after = (string) ($_SESSION['mt_after_login'] ?? '');
+    unset($_SESSION['mt_after_login']);
+    if ($after === '' || !preg_match('#^/dashboard(/[a-z-]+)?$#', $after)) {
+        $after = '/dashboard/overview';
+    }
     mt_ok([
         'authenticated' => true,
         'csrf'          => mt_csrf_token(),
         'revision'      => mt_db(true)['revision'],
+        'after'         => $after,
     ]);
 }
 

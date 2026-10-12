@@ -542,18 +542,48 @@ const halfWay = await request({ uri: '/register?event=event-welcome-circle', met
   post: { eventId: 'event-welcome-circle', name: 'Form Poster', email: 'form@example.com', phone: '+91 90000 00002', csrf } });
 ok('the form also works without JavaScript (a real POST redirects)', halfWay.status === 303 && /\/pass\/MT(-[2-9A-HJ-NP-Z]{5}){4}/.test(JSON.stringify(halfWay.headers)), halfWay.status + ' ' + JSON.stringify(halfWay.headers).slice(0, 160));
 
+/* The club area is a sign-in page first, then one page per section. */
 const dashboard = await get('/dashboard');
 ok('GET /dashboard returns 200', dashboard.status === 200);
-ok('the dashboard shows the password screen', dashboard.body.includes('id="loginForm"'));
-ok('the dashboard inlines its own styles', dashboard.body.includes('.dash-shell'));
+ok('a signed-out /dashboard is only the password screen', dashboard.body.includes('id="loginForm"'));
+/* the stylesheet is inlined, so only markup markers count here */
+ok('a signed-out /dashboard sends no dashboard markup at all',
+  !dashboard.body.includes('class="dash-shell"') && !dashboard.body.includes('id="appView"')
+    && !dashboard.body.includes('id="dashNav"') && !/<section class="panel/.test(dashboard.body));
+ok('a signed-out /dashboard leaks none of the site copy', !dashboard.body.includes('student-led psychology club'));
 ok('the dashboard is noindex', /noindex/.test(dashboard.body));
-ok('the dashboard has the event register and no tiles', dashboard.body.includes('panel-events-register') && dashboard.body.includes('registrationGroups') && !dashboard.body.includes('panel-awareness'));
 ok('no “Content Studio” wording in the dashboard', !/content studio/i.test(dashboard.body));
+
+const signedOutSection = await get('/dashboard/registrations');
+ok('a bookmarked section link still only offers the password screen',
+  signedOutSection.body.includes('id="loginForm"')
+    && !/<section class="panel/.test(signedOutSection.body)
+    && !/<div class="dash-shell/.test(signedOutSection.body),
+  signedOutSection.status + ' panels=' + (/<section class="panel/.test(signedOutSection.body)));
+
+/* every section is its own page, and it renders nothing but itself */
+const SECTIONS = ['overview', 'copy', 'team', 'events', 'events-register', 'gallery', 'inbox', 'data'];
+const panelIds = (body) => [...String(body).matchAll(/<section class="panel[^"]*" id="(panel-[a-z-]+)"/g)].map((m) => m[1]);
+for (const section of SECTIONS) {
+  const page = await get('/dashboard/' + section, AUTH);
+  const found = panelIds(page.body);
+  ok('the ' + section + ' page carries only its own section',
+    page.status === 200 && found.length === 1 && found[0] === 'panel-' + section,
+    page.status + ' ' + JSON.stringify(found));
+}
+const overviewPage = await get('/dashboard/overview', AUTH);
+ok('the club area heads each page with the section name', /<h1 id="panelTitle">/.test(overviewPage.body) && overviewPage.body.includes('Overview'));
+ok('the sidebar is real links between sections',
+  ['/dashboard/overview', '/dashboard/team', '/dashboard/events', '/dashboard/gallery']
+    .every((href) => overviewPage.body.includes('href="' + href + '"')));
+ok('the club area inlines its own styles', overviewPage.body.includes('.dash-shell'));
+ok('the overview carries the counters and no tiles', overviewPage.body.includes('id="overviewStats"') && !overviewPage.body.includes('panel-awareness'));
 
 const badLogin = await sendJson('/api/login', 'POST', { password: 'definitely-wrong' });
 ok('wrong password is rejected', badLogin.status === 401, 'status ' + badLogin.status);
 const goodLogin = await sendJson('/api/login', 'POST', { password: 'Csmu@MT' });
 ok('the club password signs in', goodLogin.status === 200 && JSON.parse(goodLogin.body).authenticated === true, String(goodLogin.body).slice(0, 160));
+ok('signing in says where to carry on', /^\/dashboard\//.test(String(JSON.parse(goodLogin.body || '{}').after || '')), String(JSON.parse(goodLogin.body || '{}').after));
 const noCsrf = await sendJson('/api/site', 'PUT', { tagline: 'x' }, { session: SESSION });
 ok('missing CSRF token is rejected', noCsrf.status === 419, 'status ' + noCsrf.status);
 const editCopy = await sendJson('/api/site', 'PUT', { tagline: 'A calmer space to understand the mind.' }, AUTH);
@@ -643,6 +673,25 @@ ok('the register, the pass and the check page fit a phone',
   && /\.register-grid \{[^}]*grid-template-columns: 1fr/.test(appCss));
 ok('the gold thread and its bead are styled and driven by the script', appCss.includes('.gold-thread') && appJs.includes('setupGoldThread') && appJs.includes('threadBead'));
 ok('the calendar keeps its own page styles', appCss.includes('.calendar-months') && appCss.includes('.calendar-month'));
+
+/* ---- the phone layout, checked against the stylesheet itself -------------
+   These three failures all shipped once: a later rule emptied the hamburger
+   menu, the two-column blocks never stacked, and the calendar headline was
+   painted dark on its own dark banner. */
+const cssBlocks = (source) => [...source.matchAll(/@media\s*\(([^)]+)\)\s*\{([\s\S]*?)\n\}/g)];
+const phoneBlocks = cssBlocks(appCss).filter(([, q]) => /max-width:\s*(3|4|5|6|7|8)\d\dpx|max-width:\s*860px/.test(q));
+ok('nothing hides the menu links on a phone',
+  !/\.nav-links a[^{]*\{[^}]*display\s*:\s*none/.test(appCss) && !/\.nav-links\s+a:not\(\.nav-action\)\s*\{[^}]*display\s*:\s*none/.test(appCss));
+ok('the hamburger panel lists every link as a tappable row',
+  /\.nav-links a \{[^}]*display: block/.test(appCss) && /\.nav-links a \{[^}]*padding: 12px/.test(appCss));
+ok('every wide block stacks on a phone',
+  phoneBlocks.some(([, , body]) => /\.hero-grid, \.about-grid, \.psyche-grid, \.history-wrap, \.contact-grid,\s*\n?\s*\.hero-art \{ grid-template-columns: 1fr/.test(body))
+  && /\.event-card \{ grid-template-columns: 1fr/.test(appCss)
+  && /\.timeline-item \{ grid-template-columns: 86px 1fr/.test(appCss));
+ok('a long word cannot push a column off the screen',
+  /\.hero-grid > \*, \.about-grid > \*/.test(appCss) && /h1, h2, h3, \.display \{ overflow-wrap: break-word/.test(appCss));
+ok('the calendar headline is light on its dark banner',
+  /\.calendar-hero h1 \{[^}]*color:\s*#fffaf1/.test(appCss));
 ok('the script never hides or rewrites the page content', !/innerHTML\s*=/.test(appJs) || /galleryStageImage/.test(appJs));
 ok('the script asks the backend for the revision instead of re-rendering', appJs.includes('/api/site?since=') && appJs.includes('window.location.reload()'));
 ok('the dashboard talks to the registrations endpoint', fs.readFileSync(path.join(ROOT, 'assets/manage.js'), 'utf8').includes('/api/registrations'));

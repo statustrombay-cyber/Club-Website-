@@ -14,7 +14,7 @@
 
   const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
-  let boot = { authed: false, csrf: '', revision: 0, site: {} };
+  let boot = { authed: false, csrf: '', revision: 0, site: {}, panel: 'overview' };
   try {
     const node = $('#dash-bootstrap');
     if (node) boot = Object.assign(boot, JSON.parse(node.textContent || '{}'));
@@ -84,15 +84,25 @@
     if (label) label.textContent = 'revision ' + revision + ' · live';
   }
 
-  function showLogin() {
-    $('#loginView')?.removeAttribute('hidden');
-    $('#appView')?.setAttribute('hidden', '');
+  /* Signed out — or when a session goes stale — the browser goes back to the
+     sign-in page, remembering the section the club was on. */
+  function goToLogin(message) {
     state.csrf = '';
+    try {
+      if (message) sessionStorage.setItem('mt-login-note', message);
+    } catch (error) { /* private mode */ }
+    window.location.replace('/dashboard');
   }
 
-  function showApp() {
-    $('#loginView')?.setAttribute('hidden', '');
-    $('#appView')?.removeAttribute('hidden');
+  function showLogin(message) {
+    goToLogin(message);
+  }
+
+  /* Where to land after a good password: the section this browser asked for. */
+  function afterLoginPath() {
+    return boot.panel && boot.panel !== 'overview' && boot.panel !== 'login'
+      ? '/dashboard/' + boot.panel
+      : '/dashboard/overview';
   }
 
   /* ------------------------------------------------------------- sign in */
@@ -119,9 +129,8 @@
         state.csrf = payload.csrf || '';
         updateRevision(payload.revision || 0);
         form.reset();
-        showApp();
-        await loadAll();
-        toast('Signed in ✓');
+        /* straight to the section this browser was on, or the overview */
+        window.location.assign(payload.after || afterLoginPath());
       } catch (error) {
         if (error) error.message = error.message || 'Could not sign in.';
         const box = $('#loginError');
@@ -137,8 +146,7 @@
       await api('/api/logout', { method: 'POST', body: JSON.stringify({}) });
     } catch (error) { /* signing out anyway */ }
     state.csrf = '';
-    showLogin();
-    toast('Signed out');
+    window.location.assign('/dashboard');
   }
 
   /* ----------------------------------------------------------------- data */
@@ -176,21 +184,9 @@
     renderOverview();
   }
 
-  /* ------------------------------------------------------------ navigation */
-  function initNav() {
-    const nav = $('#dashNav');
-    if (!nav) return;
-    nav.addEventListener('click', (event) => {
-      const button = event.target.closest('[data-panel]');
-      if (!button) return;
-      const panel = button.dataset.panel;
-      $$('.dash-nav button').forEach((item) => item.classList.toggle('is-active', item === button));
-      $$('.panel').forEach((section) => section.classList.toggle('is-active', section.id === 'panel-' + panel));
-      const title = $('#panelTitle');
-      if (title) title.textContent = button.textContent.trim();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-  }
+  /* ------------------------------------------------------------ navigation
+     Every section is its own page (/dashboard/team, /dashboard/events …), so
+     there is nothing to switch here: the sidebar links navigate. */
 
   /* --------------------------------------------------------------- overview */
   function renderOverview() {
@@ -909,30 +905,34 @@
 
   /* -------------------------------------------------------------- start-up */
   async function start() {
-    initNav();
     initLogin();
-    initActions();
 
-    if (!boot.authed) {
-      showLogin();
+    if (boot.panel === 'login' || !boot.authed) {
+      /* The sign-in page: nothing is loaded until the password is right. */
+      try {
+        const note = sessionStorage.getItem('mt-login-note');
+        if (note) {
+          sessionStorage.removeItem('mt-login-note');
+          const box = $('#loginError');
+          if (box) box.textContent = note;
+        }
+      } catch (error) { /* private mode */ }
       return;
     }
 
+    initActions();
     try {
       const session = await api('/api/session');
       if (!session.authenticated) {
-        showLogin();
+        goToLogin('Your session ended. Please sign in again.');
         return;
       }
       state.csrf = session.csrf || state.csrf;
       updateRevision(session.revision || state.revision);
-      showApp();
       await loadAll();
       loadHealth();
     } catch (error) {
-      showLogin();
-      const box = $('#loginError');
-      if (box) box.textContent = error.message;
+      toast(error.message, true);
     }
   }
 
