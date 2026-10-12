@@ -609,8 +609,10 @@ ok('unknown path shows the friendly page', missing.body.includes('drifted somewh
 const sitemap = await get('/sitemap.xml');
 ok('sitemap.xml is served', sitemap.status === 200 && sitemap.body.includes('<urlset') && sitemap.body.includes('/members'));
 const robots = await get('/robots.txt');
-ok('robots.txt keeps the dashboard, the check and the passes out of search engines',
-  robots.status === 200 && robots.body.includes('Disallow: /dashboard') && robots.body.includes('Disallow: /health') && robots.body.includes('Disallow: /pass/'));
+ok('robots.txt never advertises the private paths',
+  robots.status === 200 && !/dashboard|studio|backend|health|pass/i.test(robots.body));
+ok('the private pages keep themselves out of search engines instead',
+  (await get('/dashboard')).body.includes('noindex') && (await get('/health')).body.includes('noindex'));
 const healthPage = await get('/health');
 ok('GET /health returns 200', healthPage.status === 200);
 ok('the deployment check lists the design files', healthPage.body.includes('Design files') && healthPage.body.includes('assets/app.css'));

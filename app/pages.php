@@ -276,7 +276,9 @@ function mt_public_page(string $route): void
         case 'robots.txt':
             mt_json_raw(
                 200,
-                "User-agent: *\nAllow: /\nDisallow: /dashboard\nDisallow: /health\nDisallow: /pass/\nSitemap: /sitemap.xml\n",
+                /* Nothing private is named here: the pages that need it carry their own
+                   noindex, and pointing a crawler at a private path only advertises it. */
+                "User-agent: *\nAllow: /\nSitemap: /sitemap.xml\n",
                 ['Content-Type' => 'text/plain; charset=utf-8']
             );
             return;
