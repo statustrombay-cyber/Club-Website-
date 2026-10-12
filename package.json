@@ -1,0 +1,9 @@
+{
+  "name": "mindful-tattva",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Mindful Tattva psychology club website with a live editable content studio",
+  "scripts": {
+    "start": "node server.js"
+  }
+}
