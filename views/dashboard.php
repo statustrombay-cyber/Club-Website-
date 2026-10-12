@@ -31,7 +31,7 @@ $sections = [
   <meta name="theme-color" content="#34213d">
   <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/assets/app.css">
-  <link rel="stylesheet" href="/assets/dashboard.css">
+  <link rel="stylesheet" href="/assets/manage.css">
 </head>
 <body class="dash-body">
 
@@ -130,8 +130,9 @@ $sections = [
 
       <section class="panel" id="panel-events-register">
         <div class="panel-head">
-          <div><h2>Event registrations</h2><p>Every student who registers from the website, grouped by event, with their pass serial, payment state and uploaded proof.
-            Check a payment here, cancel with a refund, or download the door list — it carries every serial number for matching entries at the gate.</p></div>
+          <div><h2>Event registrations</h2><p>Every student who registers from the website, grouped by event. A seat is held only once a pass has been issued:
+            for a paid event that means the payment screenshot arrived — students “waiting to pay” hold no seat and have no serial yet.
+            Check a payment here, cancel with a refund, open a student's pass check page, or download the door list — it carries every serial number for matching entries at the gate.</p></div>
           <div class="row-actions">
             <a class="btn-sm primary" href="/api/registrations.csv">Download registrations CSV (serials)</a>
             <button class="btn-sm" type="button" id="exportPassCsv">Download door list</button>
@@ -142,8 +143,13 @@ $sections = [
 
       <section class="panel" id="panel-gallery">
         <div class="panel-head">
-          <div><h2>Photo album</h2><p>Upload event photos. Captions are optional and completely yours — whatever you type here is exactly what visitors see, and photos without a caption simply show as photos.</p></div>
-          <button class="btn-sm primary" type="button" id="addPhoto">+ Add photo</button>
+          <div><h2>Photo album (gallery)</h2><p>This is the club's gallery management: upload event photos here, then write the caption, the album label, the date and the order.
+            Captions are optional and completely yours — whatever you type here is exactly what visitors see, and photos without a caption simply show as photos.
+            Every photo you add appears on the website's gallery page at once.</p></div>
+          <div class="row-actions">
+            <a class="btn-sm" href="/gallery" target="_blank" rel="noreferrer">Open the gallery ↗</a>
+            <button class="btn-sm primary" type="button" id="addPhoto">+ Add photo</button>
+          </div>
         </div>
         <div class="editor-grid" id="galleryEditors"></div>
       </section>
@@ -211,6 +217,6 @@ $sections = [
       'revision' => (int) (($db['revision'] ?? 1)),
       'site'     => $site,
   ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>
-  <script src="/assets/dashboard.js"></script>
+  <script src="/assets/manage.js"></script>
 </body>
 </html>

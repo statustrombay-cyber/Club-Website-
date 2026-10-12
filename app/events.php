@@ -197,21 +197,50 @@ function mt_event_window(array $event): array
     ];
 }
 
-/** Seats left, or null when the club did not set a limit. */
+/** Seats taken by passes that exist. A seat is only held by a real pass. */
+function mt_event_seats_taken(array $db, array $event): int
+{
+    $taken = 0;
+    foreach ($db['registrations'] as $registration) {
+        if ((string) ($registration['eventId'] ?? '') !== (string) ($event['id'] ?? '')) {
+            continue;
+        }
+        if (($registration['status'] ?? 'confirmed') === 'cancelled') {
+            continue;
+        }
+        if (mt_registration_pass_ready($registration)) {
+            $taken++;
+        }
+    }
+    return $taken;
+}
+
+/** Waiting to pay: registrations that do not hold a seat yet. */
+function mt_event_seats_waiting(array $db, array $event): int
+{
+    $waiting = 0;
+    foreach ($db['registrations'] as $registration) {
+        if ((string) ($registration['eventId'] ?? '') !== (string) ($event['id'] ?? '')) {
+            continue;
+        }
+        if (($registration['status'] ?? 'confirmed') === 'cancelled') {
+            continue;
+        }
+        if (!mt_registration_pass_ready($registration)) {
+            $waiting++;
+        }
+    }
+    return $waiting;
+}
+
+/** Seats left, or null when the club did not set a limit. Only issued passes count. */
 function mt_event_seats_left(array $db, array $event): ?int
 {
     $capacity = (int) ($event['capacity'] ?? 0);
     if ($capacity <= 0) {
         return null;
     }
-    $taken = 0;
-    foreach ($db['registrations'] as $registration) {
-        if ((string) ($registration['eventId'] ?? '') === (string) ($event['id'] ?? '')
-            && ($registration['status'] ?? 'confirmed') !== 'cancelled') {
-            $taken++;
-        }
-    }
-    return max(0, $capacity - $taken);
+    return max(0, $capacity - mt_event_seats_taken($db, $event));
 }
 
 /** Why a form is (or is not) accepting a registration right now. */
@@ -250,7 +279,12 @@ function mt_open_events(array $db): array
 
 /* ------------------------------------------------------------------ passes */
 
-/** MTP-2026-0007 — one serial per registration, in the order they arrive. */
+/**
+ * MTP-2026-0007 — the serial the club reads at the door.
+ *
+ * It is issued when the pass is earned (right away for a free event, after the
+ * payment screenshot arrives for a paid one), never while a seat is unpaid.
+ */
 function mt_registration_serial(array $db): string
 {
     $year = mt_now()->format('Y');
@@ -264,9 +298,116 @@ function mt_registration_serial(array $db): string
     return 'MTP-' . $year . '-' . str_pad((string) ($highest + 1), 4, '0', STR_PAD_LEFT);
 }
 
-function mt_registration_token(): string
+/**
+ * The private code in the student's pass link: MT-7K4QP-2XZ87-9M3RT-W6HDX.
+ *
+ * Twenty characters from a 32-letter alphabet (~100 bits), so it cannot be
+ * guessed or walked through. The letters I, L, O and U and the digits 0 and 1
+ * are left out so nothing can be misread from a screen. Only its SHA-256 hash
+ * is ever stored, and the code itself is never printed on the pass, drawn in a
+ * QR code, or listed in the club dashboard.
+ */
+function mt_registration_code(): string
 {
-    return bin2hex(random_bytes(16));
+    $alphabet = '23456789ABCDEFGHJKMNPQRSTVWXYZ';
+    $groups = [];
+    for ($group = 0; $group < 4; $group++) {
+        $chunk = '';
+        for ($index = 0; $index < 5; $index++) {
+            $chunk .= $alphabet[random_int(0, strlen($alphabet) - 1)];
+        }
+        $groups[] = $chunk;
+    }
+    return 'MT-' . implode('-', $groups);
+}
+
+/** Only the hash of a pass code is kept, so a copy of the file is not a key. */
+function mt_registration_code_hash(string $code): string
+{
+    return hash('sha256', 'mindful-tattva-pass|' . strtoupper(trim($code)));
+}
+
+/** Loose shape check before hashing a code someone pasted in. */
+function mt_registration_code_looks_valid(string $code): bool
+{
+    return (bool) preg_match('/^MT(-[2-9A-HJ-NP-Z]{4,6}){3,4}$/i', trim($code));
+}
+
+/** Find the registration a stored code hash belongs to. */
+function mt_registration_by_code_hash(array $db, string $hash): ?array
+{
+    if ($hash === '') {
+        return null;
+    }
+    foreach ($db['registrations'] as $registration) {
+        $stored = (string) ($registration['passCodeHash'] ?? '');
+        if ($stored !== '' && hash_equals($stored, $hash)) {
+            return $registration;
+        }
+    }
+    return null;
+}
+
+/** Find the registration a pass link belongs to. */
+function mt_registration_by_code(array $db, string $code): ?array
+{
+    if (!mt_registration_code_looks_valid($code)) {
+        return null;
+    }
+    $hash = mt_registration_code_hash($code);
+    foreach ($db['registrations'] as $registration) {
+        if (hash_equals((string) ($registration['passCodeHash'] ?? ''), $hash)) {
+            return $registration;
+        }
+    }
+    return null;
+}
+
+/**
+ * A public, unguessable handle for the verification page. It travels in the QR
+ * code, so anyone — including a stranger who finds a lost pass — can check the
+ * pass is real without seeing the holder's contact details.
+ */
+function mt_registration_public_id(array $db): string
+{
+    do {
+        $id = 'v' . bin2hex(random_bytes(9));
+        $taken = false;
+        foreach ($db['registrations'] as $registration) {
+            if ((string) ($registration['publicId'] ?? '') === $id) {
+                $taken = true;
+                break;
+            }
+        }
+    } while ($taken);
+    return $id;
+}
+
+/** Where a scanned pass QR lands: our own page, no sign-in, no app needed. */
+function mt_verify_url(array $registration): string
+{
+    $publicId = trim((string) ($registration['publicId'] ?? ''));
+    if ($publicId === '') {
+        return mt_base_url() . '/verify';
+    }
+    return mt_base_url() . '/verify/' . rawurlencode($publicId);
+}
+
+/** "A••••  S••••" — enough to recognise yourself, not enough to abuse. */
+function mt_mask_name(string $name): string
+{
+    $parts = preg_split('/\s+/', trim($name)) ?: [];
+    $parts = array_values(array_filter($parts, static fn(string $part): bool => $part !== ''));
+    if ($parts === []) {
+        return 'A registered student';
+    }
+    $masked = [];
+    foreach ($parts as $part) {
+        $first = mb_substr($part, 0, 1);
+        $rest = max(0, mb_strlen($part) - 1);
+        $masked[] = $first . str_repeat('•', min($rest, 6));
+    }
+    return implode(' ', $masked);
 }
 
 /**
@@ -292,11 +433,17 @@ function mt_registration_new(array $db, array $event, array $input): array
 
     $fee = mt_event_fee($event);
     $now = mt_now()->format('Y-m-d\TH:i');
+    /* A free event is settled the moment the form is sent. A paid one is only
+       confirmed — with its serial, its seat and its pass — once the payment
+       screenshot has arrived. */
+    $free = $fee <= 0;
+    $code = mt_registration_code();
 
     return ['error' => null, 'record' => [
         'id'              => mt_next_id('reg'),
-        'serial'          => mt_registration_serial($db),
-        'token'           => mt_registration_token(),
+        'serial'          => $free ? mt_registration_serial($db) : '',
+        'publicId'        => mt_registration_public_id($db),
+        'passCodeHash'    => mt_registration_code_hash($code),
         'eventId'         => (string) ($event['id'] ?? ''),
         'eventTitle'      => (string) ($event['title'] ?? ''),
         'eventDate'       => mt_event_date_display($event),
@@ -309,15 +456,14 @@ function mt_registration_new(array $db, array $event, array $input): array
         'phone'           => $phone,
         'course'          => mt_clean_text($input['course'] ?? '', 160),
         'year'            => mt_clean_text($input['year'] ?? '', 60),
-        'note'            => mt_clean_text($input['note'] ?? '', 600),
-        'paymentStatus'   => $fee > 0 ? 'pending' : 'not-required',
+        'paymentStatus'   => $free ? 'not-required' : 'pending',
         'proofPath'       => '',
         'proofUploadedAt' => '',
-        'passIssuedAt'    => $fee > 0 ? '' : $now,
-        'status'          => 'confirmed',
+        'passIssuedAt'    => $free ? $now : '',
+        'status'          => $free ? 'confirmed' : 'pending-payment',
         'createdAt'       => $now,
         'updatedAt'       => $now,
-    ]];
+    ], 'code' => $code];
 }
 
 function mt_registration_find(array $db, string $id): ?array
@@ -341,40 +487,78 @@ function mt_registration_by_serial(array $db, string $serial): ?array
     return null;
 }
 
-/** A pass link is only valid with the private token that was made with it. */
+/** A pass page is only for the student who holds the code in their link. */
 function mt_registration_by_token(array $db, string $id, string $token): ?array
 {
-    $registration = mt_registration_find($db, $id);
-    if (!$registration) {
+    $registration = mt_registration_by_code($db, $token);
+    if ($registration === null) {
         return null;
     }
-    $expected = (string) ($registration['token'] ?? '');
-    if ($expected === '' || $token === '' || !hash_equals($expected, $token)) {
+    if ($id !== '' && (string) ($registration['id'] ?? '') !== $id
+        && strcasecmp((string) ($registration['serial'] ?? ''), $id) !== 0) {
         return null;
     }
     return $registration;
 }
 
-/** A pass exists only once it has been earned: paid events need the proof. */
+/**
+ * A pass exists only once it has been earned.
+ *
+ * A paid seat is confirmed — and only then gets its serial, its seat and its
+ * pass — when the payment screenshot arrives. Until that moment the student has
+ * a link that asks for the payment, and nothing else.
+ */
 function mt_registration_pass_ready(array $registration): bool
 {
+    if ((string) ($registration['status'] ?? '') === 'cancelled') {
+        return false;
+    }
     $fee = (float) ($registration['eventFee'] ?? 0);
     if ($fee <= 0) {
         return true;
     }
+    if ((string) ($registration['serial'] ?? '') === '') {
+        return false;
+    }
     return in_array((string) ($registration['paymentStatus'] ?? ''), ['submitted', 'verified'], true);
+}
+
+/** What the student's link shows right now. */
+function mt_registration_stage(array $registration): string
+{
+    if ((string) ($registration['status'] ?? '') === 'cancelled') {
+        return 'cancelled';
+    }
+    $fee = (float) ($registration['eventFee'] ?? 0);
+    if ($fee <= 0) {
+        return 'ready';
+    }
+    $status = (string) ($registration['paymentStatus'] ?? 'pending');
+    if ($status === 'rejected') {
+        return 'proof-rejected';
+    }
+    if (in_array($status, ['submitted', 'verified'], true) && (string) ($registration['serial'] ?? '') !== '') {
+        return 'ready';
+    }
+    return 'pay';
 }
 
 function mt_payment_label(string $status): string
 {
     return match ($status) {
-        'not-required' => 'Free event — nothing to pay',
-        'pending'      => 'Payment pending — upload your screenshot',
-        'submitted'    => 'Payment proof received — awaiting the club',
-        'verified'     => 'Payment verified by the club',
-        'rejected'     => 'Payment proof was not accepted — please upload again',
-        default        => 'Payment pending',
+        'not-required'    => 'Free event — nothing to pay',
+        'pending'         => 'Payment pending — the seat is not held yet',
+        'submitted'       => 'Payment proof received — awaiting the club',
+        'verified'        => 'Payment verified by the club',
+        'rejected'        => 'Payment proof was not accepted — please upload again',
+        default           => 'Payment pending',
     };
+}
+
+/** The registration is only a placeholder until the payment screenshot lands. */
+function mt_registration_is_provisional(array $registration): bool
+{
+    return !mt_registration_pass_ready($registration);
 }
 
 /** The UPI string a payment app understands, and our QR carries. */
@@ -420,8 +604,9 @@ function mt_registrations_csv(array $db): string
         'passReady'     => 'Pass ready',
         'status'        => 'Registration status',
         'proofPath'     => 'Payment screenshot',
+        'seat'          => 'Seat held',
+        'verifyUrl'     => 'Pass check link',
         'createdAt'     => 'Registered at',
-        'note'          => 'Student note',
     ];
 
     $rows = [];
@@ -441,6 +626,18 @@ function mt_registrations_csv(array $db): string
                     break;
                 case 'passReady':
                     $value = mt_registration_pass_ready($registration) ? 'yes' : 'no';
+                    break;
+                case 'seat':
+                    $value = mt_registration_pass_ready($registration) ? 'held' : 'not held yet';
+                    break;
+                case 'verifyUrl':
+                    $value = mt_registration_pass_ready($registration) ? mt_verify_url($registration) : '';
+                    break;
+                case 'serial':
+                    $value = (string) ($registration['serial'] ?? '');
+                    if ($value === '') {
+                        $value = 'not issued yet';
+                    }
                     break;
                 default:
                     $value = (string) ($registration[$key] ?? '');
@@ -488,13 +685,22 @@ function mt_registration_receive_proof(array $registration): array
         return ['path' => null, 'error' => 'That upload could not be read.'];
     }
 
-    $maxBytes = (int) (mt_config()['max_upload_bytes'] ?? 4 * 1024 * 1024);
+    /* A phone screenshot of a UPI receipt is a few hundred KB. Anything much
+       bigger is either not a screenshot or a mistake, and it would sit on the
+       club's hosting for its lifetime — so payment proofs get their own, small
+       ceiling (2 MB by default). */
+    $config = mt_config();
+    $maxBytes = (int) ($config['max_proof_bytes'] ?? 2 * 1024 * 1024);
     $size = (int) (@filesize($tmp) ?: 0);
     if ($size <= 0) {
         return ['path' => null, 'error' => 'That file is empty. Please choose the screenshot again.'];
     }
     if ($size > $maxBytes) {
-        return ['path' => null, 'error' => 'That file is larger than ' . round($maxBytes / 1048576, 1) . 'MB. A photo of the receipt is enough.'];
+        return [
+            'path'  => null,
+            'error' => 'That file is ' . round($size / 1048576, 1) . 'MB; a screenshot only needs to be up to '
+                . round($maxBytes / 1048576, 1) . 'MB. Please send a screenshot of the receipt rather than a photo.',
+        ];
     }
 
     $allowed = [IMAGETYPE_JPEG => 'jpg', IMAGETYPE_PNG => 'png', IMAGETYPE_WEBP => 'webp', IMAGETYPE_GIF => 'gif'];

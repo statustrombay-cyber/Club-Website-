@@ -100,7 +100,7 @@ async function resyncChangedFiles() {
   const current = collectSourceFiles(ROOT);
   for (const rel of current) {
     const stamp = stampOf(rel);
-    if (fileStamps.get(rel) === stamp) continue;
+    if (fileStamps.has(rel) && fileStamps.get(rel) === stamp) continue;
     await syncFileIntoRuntime(rel);
     fileStamps.set(rel, stamp);
     console.log('preview: reloaded ' + rel);
@@ -249,11 +249,20 @@ const REQUEST_PHP = String.raw`
     }
     $output = (string) ob_get_clean();
 
+    /* A PDF is not valid UTF-8, so it is handed over base64-encoded and the
+       Node side turns it back into bytes before it reaches the browser. */
+    $encoding = 'utf8';
+    if (!preg_match('//u', $output)) {
+        $output = base64_encode($output);
+        $encoding = 'base64';
+    }
+
     return json_encode([
-        'status'  => $GLOBALS['MT_TEST_STATUS'],
-        'body'    => $output,
-        'headers' => $GLOBALS['MT_TEST_HEADERS'],
-        'session' => $GLOBALS['MT_PREVIEW_SESSION'] ?? null,
+        'status'   => $GLOBALS['MT_TEST_STATUS'],
+        'body'     => $output,
+        'encoding' => $encoding,
+        'headers'  => $GLOBALS['MT_TEST_HEADERS'],
+        'session'  => $GLOBALS['MT_PREVIEW_SESSION'] ?? null,
     ]);
 })()
 `;
@@ -264,7 +273,11 @@ function runPhp(spec) {
     await php.writeFile('/site/.preview-spec.php', '<?php return json_decode(base64_decode("' + Buffer.from(JSON.stringify(spec), 'utf8').toString('base64') + '"), true);');
     const raw = await php.x([REQUEST_PHP]);
     try {
-      return JSON.parse(String(raw));
+      const parsed = JSON.parse(String(raw));
+      if (parsed && parsed.encoding === 'base64') {
+        parsed.buffer = Buffer.from(String(parsed.body), 'base64');
+      }
+      return parsed;
     } catch (error) {
       return { status: 500, body: '<pre>Preview runtime error: ' + String(raw).slice(0, 400) + '</pre>', headers: [] };
     }
@@ -428,8 +441,11 @@ const server = http.createServer(async (req, res) => {
   writeSessions(sessions);
 
   headers['Set-Cookie'] = 'mt_admin=' + sessionId + '; Path=/; HttpOnly; SameSite=Lax';
+  if (result.buffer) {
+    headers['Content-Length'] = String(result.buffer.length);
+  }
   res.writeHead(result.status || 200, headers);
-  res.end(result.body || '');
+  res.end(result.buffer || result.body || '');
 
   writeBackToDisk().catch(() => {});
 });

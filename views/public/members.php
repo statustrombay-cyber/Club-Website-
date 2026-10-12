@@ -9,7 +9,7 @@ $grouped = [];
 foreach (MT_TEAM_GROUPS as $group) {
     $grouped[$group] = [];
 }
-foreach (mt_sorted($db['team'] ?? []) as $person) {
+foreach (mt_sorted(mt_named_team($db['team'] ?? [])) as $person) {
     $group = (string) ($person['group'] ?? 'management');
     if (!isset($grouped[$group])) {
         $group = 'management';

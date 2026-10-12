@@ -438,8 +438,11 @@ function mt_api_registrations(string $method, ?string $id): void
             }
             $registration['paymentLabel'] = mt_payment_label((string) ($registration['paymentStatus'] ?? 'pending'));
             $registration['passReady'] = mt_registration_pass_ready($registration);
-            $registration['passUrl'] = '/pass/' . rawurlencode((string) ($registration['serial'] ?? ''))
-                . '?token=' . rawurlencode((string) ($registration['token'] ?? ''));
+            $registration['stage'] = mt_registration_stage($registration);
+            $registration['maskedName'] = mt_mask_name((string) ($registration['name'] ?? ''));
+            /* The pass code is the student's key. It is hashed at rest and is
+               never handed out here — not even to the club. */
+            unset($registration['passCodeHash'], $registration['code']);
             $items[] = $registration;
         }
         mt_json(200, [
@@ -574,17 +577,18 @@ function mt_api_registration_create(): void
         return true;
     });
 
-    $passUrl = '/pass/' . rawurlencode((string) $record['serial']) . '?token=' . rawurlencode((string) $record['token']) . '&new=1';
+    $passUrl = '/pass/' . rawurlencode($result['code']) . '?new=1';
     mt_json(201, [
         'ok'        => true,
         'id'        => $record['id'],
         'serial'    => $record['serial'],
+        'publicId'  => $record['publicId'],
         'passUrl'   => $passUrl,
         'event'     => $record['eventTitle'],
         'fee'       => $record['eventFee'],
         'payment'   => $record['paymentStatus'],
         'message'   => $record['eventFee'] > 0
-            ? 'Registered. Pay ' . mt_money((float) $record['eventFee']) . ' and upload the screenshot to get your pass.'
+            ? 'Saved. Pay ' . mt_money((float) $record['eventFee']) . ' and upload the screenshot — the pass is issued right after.'
             : 'Registered. Your pass is ready.',
         'revision'  => mt_db(true)['revision'],
     ]);
@@ -607,7 +611,12 @@ function mt_api_registrations_csv(): void
  * The pass itself
  * ---------------------------------------------------------------------- */
 
-/** GET /api/pass/{registration id}?token=… — the PDF the student keeps. */
+/**
+ * GET /api/pass/{serial}?code=… — the PDF the student keeps.
+ *
+ * The student's pass code is the key. A signed-in club member can reprint any
+ * pass from the dashboard without holding that key.
+ */
 function mt_api_pass(?string $id): void
 {
     if (mt_method() !== 'GET') {
@@ -620,11 +629,24 @@ function mt_api_pass(?string $id): void
     }
 
     $db = mt_db();
-    $token = trim((string) ($_GET['token'] ?? ''));
-    $registration = mt_registration_by_token($db, $id, $token);
+    $code = trim((string) ($_GET['code'] ?? $_GET['token'] ?? ''));
+    $registration = $code !== '' ? mt_registration_by_token($db, $id, $code) : null;
+    if ($registration === null) {
+        /* The browser that just opened the student's pass page carries that
+           pass in its session, so the download link on the page needs no key. */
+        mt_session();
+        $remembered = (string) ($_SESSION['pass'] ?? '');
+        if ($remembered !== '') {
+            $candidate = mt_registration_by_serial($db, $id) ?? mt_registration_find($db, $id);
+            if ($candidate !== null && hash_equals($remembered, (string) ($candidate['passCodeHash'] ?? ''))) {
+                $registration = $candidate;
+            }
+        }
+    }
     if ($registration === null && mt_authenticated()) {
         // The club can reprint any pass from the dashboard.
-        $registration = mt_registration_find($db, $id);
+        $registration = mt_registration_find($db, $id)
+            ?? mt_registration_by_serial($db, $id);
     }
     if ($registration === null) {
         mt_fail(404, 'That pass link is not valid.');
@@ -633,6 +655,10 @@ function mt_api_pass(?string $id): void
     if (!mt_registration_pass_ready($registration)) {
         mt_fail(409, 'The pass is issued once the payment proof is uploaded.');
         return;
+    }
+    /* A pass is nobody else's business: this request never touches a cache. */
+    if (!headers_sent()) {
+        header_remove('Pragma');
     }
 
     $event = mt_event_find($db, (string) ($registration['eventId'] ?? '')) ?? [];
@@ -852,6 +878,9 @@ function mt_api_password(): void
     $config = mt_config(true);
     $config['admin_password_hash'] = password_hash($password, PASSWORD_DEFAULT);
     unset($config['admin_password']);
+    /* A new password signs every other device out: their sessions carry the old
+       generation and stop working on their next request. */
+    $config['session_generation'] = max(1, (int) ($config['session_generation'] ?? 1)) + 1;
 
     if (!mt_write_config($config)) {
         mt_fail(500, 'The password could not be saved. Is the data folder writable?');
@@ -859,7 +888,10 @@ function mt_api_password(): void
     }
 
     mt_log('Admin password changed from ' . mt_client_ip());
-    mt_ok(['updated' => true]);
+    /* This browser signs back in with the new generation, so the club is not
+       thrown out of the dashboard it just changed the password from. */
+    mt_login_success();
+    mt_ok(['updated' => true, 'signedOutOthers' => true]);
 }
 
 function mt_write_config(array $config): bool

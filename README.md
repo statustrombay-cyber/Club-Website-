@@ -81,7 +81,7 @@ empty, because the upload of its *contents* never finished (slow image
 transfers over FTP are the usual culprit).
 
 To fix it: upload the complete `assets/` folder — `app.css`, `app.js`,
-`dashboard.css`, `dashboard.js` and the `img/` and `photos/` folders — then reload `/health` until it is green. Two safety nets mean the site
+`manage.css`, `manage.js` and the `img/` and `photos/` folders — then reload `/health` until it is green. Two safety nets mean the site
 never looks broken while that is pending:
 
 - if `assets/app.css` cannot be read, the app serves a small built-in baseline
@@ -145,7 +145,7 @@ app/                   PHP application
 views/                 templates: layout.php, dashboard.php, public/*.php
                        (public/health.php is the /health page — self-contained,
                        it needs no stylesheet or script of its own)
-assets/                app.css, app.js, dashboard.css, dashboard.js, images
+assets/                app.css, app.js, manage.css, manage.js, images
 data/                  site.json (content), config.php (password), backups/
 uploads/               photos uploaded from the dashboard
 tools/preview-server.mjs      local runner for machines without PHP

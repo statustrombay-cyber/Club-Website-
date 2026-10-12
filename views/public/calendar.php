@@ -3,7 +3,7 @@
  * The yearly activities calendar.
  *
  * The twelve months are the frame; everything inside them — day, year, time,
- * venue, fee and how to register — is typed in by the club from the dashboard.
+ * venue, fee and how to register — is set by the club.
  *
  * @var array $db    Whole content store.
  * @var array $site  Club copy.

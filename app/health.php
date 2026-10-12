@@ -8,7 +8,7 @@
  * A half-finished upload used to show up as a mysterious blank page — the
  * stylesheet was simply not there, so the browser rendered raw HTML. Now every
  * file the design needs is listed, checked and reported (see the /health page
- * and the dashboard's server status).
+ * and the club area's server status).
  *
  * @package MindfulTattva
  */
@@ -21,8 +21,8 @@ function mt_health_assets(): array
     return [
         'assets/app.css'                     => 'Main stylesheet — colours, type and layout',
         'assets/app.js'                      => 'Main script — bubbles, motion, gallery stage and the forms',
-        'assets/dashboard.css'               => 'Dashboard stylesheet',
-        'assets/dashboard.js'                => 'Dashboard script',
+        'assets/manage.css'               => 'Club area stylesheet',
+        'assets/manage.js'                => 'Club area script',
         'assets/img/favicon.svg'             => 'Browser tab icon',
         'assets/img/csmu-seal.png'           => 'University seal',
         'assets/img/university-logo.png'     => 'University logo',
@@ -92,12 +92,12 @@ function mt_health_report(): array
             'ok'     => is_string($config['admin_password_hash'] ?? null) || !empty($config['admin_password']),
             'detail' => is_string($config['admin_password_hash'] ?? null) || !empty($config['admin_password'])
                 ? 'Set'
-                : 'No password yet — set one from the dashboard',
+                : 'No club password set yet',
         ],
         [
             'label'  => 'Content folder writable (data/)',
             'ok'     => $dataWritable,
-            'detail' => $dataWritable ? 'Yes — the dashboard can save' : 'No — set permissions to 755',
+            'detail' => $dataWritable ? 'Yes — the club can save changes' : 'No — set permissions to 755',
         ],
         [
             'label'  => 'Uploads folder writable (uploads/)',
@@ -144,7 +144,7 @@ function mt_health_report(): array
     ];
 }
 
-/** One short line for the dashboard: "ok" or what is wrong. */
+/** One short line for the club area: "ok" or what is wrong. */
 function mt_health_summary(array $report): string
 {
     $missing = count($report['missing']);

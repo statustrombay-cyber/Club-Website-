@@ -147,6 +147,7 @@ const REQUEST_PHP = String.raw`
         'body'     => $output,
         'encoding' => $encoding,
         'headers'  => $GLOBALS['MT_TEST_HEADERS'],
+        'session'  => $GLOBALS['MT_SESSION_OUT'] ?? null,
     ]);
 })()
 `;
@@ -178,8 +179,13 @@ async function request(options) {
 const get = (uri, extra = {}) => request({ uri, method: 'GET', ...extra });
 const sendJson = (uri, method, body, extra = {}) => request({ uri, method, json: body, post: body, ...extra });
 
-const SESSION = { auth: true, csrf: 'test-csrf-token', seen: Math.floor(Date.now() / 1000) };
-const AUTH = { session: SESSION, headers: { 'X-CSRF-Token': 'test-csrf-token' } };
+/* The club signs in for real, so the dashboard half of this suite exercises the
+   same session the browser gets — fingerprint and all. */
+const loginAttempt = await request({
+  uri: '/api/login', method: 'POST', post: { password: 'Csmu@MT' }, json: { password: 'Csmu@MT' },
+});
+const SESSION = loginAttempt.session || {};
+const AUTH = { session: SESSION, headers: { 'X-CSRF-Token': SESSION.csrf || '' } };
 
 /* ----------------------------------------------------------------- tests */
 let pass = 0;
@@ -191,6 +197,7 @@ function ok(name, condition, detail = '') {
   else { fail++; failures.push(name + (detail ? ' — ' + detail : '')); console.log('  \u001b[31m✗\u001b[0m ' + name + (detail ? ' — ' + detail : '')); }
 }
 
+const mtMask = (name) => String(name || '').trim().split(/\s+/).map((part) => part.charAt(0) + '•'.repeat(Math.min(Math.max(0, part.length - 1), 6))).join(' ');
 const clean = (body) => !/(Warning|Notice|Fatal error|Deprecated|Uncaught|THROWN):/.test(String(body));
 const phpErrors = (body) => (String(body).match(/(Warning|Notice|Fatal error|Deprecated|Uncaught|THROWN):.{0,120}/) || [''])[0];
 
@@ -217,12 +224,21 @@ ok('the club statistics are printed', home.body.includes('id="statsRow"') && hom
 ok('the history timeline is written from the store', home.body.includes('timeline-item') && home.body.includes('A small idea with a big heart'));
 ok('the event card offers registration', home.body.includes('/register?event=event-welcome-circle'));
 ok('the join forms are both there', home.body.includes('id="membershipForm"') && home.body.includes('id="registrationForm"'));
-ok('the staff page link is the dashboard, not a studio', home.body.includes('href="/dashboard"'));
+ok('the public footer never links the club area', !home.body.includes('href="/dashboard"') && !home.body.includes('/dashboard'));
 ok('the footer keeps the institution and the creator credit', home.body.includes('footer-institution') && home.body.includes('Made with love by Mohd Shafiq'));
-ok('the gallery grid keeps the old look, captions and placeholders', home.body.includes('gallery-item') && home.body.includes('gallery-placeholder'));
+ok('the home gallery grid carries the club’s photos', home.body.includes('gallery-item'));
+ok('a half-written photo slot never shows on the public site', !home.body.includes('Photo placeholder'));
 ok('the stylesheet is inlined, never linked', home.body.includes('<style>') && !/href="\/assets\/app\.css"/.test(home.body));
 ok('the script is inlined, never linked', !/src="\/assets\/app\.js"/.test(home.body) && home.body.includes('setupGalleryStage'));
 ok('content is never hidden without JavaScript', home.body.includes('class="no-js"') && home.body.includes('replace("no-js", "js")'));
+
+/* The club area is private: no public page may name it, link it or hint at it. */
+const PRIVATE_WORDS = [/dashboard/i, /studio/i, /\bbackend\b/i, /\badmin\b/i];
+for (const route of ['/', '/gallery', '/calendar', '/members', '/register', '/pass', '/not-found-test']) {
+  const page = await get(route);
+  const hits = PRIVATE_WORDS.filter((word) => word.test(page.body));
+  ok('no private-area wording on ' + route, hits.length === 0, hits.map(String).join(', '));
+}
 
 const gallery = await get('/gallery');
 ok('GET /gallery returns 200', gallery.status === 200, 'status ' + gallery.status);
@@ -232,6 +248,32 @@ ok('the first photo is already in the page, background and all', /id="gallerySta
 ok('the archive is server-rendered', gallery.body.includes('archive-grid') && gallery.body.includes('archive-card'));
 ok('the slides are handed to the script as data', gallery.body.includes('id="gallery-data"'));
 ok('the gallery no longer mentions a content studio', !/content studio/i.test(gallery.body));
+
+/* The club adds a row first and fills it in later, so a row with no picture
+   must never be published as a blank tile — the exact state the public page
+   was showing before. */
+const cardCount = (body) => (String(body).match(/archive-card/g) || []).length;
+const cardsBefore = cardCount(gallery.body);
+const blankSlot = await sendJson('/api/gallery', 'POST', { caption: '', alt: '', event: '', image: '', order: 99 }, AUTH);
+ok('the club can add a photo slot and fill it in later', blankSlot.status === 201, 'status ' + blankSlot.status);
+const galleryWhileBlank = await get('/gallery');
+ok('an unfilled photo slot stays off the public gallery',
+  cardCount(galleryWhileBlank.body) === cardsBefore && !galleryWhileBlank.body.includes('Photo placeholder'),
+  cardsBefore + ' → ' + cardCount(galleryWhileBlank.body));
+const blankId = ((blankSlot.json || {}).item || {}).id;
+const cleanedUp = await request({ uri: '/api/gallery/' + blankId, method: 'DELETE', ...AUTH });
+ok('the empty slot can be removed again', cleanedUp.status === 200 || cleanedUp.status === 204 || cleanedUp.status === 404, 'status ' + cleanedUp.status);
+
+/* A member row with no name is the same story. */
+const blankMember = await sendJson('/api/team', 'POST', { name: '', role: 'Core team', group: 'management', order: 99 }, AUTH);
+const membersBefore = await get('/members');
+const membersWhileBlank = await get('/members');
+const memberCards = (body) => (String(body).match(/member-card/g) || []).length;
+ok('a member row with no name stays off the public page',
+  memberCards(membersWhileBlank.body) === memberCards(membersBefore.body),
+  memberCards(membersBefore.body) + ' → ' + memberCards(membersWhileBlank.body));
+const blankMemberId = ((blankMember.json || {}).item || {}).id;
+await request({ uri: '/api/team/' + blankMemberId, method: 'DELETE', ...AUTH });
 
 const calendar = await get('/calendar');
 ok('GET /calendar returns 200', calendar.status === 200);
@@ -258,38 +300,57 @@ ok('the registration page renders without PHP errors', clean(registerPage.body),
 ok('the form carries a CSRF token', registerPage.body.includes('name="csrf" value="test-form-token"'));
 ok('the event facts come from the backend', registerPage.body.includes('24 October 2026') && registerPage.body.includes('Seminar Hall'));
 ok('a free event says so instead of showing a payment QR', registerPage.body.includes('Free entry') && !registerPage.body.includes('upi://pay'));
-ok('the terms are stated in the form', /non-refundable/i.test(registerPage.body) && /12 working days/.test(registerPage.body));
+ok('the terms are stated in the form', /non-refundable/i.test(registerPage.body) && /24 working days/.test(registerPage.body)
+  && /decisions of the club/i.test(registerPage.body) && /without prior notice/i.test(registerPage.body));
+ok('the form never asks “anything the club should know”', !/anything the club should know/i.test(registerPage.body) && !/name="note"/.test(registerPage.body));
+ok('the form does not feed the browser name and phone suggestions', !/autocomplete="(name|tel|email|street-address)"/i.test(registerPage.body)
+  && !/name="(name|email|phone)"[^>]*value="(?!")/.test(registerPage.body));
 
 const csrf = 'test-form-token';
 const registered = await sendJson('/api/registrations', 'POST', {
   eventId: 'event-welcome-circle', name: 'Riya Sharma', email: 'riya@example.com', phone: '+91 98765 43210',
-  course: 'BSc Psychology', year: 'Second year', note: 'Coming with a friend', csrf,
+  course: 'BSc Psychology', year: 'Second year', csrf,
 }, FORM);
 let registration = {};
 try { registration = JSON.parse(registered.body); } catch (error) { /* reported below */ }
 ok('a registration from the frontend is stored', registered.status === 201, registered.status + ' ' + String(registered.body).slice(0, 200));
 ok('the pass serial is issued in order', /^MTP-\d{4}-\d{4}$/.test(registration.serial || ''), String(registration.serial));
-ok('the response hands the student their pass page', /^\/pass\/MTP-\d{4}-\d{4}\?token=[a-f0-9]{32}/.test(registration.passUrl || ''), String(registration.passUrl));
+ok('the response hands the student a private pass link', /^\/pass\/MT(-[2-9A-HJ-NP-Z]{5}){4}(\?new=1)?$/.test(registration.passUrl || ''), String(registration.passUrl));
 
-const passToken = registration.passUrl ? new URL('http://x' + registration.passUrl).searchParams.get('token') : '';
-const passPath = '/pass/' + encodeURIComponent(registration.serial || 'MT');
-const passPage = await get(passPath + '?token=' + passToken);
-ok('the pass page opens with its private token', passPage.status === 200, 'status ' + passPage.status);
+const passCode = registration.passUrl ? registration.passUrl.split('?')[0].replace('/pass/', '') : '';
+const passPath = '/pass/' + passCode;
+const passPage = await get(passPath);
+ok('the pass page opens with the private code from the link', passPage.status === 200, 'status ' + passPage.status);
 ok('the pass page renders without PHP errors', clean(passPage.body), phpErrors(passPage.body));
 ok('the pass carries the serial and the holder', passPage.body.includes(registration.serial || 'x') && passPage.body.includes('Riya Sharma'));
 ok('the pass carries the event, the date and the venue', passPage.body.includes('Welcome Circle') && passPage.body.includes('24 October 2026') && passPage.body.includes('Seminar Hall'));
-ok('the pass carries a scannable QR code', /<svg[^>]*viewBox="0 0 \d+ \d+"[^>]*shape-rendering="crispEdges"/.test(passPage.body) && passPage.body.includes('Pass code ' + (registration.serial || '')));
-ok('the pass states the no-refund rule and the 12 working days', /non-refundable/i.test(passPage.body) && /12 working days/.test(passPage.body));
+ok('the pass carries a scannable QR code', /<svg[^>]*viewBox="0 0 \d+ \d+"[^>]*shape-rendering="crispEdges"/.test(passPage.body)
+  && passPage.body.includes('/verify/' + (registration.publicId || '')), 'no verify link in the QR');
+const codeSpot = passPage.body.indexOf(passCode);
+ok('the pass page never prints the private code it was opened with', codeSpot < 0,
+  codeSpot < 0 ? '' : JSON.stringify(passPage.body.slice(Math.max(0, codeSpot - 90), codeSpot + 40)));
+ok('the pass states the no-refund rule and the 24 working days', /non-refundable/i.test(passPage.body) && /24 working days/.test(passPage.body));
 ok('the pass says the payment proof must be shown at entry', /payment proof/i.test(passPage.body));
 
-const wrongToken = await get(passPath + '?token=00000000000000000000000000000000');
-ok('a pass without its token is refused', wrongToken.status === 404, 'status ' + wrongToken.status);
+const wrongCode = await get('/pass/MT-AAAAA-AAAAA-AAAAA-AAAAA');
+ok('a made-up pass code is refused', wrongCode.status === 404, 'status ' + wrongCode.status);
+const noCode = await get('/pass');
+ok('the pass page without a link explains where the link is', noCode.status === 200 && /Find your pass/i.test(noCode.body));
 
-let pdf = await get('/api/pass/' + encodeURIComponent(registration.id || 'x') + '?token=' + passToken);
+/* the check page a scanned QR opens: public, and careful with what it says */
+const verifyPage = await get('/verify/' + encodeURIComponent(registration.publicId || 'x'));
+ok('the QR opens a public check page', verifyPage.status === 200 && /This pass is real/i.test(verifyPage.body));
+ok('the check page masks the holder', verifyPage.body.includes(mtMask(registration.name)) && !verifyPage.body.includes(registration.email));
+const verifyMiss = await get('/verify/v000000000000000000');
+ok('a made-up check link says no match', verifyMiss.status === 404 && /No pass matches/i.test(verifyMiss.body));
+
+const passSession = passPage.session || {};
+let pdf = await get('/api/pass/' + encodeURIComponent(registration.serial || 'x'), { session: passSession });
 ok('a free event issues the pass straight away', pdf.status === 200 && String(pdf.body).startsWith('%PDF-1.4'), pdf.status + ' ' + String(pdf.body).slice(0, 20));
 ok('the PDF is a finished document', String(pdf.body).includes('%%EOF') && String(pdf.body).includes('/Type /Catalog'));
 const pdfText = String(pdf.body);
-ok('the PDF names the holder, the serial and the terms', pdfText.includes('Riya Sharma') && pdfText.includes(registration.serial || '') && pdfText.includes('12 working days'));
+ok('the PDF names the holder, the serial and the terms', pdfText.includes('Riya Sharma') && pdfText.includes(registration.serial || '') && pdfText.includes('24 working days'));
+ok('the PDF carries the check page, never the private code', pdfText.includes('/verify/' + (registration.publicId || '')) && !pdfText.includes(passCode));
 
 /* a paid event: the UPI code appears, and the pass waits for the screenshot */
 console.log('\n— a paid event: the UPI code and the payment screenshot —');
@@ -307,7 +368,7 @@ ok('a paid event shows the club’s UPI code', paidRegister.body.includes('pay-c
 ok('the QR is a real UPI code, drawn on the page', paidRegister.body.includes('shape-rendering="crispEdges"') && !/src="[^"]*api\.qrserver/.test(paidRegister.body));
 ok('the fee is stated in the summary', paidRegister.body.includes('Rs. 150'));
 const paidCsrf = 'test-form-token';
-ok('the payment instructions are on the form', /upload that screenshot/i.test(paidRegister.body) && paidRegister.body.includes('keep the screenshot'));
+ok('the payment instructions are on the form', /upload the screenshot/i.test(paidRegister.body) && /keep the screenshot/i.test(paidRegister.body));
 
 const paidRegistered = await sendJson('/api/registrations', 'POST', {
   eventId: paidEventId, name: 'Aisha Khan', email: 'aisha@example.com', phone: '+91 90000 00000', csrf: paidCsrf,
@@ -315,18 +376,29 @@ const paidRegistered = await sendJson('/api/registrations', 'POST', {
 const paidRegistration = JSON.parse(paidRegistered.body || '{}');
 ok('a registration for a paid event is accepted', paidRegistered.status === 201, paidRegistered.status + ' ' + String(paidRegistered.body).slice(0, 160));
 ok('the registration waits for the payment proof', paidRegistration.payment === 'pending', String(paidRegistration.payment));
-const paidToken = paidRegistration.passUrl ? new URL('http://x' + paidRegistration.passUrl).searchParams.get('token') : '';
-const paidPassUrl = '/pass/' + encodeURIComponent(paidRegistration.serial || 'MT');
-const paidPass = await get(paidPassUrl + '?token=' + paidToken, { session: FORM_SESSION });
+ok('no serial is issued before the payment arrives', !paidRegistration.serial, 'serial ' + String(paidRegistration.serial));
+const paidCode = paidRegistration.passUrl ? paidRegistration.passUrl.split('?')[0].replace('/pass/', '') : '';
+const paidPassUrl = '/pass/' + paidCode;
+const paidPass = await get(paidPassUrl, { session: FORM_SESSION });
 ok('the pass page asks for the screenshot before issuing the pass', paidPass.body.includes('proof') && paidPass.body.includes('upload') && !paidPass.body.includes('Download your pass (PDF)'));
-const earlyPdf = await get('/api/pass/' + encodeURIComponent(paidRegistration.id || 'x') + '?token=' + paidToken);
+ok('the upload form never prints the private code', !paidPass.body.includes(paidCode) && paidPass.body.includes('action="/pass"'));
+ok('no seat is held and no serial is shown while the fee is unpaid', /no serial, no pass and no seat exist/i.test(paidPass.body));
+const earlyPdf = await get('/api/pass/' + encodeURIComponent(paidRegistration.id || 'x'), { session: paidPass.session || {} });
 ok('the PDF cannot be downloaded before the screenshot arrives', earlyPdf.status === 409, 'status ' + earlyPdf.status);
+const seatsBeforePay = await get('/api/registrations', AUTH);
+const unpaidRow = (JSON.parse(seatsBeforePay.body).items || []).find((item) => item.id === paidRegistration.id) || {};
+ok('the club register shows the unpaid row without a serial', unpaidRow.passReady === false && !unpaidRow.serial, JSON.stringify({ ready: unpaidRow.passReady, serial: unpaidRow.serial }));
+ok('the club register never carries the student’s pass code', !/token|passCodeHash|MT-[2-9A-HJ-NP-Z]{5}-/i.test(seatsBeforePay.body), String(seatsBeforePay.body).slice(0, 120));
+
+const paidSession = paidPass.session || {};
+const paidReload = await get('/pass', { session: paidSession });
+ok('the session remembers which pass the browser opened', /Pay Rs. 150 to hold your seat/.test(paidReload.body), paidReload.status + ' ' + String(paidReload.body).slice(0, 90));
 
 const proofUpload = await request({
-  uri: paidPassUrl + '?token=' + paidToken,
+  uri: '/pass',
   method: 'POST',
-  session: FORM_SESSION,
-  post: { csrf: 'test-form-token' },
+  session: Object.assign({}, paidSession),
+  post: { csrf: paidSession.csrf || 'test-form-token' },
   files: {
     proof: {
       name: 'receipt.png',
@@ -335,12 +407,18 @@ const proofUpload = await request({
     },
   },
 });
-ok('uploading the payment screenshot is accepted', proofUpload.status === 303 || proofUpload.status === 200, 'status ' + proofUpload.status);
-const paidPassAfter = await get(paidPassUrl + '?token=' + paidToken);
-ok('the pass is issued once the proof is in', paidPassAfter.body.includes('Download your pass (PDF)'));
+ok('uploading the payment screenshot is accepted', proofUpload.status === 303, 'status ' + proofUpload.status + ' ' + String(proofUpload.body).replace(/\s+/g, ' ').slice(0, 300));
+const paidPassAfter = await get('/pass?paid=1', { session: proofUpload.session || paidSession });
+ok('the pass is issued once the proof is in', paidPassAfter.body.includes('Download your pass (PDF)'), paidPassAfter.status + ' ' + String(paidPassAfter.body).slice(0, 120));
+ok('the private code is nowhere in the pass page', !paidPassAfter.body.includes(paidCode));
 ok('the proof is recorded with the registration', /proof|Payment proof received|payment proof is with the club/i.test(paidPassAfter.body));
-const paidPdf = await get('/api/pass/' + encodeURIComponent(paidRegistration.id || 'x') + '?token=' + paidToken);
+const issuedSerial = (/MTP-\d{4}-\d{4}/.exec(paidPassAfter.body) || [''])[0];
+ok('the serial appears only now, with the pass', /^MTP-\d{4}-\d{4}$/.test(issuedSerial), issuedSerial);
+const paidPdf = await get('/api/pass/' + encodeURIComponent(issuedSerial || paidRegistration.id), { session: paidPassAfter.session || {} });
 ok('the paid pass downloads as a PDF', paidPdf.status === 200 && String(paidPdf.body).startsWith('%PDF-1.4'), 'status ' + paidPdf.status);
+const paidRow = ((JSON.parse((await get('/api/registrations', AUTH)).body).items) || []).find((item) => item.id === paidRegistration.id) || {};
+ok('the seat is held only now', paidRow.passReady === true && paidRow.serial === issuedSerial, JSON.stringify({ ready: paidRow.passReady, serial: paidRow.serial }));
+ok('the club can reprint any pass without the student’s code', (await get('/api/pass/' + encodeURIComponent(issuedSerial), AUTH)).status === 200);
 
 console.log('\n— the registration window —');
 const expired = await sendJson('/api/events', 'POST', {
@@ -369,16 +447,17 @@ ok('anonymous visitors cannot read the register', inboxAnon.status === 401, 'sta
 const waitingForProof = await sendJson('/api/registrations', 'POST', {
   eventId: paidEventId, name: 'Waiting Student', email: 'waiting@example.com', phone: '+91 90000 00001', csrf,
 }, FORM);
-let waitingRow = {};
-try { waitingRow = JSON.parse(waitingForProof.body); } catch (error) { /* reported below */ }
+let waitingItem = {};
+try { waitingItem = JSON.parse(waitingForProof.body); } catch (error) { /* reported below */ }
 
 const registerList = await get('/api/registrations', AUTH);
 const regItems = JSON.parse(registerList.body).items || [];
 ok('the dashboard reads every registration', registerList.status === 200 && regItems.length >= 2, 'count ' + regItems.length);
-ok('the register carries the pass serials', regItems.every((item) => /^MTP-\d{4}-\d{4}$/.test(item.serial || '')));
+ok('the register carries a pass serial for every issued pass',
+  regItems.filter((item) => item.passReady).every((item) => /^MTP-\d{4}-\d{4}$/.test(item.serial || '')));
 ok('the register marks which passes are ready',
-  regItems.some((item) => item.serial === waitingRow.serial && item.passReady === false)
-  && regItems.some((item) => item.serial === paidRegistration.serial && item.passReady === true));
+  regItems.some((item) => item.id === waitingItem.id && item.passReady === false && !item.serial)
+  && regItems.some((item) => item.serial === issuedSerial && item.passReady === true));
 const perEvent = await get('/api/registrations?event=' + encodeURIComponent(paidEventId), AUTH);
 ok('the register can be read per event', (JSON.parse(perEvent.body).items || []).length >= 1);
 
@@ -387,15 +466,17 @@ ok('the CSV is not public', csvAnon.status === 401, 'status ' + csvAnon.status);
 const csv = await get('/api/registrations.csv', AUTH);
 const csvBody = String(csv.body);
 ok('the CSV downloads for the club', csv.status === 200 && /text\/csv/.test(JSON.stringify(csv.headers)), 'status ' + csv.status);
-ok('the CSV lists every pass serial for the gate', csvBody.includes('Pass serial') && csvBody.includes(registration.serial || 'x') && csvBody.includes(paidRegistration.serial || 'y'));
+ok('the CSV lists every pass serial for the gate', csvBody.includes('Pass serial') && csvBody.includes(registration.serial || 'x') && csvBody.includes(issuedSerial || 'y'));
+ok('the CSV marks a seat that is not held yet', /not held yet/i.test(csvBody) && !/Student note/i.test(csvBody));
+ok('the CSV carries each pass check link', csvBody.includes('/verify/' + (registration.publicId || 'x')));
 ok('the CSV carries the venue and the fee', csvBody.includes('Venue') && /(^|,)Fee(,|$)/.test(csvBody));
 
 const verify = await sendJson('/api/registrations/' + encodeURIComponent(paidRegistration.id || 'x'), 'PUT', { paymentStatus: 'verified' }, AUTH);
 ok('the club can verify a payment', verify.status === 200 && JSON.parse(verify.body).item.paymentStatus === 'verified', String(verify.body).slice(0, 160));
 const cancel = await sendJson('/api/registrations/' + encodeURIComponent(paidRegistration.id || 'x'), 'PUT', { status: 'cancelled', paymentStatus: 'rejected' }, AUTH);
 ok('the club can cancel a registration with a refund', cancel.status === 200 && JSON.parse(cancel.body).item.status === 'cancelled');
-const cancelledPass = await get(paidPassUrl + '?token=' + paidToken);
-ok('a cancelled pass says so at the door', /cancelled/i.test(cancelledPass.body) && /12 working days/.test(cancelledPass.body));
+const cancelledPass = await get(paidPassUrl);
+ok('a cancelled pass says so at the door', /cancelled/i.test(cancelledPass.body) && /24 working days/.test(cancelledPass.body));
 const removeRow = await request({ uri: '/api/registrations/' + encodeURIComponent(registration.id || 'x'), method: 'DELETE', ...AUTH });
 ok('a registration row can be deleted', removeRow.status === 200, 'status ' + removeRow.status);
 await request({ uri: '/api/events/' + encodeURIComponent(paidEventId), method: 'DELETE', ...AUTH });
@@ -430,7 +511,7 @@ ok('api health says the site is complete', healthPayload.site_ok === true && /in
 
 const halfWay = await request({ uri: '/register?event=event-welcome-circle', method: 'POST', session: FORM_SESSION,
   post: { eventId: 'event-welcome-circle', name: 'Form Poster', email: 'form@example.com', phone: '+91 90000 00002', csrf } });
-ok('the form also works without JavaScript (a real POST redirects)', halfWay.status === 303 && /\/pass\/MTP-\d{4}-\d{4}\?token=/.test(JSON.stringify(halfWay.headers)), halfWay.status + ' ' + JSON.stringify(halfWay.headers).slice(0, 160));
+ok('the form also works without JavaScript (a real POST redirects)', halfWay.status === 303 && /\/pass\/MT(-[2-9A-HJ-NP-Z]{5}){4}/.test(JSON.stringify(halfWay.headers)), halfWay.status + ' ' + JSON.stringify(halfWay.headers).slice(0, 160));
 
 const dashboard = await get('/dashboard');
 ok('GET /dashboard returns 200', dashboard.status === 200);
@@ -478,7 +559,9 @@ ok('password change works with the current one', changePassword.status === 200, 
 if (changePassword.status === 200) {
   const loginNew = await sendJson('/api/login', 'POST', { password: 'Csmu@MT2' });
   ok('the new password signs in', loginNew.status === 200, 'status ' + loginNew.status);
-  const backAgain = await sendJson('/api/password', 'POST', { current: 'Csmu@MT2', password: 'Csmu@MT' }, AUTH);
+  ok('changing the password signs every other device out', loginNew.session && loginNew.session.fingerprint !== SESSION.fingerprint, 'the generation moved');
+  const newAuth = { session: loginNew.session || {}, headers: { 'X-CSRF-Token': (loginNew.session || {}).csrf || '' } };
+  const backAgain = await sendJson('/api/password', 'POST', { current: 'Csmu@MT2', password: 'Csmu@MT' }, newAuth);
   ok('password change reverts cleanly', backAgain.status === 200, String(backAgain.body).slice(0, 160));
   const loginOld = await sendJson('/api/login', 'POST', { password: 'Csmu@MT' });
   ok('the original password works again', loginOld.status === 200, 'status ' + loginOld.status);
@@ -510,7 +593,7 @@ const appCss = fs.readFileSync(path.join(ROOT, 'assets/app.css'), 'utf8');
 const appJs = fs.readFileSync(path.join(ROOT, 'assets/app.js'), 'utf8');
 const layoutSource = fs.readFileSync(path.join(ROOT, 'views/layout.php'), 'utf8');
 const vm = await import('node:vm');
-for (const asset of ['assets/app.js', 'assets/dashboard.js']) {
+for (const asset of ['assets/app.js', 'assets/manage.js']) {
   const code = fs.readFileSync(path.join(ROOT, asset), 'utf8');
   try { new vm.Script(code, { filename: asset }); ok(asset + ' parses', true); }
   catch (error) { ok(asset + ' parses', false, error.message); }
@@ -521,11 +604,17 @@ ok('the bubbles keep their motion', ['bubbleDrift', 'orbitSpin', 'psiPulse', 'fa
 ok('the mobile menu is styled', /\.nav-links\.open/.test(appCss) || /nav-links\.open/.test(appCss));
 ok('the pass prints as the pass', /@media print/.test(appCss) && /\.pass-ticket/.test(appCss));
 ok('the payment card and the upload row are styled', appCss.includes('.pay-card') && appCss.includes('.upload-row') && appCss.includes('.status-chip'));
-ok('the register panel and the door list cards are styled', appCss.includes('.summary-card') && appCss.includes('.register-list'));
+ok('the register panel and the pass cards are styled', appCss.includes('.fact-card') && appCss.includes('.register-form') && appCss.includes('.pass-ticket'));
+ok('the register, the pass and the check page fit a phone',
+  /@media \(max-width: 620px\)/.test(appCss)
+  && /\.register-submit \{[^}]*width: 100%/.test(appCss)
+  && /\.pass-facts \{[^}]*grid-template-columns: 1fr/.test(appCss)
+  && /\.register-grid \{[^}]*grid-template-columns: 1fr/.test(appCss));
+ok('the gold thread and its bead are styled and driven by the script', appCss.includes('.gold-thread') && appJs.includes('setupGoldThread') && appJs.includes('threadBead'));
 ok('the calendar keeps its own page styles', appCss.includes('.calendar-months') && appCss.includes('.calendar-month'));
 ok('the script never hides or rewrites the page content', !/innerHTML\s*=/.test(appJs) || /galleryStageImage/.test(appJs));
 ok('the script asks the backend for the revision instead of re-rendering', appJs.includes('/api/site?since=') && appJs.includes('window.location.reload()'));
-ok('the dashboard talks to the registrations endpoint', fs.readFileSync(path.join(ROOT, 'assets/dashboard.js'), 'utf8').includes('/api/registrations'));
+ok('the dashboard talks to the registrations endpoint', fs.readFileSync(path.join(ROOT, 'assets/manage.js'), 'utf8').includes('/api/registrations'));
 
 console.log('\n— a half-finished upload (the blank-site bug) —');
 const cssBackup = await php.readFile('/site/assets/app.css', { encoding: 'utf8' });

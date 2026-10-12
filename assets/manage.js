@@ -501,8 +501,8 @@
 
   async function addItem(type) {
     const defaults = {
-      team: { name: 'New member', role: 'Core team', group: 'management', phone: '', bio: '', image: '', showOnHome: true, order: (state.team.length + 1) * 10 },
-      events: { title: 'New activity', month: 1, day: '', year: '', time: 'Time to be announced', location: 'CSMU campus', kicker: 'Mindful Tattva', description: '', image: '', brochureUrl: '', fee: 0, upiId: '', upiName: 'Mindful Tattva', registrationOpen: false, windowMode: 'date', closesAt: '', openHours: 24, capacity: 0, published: false, order: (state.events.length + 1) * 10 },
+      team: { name: '', role: 'Core team', group: 'management', phone: '', bio: '', image: '', showOnHome: true, order: (state.team.length + 1) * 10 },
+      events: { title: '', month: 1, day: '', year: '', time: 'Time to be announced', location: 'CSMU campus', kicker: 'Mindful Tattva', description: '', image: '', brochureUrl: '', fee: 0, upiId: '', upiName: 'Mindful Tattva', registrationOpen: false, windowMode: 'date', closesAt: '', openHours: 24, capacity: 0, published: false, order: (state.events.length + 1) * 10 },
       gallery: { caption: '', alt: '', event: '', date: '', image: '', order: (state.gallery.length + 1) * 10 },
     };
     try {
@@ -562,7 +562,7 @@
         <div class="submission-head">
           <div>
             <strong>${esc(item.name)}</strong>
-            <div class="muted" style="font-size:.8rem">${esc(item.serial)} · ${esc(item.eventTitle || eventTitle(item.eventId))} · ${esc(item.createdAt || '')}</div>
+            <div class="muted" style="font-size:.8rem">${item.serial ? esc(item.serial) : 'serial not issued yet'} · ${esc(item.eventTitle || eventTitle(item.eventId))} · ${esc(item.createdAt || '')}</div>
           </div>
           <div class="row-actions">
             <span class="status-chip ${esc(chipClass)}">${esc(item.paymentLabel || '')}</span>
@@ -574,14 +574,14 @@
           ${item.course ? `<div><dt>Course</dt><dd>${esc(item.course)}</dd></div>` : ''}
           ${item.year ? `<div><dt>Year</dt><dd>${esc(item.year)}</dd></div>` : ''}
           <div><dt>Fee</dt><dd>${paid ? esc('Rs. ' + Number(item.eventFee).toFixed(0)) : 'Free entry'}</dd></div>
+          <div><dt>Seat</dt><dd>${item.passReady ? 'held' : 'not held yet'}</dd></div>
           <div><dt>Status</dt><dd>${esc(item.status || 'confirmed')}</dd></div>
-          ${item.note ? `<div><dt>Note</dt><dd>${esc(item.note)}</dd></div>` : ''}
           ${item.adminNote ? `<div><dt>Club note</dt><dd>${esc(item.adminNote)}</dd></div>` : ''}
         </dl>
         <div class="links">
-          ${item.passReady ? link(`/api/pass/${encodeURIComponent(item.id)}`, 'Pass PDF ↗', ' target="_blank" rel="noreferrer"') : ''}
+          ${item.passReady ? link(`/api/pass/${encodeURIComponent(item.serial || item.id)}`, 'Pass PDF ↗', ' target="_blank" rel="noreferrer"') : ''}
           ${item.proofPath ? link(item.proofPath, 'Payment proof ↗', ' target="_blank" rel="noreferrer"') : ''}
-          ${link(item.passUrl || '#', 'Student pass page ↗', ' target="_blank" rel="noreferrer"')}
+          ${item.publicId ? link(`/verify/${encodeURIComponent(item.publicId)}`, 'Pass check page ↗', ' target="_blank" rel="noreferrer"') : ''}
           ${link(`mailto:${esc(item.email)}`, 'Reply by email ↗')}
         </div>
         <div class="row-actions" style="margin-top:10px">
@@ -615,7 +615,7 @@
         <div class="editor-card" style="margin-bottom:16px">
           <div class="editor-card-head">
             <span>${esc(items[0].eventTitle || eventTitle(eventId))}</span>
-            <span class="muted" style="font-size:.8rem">${items.length} registered · ${paidCount} paid · Rs. ${collected.toFixed(0)} collected</span>
+            <span class="muted" style="font-size:.8rem">${items.filter((item) => item.passReady).length} seat${items.filter((item) => item.passReady).length === 1 ? '' : 's'} held · ${paidCount} paid · Rs. ${collected.toFixed(0)} collected${items.filter((item) => !item.passReady).length ? ' · ' + items.filter((item) => !item.passReady).length + ' waiting to pay' : ''}</span>
           </div>
           <div style="display:grid;gap:14px">
             ${items.map(registrationCard).join('')}
@@ -640,7 +640,7 @@
   }
 
   async function setRegistrationStatus(id, status) {
-    if (!window.confirm('Cancel this registration? The fee is returned within 12 working days — the pass stops being valid at the door.')) return;
+    if (!window.confirm('Cancel this registration? The pass stops being valid at the door, and the fee is refunded within 24 working days if the club cancelled the event.')) return;
     try {
       const result = await api(`/api/registrations/${encodeURIComponent(id)}`, {
         method: 'PUT',
@@ -648,7 +648,7 @@
       });
       const index = state.registrations.findIndex((item) => item.id === id);
       if (index >= 0 && result.item) state.registrations[index] = Object.assign({}, state.registrations[index], result.item);
-      toast('Registration cancelled — refund within 12 working days');
+      toast('Registration cancelled — refund within 24 working days');
       renderAll();
     } catch (error) {
       toast(error.message, true);
@@ -825,7 +825,7 @@
         body: JSON.stringify({ current: current.value, password: next.value }),
       });
       current.value = next.value = repeat.value = '';
-      toast('Password updated ✓');
+      toast('Password updated ✓ — every other device has been signed out.');
     } catch (error) {
       toast(error.message, true);
     }

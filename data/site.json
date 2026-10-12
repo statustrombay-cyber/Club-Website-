@@ -1,6 +1,6 @@
 {
-  "revision": 6,
-  "updatedAt": "2026-10-12T13:59:53+00:00",
+  "revision": 20,
+  "updatedAt": "2026-10-12T16:56:23+00:00",
   "site": {
     "clubName": "Mindful Tattva",
     "shortName": "MT",
@@ -122,38 +122,11 @@
       "event": "",
       "date": "",
       "order": 1
-    },
-    {
-      "id": "gallery-2",
-      "caption": "",
-      "event": "",
-      "date": "",
-      "alt": "",
-      "image": "",
-      "order": 2
-    },
-    {
-      "id": "gallery-3",
-      "caption": "",
-      "event": "",
-      "date": "",
-      "alt": "",
-      "image": "",
-      "order": 3
-    },
-    {
-      "id": "gallery-4",
-      "caption": "",
-      "event": "",
-      "date": "",
-      "alt": "",
-      "image": "",
-      "order": 4
     }
   ],
+  "registrations": [],
   "submissions": [],
   "settings": {
     "frontendRegistration": true
-  },
-  "registrations": []
+  }
 }

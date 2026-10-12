@@ -8,7 +8,7 @@
  * @var array $db    Whole content store.
  * @var array $site  Club copy.
  */
-$photos = mt_sorted($db['gallery'] ?? []);
+$photos = mt_sorted(mt_gallery_photos($db['gallery'] ?? []));
 $slides = [];
 foreach ($photos as $item) {
     $image = mt_safe_image($item['image'] ?? '');
@@ -55,7 +55,7 @@ $galleryJson = json_encode(
         <div>
           <div class="eyebrow">Keep the thread</div>
           <h2>Every gathering leaves a trace.</h2>
-          <p>Photos are uploaded by the club team from the dashboard, so this page turns into a living archive of the
+          <p>Photos are added by the club team, so this page turns into a living archive of the
             people, ideas and moments that shape Mindful Tattva.</p>
         </div>
         <div class="mini-psi">Ψ</div>

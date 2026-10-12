@@ -10,8 +10,11 @@ $site       = $db['site'];
 $events     = array_values(array_filter(mt_sorted($db['events'] ?? []), static fn($event) => !empty($event['published'])));
 $openEvents = mt_open_events($db);
 $history    = mt_sorted($db['history'] ?? []);
-$gallery    = array_slice(mt_sorted($db['gallery'] ?? []), 0, 6);
-$team       = array_values(array_filter(mt_sorted($db['team'] ?? []), static fn($person) => ($person['group'] ?? 'management') === 'management'));
+$gallery    = array_slice(mt_sorted(mt_gallery_photos($db['gallery'] ?? [])), 0, 6);
+$team       = array_values(array_filter(
+    mt_sorted(mt_named_team($db['team'] ?? [])),
+    static fn($person) => ($person['group'] ?? 'management') === 'management'
+));
 $stats      = is_array($site['stats'] ?? null) ? $site['stats'] : [];
 $instagram  = mt_safe_url($site['instagramUrl'] ?? '');
 $address    = trim((string) ($site['address'] ?? ''));
@@ -106,7 +109,7 @@ $phone      = trim((string) ($site['clubPhone'] ?? ''));
     <div class="history-intro">
       <div class="eyebrow">Our history</div>
       <h2 class="display">Every meaningful space begins with a first step.</h2>
-      <p>This timeline grows with the club — milestones, people and memories are added by the club team from the dashboard.</p>
+      <p>This timeline grows with the club — milestones, people and memories are added by the club team.</p>
     </div>
     <div class="timeline" id="historyList">
       <?php foreach ($history as $entry): ?>
@@ -186,7 +189,7 @@ $phone      = trim((string) ($site['clubPhone'] ?? ''));
   <div class="container">
     <div class="section-head">
       <div><div class="eyebrow">People behind the pause</div><h2 class="display">Meet the core team.</h2></div>
-      <p>Names, roles, photos and member contact numbers are kept up to date by the club team from the dashboard.</p>
+      <p>Names, roles, photos and member contact numbers are kept up to date by the club team.</p>
     </div>
     <div class="team-grid" id="teamGrid">
       <?php foreach ($team as $member): ?>

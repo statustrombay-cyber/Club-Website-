@@ -50,10 +50,18 @@ if (isset($legacy[$route])) {
     return;
 }
 
-/* /pass/<serial> — the student's own pass, unlocked by its private token. */
+/* /pass/<private code> — the student's own pass. The code in the link is the
+ * only key: it is 20 random characters, stored as a hash, and never printed on
+ * the pass, drawn in a QR code or listed in the club dashboard. */
 if (str_starts_with($route, 'pass/')) {
-    $_GET['serial'] = substr($route, 5);
+    $_GET['code'] = substr($route, 5);
     $route = 'pass';
+}
+
+/* /verify/<public id> — what a scanned pass QR opens. Public on purpose: it
+ * says a pass is real without giving anything away. */
+if (str_starts_with($route, 'verify/')) {
+    $route = 'verify/' . substr($route, 7);
 }
 
 if (str_starts_with($route, 'register')) {

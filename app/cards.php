@@ -96,8 +96,8 @@ function mt_event_card(array $event, ?array $registration = null): string
           <div class="event-actions">
             <span class="event-fee<?= $fee > 0 ? '' : ' is-free' ?>"><?= e($fee > 0 ? mt_money($fee) : 'Free entry') ?></span>
             <?php if ($state['open']): ?>
-              <?php if ($registration): ?>
-                <a class="solid-button" href="/pass/<?= e(rawurlencode((string) $registration['serial'])) ?>?token=<?= e(rawurlencode((string) $registration['token'])) ?>">Your pass ↗</a>
+              <?php if ($registration && mt_registration_pass_ready($registration)): ?>
+                <a class="solid-button" href="/verify/<?= e(rawurlencode((string) ($registration['publicId'] ?? ''))) ?>">Your pass ↗</a>
               <?php else: ?>
                 <a class="solid-button" href="/register?event=<?= e((string) $event['id']) ?>">Register ↗</a>
               <?php endif; ?>
@@ -156,6 +156,46 @@ function mt_gallery_item(array $item): string
       </figure>
     <?php
     return (string) ob_get_clean();
+}
+
+/**
+ * Only the rows the club has actually finished belong on the public site.
+ *
+ * The dashboard lets the club add a row first and fill it in afterwards, so a
+ * half-written row must never be published: a photo with no picture, a person
+ * with no name, an activity with no title are all still "not written yet".
+ */
+function mt_finished_rows(array $items, array $required): array
+{
+    $rows = [];
+    foreach ($items as $item) {
+        if (!is_array($item)) {
+            continue;
+        }
+        $ready = true;
+        foreach ($required as $key) {
+            if (trim((string) ($item[$key] ?? '')) === '') {
+                $ready = false;
+                break;
+            }
+        }
+        if ($ready) {
+            $rows[] = $item;
+        }
+    }
+    return $rows;
+}
+
+/** Every gallery photo that has a picture behind it. */
+function mt_gallery_photos(array $items): array
+{
+    return mt_finished_rows($items, ['image']);
+}
+
+/** Every team member who actually has a name. */
+function mt_named_team(array $items): array
+{
+    return mt_finished_rows($items, ['name']);
 }
 
 /** A card inside the gallery page's archive grid. */
@@ -271,9 +311,9 @@ function mt_member_group(string $group, array $people): string
         'volunteers' => ['kicker' => '03 · Community', 'label' => 'Volunteers'],
     ];
     $empty = [
-        'management' => ['Core Committee members will appear here.', 'Members can be added from the club dashboard.'],
-        'heads'      => ['Head Committee will be added soon.', 'Members can be added from the club dashboard.'],
-        'volunteers' => ['The circle is open.', 'Volunteers can be added from the club dashboard.'],
+        'management' => ['Core Committee members will appear here.', 'The club is introducing the team for this year — come back soon.'],
+        'heads'      => ['Head Committee will be added soon.', 'The organizing team for this year is being introduced shortly.'],
+        'volunteers' => ['The circle is open.', 'Write to the club team and volunteer for the next event.'],
     ];
     $info = $labels[$group] ?? $labels['management'];
     $empties = $empty[$group] ?? $empty['management'];

@@ -85,16 +85,16 @@ $counts  = $report['counts'];
           The website will look unstyled — plain text with no colours — until these files are uploaded.
           Open the <b>assets</b> folder of the project, and copy its contents into the <code>assets</code>
           folder next to <code>index.php</code> on the server, keeping the same names:
-          <code>app.css</code>, <code>app.js</code>, <code>dashboard.css</code>, <code>dashboard.js</code>
-          and the folders <code>img/</code> and <code>photos/</code>.
+          the two stylesheets and the two scripts, plus the folders <code>img/</code>
+          and <code>photos/</code>.
         </p>
         <p>Folders <code>755</code>, files <code>644</code>. Then reload this page — the list below should turn green.</p>
       </div>
     <?php else: ?>
       <div class="verdict good">
         <strong>All <?= count($report['files']) ?> design files are present</strong>
-        <p>Stylesheets, scripts and images are all on the server, so the public website and the club
-           dashboard will render as designed.</p>
+        <p>Stylesheets, scripts and images are all on the server, so the club pages will render
+           as designed.</p>
       </div>
     <?php endif; ?>
 
@@ -143,10 +143,10 @@ $counts  = $report['counts'];
 
     <div class="links">
       <a href="/">← Back to the website</a>
-      <a href="/dashboard">Club dashboard</a>
+      <a href="/">Back to the club site</a>
       <a href="/health">Check again</a>
     </div>
-    <p class="foot">Mindful Tattva · backend <?= e(MT_VERSION) ?>. This page is not linked from the public site and is not indexed by search engines.</p>
+    <p class="foot">Mindful Tattva · site <?= e(MT_VERSION) ?>. This page is not linked from the public site and is not indexed by search engines.</p>
   </div>
 </body>
 </html>

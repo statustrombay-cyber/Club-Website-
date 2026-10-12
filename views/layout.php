@@ -13,7 +13,10 @@
 $site      = $site ?? [];
 $db        = $db ?? mt_db();
 $route     = $route ?? 'home';
-$bodyClass = trim(($bodyClass ?? '') . ' page-' . $route);
+/* The route name only: a private pass link must never end up in the markup,
+   and neither should a query string. */
+$routeClass = preg_replace('/[^a-z0-9-]/', '', strtolower(explode('/', $route)[0])) ?: 'page';
+$bodyClass = trim(($bodyClass ?? '') . ' page-' . $routeClass);
 $clubName  = (string) ($site['clubName'] ?? 'Mindful Tattva');
 $department = (string) ($site['department'] ?? '');
 $fullTitle = $pageTitle ? $pageTitle . ' · ' . $clubName : $clubName . ' · Psychology Club';
@@ -49,8 +52,11 @@ $nav = [
   <meta name="description" content="<?= e(mb_substr($description, 0, 180)) ?>">
   <meta name="theme-color" content="#403634">
   <meta name="color-scheme" content="light">
-  <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="<?= e($logo) ?>">
+  <link rel="icon" href="/assets/img/favicon-32.png" sizes="32x32" type="image/png">
+  <link rel="icon" href="/assets/img/favicon-192.png" sizes="192x192" type="image/png">
+  <link rel="shortcut icon" href="/assets/img/favicon-48.png" type="image/png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/img/apple-touch-icon.png">
+  <link rel="mask-icon" href="/assets/img/favicon.svg" color="#4e3155">
   <meta property="og:type" content="website">
   <meta property="og:title" content="<?= e($fullTitle) ?>">
   <meta property="og:description" content="<?= e(mb_substr($description, 0, 180)) ?>">
@@ -65,6 +71,10 @@ $nav = [
     <span class="bubble bubble-g"></span>
   </div>
   <div class="depth-overlay" aria-hidden="true"></div>
+  <div class="gold-thread" aria-hidden="true">
+    <span class="thread-rail"></span><span class="thread-fill" id="threadFill"></span>
+    <span class="thread-bead" id="threadBead"></span>
+  </div>
 
   <div class="site-shell">
     <?php if (trim((string) ($site['announcement'] ?? '')) !== ''): ?>
@@ -120,7 +130,6 @@ $nav = [
           <a href="/members">Members</a>
           <a href="/gallery">Gallery</a>
           <a href="/calendar">Calendar</a>
-          <a href="/dashboard">Club dashboard</a>
           <a href="#top">Back to top ↑</a>
         </div>
       </div>

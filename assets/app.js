@@ -10,7 +10,7 @@
      · the mobile menu
      · the photo gallery's stage on the gallery page
      · the club forms and the payment screenshot upload
-     · a quiet check for new content while the dashboard is being edited
+     · a quiet check for new content while the club is editing
    ========================================================================== */
 (function () {
   'use strict';
@@ -188,6 +188,32 @@
     });
   }
 
+  /* --------------------------------------------------------- the gold thread
+     A hairline of gold that fills as the page is read, with a bead that rides
+     the end of it. It is decoration: it never carries meaning, and with
+     reduced motion (or on a narrow screen) it steps aside. */
+  function setupGoldThread() {
+    const fill = $('#threadFill');
+    const bead = $('#threadBead');
+    if (!fill || !bead) return;
+
+    let frame = 0;
+    function paint() {
+      frame = 0;
+      const scrollable = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+      const read = Math.min(1, Math.max(0, (window.scrollY || window.pageYOffset || 0) / scrollable));
+      fill.style.height = (read * 100) + 'vh';
+      bead.style.top = (read * 100) + 'vh';
+    }
+    function schedule() {
+      if (!frame) frame = window.requestAnimationFrame(paint);
+    }
+
+    paint();
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule);
+  }
+
   /* ------------------------------------------------------- content updates */
   function setupLiveUpdates() {
     const boot = readJson('mt-bootstrap');
@@ -209,6 +235,7 @@
     setupMenu();
     setupGalleryStage();
     setupForms();
+    setupGoldThread();
     setupLiveUpdates();
   }
 

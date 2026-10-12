@@ -73,6 +73,14 @@ function mt_db(bool $fresh = false): array
         $db['registrations'] = [];
     }
     $db['registrations'] = array_values($db['registrations']);
+    /* Older rows carried a plain-text pass token. It is never handed out, never
+       printed and never needed again: drop it the moment the store is read, so
+       it cannot leak through an API response or a backup. */
+    foreach ($db['registrations'] as $index => $registration) {
+        if (isset($db['registrations'][$index]['token'])) {
+            unset($db['registrations'][$index]['token']);
+        }
+    }
     if (!is_array($db['site'])) {
         $db['site'] = [];
     }

@@ -253,6 +253,10 @@ function mt_public_page(string $route): void
             mt_public_pass();
             return;
 
+        case 'verify':
+            mt_public_verify('');
+            return;
+
         /* Deployment check. Handy right after an upload: it lists every design
          * file the site needs and whether it reached the server. It is built to
          * work even when nothing else loads, so it is safe to open any time. */
@@ -278,6 +282,10 @@ function mt_public_page(string $route): void
             return;
 
         default:
+            if (str_starts_with($route, 'verify/')) {
+                mt_public_verify(substr($route, 7));
+                return;
+            }
             mt_send_html(mt_page('public/not-found', ['pageTitle' => 'Page not found']), 404);
     }
 }
@@ -346,9 +354,9 @@ function mt_public_register(): void
                         $database['registrations'][] = $record;
                         return true;
                     });
-                    $passUrl = '/pass/' . rawurlencode((string) $record['serial'])
-                        . '?token=' . rawurlencode((string) $record['token']) . '&new=1';
-                    mt_redirect($passUrl);
+                    /* The student keeps this link: /pass/<private code>. The code
+                       itself is never printed, drawn in a QR or listed anywhere. */
+                    mt_redirect('/pass/' . rawurlencode($result['code']) . '?new=1');
                     return;
                 }
             }
@@ -365,68 +373,154 @@ function mt_public_register(): void
     ]));
 }
 
-/** The student's pass page, unlocked by its private token. */
+/**
+ * The student's pass page.
+ *
+ * The link is /pass/<private code>: the code in the URL is the only key, it is
+ * stored as a hash, and it is never shown on the page, in the QR code, in the
+ * PDF or in the club dashboard. Students who have the link open it any time.
+ */
 function mt_public_pass(): void
 {
     $db = mt_db();
-    $serial = trim((string) ($_GET['serial'] ?? ''));
-    $token = trim((string) ($_GET['token'] ?? ''));
-    $message = null;
-
-    $registration = null;
-    if ($serial !== '') {
-        $bySerial = mt_registration_by_serial($db, $serial);
-        if ($bySerial !== null) {
-            $registration = mt_registration_by_token($db, (string) $bySerial['id'], $token);
+    $code = trim((string) ($_GET['code'] ?? $_GET['pass'] ?? ''));
+    if ($code === '') {
+        /* No code in the link: this browser already opened a pass, so it can
+           carry on with the one it remembers. Anything else is asked for the
+           link it saved — the club cannot look a pass up for anyone. */
+        mt_session();
+        $remembered = (string) ($_SESSION['pass'] ?? '');
+        $registration = $remembered !== '' ? mt_registration_by_code_hash($db, $remembered) : null;
+        if ($registration === null) {
+            mt_send_html(mt_page('public/pass-lookup', [
+                'pageTitle' => 'Find your pass',
+                'message'   => null,
+            ]), 200);
+            return;
         }
+        $code = '';
+    } else {
+        $registration = mt_registration_by_code($db, $code);
     }
     if ($registration === null) {
+        mt_throttle_hit('pass-lookup');
         mt_send_html(mt_page('public/not-found', [
             'pageTitle' => 'Pass not found',
-            'message'   => 'That pass link is not valid any more, or the token is missing. Check the link the club sent you, or write to the club team.',
+            'message'   => 'That pass link is not valid. Open the link you were given when you registered, or write to the club team and they will help.',
         ]), 404);
         return;
     }
 
+    $registrationId = (string) $registration['id'];
+    $message = null;
+
     if (mt_method() === 'POST') {
         $input = mt_input();
         if (!mt_csrf_ok((string) ($input['csrf'] ?? ''))) {
-            $message = 'The upload expired. Please choose the screenshot again.';
+            $message = 'That upload expired. Please choose the screenshot again.';
         } else {
             $upload = mt_registration_receive_proof($registration);
             if ($upload['error'] !== null) {
                 $message = $upload['error'];
             } else {
-                mt_db_transaction(static function (array &$database) use ($registration, $upload): bool {
+                mt_db_transaction(static function (array &$database) use ($registrationId, $upload): bool {
                     foreach ($database['registrations'] as $index => $existing) {
-                        if ((string) ($existing['id'] ?? '') === (string) $registration['id']) {
-                            $database['registrations'][$index]['paymentStatus'] = 'submitted';
-                            $database['registrations'][$index]['proofPath'] = $upload['path'];
-                            $database['registrations'][$index]['proofUploadedAt'] = mt_now_iso();
-                            $database['registrations'][$index]['passIssuedAt'] = mt_now_iso();
-                            $database['registrations'][$index]['updatedAt'] = mt_now_iso();
+                        if ((string) ($existing['id'] ?? '') !== $registrationId) {
+                            continue;
                         }
+                        $database['registrations'][$index]['paymentStatus'] = 'submitted';
+                        $database['registrations'][$index]['proofPath'] = $upload['path'];
+                        $database['registrations'][$index]['proofUploadedAt'] = mt_now_iso();
+                        $database['registrations'][$index]['updatedAt'] = mt_now_iso();
+                        /* This is the moment the pass is earned: the serial, the
+                           seat and the pass are all issued together, and not
+                           a second before the payment proof is in. */
+                        if ((string) ($existing['serial'] ?? '') === '') {
+                            $database['registrations'][$index]['serial'] = mt_registration_serial($database);
+                        }
+                        $database['registrations'][$index]['passIssuedAt'] = mt_now_iso();
+                        $database['registrations'][$index]['status'] = 'confirmed';
                     }
                     return true;
                 });
-                mt_redirect('/pass/' . rawurlencode((string) $registration['serial'])
-                    . '?token=' . rawurlencode($token));
+                mt_redirect('/pass?paid=1');
                 return;
             }
         }
-        $registration = mt_registration_by_token(mt_db(), $serial, $token) ?? $registration;
+        $registration = mt_registration_by_code(mt_db(), $code) ?? $registration;
     }
 
     $event = mt_event_find(mt_db(), (string) ($registration['eventId'] ?? ''));
 
+    /* Remember whose pass this browser is looking at, so neither the PDF link
+       nor the upload form ever has to print the private code. */
+    mt_session();
+    $_SESSION['pass'] = (string) ($registration['passCodeHash'] ?? '');
+    mt_session_flush();
+
     mt_send_html(mt_page('public/pass', [
-        'pageTitle'     => 'Your pass · ' . (string) $registration['serial'],
-        'registration'  => $registration,
-        'event'         => $event ?? [],
-        'token'         => $token,
-        'message'       => $message,
+        'pageTitle'      => mt_registration_pass_ready($registration)
+            ? 'Your pass · ' . (string) $registration['serial']
+            : 'Payment · ' . (string) $registration['eventTitle'],
+        'registration'   => $registration,
+        'event'          => $event ?? [],
+        'code'           => '',
+        'pdfToken'       => '',
+        'message'        => $message,
+        'stage'          => mt_registration_stage($registration),
         'justRegistered' => !empty($_GET['new']),
+        'justPaid'       => !empty($_GET['paid']),
     ]));
+}
+
+/**
+ * /verify/<public id> — what a scanned pass QR opens.
+ *
+ * Public on purpose: anyone holding a pass (a student, a club member at the
+ * door, a stranger who found it) can confirm the pass is genuine. It shows the
+ * holder's masked name, the event, the seat state and nothing else — no
+ * contact details, no serial of anyone else, no pass codes.
+ */
+function mt_public_verify(string $publicId): void
+{
+    $publicId = trim($publicId);
+    if ($publicId === '' && isset($_GET['id'])) {
+        $publicId = trim((string) $_GET['id']);
+    }
+
+    $db = mt_db();
+    $registration = null;
+    if ($publicId !== '') {
+        foreach ($db['registrations'] as $candidate) {
+            if (hash_equals((string) ($candidate['publicId'] ?? ''), $publicId)) {
+                $registration = $candidate;
+                break;
+            }
+        }
+    }
+
+    if ($registration === null) {
+        mt_send_html(mt_page('public/verify', [
+            'pageTitle' => 'Check a pass',
+            'checked'   => $publicId !== '',
+            'verdict'   => 'unknown',
+            'registration' => [],
+            'event'     => [],
+        ]), $publicId === '' ? 200 : 404);
+        return;
+    }
+
+    $event = mt_event_find($db, (string) ($registration['eventId'] ?? '')) ?? [];
+    $ready = mt_registration_pass_ready($registration);
+    $cancelled = (string) ($registration['status'] ?? '') === 'cancelled';
+
+    mt_send_html(mt_page('public/verify', [
+        'pageTitle'    => 'Check a pass',
+        'checked'      => true,
+        'verdict'      => $cancelled ? 'cancelled' : ($ready ? 'valid' : 'pending'),
+        'registration' => $registration,
+        'event'        => $event,
+    ]), 200);
 }
 
 function mt_public_sitemap(): void

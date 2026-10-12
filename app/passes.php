@@ -9,7 +9,7 @@
  * Every pass carries the pass serial, the student, the event with its date,
  * time and venue, the fee and its payment state, a QR code of the serial and
  * the two rules that matter: bring the payment proof, and no refunds unless
- * the club cancels the event (then within 12 working days).
+ * the club cancels the event (then within 24 working days).
  *
  * @package MindfulTattva
  */
@@ -70,10 +70,16 @@ function mt_pdf_wrap(string $text, float $size, float $maxWidth, bool $bold = fa
     return $lines;
 }
 
-/** What the QR code on a pass carries. */
+/**
+ * What the QR code on a pass carries: the club's own verification page.
+ *
+ * Scanning it with any camera — Google Lens included — opens
+ * /verify/<id> and shows whether the pass is real, without an app, a login or
+ * any personal detail beyond the holder's masked name.
+ */
 function mt_pass_code(array $registration): string
 {
-    return 'MT-PASS:' . (string) ($registration['serial'] ?? '') . '|' . (string) ($registration['eventId'] ?? '');
+    return mt_verify_url($registration);
 }
 
 /**
@@ -203,18 +209,19 @@ function mt_pass_pdf(array $registration, array $event, array $site): string
     } catch (Throwable $error) {
         mt_log('Pass QR could not be drawn: ' . $error->getMessage());
     }
-    $text($qrX, $qrY - 22, 'Scan at the door', 8, true, $terracotta);
-    $text($qrX, $qrY - 34, (string) ($registration['serial'] ?? ''), 12, true, $plum);
+    $text($qrX, $qrY - 20, 'Scan to check this pass', 8, true, $terracotta);
+    $text($qrX, $qrY - 32, 'opens the club site', 8, false, $soft);
 
     /* the rules every pass carries */
     $rulesY = 322.0;
-    $rect($margin + 22, 190, $inner - 44, 126, $sand);
+    $rect($margin + 22, 176, $inner - 44, 146, $sand);
     $text($margin + 34, $rulesY, 'ENTRY & REFUND TERMS', 8.5, true, $plum);
     $ruleLines = [
         'Show this pass and your payment proof (the screenshot you uploaded) at the entry desk. Entry is given only when the pass serial matches the club register.',
         'This pass is for one person, for this event only, and cannot be sold or transferred. Please bring a photo ID for verification.',
-        'Registration fees are non-refundable. The only exception is if the club cancels the event — then the fee is returned within 12 working days.',
-        'The club may change the time or venue and will inform registered students on the phone number and email given at registration.',
+        'Registration fees are non-refundable. By registering you agree to the terms and conditions of the event.',
+        'Decisions of the club about the event are final. The club may cancel the event or change the date or venue without prior notice.',
+        'If the club cancels the event, the fee is refunded within 24 working days.',
     ];
     $lineY = $rulesY - 16;
     foreach ($ruleLines as $rule) {
@@ -228,7 +235,7 @@ function mt_pass_pdf(array $registration, array $event, array $site): string
     /* footer */
     $line($margin + 22, 170, $width - $margin - 22, 170, [0.86, 0.84, 0.83]);
     $text($margin + 22, 152, 'Registered on ' . (string) ($registration['createdAt'] ?? ''), 8.5, false, $soft);
-    $text($margin + 22, 138, 'Verify or reprint: ' . $siteUrl . '/pass/' . (string) ($registration['serial'] ?? ''), 8.5, false, $soft);
+    $text($margin + 22, 138, 'Check this pass: ' . $siteUrl . '/verify/' . (string) ($registration['publicId'] ?? ''), 8.5, false, $soft);
     $issued = 'Issued by ' . $club . ' · ' . $university;
     $text($width - $margin - 22 - mt_pdf_width($issued, 8.5), 152, $issued, 8.5, false, $soft);
 
