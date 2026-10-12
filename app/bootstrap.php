@@ -179,6 +179,16 @@ function mt_json_raw(int $status, string $body, array $extraHeaders = []): void
 {
     if (mt_headless()) {
         $GLOBALS['MT_TEST_STATUS'] = $status;
+        // Report the real headers to the runner. Without this the preview server
+        // falls back to text/html for every JSON, robots.txt and sitemap.xml
+        // response — and a browser left to guess at the type may sniff it.
+        $GLOBALS['MT_TEST_HEADERS'][] = ['Content-Type', 'application/json; charset=utf-8'];
+        $GLOBALS['MT_TEST_HEADERS'][] = ['Cache-Control', 'no-store, max-age=0'];
+        $GLOBALS['MT_TEST_HEADERS'][] = ['X-Content-Type-Options', 'nosniff'];
+        // Extra headers are appended last so an explicit type wins.
+        foreach ($extraHeaders as $name => $value) {
+            $GLOBALS['MT_TEST_HEADERS'][] = [(string) $name, (string) $value];
+        }
     } elseif (!headers_sent()) {
         http_response_code($status);
         mt_header('Content-Type', 'application/json; charset=utf-8');
