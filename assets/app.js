@@ -144,6 +144,22 @@
     const request = function () { if (!frame) frame = window.requestAnimationFrame(update); };
     window.addEventListener('scroll', request, { passive: true });
     window.addEventListener('resize', request);
+
+    /* The pill is fixed to the bottom-left corner, which is where a form field
+       ends up on a phone. Hide it while a field has focus so it can never sit
+       on top of what somebody is typing into. */
+    const isField = function (node) {
+      return !!(node && node.closest && node.closest('input, select, textarea'));
+    };
+    document.addEventListener('focusin', function (event) {
+      if (isField(event.target)) tab.classList.add('is-typing');
+    });
+    document.addEventListener('focusout', function (event) {
+      // relatedTarget is whatever is being focused next, so stepping from one
+      // field straight to another keeps the pill out of the way.
+      if (!isField(event.relatedTarget)) tab.classList.remove('is-typing');
+    });
+
     update();
   }
 
@@ -405,7 +421,11 @@
     const count = document.getElementById('lightboxCount');
 
     if (image) {
-      image.src = safeImage(item.image) || '';
+      /* Never write src="" — a browser reads that as the page's own URL and
+         fires a pointless request for the document on every open. */
+      const source = safeImage(item.image);
+      if (source) image.src = source;
+      else image.removeAttribute('src');
       image.alt = text(item.alt) || text(item.caption) || 'Mindful Tattva photo';
     }
     if (caption) {

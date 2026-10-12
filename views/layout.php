@@ -160,7 +160,7 @@ $nav = [
       <button class="lightbox-close" data-lightbox-close aria-label="Close viewer">✕</button>
       <button class="lightbox-nav lightbox-prev" data-lightbox-prev aria-label="Previous photo">←</button>
       <figure class="lightbox-figure">
-        <img id="lightboxImage" src="" alt="">
+        <img id="lightboxImage" alt="">
         <figcaption id="lightboxCaption" class="lightbox-caption" hidden></figcaption>
         <div id="lightboxBody" class="lightbox-body" hidden></div>
       </figure>
