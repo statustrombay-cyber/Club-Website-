@@ -9,6 +9,18 @@ DirectoryIndex index.php index.html
   RewriteEngine On
   RewriteBase /
 
+  # Private things first. These rules must sit above the "existing file"
+  # pass-through below, otherwise a real file on disk would be served before
+  # they are ever reached.
+  RewriteRule (^|/)\. - [F,L]                                # dot files (.gitignore, .htaccess, .git)
+  RewriteRule ^(app|views|data|tools)/ - [F,L]               # backend code, templates, content, tooling
+  RewriteRule ^(README|package(-lock)?\.json|composer\.(json|lock)) - [F,L]
+  RewriteRule \.(md|mjs|log|lock|tmp|sql|bak|example)$ - [F,L]  # notes, dev scripts, backups
+
+  # Never execute scripts that arrive through the uploads folder: they are only
+  # ever served as images or PDFs. (See uploads/.htaccess for the same rule.)
+  RewriteRule ^uploads/.*\.(php|phtml|phar|cgi|pl|py|sh|html|htm)$ - [F,L]
+
   # Send existing files and folders (assets, uploads, favicon …) straight out.
   RewriteCond %{REQUEST_FILENAME} -f [OR]
   RewriteCond %{REQUEST_FILENAME} -d
@@ -38,12 +50,6 @@ DirectoryIndex index.php index.html
   ExpiresByType image/svg+xml "access plus 30 days"
   ExpiresByType text/css "access plus 7 days"
   ExpiresByType application/javascript "access plus 7 days"
-</IfModule>
-
-# Never execute scripts that arrive through the uploads folder: they are only
-# ever served as images or PDFs. (See uploads/.htaccess for the same rule.)
-<IfModule mod_rewrite.c>
-  RewriteRule ^uploads/.*\.(php|phtml|phar|cgi|pl|py|sh|html|htm)$ - [F,L]
 </IfModule>
 
 <IfModule mod_deflate.c>

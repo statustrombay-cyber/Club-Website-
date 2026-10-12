@@ -26,15 +26,25 @@ function mt_api_handle(string $route): void
 
     switch ($resource) {
         case 'health':
+            $report = mt_health_report();
             mt_json(200, [
-                'ok'       => true,
-                'php'      => PHP_VERSION,
-                'version'  => MT_VERSION,
-                'revision' => mt_db()['revision'],
-                'writable' => [
+                'ok'          => true,
+                'php'         => PHP_VERSION,
+                'version'     => MT_VERSION,
+                'revision'    => mt_db()['revision'],
+                'writable'    => [
                     'data'    => is_writable(MT_DATA) || is_writable(dirname(MT_DATA)),
                     'uploads' => is_dir(MT_UPLOADS) ? is_writable(MT_UPLOADS) : is_writable(MT_ROOT),
                 ],
+                // A missing design file is the difference between the real
+                // website and an unstyled page, so the dashboard says it out loud.
+                'files'       => [
+                    'checked' => count($report['files']),
+                    'missing' => count($report['missing']),
+                    'list'    => array_slice($report['missing'], 0, 20),
+                ],
+                'site_ok'     => $report['ok'],
+                'summary'     => mt_health_summary($report),
             ]);
             return;
 

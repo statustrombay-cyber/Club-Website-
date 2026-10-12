@@ -686,11 +686,17 @@
     if (!box) return;
     try {
       const health = await api('/api/health');
+      const files = health.files || { checked: 0, missing: 0 };
+      const missing = Number(files.missing) || 0;
       box.innerHTML = `
         <div>PHP ${esc(health.php)} · backend ${esc(health.version)}</div>
         <div>Data folder writable: <strong>${health.writable && health.writable.data ? 'yes' : 'no'}</strong></div>
         <div>Uploads folder writable: <strong>${health.writable && health.writable.uploads ? 'yes' : 'no'}</strong></div>
-        <div>Content revision: <strong>${esc(health.revision)}</strong></div>`;
+        <div>Content revision: <strong>${esc(health.revision)}</strong></div>
+        <div>Website files: <strong>${missing
+          ? '⚠ ' + missing + ' missing'
+          : esc(files.checked) + ' found'}</strong></div>
+        <div style="margin-top:8px"><a href="/health">Open the deployment check →</a></div>`;
     } catch (error) {
       box.textContent = 'Status unavailable: ' + error.message;
     }

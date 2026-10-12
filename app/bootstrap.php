@@ -61,6 +61,7 @@ if (!function_exists('mb_strtolower')) {
 }
 
 require_once MT_APP . '/store.php';
+require_once MT_APP . '/health.php';
 require_once MT_APP . '/cards.php';
 require_once MT_APP . '/pages.php';
 require_once MT_APP . '/api.php';

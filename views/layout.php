@@ -170,6 +170,9 @@ $nav = [
   </div>
 
   <script type="application/json" id="mt-bootstrap"><?= json_encode(mt_public_db($db ?? mt_db()), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>
-  <script src="/assets/app.js"></script>
+  <!-- If this file never arrives (a half-finished upload), the "js" class is
+       dropped again: the stylesheet hides the reveal animations only under
+       html.js, so content can never stay invisible because a script is missing. -->
+  <script src="/assets/app.js" onerror="document.documentElement.classList.remove('js')"></script>
 </body>
 </html>

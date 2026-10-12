@@ -12,6 +12,9 @@ data/tmp-uploads/
 # uploads are part of the site content, but local test files are not
 uploads/**/preview-*
 
+# deploy bundles are built on demand, never committed
+deploy-bundle*.zip
+
 # editor / OS noise
 .DS_Store
 Thumbs.db

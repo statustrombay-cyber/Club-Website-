@@ -10,7 +10,9 @@
  */
 
 return [
-    // Current club password: Csmu@MT
+    // The club password as a bcrypt hash — it is never stored or printed in
+    // plain text. Change it any time from the dashboard:
+    // Backups & settings → Security → Change the club password.
     'admin_password_hash' => '$2y$12$1BYn7qhQIEijcK9g/fIL/ey2BCHz8Ahd1oGxfFRQplk0yjV0gy9om',
 
     // Uploads: 4 MB (JPEG/PNG/WEBP/GIF photos and PDFs only).

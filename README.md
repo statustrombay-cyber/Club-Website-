@@ -41,10 +41,55 @@ functions. Nothing else.
 | Mental-health awareness | `/awareness` |
 | Club calendar | `/calendar` |
 | Club dashboard (backend) | `/dashboard` |
+| Deployment check | `/health` |
 
-**Dashboard password: `Csmu@MT`** — change it any time from
-*Dashboard → Settings → Change password*. The password is stored as a bcrypt
-hash in `data/config.php`, never in plain text.
+**The club password** is stored as a bcrypt hash in `data/config.php` — never in
+plain text and never in this file. Change it any time from *Dashboard → Backups
+& settings → Change the club password*. Forgotten it? Delete the
+`admin_password_hash` line from `data/config.php` on the server and set a new
+password from the settings panel (or set the environment variable
+`MT_ADMIN_PASSWORD`).
+
+---
+
+## Deployment (uploading to the live server)
+
+The site is plain files. Upload them into the site folder (`htdocs` on
+InfinityFree and similar hosts) and it runs — no build step, no database, no
+Composer.
+
+1. Build the bundle (optional, but it keeps a deploy tidy):
+
+   ```bash
+   node tools/make-deploy-bundle.mjs      # → deploy-bundle.zip
+   ```
+
+   It packs `index.php`, `.htaccess`, `app/`, `views/`, `assets/` and
+   `uploads/.htaccess`, with folders `755` and files `644`. It deliberately
+   leaves out `data/` (site content and club password) and `uploads/` (uploaded
+   photos) — those only live on the server, so re-deploying can never wipe the
+   club's own work.
+2. Upload that ZIP into the site folder and extract it there.
+3. Open **`/health`** on the live site. It checks every design file directly on
+   the server and says, file by file, whether it arrived.
+
+### If the site ever looks blank or colourless
+
+It is always the same cause: **`assets/app.css` is not on the server**, so the
+browser receives raw HTML with no styling — and the pictures in `assets/` are
+missing for the same reason. The `assets` folder itself often exists but is
+empty, because the upload of its *contents* never finished (slow image
+transfers over FTP are the usual culprit).
+
+To fix it: upload the complete `assets/` folder — `app.css`, `app.js`,
+`dashboard.css`, `dashboard.js` and the `img/`, `photos/` and `awareness/`
+folders — then reload `/health` until it is green. Two safety nets mean the site
+never looks broken while that is pending:
+
+- if `assets/app.css` cannot be read, the app serves a small built-in baseline
+  stylesheet instead of leaving the page unstyled;
+- if `assets/app.js` cannot be read, the page drops its `js` class, so the
+  reveal animations can never leave content invisible.
 
 ---
 
@@ -83,18 +128,22 @@ app/                   PHP application
   api.php              the JSON API used by the dashboard and the public site
   pages.php            page routing, asset inlining, ETag/gzip responses
   cards.php            reusable markup (tiles, cards, forms)
+  health.php           deployment check: every design file, present or missing
 views/                 templates: layout.php, dashboard.php, public/*.php
+                       (public/health.php is the /health page — self-contained,
+                       it needs no stylesheet or script of its own)
 assets/                app.css, app.js, dashboard.css, dashboard.js, images
 data/                  site.json (content), config.php (password), backups/
 uploads/               photos uploaded from the dashboard
-tools/preview-server.mjs  local runner for machines without PHP
-tools/test.mjs           72 automated checks over pages, API, security, forms
+tools/preview-server.mjs      local runner for machines without PHP
+tools/make-deploy-bundle.mjs  builds deploy-bundle.zip for the live server
+tools/test.mjs                automated checks over pages, API, security, forms
 ```
 
 ## Development
 
 ```bash
-npm test          # runs the PHP app in isolation and checks 72 behaviours
+npm test          # runs the PHP app in isolation and checks 104 behaviours
 ```
 
 The test suite boots the real application, then exercises pages, the JSON API,

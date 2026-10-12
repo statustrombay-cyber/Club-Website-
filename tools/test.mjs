@@ -214,6 +214,17 @@ ok('unknown path shows the friendly page', missing.body.includes('drifted somewh
 const sitemap = await get('/sitemap.xml');
 ok('sitemap.xml is served', sitemap.status === 200 && sitemap.body.includes('<urlset'));
 
+const robots = await get('/robots.txt');
+ok('robots.txt is served', robots.status === 200 && robots.body.includes('Sitemap: /sitemap.xml'));
+ok('robots.txt keeps the dashboard and the check out of search engines',
+  robots.body.includes('Disallow: /dashboard') && robots.body.includes('Disallow: /health'));
+
+const healthPage = await get('/health');
+ok('GET /health returns 200', healthPage.status === 200, 'status ' + healthPage.status);
+ok('the deployment check lists the design files', healthPage.body.includes('Design files') && healthPage.body.includes('assets/app.css'));
+ok('the deployment check loads nothing of its own', !/(href|src)="\/assets\//.test(healthPage.body));
+ok('the deployment check is noindex', /noindex/.test(healthPage.body));
+
 console.log('\n— public API —');
 const siteApi = await get('/api/site');
 ok('GET /api/site returns 200', siteApi.status === 200);
@@ -228,6 +239,11 @@ ok('since= returns unchanged', JSON.parse(sinceApi.body).unchanged === true);
 
 const health = await get('/api/health');
 ok('GET /api/health is ok', health.status === 200 && JSON.parse(health.body).ok === true);
+const healthPayload = JSON.parse(health.body);
+ok('api health counts the design files it checked',
+  Boolean(healthPayload.files) && healthPayload.files.checked >= 14 && healthPayload.files.missing === 0,
+  JSON.stringify(healthPayload.files || {}));
+ok('api health says the site is complete', healthPayload.site_ok === true && /in place/.test(healthPayload.summary || ''), String(healthPayload.summary));
 
 const session = await get('/api/session');
 ok('anonymous session reports false', JSON.parse(session.body).authenticated === false);
@@ -369,6 +385,8 @@ const appCss = fs.readFileSync(path.join(ROOT, 'assets/app.css'), 'utf8');
 ok('reveals are hidden only under html.js', /html\.js \.reveal \{/.test(appCss) && !/^\s*\.reveal \{ opacity: 0/m.test(appCss));
 const appJs = fs.readFileSync(path.join(ROOT, 'assets/app.js'), 'utf8');
 ok('the script reveals with the class the stylesheet animates', appJs.includes("classList.add('is-visible')") && !appJs.includes("'is-in'"));
+const layoutSource = fs.readFileSync(path.join(ROOT, 'views/layout.php'), 'utf8');
+ok('a script that never arrives cannot hide content', /classList\.remove\('js'\)/.test(layoutSource));
 ok('the awareness rails move left to right while scrolling', appJs.includes('translate3d(') && /lag = index % 2 === 0 \? 1 : 0\.62/.test(appJs));
 ok('the gallery badge only replaces a missing caption', appCss.includes('.gallery-badge') && appJs.includes('gallery-badge'));
 ok('the lightbox locks the page while open', appCss.includes('body.lightbox-open'));
@@ -381,6 +399,34 @@ const awarePage = (await get('/awareness')).body;
 ok('the awareness page has no self-linked tab', !awarePage.includes('id="awarenessTab"'));
 ok('the awareness page keeps the helplines visible', awarePage.includes('14416') && awarePage.includes('KIRAN'));
 ok('awareness tiles link to a full note', awareHome.includes('class="tile') && awareHome.includes('data-awareness-open="0"'));
+
+console.log('\n— a half-finished upload (the blank-site bug) —');
+/* Exactly what the live server looked like: the assets folder was there, its
+   files were not. The site must stay readable and the check must say so. */
+const cssBackup = await php.readFile('/site/assets/app.css', { encoding: 'utf8' });
+const jsBackup = await php.readFile('/site/assets/app.js', { encoding: 'utf8' });
+await php.unlink('/site/assets/app.css');
+await php.unlink('/site/assets/app.js');
+
+const halfHome = await get('/');
+ok('a missing stylesheet falls back to the built-in baseline',
+  halfHome.body.includes('id="mt-baseline"') && halfHome.body.includes('assets/app.css was not found'));
+ok('the baseline keeps the page readable instead of unstyled',
+  /--plum-deep/.test(halfHome.body) && /body \{/.test(halfHome.body));
+const halfHealth = await get('/health');
+const halfCount = /(\d+) files? (?:are|is) missing/.exec(halfHealth.body);
+ok('the deployment check names how many files are missing',
+  halfHealth.status === 200 && Boolean(halfCount) && Number(halfCount[1]) >= 2,
+  halfHealth.status + ' → ' + (halfCount ? halfCount[1] : 'no count found'));
+const halfApi = JSON.parse((await get('/api/health')).body);
+ok('the dashboard status reports the missing files',
+  halfApi.files.missing >= 2 && /missing/.test(halfApi.summary || ''), JSON.stringify(halfApi.files || {}));
+ok('every page still works with the design files gone', (await get('/gallery')).status === 200);
+
+await php.writeFile('/site/assets/app.css', cssBackup);
+await php.writeFile('/site/assets/app.js', jsBackup);
+const restored = await get('/');
+ok('the real stylesheet comes back once the files are restored', !/id="mt-baseline"/.test(restored.body) && /\.awareness-stage/.test(restored.body));
 
 console.log('\n— clean output check —');
 for (const route of ['/', '/gallery', '/calendar', '/awareness', '/dashboard', '/does-not-exist']) {
