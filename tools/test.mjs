@@ -452,6 +452,13 @@ const paidRow = ((JSON.parse((await get('/api/registrations', AUTH)).body).items
 ok('the seat is held only now', paidRow.passReady === true && paidRow.serial === issuedSerial, JSON.stringify({ ready: paidRow.passReady, serial: paidRow.serial }));
 ok('the club can reprint any pass without the student’s code', (await get('/api/pass/' + encodeURIComponent(issuedSerial), AUTH)).status === 200);
 
+/* A window that is measured in hours must be built from the clock the test is
+   actually running on: one opened an hour ago is always inside a 24-hour run. */
+const hoursAgoLocal = (hours) => {
+  const d = new Date(Date.now() - hours * 3600 * 1000);
+  const p = (n) => String(n).padStart(2, '0');
+  return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes());
+};
 console.log('\n— the registration window —');
 const expired = await sendJson('/api/events', 'POST', {
   title: 'Closed circle', month: 12, day: 1, year: 2026, time: '11:00 AM', location: 'Seminar Hall',
@@ -465,7 +472,7 @@ const expiredPost = await sendJson('/api/registrations', 'POST', { eventId: expi
 ok('a registration after the window closes is refused', expiredPost.status === 409, 'status ' + expiredPost.status);
 const hoursWindow = await sendJson('/api/events', 'POST', {
   title: 'Two-hour window', month: 12, day: 2, year: 2026, time: '11:00 AM', location: 'Seminar Hall',
-  published: true, fee: 0, registrationOpen: true, windowMode: 'hours', openHours: 24, openedAt: '2026-10-12T09:00',
+  published: true, fee: 0, registrationOpen: true, windowMode: 'hours', openHours: 24, openedAt: hoursAgoLocal(1),
 }, AUTH);
 const hoursId = hoursWindow.status === 201 ? JSON.parse(hoursWindow.body).item.id : '';
 const hoursPage = await get('/register?event=' + encodeURIComponent(hoursId));
@@ -784,6 +791,17 @@ ok('the page skips work for what is off screen (a faster scroll)',
 ok('the pictures below the fold wait until they are reached',
   (fs.readFileSync(path.join(ROOT, 'views/public/members.php'), 'utf8').match(/loading="lazy"/g) || []).length >= 1
   && (fs.readFileSync(path.join(ROOT, 'views/layout.php'), 'utf8').match(/loading="lazy"/g) || []).length >= 2);
+
+/* A hidden thing must stay hidden and nothing may paint dark at load: the
+   photo frame is hidden in the markup, its image carries no empty src, and its
+   backdrop is a warm plum rather than black. */
+ok('a hidden element can never be shown by a later style rule',
+  /\[hidden\] \{ display: none !important; \}/.test(appCss));
+ok('the photo frame image carries no empty source to paint at load',
+  !/id="photoFrameImage"[^>]*src=""/.test(homeAlbums.body) && !/id="photoFrameImage"[^>]*src=""/.test((await get('/gallery')).body));
+ok('the photo frame backdrop is warm, not black',
+  /\.photo-frame \{[^}]*background: rgba\(76,58,64/.test(appCss)
+  && !/#241d20/.test(appCss));
 
 /* The club area itself, on a phone: the section strip scrolls sideways, the
    counters and editors go one per row, and a long word cannot widen a page. */

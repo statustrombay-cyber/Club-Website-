@@ -227,7 +227,7 @@ function mt_photo_frame(): string
       <div class="photo-frame" id="photoFrame" role="dialog" aria-modal="true" aria-label="Photo" hidden>
         <button type="button" class="photo-frame-close" id="photoFrameClose" aria-label="Close the photo">✕</button>
         <figure class="photo-frame-card">
-          <img id="photoFrameImage" src="" alt="" decoding="async">
+          <img id="photoFrameImage" alt="" decoding="async">
           <figcaption>
             <span id="photoFrameCaption"></span>
             <span class="photo-frame-hint">Tap anywhere to close</span>

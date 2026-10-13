@@ -28,6 +28,11 @@
 }
 
 * { box-sizing: border-box; }
+/* The `hidden` attribute must always hide, whatever a later rule says about
+   display. Without this an element marked hidden in the markup can still be
+   painted on screen at load — which is exactly what happened to the photo
+   frame, showing a dark sheet with a close cross over the page as it opened. */
+[hidden] { display: none !important; }
 html { scroll-behavior: smooth; }
 body {
   margin: 0;
@@ -804,7 +809,7 @@ html.js .scroll-reveal.is-visible { opacity: 1; transform: none; }
 .photo-frame {
   position: fixed; inset: 0; z-index: 300;
   display: grid; place-items: center; padding: 26px;
-  background: rgba(40,28,34,.72);
+  background: rgba(76,58,64,.55);
   backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
 }
 .photo-frame-card {
@@ -814,7 +819,7 @@ html.js .scroll-reveal.is-visible { opacity: 1; transform: none; }
   box-shadow: 0 30px 70px rgba(30,18,24,.42);
   border: 1px solid rgba(255,250,241,.5);
 }
-.photo-frame-card img { display: block; width: 100%; max-height: calc(100svh - 150px); object-fit: contain; background: #241d20; }
+.photo-frame-card img { display: block; width: 100%; max-height: calc(100svh - 150px); object-fit: contain; background: #efe6dd; }
 .photo-frame-card figcaption {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px;
   padding: 14px 18px; color: var(--plum-deep); font-family: var(--font-display); font-size: 1.05rem;
@@ -886,7 +891,6 @@ html.photo-frame-open { overflow: hidden; }
   content-visibility: auto;
   contain-intrinsic-size: auto 340px;
 }
-img { content-visibility: auto; }
 /* the bubbles and the gold thread are decoration: they never block a tap */
 .bubble-field, .gold-thread { pointer-events: none; }
 
