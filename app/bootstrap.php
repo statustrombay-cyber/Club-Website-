@@ -471,7 +471,15 @@ function mt_require_auth(): void
     if (!mt_authenticated()) {
         mt_fail(401, 'Please sign in to the club dashboard first.');
     }
-    mt_require_csrf();
+
+    /* Plain reads are protected by the session alone. The dashboard downloads
+       the register and the backup with ordinary links, and a link cannot send
+       a header — asking for the token there answered every download with
+       "your session expired". Anything that changes what the club has stored
+       still has to carry the token. */
+    if (!in_array(strtoupper(mt_method()), ['GET', 'HEAD', 'OPTIONS'], true)) {
+        mt_require_csrf();
+    }
 }
 
 function mt_require_csrf(): void

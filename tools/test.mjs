@@ -595,7 +595,18 @@ const goodLogin = await sendJson('/api/login', 'POST', { password: 'Csmu@MT' });
 ok('the club password signs in', goodLogin.status === 200 && JSON.parse(goodLogin.body).authenticated === true, String(goodLogin.body).slice(0, 160));
 ok('signing in says where to carry on', /^\/dashboard\//.test(String(JSON.parse(goodLogin.body || '{}').after || '')), String(JSON.parse(goodLogin.body || '{}').after));
 const noCsrf = await sendJson('/api/site', 'PUT', { tagline: 'x' }, { session: SESSION });
-ok('missing CSRF token is rejected', noCsrf.status === 419, 'status ' + noCsrf.status);
+ok('missing CSRF token is rejected on a write', noCsrf.status === 419, 'status ' + noCsrf.status);
+
+/* The dashboard downloads the register and the backup with plain links, and a
+   link cannot send a header: those reads must work on the session alone. */
+const plainCsv = await get('/api/registrations.csv', { session: SESSION });
+ok('the register downloads from a plain link, with no token', plainCsv.status === 200 && /name/i.test(String(plainCsv.body).split('\n')[0]), 'status ' + plainCsv.status);
+const plainExport = await get('/api/export', { session: SESSION });
+ok('the backup downloads from a plain link, with no token', plainExport.status === 200 && /\{/.test(String(plainExport.body).slice(0, 2)), 'status ' + plainExport.status);
+const plainList = await get('/api/registrations', { session: SESSION });
+ok('the register list opens from a plain link, with no token', plainList.status === 200 && Array.isArray(JSON.parse(String(plainList.body) || '{}').items), 'status ' + plainList.status);
+const plainDelete = await request({ uri: '/api/events/event-welcome-circle', method: 'DELETE', session: SESSION });
+ok('a delete still needs the token, even signed in', plainDelete.status === 419, 'status ' + plainDelete.status);
 const editCopy = await sendJson('/api/site', 'PUT', { tagline: 'A calmer space to understand the mind.' }, AUTH);
 ok('site copy saves with a token', editCopy.status === 200, String(editCopy.body).slice(0, 160));
 const eventPatch = await sendJson('/api/events/event-welcome-circle', 'PUT', { fee: 0, windowMode: 'hours', openHours: 6, location: 'CSMU campus · Seminar Hall' }, AUTH);
