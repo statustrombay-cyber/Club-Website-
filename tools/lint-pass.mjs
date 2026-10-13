@@ -39,8 +39,17 @@ for (const [rel, abs] of collect(ROOT)) {
 }
 
 /* One statement, so the whole thing runs: a parse error is catchable, and a
-   file that never gets to its own end is reported as the fatal it is. */
-await php.exec('(function () { try { require "/site/' + TARGET + '"; file_put_contents("/site/.lint.txt", "OK: ' + TARGET + ' loads clean"); } catch (Throwable $e) { file_put_contents("/site/.lint.txt", "FAIL: " . get_class($e) . ": " . $e->getMessage() . " @ line " . $e->getLine()); } })();');
+   file that never gets to its own end is reported as the fatal it is.
+   A view is loaded the way the front controller loads it — the club's own
+   bootstrap first, then the file — so a view that needs the club's helpers has
+   them, exactly as it does in the browser. */
+const needsBootstrap = /^views\//.test(TARGET);
+const prelude = needsBootstrap
+  ? 'require "/site/app/bootstrap.php"; $db = mt_db(); $site = $db["site"]; $route = "home"; $content = "";'
+    + ' $event = $db["events"][0] ?? []; $registration = $db["registrations"][0] ?? []; $person = [];'
+    + ' ob_start(); require "/site/' + TARGET + '"; ob_end_clean();'
+  : 'require "/site/' + TARGET + '";';
+await php.exec('(function () { try { ' + prelude + ' file_put_contents("/site/.lint.txt", "OK: ' + TARGET + ' loads clean"); } catch (Throwable $e) { file_put_contents("/site/.lint.txt", "FAIL: " . get_class($e) . ": " . $e->getMessage() . " @ line " . $e->getLine()); } })();');
 let verdict = 'FAIL: nothing was written — a fatal at compile time (a redeclaration, or a variable both a parameter and a closure capture)';
 try { verdict = (await php.readFile('/site/.lint.txt', { encoding: 'utf8' })).slice(0, 500); } catch (error) { /* keep the default */ }
 console.log(verdict);

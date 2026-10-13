@@ -1,7 +1,8 @@
 <?php
 /**
- * Shared shell for the public site: the drifting bubbles, the announcement
- * strip, the live event banner, the navigation and the footer.
+ * Shared shell for the public site: the two slow glows behind everything, the
+ * announcement strip, the live event banner, the floating navigation and the
+ * footer with both logos.
  *
  * @var string $content   Rendered page body.
  * @var array  $site      Club copy from the store.
@@ -19,6 +20,7 @@ $routeClass = preg_replace('/[^a-z0-9-]/', '', strtolower(explode('/', $route)[0
 $bodyClass = trim(($bodyClass ?? '') . ' page-' . $routeClass);
 $clubName  = (string) ($site['clubName'] ?? 'Mindful Tattva');
 $department = (string) ($site['department'] ?? '');
+$university = (string) ($site['universityName'] ?? '');
 $fullTitle = $pageTitle ? $pageTitle . ' · ' . $clubName : $clubName . ' · Psychology Club';
 $description = (string) ($site['intro'] ?? '');
 $logo      = mt_safe_image($site['logoImage'] ?? '') ?: '/assets/photos/mt-club-logo.jpg';
@@ -26,8 +28,9 @@ $instagram = mt_safe_url($site['instagramUrl'] ?? '');
 $email     = trim((string) ($site['email'] ?? ''));
 $phone     = trim((string) ($site['clubPhone'] ?? ''));
 $address   = trim((string) ($site['address'] ?? ''));
-$mapUrl    = 'https://www.google.com/maps/search/?api=1&query=' . urlencode($address !== '' ? $address : (string) ($site['universityName'] ?? ''));
+$mapUrl    = 'https://www.google.com/maps/search/?api=1&query=' . urlencode($address !== '' ? $address : $university);
 $banner    = mt_featured_event($db);
+$year      = date('Y');
 
 $nav = [
     ['/#about', 'About'],
@@ -50,8 +53,8 @@ $nav = [
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><?= e($fullTitle) ?></title>
   <meta name="description" content="<?= e(mb_substr($description, 0, 180)) ?>">
-  <meta name="theme-color" content="#403634">
-  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#08080b">
+  <meta name="color-scheme" content="dark">
   <link rel="icon" href="/assets/img/favicon-48.png" sizes="48x48" type="image/png">
   <link rel="icon" href="/assets/img/favicon-32.png" sizes="32x32" type="image/png">
   <link rel="icon" href="/assets/img/favicon-192.png" sizes="192x192" type="image/png">
@@ -65,29 +68,14 @@ $nav = [
 </head>
 <body class="<?= e($bodyClass) ?>">
 
-  <div class="bubble-field" aria-hidden="true">
-    <span class="bubble bubble-a"></span><span class="bubble bubble-b"></span><span class="bubble bubble-c"></span>
-    <span class="bubble bubble-d"></span><span class="bubble bubble-e"></span><span class="bubble bubble-f"></span>
-    <span class="bubble bubble-g"></span>
-  </div>
-  <div class="gold-thread" aria-hidden="true">
-    <span class="thread-rail"></span><span class="thread-fill" id="threadFill"></span>
-    <span class="thread-bead" id="threadBead"></span>
+  <?php /* Two slow glows and a grain sheet. They sit behind every word, are
+           never in front of anything, and go completely still for a visitor
+           who has asked their device for less movement. */ ?>
+  <div class="ambient" aria-hidden="true">
+    <span class="ambient-blob ambient-blob-a"></span>
+    <span class="ambient-blob ambient-blob-b"></span>
   </div>
   <div class="read-progress" aria-hidden="true"><i id="readProgress"></i></div>
-
-  <?php /* The club's horses, behind every public page. A still frame is always
-           there and the compressed clip plays over it — muted, in a loop —
-           pinned to the window, so the herd keeps running while the visitor
-           scrolls and every block reads through a thin film of its own paper.
-           It is never dark and never in front of a word. */ ?>
-  <div class="hero-media" aria-hidden="true">
-    <img class="hero-still" id="heroStill" src="/assets/media/horses-running-poster.jpg" alt="" decoding="async">
-    <video class="hero-video" id="heroVideo" muted loop playsinline autoplay preload="auto"
-           poster="/assets/media/horses-running-poster.jpg" tabindex="-1">
-      <source src="/assets/media/horses-running.mp4" type="video/mp4">
-    </video>
-  </div>
 
   <div class="site-shell">
     <?php if (trim((string) ($site['announcement'] ?? '')) !== ''): ?>
@@ -131,24 +119,48 @@ $nav = [
 
     <a class="to-top" id="toTop" href="#top" aria-label="Back to top">↑</a>
 
+    <?php /* The foot of every page: the club's name running, then everything
+             the club asked to keep here — the club's own crest, the
+             university's mark with its campus address, and the copyright. */ ?>
     <footer class="footer">
-      <div class="container footer-row">
-        <a class="brand" href="/">
-          <span class="brand-mark" id="footerMark"><img src="<?= e($logo) ?>" alt="<?= e($clubName) ?> logo" loading="lazy" decoding="async"></span>
-          <span class="brand-name" id="footerName"><?= e($clubName) ?></span>
-        </a>
-        <div class="footer-institution">
-          <img src="/assets/img/university-logo.png" alt="<?= e((string) ($site['universityName'] ?? '')) ?>" loading="lazy" decoding="async">
-          <span><?= e($department) ?> · Psychology Club</span>
+      <div class="container">
+        <span class="footer-name" aria-hidden="true"><?= e($clubName) ?></span>
+        <div class="footer-row">
+          <a class="brand" href="/">
+            <span class="brand-mark" id="footerMark"><img src="<?= e($logo) ?>" alt="<?= e($clubName) ?> logo" loading="lazy" decoding="async"></span>
+            <span class="brand-name" id="footerName"><?= e($clubName) ?></span>
+          </a>
+          <div class="footer-institution">
+            <img src="/assets/img/university-logo.png" alt="<?= e($university) ?>" loading="lazy" decoding="async">
+            <span><?= e($department) ?><?= $department !== '' ? ' · ' : '' ?>Psychology Club<?= $university !== '' ? ' · ' . e($university) : '' ?></span>
+          </div>
+          <div class="footer-links">
+            <a href="/members">Members</a>
+            <a href="/gallery">Gallery</a>
+            <a href="/calendar">Calendar</a>
+            <?php if ($instagram !== ''): ?><a href="<?= e($instagram) ?>" target="_blank" rel="noreferrer noopener">Instagram</a><?php endif; ?>
+            <a href="#top">Back to top ↑</a>
+          </div>
         </div>
-        <div class="footer-links">
-          <a href="/members">Members</a>
-          <a href="/gallery">Gallery</a>
-          <a href="/calendar">Calendar</a>
-          <a href="#top">Back to top ↑</a>
+
+        <div class="footer-logos">
+          <img class="footer-logo-club" src="<?= e($logo) ?>" alt="<?= e($clubName) ?> logo" loading="lazy" decoding="async">
+          <img src="/assets/img/university-logo.png" alt="<?= e($university) ?>" loading="lazy" decoding="async">
+          <img src="/assets/img/csmu-seal.png" alt="<?= e($university) ?> seal" loading="lazy" decoding="async">
         </div>
+        <?php if ($address !== ''): ?>
+          <div class="footer-address">
+            <?= e($university) ?> · <?= e($address) ?><?php if ($email !== ''): ?> · <a href="mailto:<?= e($email) ?>"><?= e($email) ?></a><?php endif; ?><?php if ($phone !== ''): ?> · <?= e($phone) ?><?php endif; ?>
+          </div>
+        <?php endif; ?>
+
+        <div class="footer-legal">
+          <span>© <?= e($clubName) ?> <?= e($year) ?></span>
+          <span><?= e($university) ?></span>
+          <span>All rights reserved</span>
+        </div>
+        <div class="creator-credit"><span class="credit-heart" aria-hidden="true">♥</span> Made with love by Mohd Shafiq · Vice President</div>
       </div>
-      <div class="container creator-credit"><span class="credit-heart" aria-hidden="true">♥</span> Made with love by Mohd Shafiq · Vice President</div>
     </footer>
   </div>
 

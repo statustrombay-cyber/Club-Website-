@@ -18,6 +18,10 @@ import { PhpNode } from 'php-wasm/PhpNode';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..');
+/* read once, and used by the design checks all through this file */
+const appCss = fs.readFileSync(path.join(ROOT, 'assets/app.css'), 'utf8');
+const appJs = fs.readFileSync(path.join(ROOT, 'assets/app.js'), 'utf8');
+const layoutSource = fs.readFileSync(path.join(ROOT, 'views/layout.php'), 'utf8');
 const SKIP = new Set(['.git', 'node_modules', '.arena', 'backup-original', 'data/logs', 'data/sessions', 'data/backups']);
 
 function collect(dir, base = '') {
@@ -206,8 +210,19 @@ console.log('\n— the public site —');
 const home = await get('/');
 ok('GET / returns 200', home.status === 200, 'status ' + home.status + ' ' + String(home.body).slice(0, 200));
 ok('the home page renders without PHP errors', clean(home.body), phpErrors(home.body));
-ok('the original design is back: the drifting bubbles', home.body.includes('bubble-field') && home.body.includes('bubble bubble-e'));
-ok('the page shell and the bubbles are there', home.body.includes('site-shell') && home.body.includes('bubble-field'));
+ok('the opening line is the club’s name in wide letters', home.body.includes('class="display-air" id="heroTagline"') && home.body.includes('Mindful Tattva'));
+ok('the page shell carries the two slow glows and no drifting bubbles', home.body.includes('site-shell') && home.body.includes('ambient-blob') && !home.body.includes('bubble-field'));
+ok('the four rings are on the page, waiting to close in', ['ring-1', 'ring-2', 'ring-3', 'ring-4'].every((ring) => home.body.includes('ring ' + ring)));
+ok('the rings tighten as the visitor scrolls, and the script carries the position',
+  /var\(--ring\)/.test(appCss) && /\.ring-4 \{ --i: 4; \}/.test(appCss) && appJs.includes('setupRings') && appJs.includes("setProperty('--ring'"));
+ok('the club’s name runs down the page', home.body.includes('name-runner') && home.body.includes('name-track') && /\.name-track \{[^}]*animation: nameRunDown/.test(appCss) && /@keyframes nameRunUp/.test(appCss));
+ok('the club’s name also runs across, in a band that never shows its seam', home.body.includes('values-marquee') && /\.values-track \{[^}]*animation: marqueeRun/.test(appCss));
+ok('the four steps and the four wide feature lines are on the page', (home.body.match(/class="step-number"/g) || []).length === 4 && (home.body.match(/class="feature-block"/g) || []).length === 4);
+ok('the page closes on the invitation panel, then the club’s name in the foot', home.body.includes('cta-panel') && home.body.includes('footer-name'));
+ok('the club’s logos and the copyright stand at the foot of every page',
+  home.body.includes('footer-logos') && home.body.includes('university-logo.png') && home.body.includes('csmu-seal.png')
+  && /© Mindful Tattva 2026/.test((await get('/gallery')).body)
+  && /© Mindful Tattva 2026/.test((await get('/members')).body));
 ok('nothing darkens the page as it scrolls', !home.body.includes('depth-overlay') && !fs.readFileSync(path.join(ROOT, 'assets/app.css'), 'utf8').includes('depth-overlay'));
 ok('the announcement strip is written by the backend', home.body.includes('class="announcement"') && home.body.includes('reflection, connection'));
 ok('the live event banner shows the published event', home.body.includes('id="eventBanner"') && home.body.includes('Mindful Tattva Welcome Circle'));
@@ -705,9 +720,6 @@ ok('the deployment check loads nothing of its own', !/(href|src)="\/assets\//.te
 ok('the deployment check is noindex', /noindex/.test(healthPage.body));
 
 console.log('\n— the design contracts (motion, alignment, safety) —');
-const appCss = fs.readFileSync(path.join(ROOT, 'assets/app.css'), 'utf8');
-const appJs = fs.readFileSync(path.join(ROOT, 'assets/app.js'), 'utf8');
-const layoutSource = fs.readFileSync(path.join(ROOT, 'views/layout.php'), 'utf8');
 const vm = await import('node:vm');
 for (const asset of ['assets/app.js', 'assets/manage.js']) {
   const code = fs.readFileSync(path.join(ROOT, asset), 'utf8');
@@ -716,7 +728,8 @@ for (const asset of ['assets/app.js', 'assets/manage.js']) {
 }
 ok('reveals are hidden only under html.js', /html\.js \.scroll-reveal \{/.test(appCss) && !/^\s*\.scroll-reveal \{ opacity: 0/m.test(appCss));
 ok('a script that never arrives cannot hide content', /classList\.remove\('js'\)/.test(layoutSource));
-ok('the bubbles keep their motion', ['bubbleDrift', 'orbitSpin', 'psiPulse', 'fadeIn', 'breathe', 'stickerPulse'].every((name) => appCss.includes('@keyframes ' + name)));
+ok('the new design keeps its own motion', ['blobDrift', 'grainShift', 'nameRunDown', 'nameRunUp', 'marqueeRun', 'orbitSpin', 'psiPulse', 'fadeIn', 'breathe'].every((name) => appCss.includes('@keyframes ' + name)));
+ok('the old dressing is gone from the stylesheet and the script', !/\.bubble\b/.test(appCss) && !appCss.includes('.gold-thread') && !appJs.includes('setupGoldThread') && !appJs.includes('threadBead'));
 ok('the mobile menu is styled', /\.nav-links\.open/.test(appCss) || /nav-links\.open/.test(appCss));
 ok('the pass prints as the pass', /@media print/.test(appCss) && /\.pass-ticket/.test(appCss));
 ok('the payment card and the upload row are styled', appCss.includes('.pay-card') && appCss.includes('.upload-row') && appCss.includes('.status-chip'));
@@ -726,7 +739,7 @@ ok('the register, the pass and the check page fit a phone',
   && /\.register-submit \{[^}]*width: 100%/.test(appCss)
   && /\.pass-facts \{[^}]*grid-template-columns: 1fr/.test(appCss)
   && /\.register-grid \{[^}]*grid-template-columns: 1fr/.test(appCss));
-ok('the gold thread and its bead are styled and driven by the script', appCss.includes('.gold-thread') && appJs.includes('setupGoldThread') && appJs.includes('threadBead'));
+ok('the rings are styled and the script drives them', appCss.includes('.ring-stage') && appCss.includes('.ring-core') && appJs.includes('setupRings'));
 ok('the calendar keeps its own page styles', appCss.includes('.calendar-months') && appCss.includes('.calendar-month'));
 
 /* ---- the phone layout, checked against the stylesheet itself -------------
@@ -739,12 +752,15 @@ ok('nothing hides the menu links on a phone',
   !/\.nav-links a[^{]*\{[^}]*display\s*:\s*none/.test(appCss) && !/\.nav-links\s+a:not\(\.nav-action\)\s*\{[^}]*display\s*:\s*none/.test(appCss));
 ok('the hamburger panel lists every link as a tappable row',
   /\.nav-links a \{[^}]*display: block/.test(appCss) && /\.nav-links a \{[^}]*padding: 12px/.test(appCss));
+ok('the hamburger button appears on a phone and the panel opens under it',
+  /\.menu-button \{ display: grid/.test(appCss) && /\.nav-links\.open \{ display: flex/.test(appCss) && appJs.includes("nav.classList.toggle('open'"));
 ok('every wide block stacks on a phone',
-  phoneBlocks.some(([, , body]) => /\.hero-grid, \.about-grid, \.psyche-grid, \.history-wrap, \.contact-grid,\s*\n?\s*\.hero-art \{ grid-template-columns: 1fr/.test(body))
-  && /\.event-card \{ grid-template-columns: 1fr/.test(appCss)
-  && /\.timeline-item \{ grid-template-columns: 86px 1fr/.test(appCss));
+  /@media \(max-width: 1000px\)/.test(appCss) && phoneBlocks.length >= 1
+  && /\.hero-grid, \.psyche-grid, \.about-grid, \.history-wrap, \.contact-grid, \.register-grid,/.test(appCss)
+  && /\.split-section, \.gallery-shell, \.members-hero-grid, \.pass-body \{ grid-template-columns: minmax\(0, 1fr\); \}/.test(appCss)
+  && /\.section-head \{ grid-template-columns: minmax\(0, 1fr\);/.test(appCss));
 ok('a long word cannot push a column off the screen',
-  /\.hero-grid > \*, \.about-grid > \*/.test(appCss) && /h1, h2, h3, \.display \{ overflow-wrap: break-word/.test(appCss));
+  /\.hero-grid > \*, \.about-grid > \*/.test(appCss) && /h1, h2, h3, \.display, \.display-air \{ overflow-wrap: break-word/.test(appCss));
 ok('the calendar headline is light on its dark banner',
   /\.calendar-hero h1 \{[^}]*color:\s*#fffaf1/.test(appCss));
 
@@ -806,7 +822,7 @@ ok('the stage lays the same photo softly behind the picture, and it drifts',
   /\.gallery-stage-image\.has-image:before \{[^}]*animation: fillDrift/.test(appCss)
   && /@keyframes fillDrift/.test(appCss));
 ok('a photo tile keeps its caption readable over any picture',
-  /\.gallery-item:after \{[^}]*linear-gradient\(0deg, rgba\(30,18,38,\.62\)/.test(appCss)
+  /\.gallery-item:after \{[^}]*linear-gradient\(0deg, rgba\(30,\s*18,\s*38,\s*\.62\)/.test(appCss)
   && /\.gallery-caption \{[^}]*z-index: 3/.test(appCss));
 /* clean up the two extra photos so the site stays exactly as the club left it */
 await request({ uri: '/api/gallery/' + ((asJson(orderOne).item || {}).id || 'x'), method: 'DELETE', ...FRESH });
@@ -847,25 +863,22 @@ ok('every condition is a short line, none is a paragraph',
 /* psi stays, but only in its two homes: the lens section and the album */
 ok('the psi sign is kept where it means something',
   homeAlbums.body.includes('psyche-psi') && (await get('/gallery')).body.includes('mini-psi'));
-ok('small planets turn around the circle of words in the lens',
-  (homeAlbums.body.match(/loop-orbit/g) || []).length >= 3
-  && !/loop-orbit[^>]*><img/.test(homeAlbums.body)
-  && /\.loop-orbit \{[^}]*animation: orbitTurn/.test(appCss)
-  && /\.loop-orbit:after \{[^}]*radial-gradient/.test(appCss));
-ok('the circle of words sits at the left, clear of the screen edge',
-  /\.curiosity-loop \{[^}]*margin: 42px 0 6px 6px/.test(appCss)
-  && /\.curiosity-loop b \{[^}]*transform: rotate\(-12deg\)/.test(appCss));
-ok('every planet rides its own ring: same box, same centre, same angle and speed',
-  /\.curiosity-loop:before, \.curiosity-loop:after, \.loop-orbit \{[^}]*left: 50%; top: 50%/.test(appCss)
-  && /\.curiosity-loop:before, \.curiosity-loop:after, \.loop-orbit \{[^}]*margin-left: calc\(var\(--w\) \/ -2\)/.test(appCss)
-  && /\.curiosity-loop:before \{ --w: 208px; --h: 148px; --start: 55deg; --speed: 19s; \}/.test(appCss)
-  && /\.loop-orbit-a \{ --w: 208px; --h: 148px; --start: 55deg; --speed: 19s;/.test(appCss)
-  && /\.loop-orbit-b \{ --w: 150px; --h: 214px; --start: -34deg; --speed: 26s;/.test(appCss)
-  /* an auto margin cannot centre a box wider than its circle — that was the
-     bug that left the planets orbiting beside their rings */
-  && !/\.loop-orbit \{[^}]*inset: 0; margin: auto/.test(appCss));
+ok('the lens is a stage of four rings around the psi and the club’s name',
+  (homeAlbums.body.match(/class="ring ring-/g) || []).length === 4
+  && /\.ring \{[^}]*border-radius: 50%/.test(appCss)
+  && /\.ring::after \{[^}]*box-shadow: 0 0 16px rgba\(232, 189, 133, \.9\)/.test(appCss)
+  && /\.ring-core \.psi \{[^}]*color: var\(--gold\)/.test(appCss));
+ok('the words of the stage sit in the middle, above the rings',
+  /\.ring-stage \{[^}]*display: grid; place-items: center/.test(appCss)
+  && /\.ring-stage \.ring-core \{[^}]*z-index: 2/.test(appCss)
+  && /\.ring \{[^}]*position: absolute/.test(appCss));
+ok('each ring knows its own number, and the gaps close as the page moves',
+  ['--i: 1', '--i: 2', '--i: 3', '--i: 4'].every((flag) => appCss.includes(flag))
+  /* every ring is one element: the same expression decides its width and its
+     height, so a ring can never become an oval or sit off its own centre */
+  && /\.ring \{[^}]*width: calc\(\(28% \+ var\(--i\) \* 15%\) - var\(--ring\) \* var\(--i\) \* 4\.5%\)/.test(appCss)
+  && /\.ring \{[^}]*padding-bottom: calc\(\(28% \+ var\(--i\) \* 15%\) - var\(--ring\) \* var\(--i\) \* 4\.5%\)/.test(appCss));
 ok('nothing else was drawn between the rings', !/loop-thread|loop-spark/.test(appCss) && !homeAlbums.body.includes('loop-thread'));
-ok('the words of the lens stay above the rings and the planets', /\.curiosity-loop b \{[^}]*z-index: 3/.test(appCss) && /\.loop-orbit \{[^}]*z-index: 2/.test(appCss));
 ok('one golden line runs through the beginning, our why and the next chapter',
   homeAlbums.body.includes('timeline-spine')
   && /\.timeline-spine \{[^}]*overflow: hidden/.test(appCss)
@@ -889,9 +902,9 @@ ok('a gold bar across the top shows how much of the page is read',
 ok('the way back up appears once the page has been read a little',
   layoutSource.includes('id="toTop"') && /\.to-top\.is-on \{[^}]*opacity: 1/.test(appCss)
   && appJs.includes("toTop.classList.toggle('is-on', y > 700)"));
-ok('the top bar reads a little more solid once the visitor has scrolled',
-  /\.nav:before \{[^}]*background: rgba\(255,250,241,\.16\)/.test(appCss)
-  && /body\.is-scrolled \.nav:before \{[^}]*rgba\(255,250,241,\.34\)/.test(appCss)
+ok('the top bar settles once the visitor has scrolled',
+  /\.nav-wrap\.is-scrolled \.nav \{[^}]*background: rgba\(8, 8, 11, \.9\)/.test(appCss)
+  && /\.nav \{[^}]*backdrop-filter: blur\(18px\)/.test(appCss)
   && appJs.includes("classList.toggle('is-scrolled', y > 40)"));
 ok('the club area never carries the public dressing: it has its own body',
   fs.readFileSync(path.join(ROOT, 'views/dashboard.php'), 'utf8').includes('<body class="dash-body">')
@@ -900,11 +913,13 @@ ok('the club area never carries the public dressing: it has its own body',
 ok('the club timeline keeps a slow golden heartbeat, and the photos breathe on hover',
   /\.timeline-dot \{[^}]*animation: dotPulse/.test(appCss)
   && /@keyframes dotPulse/.test(appCss)
-  && /\.gallery-item:hover \.gallery-visual\.has-image, \.archive-card:hover \.archive-image \{ transform: scale\(1\.045\)/.test(appCss)
-  && /\.nav-action:after, \.solid-button:after \{/.test(appCss));
-ok('the hero’s own words arrive one line after another',
-  /\.hero \.fade-in > \* \{ animation: fadeIn/.test(appCss)
-  && /\.hero \.fade-in > \*:nth-child\(3\) \{ animation-delay: \.2s/.test(appCss));
+  && /\.gallery-item:hover img \{ transform: scale\(1\.06\)/.test(appCss)
+  && /\.nav-action:after, \.solid-button:after, \.btn-solid:after \{/.test(appCss));
+ok('the words arrive one after another: the hero lifts in, the statements word by word',
+  /\.fade-in \{[^}]*opacity: 0/.test(appCss)
+  && /html\.js \.reveal-words \.rw \{[^}]*opacity: 0/.test(appCss)
+  && /\.reveal-words\.is-visible \.rw \{/.test(appCss)
+  && appJs.includes('setupRevealWords') && appJs.includes('word.style.transitionDelay'));
 ok('the club emblem appears between sections on the home page',
   (homeAlbums.body.match(/logo-medallion/g) || []).length >= 2);
 ok('the club emblem sits in the members stage, and the frame script is live',
@@ -912,7 +927,7 @@ ok('the club emblem sits in the members stage, and the frame script is live',
 ok('the club emblem is faded into the member cards instead of psi',
   /\.member-card:after \{[^}]*mt-club-logo/.test(appCss) && !/\.member-card:after \{[^}]*content: 'Ψ'/.test(appCss));
 ok('the page skips work for what is off screen (a faster scroll)',
-  /\.section, \.gallery-item[^{]*\{[^}]*content-visibility: auto/.test(appCss));
+  /\.event-card, \.calendar-item, \.team-card, \.member-card, \.gallery-item \{ content-visibility: auto/.test(appCss));
 ok('the pictures below the fold wait until they are reached',
   (fs.readFileSync(path.join(ROOT, 'views/public/members.php'), 'utf8').match(/loading="lazy"/g) || []).length >= 1
   && (fs.readFileSync(path.join(ROOT, 'views/layout.php'), 'utf8').match(/loading="lazy"/g) || []).length >= 2);
@@ -924,61 +939,10 @@ ok('a hidden element can never be shown by a later style rule',
   /\[hidden\] \{ display: none !important; \}/.test(appCss));
 ok('the photo frame image carries no empty source to paint at load',
   !/id="photoFrameImage"[^>]*src=""/.test(homeAlbums.body) && !/id="photoFrameImage"[^>]*src=""/.test((await get('/gallery')).body));
-ok('the photo frame backdrop is warm, not black',
-  /\.photo-frame \{[^}]*background: rgba\(76,58,64/.test(appCss)
-  && !/#241d20/.test(appCss));
+ok('the photo frame opens on the club’s own dark, so the picture is the only light',
+  /\.photo-frame \{[^}]*background: rgba\(4, 4, 7, \.9\)/.test(appCss)
+  && /\.photo-frame-card \{[^}]*border: 1px solid var\(--line-strong\)/.test(appCss));
 
-/* ------------------------------------------------ the herd on the front page
-   The club's horses: one compressed clip, a still frame that is always there,
-   both pinned behind the page. Nothing dark, nothing clickable, on the front
-   page only — and the server must hand the clip out as video, in slices. */
-const clipPath = path.join(ROOT, 'assets/media/horses-running.mp4');
-const clip = fs.existsSync(clipPath) ? fs.readFileSync(clipPath) : Buffer.alloc(0);
-
-/** Read the boxes of an mp4 so the clip can be checked for what it really is. */
-function mp4Boxes(buffer, from, to) {
-  const boxes = [];
-  let at = from;
-  while (at + 8 <= to) {
-    const size = buffer.readUInt32BE(at);
-    const type = buffer.toString('latin1', at + 4, at + 8);
-    if (size < 8 || at + size > to) break;
-    boxes.push({ type, at, size, end: at + size });
-    at += size;
-  }
-  return boxes;
-}
-const topBoxes = mp4Boxes(clip, 0, clip.length);
-const moov = topBoxes.find((box) => box.type === 'moov');
-const moovBoxes = moov ? mp4Boxes(clip, moov.at + 8, moov.end) : [];
-const mvhd = moovBoxes.find((box) => box.type === 'mvhd');
-const clipSeconds = mvhd ? clip.readUInt32BE(mvhd.at + 24) / clip.readUInt32BE(mvhd.at + 20) : 0;
-let clipW = 0;
-let clipH = 0;
-for (const trak of moovBoxes.filter((box) => box.type === 'trak')) {
-  const tkhd = mp4Boxes(clip, trak.at + 8, trak.end).find((box) => box.type === 'tkhd');
-  if (tkhd && clip[tkhd.at + 8] === 0) {
-    clipW = clip.readUInt32BE(tkhd.at + 84) / 65536;
-    clipH = clip.readUInt32BE(tkhd.at + 88) / 65536;
-  }
-}
-ok('the herd is the club\'s own footage, enhanced — not a squeezed copy',
-  clip.length > 8 * 1024 * 1024 && clip.length < 12 * 1024 * 1024
-  && fs.existsSync(path.join(ROOT, 'assets/media/horses-running-poster.jpg'))
-  && fs.readdirSync(ROOT).every((name) => !/\.mp4$/i.test(name)),
-  Math.round(clip.length / 1024) + ' KB');
-ok('the clip is a real mp4 that browsers can start straight away',
-  clip.slice(4, 8).toString('latin1') === 'ftyp'
-  && topBoxes.some((box) => box.type === 'moov') && topBoxes.some((box) => box.type === 'mdat')
-  && topBoxes.findIndex((box) => box.type === 'moov') < topBoxes.findIndex((box) => box.type === 'mdat'));
-ok('the clip is enhanced to 1440x960 and runs through several locations',
-  clipSeconds > 17 && clipSeconds < 22 && clipW === 1440 && clipH === 960,
-  clipW + 'x' + clipH + ', ' + clipSeconds.toFixed(1) + 's');
-ok('a clip that stalls is nudged, reloaded, and carries on where it stopped',
-  appJs.includes('addEventListener(\'loadedmetadata\'')
-  && appJs.includes("addEventListener('stalled'")
-  && appJs.includes('resumeAt = Math.max(0, clock - 0.2)')
-  && appJs.includes('video.load()'));
 /* The gallery is one strip in the club's own order, with no categories. */
 const galleryBody = (await get('/gallery')).body;
 ok('the gallery has no event albums or category chips any more',
@@ -1008,50 +972,18 @@ ok('the slideshow piles every photo in order and turns by itself',
   /const slides = \(readJson\('gallery-data'\)\.slides \|\| \[\]\)/.test(appJs)
   && /slides\.length < 2\) return;/.test(appJs) && /go\(index \+ 1\); \}, 4800\)/.test(appJs));
 
-ok('the front page plays the herd, muted and looping, behind everything',
-  /<video[^>]*id="heroVideo"[^>]*muted[^>]*loop[^>]*playsinline[^>]*autoplay/.test(homeAlbums.body)
-  && homeAlbums.body.includes('/assets/media/horses-running.mp4')
-  && homeAlbums.body.includes('id="heroStill"'));
-ok('the herd runs behind every public page',
-  (await Promise.all(['/', '/gallery', '/calendar', '/members', '/register', '/pass', '/verify']
-    .map((route) => get(route)))).every((page) => page.body.includes('id="heroVideo"') && page.body.includes('id="heroStill"')));
-ok('the club\'s own area stays plain: no video behind the dashboard',
-  !(await get('/dashboard')).body.includes('id="heroVideo"'));
-ok('the herd is behind the words and the bubbles, and cannot be clicked',
-  /\.hero-still, \.hero-video \{[^}]*position: fixed/.test(appCss)
-  && /\.hero-still \{ z-index: -2; \}/.test(appCss) && /\.hero-video \{ z-index: -1; \}/.test(appCss)
-  && /\.hero-still, \.hero-video \{[^}]*pointer-events: none/.test(appCss));
-ok('the veil over the herd is warm cream, never dark',
-  /\.hero-veil \{[^}]*background:[^}]*rgba\(247,242,237/.test(appCss)
-  && !/\.hero-(still|video|veil)[^{]*\{[^}]*background: *#[0-5]/.test(appCss));
-ok('less motion means the still frame instead of the clip',
-  /@media \(prefers-reduced-motion: reduce\) \{\s*\.hero-video \{ display: none/.test(appCss)
-  && appJs.includes('saveData') && appJs.includes('video.hidden = true'));
-ok('a clip that cannot play leaves the still frame, never a blank box',
-  appJs.includes("video.addEventListener('error', drop)")
-  && appJs.includes('video.hidden = true') && layoutSource.includes('id="heroStill"'));
-ok('the herd never stops on its own — nothing pauses it while the page is open',
-  !/observe\(hero\)/.test(appJs) && appJs.includes('window.setInterval(function () {')
-  && appJs.includes('video.currentTime = clock + 0.1') && appJs.includes('video.load()')
-  && /document\.hidden\) pause\(\); else play\(\)/.test(appJs));
-ok('no block of the page is a solid wall: the herd shows through all of them',
-  /\.site-shell main > section:not\(\.hero-with-video\)[^{]*,\s*\n\.site-shell main > div:not\(\.photo-frame\) \{\s*background-color: rgba\(var\(--film-rgb\), \.69\);/.test(appCss)
-  && !/main > section:not\(\.hero-with-video\)[^{]*\{[^}]*background(-color)?: var\(--cream\)/.test(appCss));
-ok('the film opens up at the edges, where no words are',
-  /@media \(min-width: 1150px\)/.test(appCss) && /rgba\(var\(--film-rgb\), \.14\) 0%/.test(appCss));
-ok('the dark blocks stay dark glass, with the herd moving behind them',
-  /\.site-shell main > \.section-plum \{ background: rgba\(var\(--film-deep-rgb\), \.76\); \}/.test(appCss)
-  && /main > \.psyche-section \{[^}]*rgba\(59,39,69,\.78\)/.test(appCss));
-ok('the closest-set text keeps more paper: cards are thinner, not opaque',
-  /\.event-card, \.calendar-item, \.club-panel, \.fact-card \{ background: rgba\(255,250,241,\.42\); \}/.test(appCss));
-ok('the softer grey and the accent labels were deepened for the film',
-  /--ink-soft: #463f3b;/.test(appCss) && /--terracotta-ink: #54291a;/.test(appCss)
-  && !/color: var\(--terracotta\);/.test(appCss.slice(appCss.indexOf('.eyebrow'), appCss.indexOf('.eyebrow') + 200)));
-ok('the top bar no longer hides the herd',
-  /\.nav:before \{[^}]*background: rgba\(255,250,241,\.16\)/.test(appCss));
-ok('the herd layer sits outside the page shell, so the bubbles drift over it',
-  layoutSource.indexOf('heroVideo') > 0 && layoutSource.indexOf('heroVideo') < layoutSource.indexOf('site-shell'));
-ok('the server hands the clip out as video, in slices',
+/* The herd is gone. The club asked for it out when the design changed, so the
+   clip and its still are not on any page, not in the shell and not in the
+   script — and the club area never carried them either. The server still knows
+   how to hand a video out, which is what an uploaded clip would need. */
+ok('no page carries the herd any more',
+  !/heroVideo|heroStill|horses-running/.test(layoutSource)
+  && !/heroVideo|heroStill|horses-running/.test(appJs)
+  && !/\.hero-video|\.hero-still/.test(appCss)
+  && !(await get('/dashboard')).body.includes('heroVideo'));
+ok('the club\'s own area stays plain, with no film behind it',
+  (await get('/dashboard')).body.includes('dash-body'));
+ok('the server hands a video out as video, in slices',
   /\.mp4': 'video\/mp4'/.test(fs.readFileSync(path.join(ROOT, 'tools/preview-server.mjs'), 'utf8'))
   && /Content-Range/.test(fs.readFileSync(path.join(ROOT, 'tools/preview-server.mjs'), 'utf8'))
   && /AddType video\/mp4/.test(fs.readFileSync(path.join(ROOT, '.htaccess'), 'utf8')));
@@ -1092,7 +1024,7 @@ ok('every page still works with the design files gone', (await get('/calendar'))
 await php.writeFile('/site/assets/app.css', cssBackup);
 await php.writeFile('/site/assets/app.js', jsBackup);
 const restored = await get('/');
-ok('the real stylesheet comes back once the files are restored', !/id="mt-baseline"/.test(restored.body) && /bubble-field/.test(restored.body));
+ok('the real stylesheet comes back once the files are restored', !/id="mt-baseline"/.test(restored.body) && /ambient-blob/.test(restored.body));
 
 console.log('\n— clean output check —');
 for (const route of ['/', '/gallery', '/calendar', '/members', '/register?event=event-welcome-circle', '/dashboard', '/does-not-exist']) {

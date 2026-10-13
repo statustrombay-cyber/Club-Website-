@@ -263,8 +263,15 @@ for (const [route, expect] of [['/', 'Mindful'], ['/gallery', 'gallery'], ['/cal
 }
 const noStudio = await req('/');
 check('no studio or dashboard words on the public page', !/(content studio|dashboard|backend)/i.test(String(noStudio.body).replace(/<style[\s\S]*?<\/style>/g, '').replace(/<script[\s\S]*?<\/script>/g, '')));
-const video = await req('/assets/media/horses-running.mp4', { headers: { Range: 'bytes=0-99' } });
-check('the herd streams in slices', video.status === 206 && String(video.headers.get('content-range') || '').startsWith('bytes 0-99/'));
+/* The uploaded files and the two marks in the footer are the only binaries the
+   club's own pages need, and a slice request must still work for the day an
+   event poster is a video. */
+for (const asset of ['/assets/app.css', '/assets/img/university-logo.png', '/assets/img/csmu-seal.png', '/assets/photos/mt-club-logo.jpg']) {
+  const file = await req(asset);
+  check('the file ' + asset + ' is served', file.status === 200, 'status ' + file.status);
+}
+const sliced = await req('/assets/app.css', { headers: { Range: 'bytes=0-99' } });
+check('a slice request is answered with the slice', sliced.status === 206 && String(sliced.headers.get('content-range') || '').startsWith('bytes 0-99/'));
 const logout = await req('/api/logout', { method: 'POST', csrf });
 check('signing out works', logout.status === 200);
 const afterLogout = await req('/api/registrations');

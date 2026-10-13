@@ -453,8 +453,14 @@ function mt_pass_pdf(array $registration, array $event, array $site): string
         $x = $margin + 22 + $column * ($columnWidth + 14);
         $rowY = $factY - $row * 38;
         $text($x, $rowY, $label, 7.5, true, $terracotta);
+        /* Every line of the value, not just the first: "Payment pending — the
+           seat is not held yet" must not print as "Payment pending — the".
+           Two lines fit inside the row's 38 points; a third would collide with
+           the row below, and no value the club can write is longer than two. */
         $wrapped = mt_pdf_wrap($value, 10, $columnWidth - 6);
-        $text($x, $rowY - 13, $wrapped[0] ?? '', 10, false, $ink);
+        foreach (array_slice($wrapped, 0, 2) as $lineIndex => $valueLine) {
+            $text($x, $rowY - 13 - $lineIndex * 11, $valueLine, 10, false, $ink);
+        }
     }
 
     /* the QR code: its own frame in the top right of the card body, with the

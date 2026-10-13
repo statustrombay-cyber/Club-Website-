@@ -95,47 +95,43 @@ never looks broken while that is pending:
 
 - **Public website** — hero, about, the psychology lens, club details, history
   timeline, events, calendar, gallery, core team, two registration forms and
-  contact details, with the original drifting bubbles and orbit artwork.
-- **The herd** — the club's own horse footage plays behind every public page,
-  pinned to the window and muted, with the bubbles drifting over it and a warm
-  film of paper over the reading. It is cut from the three clips the club
-  uploaded: 19 seconds, four locations — the white horse leading the golden
-  herd, the black horse galloping through snow, the stampede through water, and
-  the brown herd on the grass ridge. The slow stretches are cut out and the
-  joins decode clean.
-  - It is **enhanced for the screen**: each shot trimmed exactly (not by
-    keyframe), scaled to **1440×960** with Lanczos, given one light unsharp
-    pass, and encoded once at CRF 20 / `veryslow` — about **twice as sharp
-    where it actually lands on a 1600-px window** as the 1080×720 master it
-    replaces, and lighter on the wire: 9.9 MB instead of 12.1 MB
-    (`assets/media/horses-running.mp4`). A still
-  frame (`horses-running-poster.jpg`) sits in the same place and is always
-  there: if the clip cannot play, or the visitor asked for less motion or is on
-  a metered connection, the still frame simply stays and the page is never
-  blank.
-  - It runs **continuously** — nothing pauses it while the page is open — and a
-    watchdog checks about once a second that its clock is still moving: a stall
-    gets a nudge first, and a quiet reload if that was not enough. A reload
-    **carries on from the second the clip stopped** instead of snapping back to
-    the start, and a stall the browser reports itself gets the same treatment
-    straight away, so the herd can never be caught frozen on screen.
-  - The herd runs behind **every public page** (home, gallery, calendar,
-    members, register, pass and verify). Nothing is a solid wall: each block
-    paints a thin film of its own paper and the horses move behind it. The film
-    is dense in the middle column, where the words are, and opens at the outer
-    edges, where there is nothing to read. Every value was measured against all
-    sixteen frames of the loop at its hardest pixels: body text holds 8.4:1 and
-    the softer grey 4.6:1 in the reading column, the cards and panels 5.5:1 or
-    better, cream text on the dark blocks 6.8:1. The film is lighter than it
-    was at first (0.87 → 0.80) because the club asked to see more of the herd;
-    the softer grey (`--ink-soft: #57504c`) and the small-caps labels
-    (`--terracotta-ink: #74452f`) were deepened at the same time, so nothing
-    reads worse than it did on solid paper — the labels improved.
-  - The club's own area stays plain: the dashboard and the sign-in page have
-    their own shell and no video behind them.
-  - The server hands it out as `video/mp4` with **byte-range support** (a real
-    `206` with `Content-Range`), which browsers — Safari above all — require
-    before they will play or seek it.
+  contact details, in **the dark, airy design the club chose**: a near-black
+  page, warm cream type, wide letter-spaced display lines and one gold accent
+  used sparingly.
+  - **The rings** — the psychology lens is four concentric rings with the psi
+    and the club's name steady in the middle. They start far apart and **close
+    in as the section crosses the window**: each ring is one element whose width
+    and height come from the same expression, so a ring can never become an
+    oval or slide off its own centre. The scroll position is carried in one CSS
+    variable (`--ring`) written by the script; with reduced motion the rings
+    simply rest.
+  - **The club's name runs down the page** in three columns — the middle one
+    larger, slower and in the club's gold, the outer two plain and going the
+    other way — masked top and bottom so the words appear and disappear rather
+    than being cut. A second band of the club's own words (**mind · body ·
+    connection · …**) drifts across under the hero: four copies side by side,
+    sliding exactly one copy across, so the loop has no seam on any screen width.
+  - **The words arrive one after another** — the hero lifts in, and the
+    statements are revealed word by word as they are reached. Both are pure CSS
+    driven by a class, so with the script missing, or with reduced motion asked
+    for, every word is simply there.
+  - **Two slow glows** drift behind everything, with a faint grain sheet over
+    them, and they move a little with the scroll. Nothing dark ever covers a
+    word: the glows sit behind the page shell, never in front of it.
+  - A **gold bar across the top of the window** shows how much of the page is
+    read, the floating top bar settles once you have scrolled, a **way back up**
+    appears once the page has been read a bit, a golden streak crosses the hero
+    now and then, a soft light crosses the filled buttons on hover, and the
+    photos breathe in slightly under the pointer.
+  - Everything is CSS: with **reduced motion** asked for, the glows, the bands
+    and the reveals hold still and the page is complete without a single frame
+    of animation.
+- **The same design on every page** — the stylesheet is one system, so the
+  gallery, the calendar (twelve month cards, the months with something in them
+  edged in gold), the member directory, the register form, the pass and the
+  check page all wear the same colours, type and cards. The club's own area
+  (the dashboard and the sign-in page) wears the same dark clothes, with its own
+  shell — no reading bar and no floating pill over the club's work.
 - **Photo gallery** — one flat album, no categories: a photo is a caption and a
   **display order** (order 1 leads, order 2 follows), and the same list is what
   the slideshow turns through. A caption appears only when the club typed one,
@@ -151,35 +147,16 @@ never looks broken while that is pending:
     photo to fill it.
 - **The moving pieces** — the club asked for a site that keeps moving without
   ever hiding a word:
-  - the circle of words in the psychology lens sits at the **left** of its
-    column, far enough in that neither golden ring nor the **small planets**
-    riding them can leave the screen (it used to be pushed right, which cut it
-    at the left edge on a narrow screen);
-  - **each planet is locked to its own ring.** A ring and the planet that rides
-    it are the same box — same width and height, centred the same way, at the
-    same angle, turning at the same speed in the same direction — so the planet
-    travels exactly along the ellipse. (An `auto` margin cannot centre a box
-    wider than its circle: it collapses to nothing, and the planet ends up
-    orbiting *beside* its ring. That was the bug; the numbers are asserted in
-    the tests.)
   - one **golden line runs the height of the club timeline** — through the
     beginning, our why and the next chapter — with a light travelling back and
     forth along it, and the dots keep a slow golden heartbeat;
-  - a thin band of the club's own words (**mind · body · connection · …**)
-    drifts past under the hero — four copies side by side, sliding exactly one
-    copy across (a quarter of the track), so the loop has no seam on any screen
-    width;
-  - a **gold bar across the top of the window** shows how much of the page is
-    read, the top bar frosts a little once you have scrolled, and a **way back
-    up** appears once the page has been read a bit;
-  - a golden streak crosses the hero now and then, the hero's words arrive one
-    line after another, a soft light crosses the filled buttons on hover, the
-    photos breathe in slightly under the pointer, a sheen crosses the lens cards
-    on hover, the softened copy behind every photo drifts slowly, and the
-    drifting bubbles and the scroll-linked gold thread are unchanged.
-  - It is all CSS, so a visitor who asked for **less motion** sees the site
-    still, and nothing here can cover a word.
-  - The club's own area is untouched by all of it: the dashboard and the sign-in
+  - the unreadable leftovers of the older design are gone: no drifting bubbles,
+    no gold thread down the window, no planets orbiting the lens, and **no horse
+    clip** anywhere. The clip and its still frame are not in the repository any
+    more; they are kept in the saved copy of the old design (the tag
+    `design-classic-2026-10-13`), so they can be brought back in one command if
+    the club ever wants them;
+  - the club's own area is untouched by all of it: the dashboard and the sign-in
     page render their own body, so no gold bar and no floating pill ever appear
     over the club's work.
 - **Event registration** — one form per event. The club sets the venue, the
@@ -211,7 +188,10 @@ never looks broken while that is pending:
     to the PDF with PNG predictors (`/DecodeParms << /Predictor 15 … >>`). A
     mark that cannot be read leaves its space empty rather than breaking the
     pass; a picture with transparency is shipped as a print copy without alpha
-    (`assets/img/university-logo-print.png`).
+    (`assets/img/university-logo-print.png` — the university's lockup laid flat
+    on white, card, crest and blue type all kept). Every fact prints **all** of
+    its lines: “Payment pending — the seat is not held yet” is not cut down to
+    its first line, which is what an earlier version of this file did.
 - **Club dashboard** — overview, site copy, statistics, team, events, gallery
   photos, the **event register** and the form inbox, plus JSON export/import and
   one-click backups. Everything the public site shows is edited from here.
@@ -243,7 +223,6 @@ views/                 templates: layout.php, dashboard.php, public/*.php
                        (public/health.php is the /health page — self-contained,
                        it needs no stylesheet or script of its own)
 assets/                app.css, app.js, manage.css, manage.js, images
-assets/media/          the home page's herd: horses-running.mp4 + its still
 data/                  site.json (content), config.php (password), backups/
 uploads/               photos uploaded from the dashboard
 tools/preview-server.mjs      local runner for machines without PHP
@@ -293,7 +272,7 @@ Two notes for the launch:
 ## Development
 
 ```bash
-npm test          # runs the PHP app in isolation and checks 304 behaviours
+npm test          # runs the PHP app in isolation and checks 295 behaviours
 npm run lint      # load one PHP file in that runtime and print why it will not
 ```
 
