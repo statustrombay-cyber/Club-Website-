@@ -252,7 +252,9 @@ node tools/deploy-check.mjs https://mindfultattva.site.je
 ```
 
 `tools/clean-test-data.mjs` removes anything an interrupted run left behind,
-including uploaded files no record points at.
+including uploaded files no record points at. **Stop the preview first**: the
+preview keeps its own copy of the project and writes it back to disk when it
+stops, so a file swept while it is running comes straight back.
 
 Two notes for the launch:
 

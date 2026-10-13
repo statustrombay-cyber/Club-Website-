@@ -278,4 +278,9 @@ for (const [state, name, detail] of results) {
 console.log('='.repeat(64));
 console.log(pass + ' checked and working' + (failures.length ? ', ' + failures.length + ' PROBLEM(S):' : ', nothing failed.'));
 for (const failure of failures) console.log('   · ' + failure);
+/* This walk uploads a photo and a payment proof of its own, and deletes the
+   records it made — the files stay on disk until they are swept, which is why
+   the note below is printed every time rather than left to memory. */
+console.log('   note  the walk left one photo and one proof in uploads/: run');
+console.log('         node tools/clean-test-data.mjs (with the preview stopped) to sweep them.');
 process.exit(failures.length ? 1 : 0);
