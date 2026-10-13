@@ -131,6 +131,27 @@
 @media (max-width: 900px) {
   .dash-shell { grid-template-columns: 1fr; }
   .dash-side { position: static; height: auto; }
-  .dash-nav { grid-auto-flow: column; overflow-x: auto; }
+  /* the sections become one row that scrolls sideways, so every one of them
+     stays reachable on a phone */
+  .dash-nav { grid-auto-flow: column; grid-auto-columns: max-content; overflow-x: auto; padding-bottom: 6px; -webkit-overflow-scrolling: touch; }
+  .dash-nav a { white-space: nowrap; }
   .form-grid { grid-template-columns: 1fr; }
+}
+
+/* Phones: the sign-in card and the club pages keep their margins, the
+   counters and editors go one per row, and the toast spans the screen. */
+@media (max-width: 620px) {
+  .login-wrap { padding: 10svh 16px 26px; align-items: start; }
+  .login-card { padding: 26px 22px; border-radius: 22px; }
+  .login-card h1 { font-size: 1.7rem; }
+  .dash-side { padding: 18px 14px; }
+  .dash-main { padding: 20px 16px 50px; gap: 16px; }
+  .dash-top h1, #panelTitle { font-size: 1.5rem; }
+  .dash-status { width: 100%; justify-content: space-between; }
+  .panel-head { align-items: flex-start; }
+  .panel-head .row-actions { width: 100%; }
+  .panel-head .btn-sm { width: 100%; text-align: center; }
+  .stat-cards, .editor-grid { grid-template-columns: 1fr; }
+  .row-actions { flex-wrap: wrap; }
+  .toast { left: 16px; right: 16px; bottom: 16px; text-align: center; }
 }

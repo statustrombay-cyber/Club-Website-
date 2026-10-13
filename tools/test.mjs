@@ -692,6 +692,19 @@ ok('a long word cannot push a column off the screen',
   /\.hero-grid > \*, \.about-grid > \*/.test(appCss) && /h1, h2, h3, \.display \{ overflow-wrap: break-word/.test(appCss));
 ok('the calendar headline is light on its dark banner',
   /\.calendar-hero h1 \{[^}]*color:\s*#fffaf1/.test(appCss));
+
+/* The club area itself, on a phone: the section strip scrolls sideways, the
+   counters and editors go one per row, and a long word cannot widen a page. */
+const manageCss = fs.readFileSync(path.join(ROOT, 'assets/manage.css'), 'utf8');
+ok('the club section strip scrolls sideways on a phone',
+  /\.dash-nav \{[^}]*grid-auto-columns: max-content[^}]*overflow-x: auto/.test(manageCss)
+  && /\.dash-nav a \{[^}]*white-space: nowrap/.test(manageCss));
+ok('the club cards go one per row on a phone',
+  /\.login-card \{[^}]*padding: 26px 22px/.test(manageCss)
+  && /\.stat-cards, \.editor-grid \{ grid-template-columns: 1fr/.test(manageCss)
+  && /\.dash-main \{[^}]*padding: 20px 16px/.test(manageCss));
+ok('a long word wraps instead of widening the page',
+  /body \{[^}]*overflow-wrap: break-word/.test(appCss));
 ok('the script never hides or rewrites the page content', !/innerHTML\s*=/.test(appJs) || /galleryStageImage/.test(appJs));
 ok('the script asks the backend for the revision instead of re-rendering', appJs.includes('/api/site?since=') && appJs.includes('window.location.reload()'));
 ok('the dashboard talks to the registrations endpoint', fs.readFileSync(path.join(ROOT, 'assets/manage.js'), 'utf8').includes('/api/registrations'));
