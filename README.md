@@ -160,8 +160,9 @@ never looks broken while that is pending:
     beginning, our why and the next chapter — with a light travelling back and
     forth along it, and the dots keep a slow golden heartbeat;
   - a thin band of the club's own words (**mind · body · connection · …**)
-    drifts past under the hero — two copies side by side, sliding exactly one
-    copy across, so the loop has no seam;
+    drifts past under the hero — four copies side by side, sliding exactly one
+    copy across (a quarter of the track), so the loop has no seam on any screen
+    width;
   - a **gold bar across the top of the window** shows how much of the page is
     read, the top bar frosts a little once you have scrolled, and a **way back
     up** appears once the page has been read a bit;

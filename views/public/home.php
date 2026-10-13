@@ -60,14 +60,17 @@ $phone      = trim((string) ($site['clubPhone'] ?? ''));
 </section>
 
 <?php
-/* A thin band of the club's own words drifting past under the hero: two
+/* A thin band of the club's own words drifting past under the hero: four
    copies side by side, sliding exactly one copy across, so the loop has no
-   seam. It is decoration, so it stays out of the reading order. */
+   seam. (Four, not two: one copy is about 1000px wide, and on a screen wider
+   than that a two-copy band runs out of words at the seam. Every extra copy is
+   one more period of the same pattern, so nothing looks repeated.) It is
+   decoration, so it stays out of the reading order. */
 $clubWords = ['mind', 'body', 'connection', 'curiosity', 'growth', 'community', 'kindness', 'a pause'];
 ?>
 <div class="values-marquee" aria-hidden="true">
   <div class="values-track">
-    <?php for ($copy = 0; $copy < 2; $copy++): ?>
+    <?php for ($copy = 0; $copy < 4; $copy++): ?>
       <div class="values-run">
         <?php foreach ($clubWords as $word): ?><span><?= e($word) ?></span><i>✦</i><?php endforeach; ?>
       </div>

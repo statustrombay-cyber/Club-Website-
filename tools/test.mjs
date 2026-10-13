@@ -843,10 +843,12 @@ ok('the page keeps moving: a golden streak over the hero and a sheen on the lens
   && /\.hero-comet \{[^}]*animation: cometRun/.test(appCss)
   && /\.psyche-card:hover:before \{[^}]*translateX/.test(appCss));
 ok('the club’s own words drift past in a band under the hero, seamless and quiet',
-  (homeAlbums.body.match(/class="values-run"/g) || []).length === 2
+  (homeAlbums.body.match(/class="values-run"/g) || []).length === 4
   && homeAlbums.body.includes('aria-hidden="true">') && homeAlbums.body.includes('values-marquee')
   && /\.values-track \{[^}]*animation: marqueeRun 52s linear infinite/.test(appCss)
-  && /@keyframes marqueeRun \{ from \{ transform: translateX\(0\); \} to \{ transform: translateX\(-50%\); \} \}/.test(appCss));
+  /* one copy is about 1000px wide: four copies and a quarter-track slide keeps
+     the seam off screen even where a two-copy band would run out of words */
+  && /@keyframes marqueeRun \{ from \{ transform: translateX\(0\); \} to \{ transform: translateX\(-25%\); \} \}/.test(appCss));
 ok('a gold bar across the top shows how much of the page is read',
   layoutSource.includes('id="readProgress"')
   && /\.read-progress \{[^}]*position: fixed/.test(appCss)

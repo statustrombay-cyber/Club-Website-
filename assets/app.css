@@ -523,7 +523,7 @@ html.js .scroll-reveal.is-visible { opacity: 1; transform: none; }
 @keyframes breathe { 0%, 100% { transform: scale(.95); opacity: .75; } 50% { transform: scale(1.05); opacity: .3; } }
 @keyframes fillDrift { from { transform: scale(1.02) translate3d(-1.5%, 1%, 0); } to { transform: scale(1.14) translate3d(1.5%, -1.5%, 0); } }
 @keyframes dotPulse { 0%, 100% { box-shadow: 0 0 0 1px #d7a246, 0 0 16px rgba(215,162,70,.45); } 50% { box-shadow: 0 0 0 1px #d7a246, 0 0 0 7px rgba(215,162,70,.13), 0 0 22px rgba(215,162,70,.62); } }
-@keyframes marqueeRun { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@keyframes marqueeRun { from { transform: translateX(0); } to { transform: translateX(-25%); } }
 @keyframes cometRun { 0%, 70% { opacity: 0; transform: translate3d(0, 0, 0) rotate(9deg); } 74% { opacity: .9; } 94% { opacity: 0; transform: translate3d(140vw, 11vh, 0) rotate(9deg); } 100% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { *, *:before, *:after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; } }
 
@@ -962,10 +962,11 @@ html.js .scroll-reveal.is-visible { opacity: 1; transform: none; }
 
 
 /* ------------------------------------------------------ the moving pieces */
-/* The thin band of the club's own words drifting past under the hero. Two
-   copies sit side by side and the track slides exactly one copy across, so the
-   loop has no seam. The band is decoration, so it is hidden from screen
-   readers — the club's words are never written twice for anyone. */
+/* The thin band of the club's own words drifting past under the hero. Four
+   copies sit side by side and the track slides exactly one copy across (a
+   quarter of the track), so the loop has no seam on any width — two copies
+   would run out of words on a screen wider than one copy. The band is
+   decoration, so it is hidden from screen readers. */
 .values-marquee { position: relative; overflow: hidden; padding: 15px 0; border-top: 1px solid rgba(215,162,70,.26); border-bottom: 1px solid rgba(215,162,70,.26); }
 .values-track { display: flex; width: max-content; animation: marqueeRun 52s linear infinite; }
 .values-marquee:hover .values-track { animation-play-state: paused; }
