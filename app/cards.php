@@ -223,9 +223,9 @@ function mt_gallery_stage(array $slides, string $kicker = 'Mindful Tattva galler
             </div>
           <?php endif; ?>
           <div class="gallery-controls">
-            <button class="gallery-control" id="galleryPrev" aria-label="Previous photo">←</button>
+            <button class="gallery-control" id="galleryPrev" aria-label="Previous photo"<?= $total > 1 ? '' : ' disabled' ?>>←</button>
             <span class="gallery-counter" id="galleryCounter">01 / <?= str_pad((string) $total, 2, '0', STR_PAD_LEFT) ?></span>
-            <button class="gallery-control" id="galleryNext" aria-label="Next photo">→</button>
+            <button class="gallery-control" id="galleryNext" aria-label="Next photo"<?= $total > 1 ? '' : ' disabled' ?>>→</button>
           </div>
         </div>
       </div>

@@ -602,6 +602,9 @@ html.js .scroll-reveal.is-visible { opacity: 1; transform: none; }
     .gallery-controls { display: flex; align-items: center; justify-content: space-between; margin-top: 19px; }
     .gallery-control { display: inline-grid; place-items: center; width: 43px; height: 43px; border: 1px solid rgba(90,77,73,.22); border-radius: 50%; color: var(--plum-deep); background: rgba(255,255,255,.7); font-size: 1.2rem; cursor: pointer; }
     .gallery-control:hover { background: #c86f58; }
+    /* one photo in the album: the arrows are there, and greyed, instead of doing nothing */
+    .gallery-control:disabled { opacity: .42; cursor: default; }
+    .gallery-control:disabled:hover { background: rgba(255,255,255,.7); }
     .gallery-counter { color: rgba(255,249,239,.75); font-size: .75rem; font-weight: 800; letter-spacing: .12em; }
     .gallery-thumbs { display: flex; gap: 8px; margin-top: 16px; padding-bottom: 3px; overflow-x: auto; }
     .gallery-thumb { flex: 0 0 auto; width: 64px; height: 48px; border: 1px solid rgba(90,77,73,.22); border-radius: 11px; background-size: contain; background-position: center; background-repeat: no-repeat; background-color: rgba(43,26,43,.9); opacity: .62; cursor: pointer; transition: opacity .2s ease, transform .2s ease, border-color .2s ease; }

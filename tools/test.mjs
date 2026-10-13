@@ -920,6 +920,8 @@ ok('the slideshow frame is a photo, not a colour block',
   /class="gallery-stage-image[^"]*"[^>]*background-image:url\(/.test(galleryBody)
   && /\.gallery-stage-image \{[^}]*background-size: contain/.test(appCss)
   && /\.gallery-stage-image\.has-image:before \{[^}]*background-image: inherit/.test(appCss));
+ok('with a single photo the arrows are greyed, not clicking into nothing',
+  /id="galleryPrev"[^>]*disabled/.test(galleryBody) && /\.gallery-control:disabled \{[^}]*opacity/.test(appCss));
 ok('the album’s own frames turn the stage, and the small line stays the stage’s',
   /\.gallery-thumb \{[^}]*background-size: contain/.test(appCss)
   && appJs.includes("thumb.dataset.slide")
