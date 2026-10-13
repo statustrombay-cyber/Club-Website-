@@ -97,14 +97,28 @@ never looks broken while that is pending:
   timeline, events, calendar, gallery, core team, two registration forms and
   contact details, with the original drifting bubbles and orbit artwork.
 - **The herd on the front page** — the club's own horse footage plays behind
-  the home hero from the moment the page opens: muted, looping, pinned to the
-  window so it keeps running while the visitor scrolls, with the bubbles
-  drifting over it and a warm cream veil keeping every word readable. It is one
-  small file (`assets/media/horses-running.mp4`, ~1.5 MB for 17 seconds), cut
-  from the three clips the club uploaded and re-encoded for the web, plus a
-  still frame (`horses-running-poster.jpg`) that is always there — if the clip
-  cannot play, or the visitor asked for less motion or is on a metered
-  connection, the still frame stays and the page is never blank.
+  the home hero from the moment the page opens: muted, looping and pinned to
+  the window, with the bubbles drifting over it and a warm cream veil keeping
+  every word readable. It is one small file (`assets/media/horses-running.mp4`,
+  ~2.5 MB for 11 seconds at 1280×960, 30 fps), cut from the three clips the
+  club uploaded: the golden-hour herd, the stampede through the water, and the
+  black horse galloping across the snow — the slow stretches of the originals
+  (a horse easing into a walk, a herd marching through dust) were left out, and
+  the tail is crossfaded back into the head so the repeat has no visible jump.
+  A still frame (`horses-running-poster.jpg`) sits in the same place and is
+  always there: if the clip cannot play, or the visitor asked for less motion
+  or is on a metered connection, the still frame simply stays and the page is
+  never blank.
+  - It runs **continuously** — nothing pauses it while the page is open — and a
+    watchdog checks twice a second that its clock is still moving: a stall gets
+    a nudge first, and a quiet reload if that was not enough, so the herd can
+    never be caught frozen on screen.
+  - The herd is the front page's **opening, not wallpaper**: every section
+    after the hero paints its own paper, so no paragraph can ever end up
+    sitting on top of the video. The top bar is thin enough to see it through.
+  - The server hands it out as `video/mp4` with **byte-range support** (a real
+    `206` with `Content-Range`), which browsers — Safari above all — require
+    before they will play or seek it.
 - **Photo gallery** — masonry album, event filters, caption search and a
   full-frame viewer (arrow keys, swipe, click-outside to close). Captions appear
   only when the club typed one; an event name on its own shows as a small badge.
@@ -166,7 +180,7 @@ tools/test.mjs                automated checks over pages, API, security, forms
 ## Development
 
 ```bash
-npm test          # runs the PHP app in isolation and checks 260 behaviours
+npm test          # runs the PHP app in isolation and checks 264 behaviours
 ```
 
 The test suite boots the real application, then exercises pages, the JSON API,

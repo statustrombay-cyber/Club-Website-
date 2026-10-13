@@ -93,7 +93,7 @@ button { cursor: pointer; }
 .event-banner-pulse { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--terracotta); box-shadow: 0 0 0 5px rgba(200,111,88,.13); }
 .nav-wrap { position: relative; z-index: 10; }
 .nav { position: relative; }
-.nav:before { content: ''; position: absolute; inset: 11px -16px; z-index: -1; border: 1px solid rgba(78,49,85,.08); border-radius: 25px; background: rgba(255,250,241,.42); box-shadow: 0 12px 30px rgba(61,39,66,.05); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+.nav:before { content: ''; position: absolute; inset: 11px -16px; z-index: -1; border: 1px solid rgba(78,49,85,.07); border-radius: 25px; background: rgba(255,250,241,.16); box-shadow: 0 10px 26px rgba(61,39,66,.04); backdrop-filter: blur(9px); -webkit-backdrop-filter: blur(9px); }
 .nav { 
   display: flex;
   align-items: center;
@@ -180,8 +180,8 @@ button { cursor: pointer; }
 .hero-veil {
   position: absolute; inset: 0; z-index: -1; pointer-events: none;
   background:
-    linear-gradient(100deg, rgba(247,242,237,.92) 0%, rgba(247,242,237,.84) 34%, rgba(247,242,237,.42) 62%, rgba(247,242,237,.16) 100%),
-    linear-gradient(180deg, rgba(247,242,237,.66) 0%, rgba(247,242,237,.16) 24%, rgba(247,242,237,0) 52%, rgba(247,242,237,.26) 78%, var(--paper) 99%);
+    linear-gradient(100deg, rgba(247,242,237,.96) 0%, rgba(247,242,237,.93) 26%, rgba(247,242,237,.78) 46%, rgba(247,242,237,.34) 62%, rgba(247,242,237,.08) 100%),
+    linear-gradient(180deg, rgba(247,242,237,.48) 0%, rgba(247,242,237,.12) 22%, rgba(247,242,237,0) 50%, rgba(247,242,237,.28) 78%, var(--paper) 99%);
 }
 @media (max-width: 900px) {
   .hero-with-video { min-height: 560px; min-height: min(680px, 92svh); }
@@ -193,6 +193,14 @@ button { cursor: pointer; }
       linear-gradient(180deg, rgba(247,242,237,.95) 0%, rgba(247,242,237,.9) 34%, rgba(247,242,237,.74) 58%, rgba(247,242,237,.52) 80%, rgba(247,242,237,.58) 90%, var(--paper) 99%);
   }
 }
+/* The herd is the front page's opening, not wallpaper behind the reading:
+   every block after the hero paints its own paper, so no word can ever end up
+   sitting on top of the video. Each of these is cream or paper in the design
+   already — this only stops the video showing through the ones that were
+   transparent (the gallery block and the medallion strips between sections). */
+.site-shell main > section:not(.hero-with-video):not(.section-tint):not(.section-plum):not(.psyche-section):not(.details-section):not(.history-section):not(.calendar-section):not(.join-section),
+.site-shell main > div:not(.photo-frame) { background-color: var(--cream); }
+
 /* Someone who asked for less motion gets the still frame, not the clip. */
 @media (prefers-reduced-motion: reduce) {
   .hero-video { display: none; }

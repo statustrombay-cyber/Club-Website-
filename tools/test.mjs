@@ -809,14 +809,46 @@ ok('the photo frame backdrop is warm, not black',
    page only — and the server must hand the clip out as video, in slices. */
 const clipPath = path.join(ROOT, 'assets/media/horses-running.mp4');
 const clip = fs.existsSync(clipPath) ? fs.readFileSync(clipPath) : Buffer.alloc(0);
+
+/** Read the boxes of an mp4 so the clip can be checked for what it really is. */
+function mp4Boxes(buffer, from, to) {
+  const boxes = [];
+  let at = from;
+  while (at + 8 <= to) {
+    const size = buffer.readUInt32BE(at);
+    const type = buffer.toString('latin1', at + 4, at + 8);
+    if (size < 8 || at + size > to) break;
+    boxes.push({ type, at, size, end: at + size });
+    at += size;
+  }
+  return boxes;
+}
+const topBoxes = mp4Boxes(clip, 0, clip.length);
+const moov = topBoxes.find((box) => box.type === 'moov');
+const moovBoxes = moov ? mp4Boxes(clip, moov.at + 8, moov.end) : [];
+const mvhd = moovBoxes.find((box) => box.type === 'mvhd');
+const clipSeconds = mvhd ? clip.readUInt32BE(mvhd.at + 24) / clip.readUInt32BE(mvhd.at + 20) : 0;
+let clipW = 0;
+let clipH = 0;
+for (const trak of moovBoxes.filter((box) => box.type === 'trak')) {
+  const tkhd = mp4Boxes(clip, trak.at + 8, trak.end).find((box) => box.type === 'tkhd');
+  if (tkhd && clip[tkhd.at + 8] === 0) {
+    clipW = clip.readUInt32BE(tkhd.at + 84) / 65536;
+    clipH = clip.readUInt32BE(tkhd.at + 88) / 65536;
+  }
+}
 ok('the herd is one small file, not the raw uploads',
-  clip.length > 200000 && clip.length < 2.6 * 1024 * 1024
+  clip.length > 2 * 1024 * 1024 && clip.length < 2.8 * 1024 * 1024
   && fs.existsSync(path.join(ROOT, 'assets/media/horses-running-poster.jpg'))
   && fs.readdirSync(ROOT).every((name) => !/\.mp4$/i.test(name)),
   Math.round(clip.length / 1024) + ' KB');
 ok('the clip is a real mp4 that browsers can start straight away',
-  clip.slice(4, 8).toString('latin1') === 'ftyp' && clip.indexOf('moov') > 0
-  && clip.indexOf('moov') < clip.indexOf('mdat'));
+  clip.slice(4, 8).toString('latin1') === 'ftyp'
+  && topBoxes.some((box) => box.type === 'moov') && topBoxes.some((box) => box.type === 'mdat')
+  && topBoxes.findIndex((box) => box.type === 'moov') < topBoxes.findIndex((box) => box.type === 'mdat'));
+ok('the clip is short, sharp and the right shape',
+  clipSeconds > 10 && clipSeconds < 13 && clipW >= 1280 && clipW <= 1440 && Math.abs(clipW / clipH - 4 / 3) < 0.01,
+  clipW + 'x' + clipH + ', ' + clipSeconds.toFixed(1) + 's');
 ok('the front page plays the herd, muted and looping, behind everything',
   /<video[^>]*id="heroVideo"[^>]*muted[^>]*loop[^>]*playsinline[^>]*autoplay/.test(homeAlbums.body)
   && homeAlbums.body.includes('/assets/media/horses-running.mp4')
@@ -837,6 +869,14 @@ ok('less motion means the still frame instead of the clip',
 ok('a clip that cannot play leaves the still frame, never a blank box',
   appJs.includes("video.addEventListener('error', drop)")
   && appJs.includes('video.hidden = true') && layoutSource.includes('id="heroStill"'));
+ok('the herd never stops on its own — nothing pauses it while the page is open',
+  !/observe\(hero\)/.test(appJs) && appJs.includes('window.setInterval(function () {')
+  && appJs.includes('video.currentTime = clock + 0.1') && appJs.includes('video.load()')
+  && /document\.hidden\) pause\(\); else play\(\)/.test(appJs));
+ok('no word on the page can ever sit on top of the video',
+  /\.site-shell main > section:not\(\.hero-with-video\)[^{]*,\s*\n\.site-shell main > div:not\(\.photo-frame\) \{ background-color: var\(--cream\); \}/.test(appCss));
+ok('the top bar no longer hides the herd',
+  /\.nav:before \{[^}]*background: rgba\(255,250,241,\.16\)/.test(appCss));
 ok('the herd layer sits outside the page shell, so the bubbles drift over it',
   layoutSource.indexOf('heroVideo') > 0 && layoutSource.indexOf('heroVideo') < layoutSource.indexOf('site-shell'));
 ok('the server hands the clip out as video, in slices',

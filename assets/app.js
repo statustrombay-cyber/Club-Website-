@@ -261,14 +261,17 @@
 
   /* ------------------------------------------------------------ the herd */
   /* The front page's horses. The still frame is already in the HTML, so this
-     only plays the clip — and stops it when nobody can see it: when the hero
-     has scrolled away, or when the tab is in the background. A clip that
-     cannot play at all is hidden, leaving the still frame in its place, so the
-     page never shows a blank or dark box. */
+     only plays the clip — and keeps it running: the herd is never paused while
+     the page is open, so it can never be caught frozen on screen. A clip can
+     still stall on a slow connection or at the wrap of the loop, so the herd
+     is watched: if the clock stops moving while the clip is meant to be
+     playing, it is nudged on; if that does not take, it reloads and carries on
+     from there. The still frame stays behind it the whole time, so even that
+     moment is never blank. A clip that cannot play at all is hidden, leaving
+     the still frame in its place. */
   function setupHeroVideo() {
     const video = $('#heroVideo');
     if (!video) return;
-    const hero = $('#top-section');
     const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
     const allowed = !reduced() && !(connection && connection.saveData);
     let retried = false;
@@ -276,9 +279,9 @@
     function drop() { video.hidden = true; }
     function pause() { try { video.pause(); } catch (error) { /* nothing to pause */ } }
     function play() {
-      if (!allowed || document.hidden) return;
+      if (!allowed || document.hidden || video.hidden) return;
       const attempt = video.play();
-      if (attempt && typeof attempt.catch === 'function') attempt.catch(drop);
+      if (attempt && typeof attempt.catch === 'function') attempt.catch(function () { /* retried below */ });
     }
 
     if (!allowed) { drop(); return; }
@@ -286,27 +289,42 @@
     video.addEventListener('error', drop);
     play();
 
+    /* The whole reason a background clip "gets stuck midway": the browser
+       stops feeding it. So the herd is checked twice a second — a nudge
+       first, a quiet reload if the nudge was not enough. */
+    let lastClock = -1;
+    let recovery = 0;
+    window.setInterval(function () {
+      if (document.hidden || video.hidden || video.error) return;
+      if (video.paused) { play(); return; }
+      const clock = video.currentTime;
+      if (Math.abs(clock - lastClock) > 0.02) { lastClock = clock; recovery = 0; return; }
+      recovery += 1;
+      if (recovery === 1) {
+        try { video.currentTime = clock + 0.1; } catch (error) { /* the reload below will do */ }
+        play();
+      } else if (recovery === 2) {
+        video.load();
+        play();
+        recovery = 0;
+      }
+    }, 900);
+
     /* Some phones block even a muted autoplay until the visitor touches the
        page: the first touch, tap, key or scroll asks again. */
     function retry() {
       if (retried || video.error) return;
       retried = true;
-      video.hidden = false;
       play();
     }
     ['pointerdown', 'touchstart', 'keydown', 'scroll'].forEach(function (name) {
       window.addEventListener(name, retry, { once: true, passive: true });
     });
 
+    /* The one time the herd is paused: when the tab is not on screen. */
     document.addEventListener('visibilitychange', function () {
       if (document.hidden) pause(); else play();
     });
-
-    if (hero && 'IntersectionObserver' in window) {
-      new IntersectionObserver(function (entries) {
-        entries.forEach(function (entry) { if (entry.isIntersecting) play(); else pause(); });
-      }, { threshold: 0 }).observe(hero);
-    }
   }
 
   function start() {
