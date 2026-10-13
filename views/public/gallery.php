@@ -12,27 +12,9 @@ $photos = mt_sorted(mt_gallery_photos($db['gallery'] ?? []));
 
 /* The club's photos, in the order the club set: order 1 first, order 2 next.
    There are no categories any more — a photo is just a photo with a caption,
-   so the gallery is one strip and the club decides what leads it. */
-$slides = [];
-foreach ($photos as $item) {
-    $image = mt_safe_image($item['image'] ?? '');
-    if ($image === '') {
-        continue;
-    }
-    $caption = trim((string) ($item['caption'] ?? '')) !== '' ? (string) $item['caption'] : 'Mindful Tattva memory';
-    $slides[] = [
-        'caption' => $caption,
-        'image'   => $image,
-        'alt'     => trim((string) ($item['alt'] ?? '')) !== '' ? (string) $item['alt'] : $caption,
-    ];
-}
-
-$first = $slides[0] ?? null;
-$stage = $first && $first['image'] !== '';
-$galleryJson = json_encode(
-    ['slides' => $slides],
-    JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
-);
+   so the gallery is one strip and the club decides what leads it. The same
+   list is what the stage turns through. */
+$slides = mt_gallery_slides($db['gallery'] ?? []);
 ?>
 <section class="gallery-hero">
   <div class="container">
@@ -45,19 +27,7 @@ $galleryJson = json_encode(
 <section class="gallery-shell" id="gallery">
   <div class="container">
     <div class="gallery-showcase">
-      <div class="gallery-stage" id="galleryStage">
-        <div class="gallery-stage-image<?= $stage ? ' has-image' : '' ?>" id="galleryStageImage" role="img"
-             aria-label="<?= e($first['alt'] ?? 'Gallery photo') ?>"<?= mt_background_style($first['image'] ?? '') ?>></div>
-        <div class="gallery-stage-copy">
-          <small id="galleryStageKicker"><?= $stage ? 'Mindful Tattva gallery' : 'The album is waiting' ?></small>
-          <h2 id="galleryStageCaption"><?= e($stage ? (string) $first['caption'] : 'Your first club memory') ?></h2>
-          <div class="gallery-controls">
-            <button class="gallery-control" id="galleryPrev" aria-label="Previous photo">←</button>
-            <span class="gallery-counter" id="galleryCounter">01 / <?= str_pad((string) max(1, count($slides)), 2, '0', STR_PAD_LEFT) ?></span>
-            <button class="gallery-control" id="galleryNext" aria-label="Next photo">→</button>
-          </div>
-        </div>
-      </div>
+      <?= mt_gallery_stage($slides) ?>
       <aside class="gallery-side-note">
         <div>
           <div class="eyebrow">Keep the thread</div>
@@ -90,4 +60,4 @@ $galleryJson = json_encode(
 </section>
 
 <?= mt_photo_frame() ?>
-<script type="application/json" id="gallery-data"><?= $galleryJson ?></script>
+<?= mt_gallery_data($slides) ?>

@@ -227,7 +227,8 @@ ok('the event card offers registration', home.body.includes('/register?event=eve
 ok('the join forms are both there', home.body.includes('id="membershipForm"') && home.body.includes('id="registrationForm"'));
 ok('the public footer never links the club area', !home.body.includes('href="/dashboard"') && !home.body.includes('/dashboard'));
 ok('the footer keeps the institution and the creator credit', home.body.includes('footer-institution') && home.body.includes('Made with love by Mohd Shafiq'));
-ok('the home gallery grid carries the club’s photos', home.body.includes('gallery-item'));
+ok('the home page carries the club’s photos, and hands the stage the same list',
+  home.body.includes('id="galleryStageImage"') && home.body.includes('id="gallery-data"'));
 ok('a half-written photo slot never shows on the public site', !home.body.includes('Photo placeholder'));
 ok('the stylesheet is inlined, never linked', home.body.includes('<style>') && !/href="\/assets\/app\.css"/.test(home.body));
 ok('the script is inlined, never linked', !/src="\/assets\/app\.js"/.test(home.body) && home.body.includes('setupGalleryStage'));
@@ -762,10 +763,18 @@ ok('the slideshow is built from the same photos, in the same order',
   orderedPage.body.indexOf('Leads the album') < orderedPage.body.indexOf('Comes next')
   && /<script type="application\/json" id="gallery-data">/.test(orderedPage.body)
   && orderedPage.body.indexOf('gallery-data') > orderedPage.body.indexOf('archive-grid'));
-ok('every photo is a picture in a frame, not a colour block',
-  !/background-size: contain/.test(appCss)
-  && /\.archive-image \{[^}]*background-size: cover/.test(appCss)
-  && /\.gallery-stage-image \{[^}]*background-size: cover/.test(appCss));
+ok('no photo is ever cropped: it is drawn whole over a softened copy of itself',
+  /\.gallery-visual\.has-image, \.archive-image, \.gallery-stage-image\.has-image \{[^}]*background-size: contain/.test(appCss)
+  && /\.archive-image \{[^}]*background-size: contain/.test(appCss)
+  && /\.gallery-visual\.has-image:before, \.archive-image:before, \.gallery-stage-image\.has-image:before \{[^}]*background-image: inherit/.test(appCss)
+  && /background-image: inherit; background-size: cover/.test(appCss)
+  && /filter: blur\(22px\) brightness\(\.6\)/.test(appCss));
+ok('the stage lays the same photo softly behind the picture, and it drifts',
+  /\.gallery-stage-image\.has-image:before \{[^}]*animation: fillDrift/.test(appCss)
+  && /@keyframes fillDrift/.test(appCss));
+ok('a photo tile keeps its caption readable over any picture',
+  /\.gallery-item:after \{[^}]*linear-gradient\(0deg, rgba\(30,18,38,\.62\)/.test(appCss)
+  && /\.gallery-caption \{[^}]*z-index: 3/.test(appCss));
 /* clean up the two extra photos so the site stays exactly as the club left it */
 await request({ uri: '/api/gallery/' + ((asJson(orderOne).item || {}).id || 'x'), method: 'DELETE', ...FRESH });
 await request({ uri: '/api/gallery/' + ((asJson(orderTwo).item || {}).id || 'x'), method: 'DELETE', ...FRESH });
@@ -805,12 +814,27 @@ ok('every condition is a short line, none is a paragraph',
 /* psi stays, but only in its two homes: the lens section and the album */
 ok('the psi sign is kept where it means something',
   homeAlbums.body.includes('psyche-psi') && (await get('/gallery')).body.includes('mini-psi'));
-ok('the club crest orbits the circle of words in the lens',
-  (homeAlbums.body.match(/loop-orbit/g) || []).length >= 2
-  && /\.loop-orbit \{[^}]*animation: orbitSpin/.test(appCss)
-  && /\.curiosity-loop \{[^}]*margin: 42px clamp/.test(appCss));
-ok('the circle of words sits clear of the left edge',
-  /\.curiosity-loop \{[^}]*margin:[^;]*auto/.test(appCss) && /\.curiosity-loop b \{ transform: rotate\(-12deg\); \}/.test(appCss));
+ok('small planets turn around the circle of words in the lens',
+  (homeAlbums.body.match(/loop-orbit/g) || []).length >= 3
+  && !/loop-orbit[^>]*><img/.test(homeAlbums.body)
+  && /\.loop-orbit \{[^}]*animation: orbitTurn/.test(appCss)
+  && /\.loop-orbit:after \{[^}]*radial-gradient/.test(appCss));
+ok('the circle of words sits at the left, clear of the screen edge',
+  /\.curiosity-loop \{[^}]*margin: 42px 0 6px 6px/.test(appCss)
+  && /\.curiosity-loop b \{[^}]*transform: rotate\(-12deg\)/.test(appCss));
+ok('a golden line runs through curiosity, connection and growth, and its light travels',
+  homeAlbums.body.includes('loop-thread')
+  && /\.loop-thread \{[^}]*linear-gradient/.test(appCss)
+  && /\.loop-spark \{[^}]*animation: lineRun/.test(appCss));
+ok('one golden line runs through the beginning, our why and the next chapter',
+  homeAlbums.body.includes('timeline-spine')
+  && /\.timeline-spine \{[^}]*overflow: hidden/.test(appCss)
+  && /\.timeline-glint \{[^}]*animation: lineRun/.test(appCss)
+  && !/\.timeline-item:not\(:last-child\):after \{/.test(appCss));
+ok('the page keeps moving: a golden streak over the hero and a sheen on the lens cards',
+  homeAlbums.body.includes('hero-comet')
+  && /\.hero-comet \{[^}]*animation: cometRun/.test(appCss)
+  && /\.psyche-card:hover:before \{[^}]*translateX/.test(appCss));
 ok('the club emblem appears between sections on the home page',
   (homeAlbums.body.match(/logo-medallion/g) || []).length >= 2);
 ok('the club emblem sits in the members stage, and the frame script is live',
@@ -894,8 +918,15 @@ ok('the gallery is one strip in the club\'s order',
   && (galleryBody.match(/class="archive-card"/g) || []).length === (galleryBody.match(/class="archive-image"/g) || []).length);
 ok('the slideshow frame is a photo, not a colour block',
   /class="gallery-stage-image[^"]*"[^>]*background-image:url\(/.test(galleryBody)
-  && !/background-size: contain/.test(appCss)
-  && /\.gallery-stage-image \{[^}]*background-size: cover/.test(appCss));
+  && /\.gallery-stage-image \{[^}]*background-size: contain/.test(appCss)
+  && /\.gallery-stage-image\.has-image:before \{[^}]*background-image: inherit/.test(appCss));
+ok('the album’s own frames turn the stage, and the small line stays the stage’s',
+  /\.gallery-thumb \{[^}]*background-size: contain/.test(appCss)
+  && appJs.includes("thumb.dataset.slide")
+  && /if \(kicker && slide\.kicker\)/.test(appJs));
+ok('the home page turns the very same slideshow',
+  /class="gallery-stage stage-feature" id="galleryStage"/.test(homeAlbums.body)
+  && /\.gallery-stage\.stage-feature \{[^}]*max-width/.test(appCss));
 ok('the slideshow piles every photo in order and turns by itself',
   /const slides = \(readJson\('gallery-data'\)\.slides \|\| \[\]\)/.test(appJs)
   && /slides\.length < 2\) return;/.test(appJs) && /go\(index \+ 1\); \}, 4800\)/.test(appJs));

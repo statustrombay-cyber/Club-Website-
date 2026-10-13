@@ -162,6 +162,78 @@ function mt_gallery_item(array $item): string
 }
 
 /**
+ * The club's photos, in the order the club set: order 1 first, order 2 next.
+ * There are no categories any more — a photo is a caption and a place in the
+ * queue — and this one list feeds the slideshow, the strip and the archive.
+ */
+function mt_gallery_slides(array $items): array
+{
+    $slides = [];
+    foreach (mt_sorted(mt_gallery_photos($items)) as $item) {
+        $image = mt_safe_image($item['image'] ?? '');
+        if ($image === '') {
+            continue;
+        }
+        $caption = trim((string) ($item['caption'] ?? '')) !== '' ? (string) $item['caption'] : 'Mindful Tattva memory';
+        $slides[] = [
+            'caption' => $caption,
+            'image'   => $image,
+            'alt'     => trim((string) ($item['alt'] ?? '')) !== '' ? (string) $item['alt'] : $caption,
+        ];
+    }
+    return $slides;
+}
+
+/** The same list as JSON, so the script can turn the pages of the album. */
+function mt_gallery_data(array $slides): string
+{
+    $json = json_encode(
+        ['slides' => array_values($slides)],
+        JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
+    );
+    return '<script type="application/json" id="gallery-data">' . $json . '</script>';
+}
+
+/**
+ * The photo stage: one big picture, its caption, the pages of the album and
+ * the arrows. The picture is written by PHP, so the stage is complete before
+ * any script runs, and it is drawn whole — the stylesheet lays a softened copy
+ * of the same photo behind it, so a tall photo or a square crest can never sit
+ * in a block of flat colour.
+ */
+function mt_gallery_stage(array $slides, string $kicker = 'Mindful Tattva gallery', string $class = ''): string
+{
+    $first = $slides[0] ?? null;
+    $stage = is_array($first) && mt_safe_image($first['image'] ?? '') !== '';
+    $total = max(1, count($slides));
+    $alt   = $stage ? (string) $first['alt'] : 'Gallery photo';
+    ob_start(); ?>
+      <div class="gallery-stage<?= $class !== '' ? ' ' . e($class) : '' ?>" id="galleryStage">
+        <div class="gallery-stage-image<?= $stage ? ' has-image' : '' ?>" id="galleryStageImage" role="img"
+             aria-label="<?= e($alt) ?>"<?= mt_background_style($stage ? (string) $first['image'] : '') ?>></div>
+        <div class="gallery-stage-copy">
+          <small id="galleryStageKicker"><?= e($stage ? $kicker : 'The album is waiting') ?></small>
+          <h2 id="galleryStageCaption"><?= e($stage ? (string) $first['caption'] : 'Your first club memory') ?></h2>
+          <?php if ($total > 1): ?>
+            <div class="gallery-thumbs" id="galleryThumbs" aria-label="Every photo in the album">
+              <?php foreach ($slides as $index => $slide): ?>
+                <button type="button" class="gallery-thumb<?= $index === 0 ? ' is-current' : '' ?>" data-slide="<?= (int) $index ?>"
+                        aria-label="Show photo <?= (int) $index + 1 ?>: <?= e((string) $slide['caption']) ?>"<?= mt_background_style((string) $slide['image']) ?>></button>
+              <?php endforeach; ?>
+            </div>
+          <?php endif; ?>
+          <div class="gallery-controls">
+            <button class="gallery-control" id="galleryPrev" aria-label="Previous photo">←</button>
+            <span class="gallery-counter" id="galleryCounter">01 / <?= str_pad((string) $total, 2, '0', STR_PAD_LEFT) ?></span>
+            <button class="gallery-control" id="galleryNext" aria-label="Next photo">→</button>
+          </div>
+        </div>
+      </div>
+    <?php
+    return (string) ob_get_clean();
+}
+
+/**
  * Only the rows the club has actually finished belong on the public site.
  *
  * The dashboard lets the club add a row first and fill it in afterwards, so a

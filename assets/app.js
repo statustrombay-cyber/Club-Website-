@@ -126,12 +126,18 @@
     let timer = null;
     let index = 0;
 
+    const thumbs = $$('#galleryThumbs .gallery-thumb');
     const paint = function (slide) {
       stage.style.backgroundImage = slide.image ? "url('" + String(slide.image).replace(/[()'"]/g, '') + "')" : '';
       stage.classList.toggle('has-image', Boolean(slide.image));
       stage.setAttribute('aria-label', slide.alt || slide.caption || 'Mindful Tattva gallery photo');
       if (caption) caption.textContent = slide.caption || 'Mindful Tattva memory';
-      if (kicker) kicker.textContent = slide.kicker || 'Mindful Tattva memory';
+      /* the small line above the caption belongs to the stage, not the photo:
+         only a slide that carries its own words may replace it */
+      if (kicker && slide.kicker) kicker.textContent = slide.kicker;
+      thumbs.forEach(function (thumb) {
+        thumb.classList.toggle('is-current', Number(thumb.dataset.slide) === index);
+      });
       if (counter) counter.textContent = String(index + 1).padStart(2, '0') + ' / ' + String(slides.length).padStart(2, '0');
     };
     const go = function (next) { index = (next + slides.length) % slides.length; paint(slides[index]); };
@@ -146,6 +152,9 @@
     const next = $('#galleryNext');
     if (previous) previous.addEventListener('click', function () { go(index - 1); play(); });
     if (next) next.addEventListener('click', function () { go(index + 1); play(); });
+    thumbs.forEach(function (thumb) {
+      thumb.addEventListener('click', function () { go(Number(thumb.dataset.slide) || 0); play(); });
+    });
     const wrap = $('#galleryStage');
     if (wrap) {
       wrap.addEventListener('mouseenter', stop);

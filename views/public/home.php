@@ -11,8 +11,11 @@ $events     = array_values(array_filter(mt_events_numbered($db['events'] ?? []),
 $openEvents = mt_open_events($db);
 $history    = mt_sorted($db['history'] ?? []);
 $numbered   = mt_events_numbered($db['events'] ?? []);
-/* The home strip: the same photos a visitor meets first on the gallery page. */
-$gallery = array_slice(mt_sorted(mt_gallery_photos($db['gallery'] ?? [])), 0, 6);
+/* The same photos a visitor meets on the gallery page, in the club's order:
+   the stage turns through all of them, and the strip below shows the first
+   few — so the home page opens the album instead of hiding it. */
+$gallery       = array_slice(mt_sorted(mt_gallery_photos($db['gallery'] ?? [])), 0, 6);
+$gallerySlides = mt_gallery_slides($db['gallery'] ?? []);
 $team       = array_values(array_filter(
     mt_sorted(mt_named_team($db['team'] ?? [])),
     static fn($person) => ($person['group'] ?? 'management') === 'management'
@@ -29,6 +32,7 @@ $phone      = trim((string) ($site['clubPhone'] ?? ''));
            readable, and melts the bottom of the picture (drawn in the layout)
            into the section that follows. */ ?>
   <div class="hero-veil" aria-hidden="true"></div>
+  <i class="hero-comet" aria-hidden="true"></i>
   <div class="container hero-grid">
     <div class="fade-in">
       <div class="eyebrow" id="heroEyebrow"><?= e((string) ($site['eyebrow'] ?? '')) ?></div>
@@ -87,8 +91,10 @@ $phone      = trim((string) ($site['clubPhone'] ?? ''));
       <h2 class="display">A club for the lives we are actually living.</h2>
       <p>Psychology is not only something we study. It is how we notice our thoughts, hold space for another person, move through change and build a life that feels more like our own.</p>
       <div class="curiosity-loop">
-        <i class="loop-orbit loop-orbit-a" aria-hidden="true"><img src="<?= e(mt_safe_image($site['logoImage'] ?? '') ?: '/assets/photos/mt-club-logo.jpg') ?>" alt="" loading="lazy" decoding="async"></i>
-        <i class="loop-orbit loop-orbit-b" aria-hidden="true"><img src="<?= e(mt_safe_image($site['logoImage'] ?? '') ?: '/assets/photos/mt-club-logo.jpg') ?>" alt="" loading="lazy" decoding="async"></i>
+        <span class="loop-thread" aria-hidden="true"><i class="loop-spark"></i></span>
+        <i class="loop-orbit loop-orbit-a" aria-hidden="true"></i>
+        <i class="loop-orbit loop-orbit-a2" aria-hidden="true"></i>
+        <i class="loop-orbit loop-orbit-b" aria-hidden="true"></i>
         <b>curiosity<br>→ connection<br>→ growth</b>
       </div>
     </div>
@@ -122,6 +128,7 @@ $phone      = trim((string) ($site['clubPhone'] ?? ''));
       <p>This timeline grows with the club — milestones, people and memories are added by the club team.</p>
     </div>
     <div class="timeline" id="historyList">
+      <?php if (count($history) > 1): ?><span class="timeline-spine" aria-hidden="true"><i class="timeline-glint"></i></span><?php endif; ?>
       <?php foreach ($history as $entry): ?>
         <article class="timeline-item">
           <span class="timeline-dot"></span>
@@ -193,11 +200,14 @@ $phone      = trim((string) ($site['clubPhone'] ?? ''));
       <div><div class="eyebrow">Event gallery</div><h2 class="display"><?= e((string) ($site['galleryHeading'] ?? 'Small moments. Big meaning.')) ?></h2></div>
       <p><?= e((string) ($site['galleryIntro'] ?? 'Photos from your events will turn this space into a living scrapbook of the club.')) ?><br><a class="event-link" href="/gallery">Open the full gallery ↗</a></p>
     </div>
-    <div class="gallery-grid" id="galleryGrid">
-      <?php foreach ($gallery as $item): ?>
-        <?= mt_gallery_item($item) ?>
-      <?php endforeach; ?>
-    </div>
+    <?= mt_gallery_stage($gallerySlides, 'Mindful Tattva gallery', 'stage-feature') ?>
+    <?php if (count($gallery) > 1): ?>
+      <div class="gallery-grid" id="galleryGrid">
+        <?php foreach ($gallery as $item): ?>
+          <?= mt_gallery_item($item) ?>
+        <?php endforeach; ?>
+      </div>
+    <?php endif; ?>
   </div>
 </section>
 
@@ -208,6 +218,7 @@ $phone      = trim((string) ($site['clubPhone'] ?? ''));
 </div>
 
 <?= mt_photo_frame() ?>
+<?= mt_gallery_data($gallerySlides) ?>
 
 <section class="section section-tint" id="team">
   <div class="container">

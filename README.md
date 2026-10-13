@@ -131,10 +131,32 @@ never looks broken while that is pending:
     `206` with `Content-Range`), which browsers — Safari above all — require
     before they will play or seek it.
 - **Photo gallery** — one flat album, no categories: a photo is a caption and a
-  **display order** (order 1 leads, order 2 follows), and the slideshow at the
-  top of the page uses the same list in the same order. A caption appears only
-  when the club typed one, and clicking any photo opens it full size in the
-  photo frame (Escape, the ✕ or a tap outside closes it).
+  **display order** (order 1 leads, order 2 follows), and the same list is what
+  the slideshow turns through. A caption appears only when the club typed one,
+  and clicking any photo opens it full size in the photo frame (Escape, the ✕
+  or a tap outside closes it).
+  - The album turns on **both** pages: the home page carries the same stage as
+    `/gallery`, written by PHP first so the photo is on screen before any script
+    runs, and the little frames under the caption move the stage by hand.
+  - **No photo is ever cropped**, and none can read as a block of flat colour:
+    the picture is drawn whole, over a softened, slowly drifting copy of itself
+    filling the frame. A square crest and a wide photograph both look like
+    pictures. The strip below the home stage appears once there is more than one
+    photo to fill it.
+- **The moving pieces** — the club asked for a site that keeps moving without
+  ever hiding a word:
+  - the circle of words in the psychology lens sits at the **left** of its
+    column, far enough in that neither golden ring nor the **small planets**
+    riding them can leave the screen (it used to be pushed right, which cut it
+    at the left edge on a narrow screen);
+  - a **golden line runs through** curiosity, connection and growth, and one
+    more runs the height of the club timeline — through the beginning, our why
+    and the next chapter — each with a light travelling back and forth along it;
+  - a golden streak crosses the hero now and then, a sheen crosses the lens
+    cards on hover, the softened copy behind every photo drifts slowly, and the
+    drifting bubbles and the scroll-linked gold thread are unchanged.
+  - It is all CSS, so a visitor who asked for **less motion** sees the site
+    still, and nothing here can cover a word.
 - **Event registration** — one form per event. The club sets the venue, the
   date, the fee and the registration window in the dashboard; the form reads all
   of it back.
@@ -230,7 +252,7 @@ Two notes for the launch:
 ## Development
 
 ```bash
-npm test          # runs the PHP app in isolation and checks 282 behaviours
+npm test          # runs the PHP app in isolation and checks 289 behaviours
 ```
 
 The test suite boots the real application, then exercises pages, the JSON API,

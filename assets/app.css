@@ -296,26 +296,31 @@ button { cursor: pointer; }
 /* The club's circle of words, clear of the left edge and with the club crest
    riding its two golden rings. The rings are an unrotated box; only the ring
    line and the crest inside it turn, so the words stay upright. */
-.curiosity-loop { position: relative; display: grid; place-items: center; width: 180px; height: 180px; margin: 42px clamp(8px, 5vw, 64px) 6px auto; border: 1px solid rgba(255,248,238,.42); border-radius: 50%; color: #ffe5b1; text-align: center; font-family: var(--font-display); font-size: 1rem; line-height: 1.1; }
-.curiosity-loop b { transform: rotate(-12deg); }
-.curiosity-loop:before, .curiosity-loop:after { content: ''; position: absolute; border: 1px solid rgba(255,248,238,.32); border-radius: 50%; }
-.curiosity-loop:before { width: 208px; height: 148px; transform: rotate(55deg); animation: orbitSpin 19s linear infinite; }
-.curiosity-loop:after { width: 150px; height: 214px; transform: rotate(-34deg); animation: orbitSpin 26s linear reverse infinite; }
-.loop-orbit { position: absolute; inset: 0; display: block; transform: rotate(var(--start, 0deg)); animation: orbitSpin var(--speed, 19s) linear infinite; }
-.loop-orbit-b { animation-direction: reverse; animation-duration: 26s; }
-.loop-orbit img { position: absolute; width: 34px; height: 34px; border-radius: 50%; object-fit: cover; background: #f7f2ed; box-shadow: 0 0 0 3px rgba(255,248,238,.16), 0 6px 16px rgba(20,10,26,.35); }
-.loop-orbit-a { --start: 18deg; --speed: 19s; }
-.loop-orbit-a img { left: 50%; top: -17px; margin-left: -17px; }
-.loop-orbit-b { --start: 200deg; }
-.loop-orbit-b img { left: -17px; top: 50%; margin-top: -17px; }
-.curiosity-loop:before, .curiosity-loop:after { content: ''; position: absolute; border: 1px solid rgba(255,248,238,.32); border-radius: 50%; }
-.curiosity-loop span { position: absolute; width: 7px; height: 7px; border-radius: 50%; background: var(--coral); }
-.curiosity-loop span:nth-child(1) { top: 21px; right: 31px; }
-.curiosity-loop span:nth-child(2) { bottom: 25px; left: 25px; background: var(--sage); }
-.curiosity-loop span:nth-child(3) { top: 82px; left: -3px; background: var(--saffron); }
-.curiosity-loop b { position: relative; z-index: 1; font-weight: 400; }
+/* The circle of words sits at the left of its column, with just enough room
+   that neither the rings nor the planets riding them can leave the screen. */
+.curiosity-loop { position: relative; display: grid; place-items: center; width: 180px; height: 180px; margin: 42px 0 6px 6px; border: 1px solid rgba(255,248,238,.42); border-radius: 50%; color: #ffe5b1; text-align: center; font-family: var(--font-display); font-size: 1rem; line-height: 1.1; }
+/* a golden line runs through curiosity -> connection -> growth, and its light
+   travels up and down the line, never stopping */
+.loop-thread { position: absolute; left: 50%; top: 22%; width: 2px; height: 56%; margin-left: -1px; overflow: hidden; border-radius: 999px; background: linear-gradient(180deg, rgba(255,229,177,.12), rgba(224,169,78,.9) 45%, rgba(255,229,177,.12)); box-shadow: 0 0 14px rgba(224,169,78,.4); }
+.loop-spark { position: absolute; left: 0; top: 0; display: block; width: 100%; height: 100%; background: linear-gradient(180deg, transparent 0 36%, #fff3d6 50%, transparent 64% 100%); animation: lineRun 4.8s ease-in-out infinite alternate; }
+.curiosity-loop:before, .curiosity-loop:after { content: ''; position: absolute; border: 1px solid rgba(255,248,238,.32); border-radius: 50%; animation: orbitTurn var(--speed, 19s) linear infinite; }
+.curiosity-loop:before { width: 208px; height: 148px; --start: 55deg; --speed: 19s; }
+.curiosity-loop:after { width: 150px; height: 214px; --start: -34deg; --speed: 26s; animation-direction: reverse; }
+/* the planets: small round bodies riding the two golden rings */
+.loop-orbit { position: absolute; inset: 0; margin: auto; display: block; animation: orbitTurn var(--speed, 19s) linear infinite; }
+.loop-orbit:after { content: ''; position: absolute; left: 0; top: 50%; width: var(--size, 15px); height: var(--size, 15px); border-radius: 50%; transform: translate(-50%, -50%); background: radial-gradient(circle at 32% 28%, #fff4da, var(--tone, #d7a246) 55%, rgba(94,58,24,.92)); box-shadow: 0 0 12px rgba(215,162,70,.45); }
+.loop-orbit-a { width: 208px; height: 148px; --start: 55deg; --speed: 19s; --size: 15px; --tone: #d7a246; }
+.loop-orbit-a2 { width: 208px; height: 148px; --start: 55deg; --speed: 19s; --size: 9px; --tone: #b8c3b0; }
+.loop-orbit-a2:after { left: auto; right: 0; transform: translate(50%, -50%); }
+.loop-orbit-b { width: 150px; height: 214px; --start: -34deg; --speed: 26s; --size: 12px; --tone: #c9aaa0; animation-direction: reverse; }
+.curiosity-loop b { position: relative; z-index: 1; transform: rotate(-12deg); font-weight: 400; }
+/* a ring turns a full circle, so it never snaps back to where it began */
+@keyframes orbitTurn { from { transform: rotate(var(--start, 0deg)); } to { transform: rotate(calc(var(--start, 0deg) + 360deg)); } }
+@keyframes lineRun { from { transform: translateY(-100%); } to { transform: translateY(100%); } }
 .psyche-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-.psyche-card { position: relative; min-height: 310px; padding: 22px; border-radius: 23px; color: var(--plum-deep); background: #f9d8b0; box-shadow: 0 16px 40px rgba(22,11,31,.17); transition: transform .3s ease, box-shadow .3s ease; }
+.psyche-card { position: relative; overflow: hidden; min-height: 310px; padding: 22px; border-radius: 23px; color: var(--plum-deep); background: #f9d8b0; box-shadow: 0 16px 40px rgba(22,11,31,.17); transition: transform .3s ease, box-shadow .3s ease; }
+.psyche-card:before { content: ''; position: absolute; inset: -20% -70%; pointer-events: none; opacity: 0; transform: translateX(-60%); background: linear-gradient(115deg, transparent 44%, rgba(255,255,255,.42) 50%, transparent 56%); transition: transform .9s ease, opacity .35s ease; }
+.psyche-card:hover:before { opacity: 1; transform: translateX(60%); }
 .psyche-card:hover { transform: translateY(-12px) rotate(-1deg); box-shadow: 0 25px 50px rgba(22,11,31,.25); }
 .psyche-card-two { margin-top: 35px; background: #bdcfb5; }
 .psyche-card-three { margin-top: -20px; background: #ed9d80; }
@@ -365,8 +370,11 @@ button { cursor: pointer; }
 .history-intro p { max-width: 330px; color: var(--ink-soft); font-size: .93rem; }
 .timeline { position: relative; display: grid; gap: 0; padding-left: 32px; }
 .timeline-item { position: relative; display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 24px; padding: 0 0 46px; }
-.timeline-item:not(:last-child):after { content: ''; position: absolute; left: -26px; top: 16px; bottom: 0; width: 2px; border-radius: 999px; background: linear-gradient(180deg, var(--terracotta), rgba(166,111,91,.28)); box-shadow: 0 0 12px rgba(166,111,91,.2); }
-.timeline-dot { position: absolute; z-index: 1; left: -32px; top: 4px; width: 13px; height: 13px; border: 3px solid var(--paper); border-radius: 50%; background: var(--terracotta); box-shadow: 0 0 0 1px var(--terracotta), 0 0 12px rgba(166,111,91,.2); }
+/* One golden line runs the height of the timeline, through the beginning,
+   our why and the next chapter, and a light travels back and forth along it. */
+.timeline-spine { position: absolute; left: 5px; top: 9px; bottom: 9px; width: 3px; overflow: hidden; border-radius: 999px; background: linear-gradient(180deg, rgba(215,162,70,.92), rgba(200,111,88,.6) 45%, rgba(215,162,70,.92)); box-shadow: 0 0 14px rgba(215,162,70,.32); }
+.timeline-glint { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: linear-gradient(180deg, transparent 0 38%, #ffe7b4 50%, transparent 62% 100%); animation: lineRun 6.5s ease-in-out infinite alternate; }
+.timeline-dot { position: absolute; z-index: 1; left: -32px; top: 4px; width: 13px; height: 13px; border: 3px solid var(--paper); border-radius: 50%; background: #d7a246; box-shadow: 0 0 0 1px #d7a246, 0 0 16px rgba(215,162,70,.45); }
 .timeline-item:last-child { padding-bottom: 0; }
 .timeline-year, .timeline-item h3, .timeline-item p { min-width: 0; }
 .timeline-year { padding-top: 2px; color: var(--terracotta-ink); font-size: .74rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
@@ -378,10 +386,10 @@ button { cursor: pointer; }
 .event-card:hover { transform: translateY(-7px) rotate(.35deg); box-shadow: 0 22px 42px rgba(61,39,66,.14); }
 .card-visual, .gallery-visual { position: relative; overflow: hidden; background: linear-gradient(145deg, #d4b486, #e28e6c); }
 .card-visual { min-height: 218px; }
-.card-visual:before, .gallery-visual:before { content: ''; position: absolute; width: 120px; height: 120px; left: 22px; bottom: -32px; border: 1px solid rgba(255,250,240,.65); border-radius: 50%; box-shadow: 25px -10px 0 -24px rgba(255,250,240,.8), 25px -10px 0 -23px rgba(255,250,240,.8); transform: rotate(25deg); }
-.card-visual:after, .gallery-visual:after { content: '✳'; position: absolute; right: 18px; top: 18px; color: rgba(255,250,240,.7); font-size: 1.4rem; }
-.card-visual.has-image, .gallery-visual.has-image { background-size: cover; background-position: center; background-repeat: no-repeat; background-color: rgba(46,32,51,.9); }
-.card-visual.has-image:before, .card-visual.has-image:after, .gallery-visual.has-image:before, .gallery-visual.has-image:after { display: none; }
+.card-visual:not(.has-image):before, .gallery-visual:not(.has-image):before { content: ''; position: absolute; width: 120px; height: 120px; left: 22px; bottom: -32px; border: 1px solid rgba(255,250,240,.65); border-radius: 50%; box-shadow: 25px -10px 0 -24px rgba(255,250,240,.8), 25px -10px 0 -23px rgba(255,250,240,.8); transform: rotate(25deg); }
+.card-visual:not(.has-image):after, .gallery-visual:not(.has-image):after { content: '✳'; position: absolute; right: 18px; top: 18px; color: rgba(255,250,240,.7); font-size: 1.4rem; }
+.card-visual.has-image { background-size: cover; background-position: center; background-repeat: no-repeat; background-color: rgba(46,32,51,.9); }
+.card-visual.has-image:before, .card-visual.has-image:after { display: none; }
 .visual-label { position: absolute; left: 19px; bottom: 18px; right: 12px; color: #fff9ef; font-family: var(--font-display); font-size: 1.25rem; line-height: 1; }
 .event-body { display: flex; flex-direction: column; padding: 24px 24px 21px; }
 .event-date { color: var(--terracotta-ink); font-size: .7rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
@@ -423,9 +431,24 @@ button { cursor: pointer; }
 .gallery-item:nth-child(3) { background: linear-gradient(145deg, #604062, #c97c67); }
 .gallery-item:nth-child(4) { background: linear-gradient(145deg, #d39f68, #8d7d91); }
 .gallery-visual { height: 100%; min-height: 250px; background: transparent; }
-.gallery-visual:before { width: 180px; height: 180px; left: auto; right: -40px; bottom: -65px; }
-.gallery-visual:after { font-size: 1.6rem; }
-.gallery-caption { position: absolute; left: 20px; right: 20px; bottom: 18px; z-index: 1; max-width: calc(100% - 40px); color: #fff9ef; font-family: var(--font-display); font-size: clamp(.95rem, 1.4vw, 1.18rem); line-height: 1.12; word-break: normal; overflow-wrap: normal; text-wrap: balance; }
+.gallery-visual:not(.has-image):before { width: 180px; height: 180px; left: auto; right: -40px; bottom: -65px; }
+.gallery-visual:not(.has-image):after { font-size: 1.6rem; }
+/* the caption keeps its own shade, so it reads over any photo */
+.gallery-item:after { content: ''; position: absolute; z-index: 2; inset: auto 0 0; height: 52%; pointer-events: none; background: linear-gradient(0deg, rgba(30,18,38,.62), transparent); }
+/* A photo is never cropped and never sits in a block of flat colour: the
+   picture is drawn whole, with a softened copy of itself filling the frame
+   behind it. A square crest and a wide photograph both look like pictures. */
+.gallery-visual.has-image, .archive-image, .gallery-stage-image.has-image { background-size: contain; background-position: center; background-repeat: no-repeat; background-color: #2b1a2b; }
+.gallery-visual.has-image:before, .archive-image:before, .gallery-stage-image.has-image:before {
+  content: ''; position: absolute; z-index: 0; inset: -14%; display: block;
+  background-image: inherit; background-size: cover; background-position: center; background-repeat: no-repeat;
+  filter: blur(22px) brightness(.6) saturate(1.08);
+}
+.gallery-visual.has-image:after, .archive-image:after, .gallery-stage-image.has-image:after {
+  content: ''; position: absolute; z-index: 1; inset: 0; display: block;
+  background-image: inherit; background-size: contain; background-position: center; background-repeat: no-repeat;
+}
+.gallery-caption { position: absolute; left: 20px; right: 20px; bottom: 18px; z-index: 3; max-width: calc(100% - 40px); color: #fff9ef; font-family: var(--font-display); font-size: clamp(.95rem, 1.4vw, 1.18rem); line-height: 1.12; word-break: normal; overflow-wrap: normal; text-wrap: balance; }
 .gallery-placeholder { position: absolute; top: 20px; left: 20px; color: rgba(255,250,240,.72); font-size: .62rem; font-weight: 800; text-transform: uppercase; letter-spacing: .14em; }
 
 .team-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
@@ -485,6 +508,8 @@ html.js .scroll-reveal.is-visible { opacity: 1; transform: none; }
 @keyframes orbitSpin { to { transform: rotate(332deg); } }
 @keyframes stickerPulse { 0%, 100% { transform: rotate(13deg) scale(1); } 50% { transform: rotate(8deg) scale(1.07); } }
 @keyframes breathe { 0%, 100% { transform: scale(.95); opacity: .75; } 50% { transform: scale(1.05); opacity: .3; } }
+@keyframes fillDrift { from { transform: scale(1.02) translate3d(-1.5%, 1%, 0); } to { transform: scale(1.14) translate3d(1.5%, -1.5%, 0); } }
+@keyframes cometRun { 0%, 70% { opacity: 0; transform: translate3d(0, 0, 0) rotate(9deg); } 74% { opacity: .9; } 94% { opacity: 0; transform: translate3d(140vw, 11vh, 0) rotate(9deg); } 100% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { *, *:before, *:after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; } }
 
 @media (max-width: 860px) {
@@ -564,8 +589,12 @@ html.js .scroll-reveal.is-visible { opacity: 1; transform: none; }
     .gallery-shell { padding: 76px 0 110px; }
     .gallery-showcase { display: grid; grid-template-columns: 1.2fr .8fr; gap: 20px; align-items: stretch; }
     .gallery-stage { position: relative; overflow: hidden; border-radius: 26px; background: rgba(var(--film-rgb), .9); box-shadow: 0 24px 60px rgba(61,39,66,.15); display: flex; flex-direction: column; }
-    .gallery-stage-image { position: relative; inset: auto; display: block; width: 100%; height: clamp(300px, 46vw, 520px); background-position: center; background-size: cover; background-repeat: no-repeat; background-color: rgba(46,32,51,.9); transition: opacity .4s ease, transform .7s ease; }
+    .gallery-stage-image { position: relative; inset: auto; overflow: hidden; display: block; width: 100%; height: clamp(300px, 46vw, 520px); background-position: center; background-size: contain; background-repeat: no-repeat; background-color: #2b1a2b; transition: opacity .4s ease, transform .7s ease; }
     .gallery-stage-image.has-image:hover { transform: scale(1.012); }
+    .gallery-stage-image.has-image:before { filter: blur(34px) brightness(.55) saturate(1.1); animation: fillDrift 34s ease-in-out infinite alternate; }
+    /* the home page's stage is a feature, not the whole wall */
+    .gallery-stage.stage-feature { max-width: 960px; }
+    .gallery-stage.stage-feature .gallery-stage-image { height: clamp(260px, 34vw, 430px); }
     /* no dark sheet over the photo any more: the caption has its own cream band */
     .gallery-stage-copy { position: relative; z-index: 2; padding: 20px 26px 22px; background: rgba(var(--film-rgb), .9); border-top: 1px solid rgba(90,77,73,.14); }
     .gallery-stage-copy small { color: var(--terracotta-ink); font-size: .68rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
@@ -574,6 +603,10 @@ html.js .scroll-reveal.is-visible { opacity: 1; transform: none; }
     .gallery-control { display: inline-grid; place-items: center; width: 43px; height: 43px; border: 1px solid rgba(90,77,73,.22); border-radius: 50%; color: var(--plum-deep); background: rgba(255,255,255,.7); font-size: 1.2rem; cursor: pointer; }
     .gallery-control:hover { background: #c86f58; }
     .gallery-counter { color: rgba(255,249,239,.75); font-size: .75rem; font-weight: 800; letter-spacing: .12em; }
+    .gallery-thumbs { display: flex; gap: 8px; margin-top: 16px; padding-bottom: 3px; overflow-x: auto; }
+    .gallery-thumb { flex: 0 0 auto; width: 64px; height: 48px; border: 1px solid rgba(90,77,73,.22); border-radius: 11px; background-size: contain; background-position: center; background-repeat: no-repeat; background-color: rgba(43,26,43,.9); opacity: .62; cursor: pointer; transition: opacity .2s ease, transform .2s ease, border-color .2s ease; }
+    .gallery-thumb:hover { opacity: 1; transform: translateY(-2px); }
+    .gallery-thumb.is-current { opacity: 1; border-color: #c86f58; box-shadow: 0 0 0 2px rgba(200,111,88,.32); }
     .gallery-side-note { display: flex; flex-direction: column; justify-content: space-between; padding: 28px; border-radius: 27px; background: #fffaf1; box-shadow: 0 20px 48px rgba(61,39,66,.08); }
     .gallery-side-note h2 { margin: 12px 0 0; color: #34213d; font-family: Georgia, serif; font-size: 2.7rem; font-weight: 400; line-height: 1; }
     .gallery-side-note p { color: #625c6d; font-size: .85rem; }
@@ -586,9 +619,9 @@ html.js .scroll-reveal.is-visible { opacity: 1; transform: none; }
     .archive-card { position: relative; min-height: 285px; overflow: hidden; border-radius: 19px; background: linear-gradient(145deg, #c6715b, #eab381); box-shadow: 0 13px 27px rgba(61,39,66,.08); }
     .archive-card:nth-child(2n) { background: linear-gradient(145deg, #8da18d, #d1b587); }
     .archive-card:nth-child(3n) { background: linear-gradient(145deg, #604062, #c97c67); }
-    .archive-image { position: absolute; inset: 0; background-position: center; background-size: cover; background-repeat: no-repeat; background-color: rgba(46,32,51,.9); }
-    .archive-card:after { content: ''; position: absolute; inset: 0; background: linear-gradient(0deg, rgba(38,23,47,.75), transparent 72%); }
-    .archive-caption { position: absolute; z-index: 1; left: 18px; right: 18px; bottom: 17px; color: #fff9ef; font-family: Georgia, serif; font-size: 1.35rem; line-height: 1.05; }
+    .archive-image { position: absolute; inset: 0; overflow: hidden; background-position: center; background-size: contain; background-repeat: no-repeat; background-color: #2b1a2b; }
+    .archive-card:after { content: ''; position: absolute; z-index: 2; inset: 0; background: linear-gradient(0deg, rgba(38,23,47,.75), transparent 72%); }
+    .archive-caption { position: absolute; z-index: 3; left: 18px; right: 18px; bottom: 17px; color: #fff9ef; font-family: Georgia, serif; font-size: 1.35rem; line-height: 1.05; }
     .gallery-empty { grid-column: 1 / -1; display: grid; place-items: center; min-height: 200px; padding: 30px; border: 1px dashed rgba(78,49,85,.22); border-radius: 20px; color: #625c6d; text-align: center; }
     .gallery-empty strong { color: #34213d; font-family: Georgia, serif; font-size: 1.6rem; font-weight: 400; }
     .gallery-empty p { margin: 5px 0 0; font-size: .82rem; }
@@ -910,11 +943,14 @@ html.js .scroll-reveal.is-visible { opacity: 1; transform: none; }
 .logo-medallion:after { background: linear-gradient(180deg, transparent, rgba(215,162,70,.5)); }
 
 
+/* A golden streak crosses the hero now and then: the page never sits still. */
+.hero-comet { position: absolute; z-index: 0; top: 16%; left: -16%; width: 210px; height: 1px; pointer-events: none; opacity: 0; transform: rotate(9deg); background: linear-gradient(90deg, transparent, rgba(255,236,190,.9), transparent); box-shadow: 0 0 12px rgba(244,193,127,.5); animation: cometRun 16s ease-in-out 4s infinite; }
+
 /* --------------------------------------------------------------- photo frame */
 /* Clicking a photo opens it big, in a warm frame of its own. */
 .gallery-visual, .archive-image, .gallery-stage-image.has-image { cursor: zoom-in; border: 0; padding: 0; }
 .gallery-zoom {
-  position: absolute; right: 14px; top: 14px; z-index: 2;
+  position: absolute; right: 14px; top: 14px; z-index: 4;
   display: grid; place-items: center; width: 34px; height: 34px;
   border-radius: 50%; background: rgba(255,250,241,.9); color: var(--plum-deep);
   font-size: 1rem; line-height: 1; opacity: 0; transition: opacity .2s ease, transform .2s ease;
