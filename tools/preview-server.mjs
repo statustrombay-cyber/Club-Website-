@@ -294,6 +294,7 @@ const MIME = {
   '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp',
   '.gif': 'image/gif', '.ico': 'image/x-icon', '.pdf': 'application/pdf', '.txt': 'text/plain; charset=utf-8',
   '.woff2': 'font/woff2', '.mjs': 'text/javascript; charset=utf-8', '.md': 'text/plain; charset=utf-8',
+  '.mp4': 'video/mp4', '.m4v': 'video/mp4', '.mov': 'video/quicktime', '.webm': 'video/webm',
 };
 
 function sendFile(res, filePath, req) {
@@ -304,13 +305,37 @@ function sendFile(res, filePath, req) {
     res.writeHead(304, { ETag: etag });
     return res.end();
   }
-  res.writeHead(200, {
+
+  /* A video is not downloaded in one piece: the browser asks for a slice at a
+     time, and Safari refuses to play at all unless the answer is a real 206
+     with a Content-Range. So answer the range that was asked for. */
+  let start = 0;
+  let end = stat.size - 1;
+  let partial = false;
+  const asked = /^bytes=(\d*)-(\d*)$/.exec(String(req.headers.range || '').trim());
+  if (asked && !(asked[1] === '' && asked[2] === '')) {
+    const from = asked[1];
+    const to = asked[2];
+    start = from === '' ? Math.max(0, stat.size - Number(to)) : Number(from);
+    end = from === '' || to === '' ? stat.size - 1 : Math.min(Number(to), stat.size - 1);
+    if (!Number.isFinite(start) || !Number.isFinite(end) || start > end || start >= stat.size) {
+      res.writeHead(416, { 'Content-Range': 'bytes */' + stat.size, 'Accept-Ranges': 'bytes' });
+      return res.end();
+    }
+    partial = true;
+  }
+
+  const headers = {
     'Content-Type': MIME[ext] || 'application/octet-stream',
-    'Content-Length': stat.size,
+    'Content-Length': end - start + 1,
+    'Accept-Ranges': 'bytes',
     ETag: etag,
     'Cache-Control': 'no-cache',
-  });
-  fs.createReadStream(filePath).pipe(res);
+  };
+  if (partial) headers['Content-Range'] = 'bytes ' + start + '-' + end + '/' + stat.size;
+  res.writeHead(partial ? 206 : 200, headers);
+  if (req.method === 'HEAD') return res.end();
+  fs.createReadStream(filePath, { start, end }).pipe(res);
 }
 
 function readBody(req) {

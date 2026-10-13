@@ -259,9 +259,60 @@
     }, 45000);
   }
 
+  /* ------------------------------------------------------------ the herd */
+  /* The front page's horses. The still frame is already in the HTML, so this
+     only plays the clip — and stops it when nobody can see it: when the hero
+     has scrolled away, or when the tab is in the background. A clip that
+     cannot play at all is hidden, leaving the still frame in its place, so the
+     page never shows a blank or dark box. */
+  function setupHeroVideo() {
+    const video = $('#heroVideo');
+    if (!video) return;
+    const hero = $('#top-section');
+    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    const allowed = !reduced() && !(connection && connection.saveData);
+    let retried = false;
+
+    function drop() { video.hidden = true; }
+    function pause() { try { video.pause(); } catch (error) { /* nothing to pause */ } }
+    function play() {
+      if (!allowed || document.hidden) return;
+      const attempt = video.play();
+      if (attempt && typeof attempt.catch === 'function') attempt.catch(drop);
+    }
+
+    if (!allowed) { drop(); return; }
+
+    video.addEventListener('error', drop);
+    play();
+
+    /* Some phones block even a muted autoplay until the visitor touches the
+       page: the first touch, tap, key or scroll asks again. */
+    function retry() {
+      if (retried || video.error) return;
+      retried = true;
+      video.hidden = false;
+      play();
+    }
+    ['pointerdown', 'touchstart', 'keydown', 'scroll'].forEach(function (name) {
+      window.addEventListener(name, retry, { once: true, passive: true });
+    });
+
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) pause(); else play();
+    });
+
+    if (hero && 'IntersectionObserver' in window) {
+      new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) { if (entry.isIntersecting) play(); else pause(); });
+      }, { threshold: 0 }).observe(hero);
+    }
+  }
+
   function start() {
     setupReveal();
     setupMenu();
+    setupHeroVideo();
     setupPhotoFrame();
     setupGalleryStage();
     setupForms();

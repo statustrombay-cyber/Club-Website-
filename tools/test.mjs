@@ -50,7 +50,7 @@ const files = collect(ROOT);
 for (const [rel, absSource] of files) {
   const target = '/site/' + rel;
   await ensureDir(target.slice(0, target.lastIndexOf('/')));
-  if (/\.(png|jpe?g|webp|gif|ico|pdf)$/i.test(rel)) {
+  if (/\.(png|jpe?g|webp|gif|ico|pdf|mp4|m4v|mov|webm)$/i.test(rel)) {
     await php.writeFile(target, new Uint8Array(fs.readFileSync(absSource)));
   } else {
     await php.writeFile(target, fs.readFileSync(absSource, 'utf8'));
@@ -802,6 +802,47 @@ ok('the photo frame image carries no empty source to paint at load',
 ok('the photo frame backdrop is warm, not black',
   /\.photo-frame \{[^}]*background: rgba\(76,58,64/.test(appCss)
   && !/#241d20/.test(appCss));
+
+/* ------------------------------------------------ the herd on the front page
+   The club's horses: one compressed clip, a still frame that is always there,
+   both pinned behind the page. Nothing dark, nothing clickable, on the front
+   page only — and the server must hand the clip out as video, in slices. */
+const clipPath = path.join(ROOT, 'assets/media/horses-running.mp4');
+const clip = fs.existsSync(clipPath) ? fs.readFileSync(clipPath) : Buffer.alloc(0);
+ok('the herd is one small file, not the raw uploads',
+  clip.length > 200000 && clip.length < 2.6 * 1024 * 1024
+  && fs.existsSync(path.join(ROOT, 'assets/media/horses-running-poster.jpg'))
+  && fs.readdirSync(ROOT).every((name) => !/\.mp4$/i.test(name)),
+  Math.round(clip.length / 1024) + ' KB');
+ok('the clip is a real mp4 that browsers can start straight away',
+  clip.slice(4, 8).toString('latin1') === 'ftyp' && clip.indexOf('moov') > 0
+  && clip.indexOf('moov') < clip.indexOf('mdat'));
+ok('the front page plays the herd, muted and looping, behind everything',
+  /<video[^>]*id="heroVideo"[^>]*muted[^>]*loop[^>]*playsinline[^>]*autoplay/.test(homeAlbums.body)
+  && homeAlbums.body.includes('/assets/media/horses-running.mp4')
+  && homeAlbums.body.includes('id="heroStill"'));
+ok('the herd belongs to the front page only',
+  !(await get('/gallery')).body.includes('id="heroVideo"') && !(await get('/members')).body.includes('id="heroVideo"')
+  && !(await get('/calendar')).body.includes('id="heroStill"'));
+ok('the herd is behind the words and the bubbles, and cannot be clicked',
+  /\.hero-still, \.hero-video \{[^}]*position: fixed/.test(appCss)
+  && /\.hero-still \{ z-index: -2; \}/.test(appCss) && /\.hero-video \{ z-index: -1; \}/.test(appCss)
+  && /\.hero-still, \.hero-video \{[^}]*pointer-events: none/.test(appCss));
+ok('the veil over the herd is warm cream, never dark',
+  /\.hero-veil \{[^}]*background:[^}]*rgba\(247,242,237/.test(appCss)
+  && !/\.hero-(still|video|veil)[^{]*\{[^}]*background: *#[0-5]/.test(appCss));
+ok('less motion means the still frame instead of the clip',
+  /@media \(prefers-reduced-motion: reduce\) \{\s*\.hero-video \{ display: none/.test(appCss)
+  && appJs.includes('saveData') && appJs.includes('video.hidden = true'));
+ok('a clip that cannot play leaves the still frame, never a blank box',
+  appJs.includes("video.addEventListener('error', drop)")
+  && appJs.includes('video.hidden = true') && layoutSource.includes('id="heroStill"'));
+ok('the herd layer sits outside the page shell, so the bubbles drift over it',
+  layoutSource.indexOf('heroVideo') > 0 && layoutSource.indexOf('heroVideo') < layoutSource.indexOf('site-shell'));
+ok('the server hands the clip out as video, in slices',
+  /\.mp4': 'video\/mp4'/.test(fs.readFileSync(path.join(ROOT, 'tools/preview-server.mjs'), 'utf8'))
+  && /Content-Range/.test(fs.readFileSync(path.join(ROOT, 'tools/preview-server.mjs'), 'utf8'))
+  && /AddType video\/mp4/.test(fs.readFileSync(path.join(ROOT, '.htaccess'), 'utf8')));
 
 /* The club area itself, on a phone: the section strip scrolls sideways, the
    counters and editors go one per row, and a long word cannot widen a page. */

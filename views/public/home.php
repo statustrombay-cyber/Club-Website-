@@ -42,7 +42,11 @@ $mapUrl     = 'https://www.google.com/maps/search/?api=1&query=' . urlencode($ad
 $email      = trim((string) ($site['email'] ?? ''));
 $phone      = trim((string) ($site['clubPhone'] ?? ''));
 ?>
-<section class="hero" id="top-section">
+<section class="hero hero-with-video" id="top-section">
+  <?php /* The hero's warm veil: it keeps the words on top of the herd
+           readable, and melts the bottom of the picture (drawn in the layout)
+           into the section that follows. */ ?>
+  <div class="hero-veil" aria-hidden="true"></div>
   <div class="container hero-grid">
     <div class="fade-in">
       <div class="eyebrow" id="heroEyebrow"><?= e((string) ($site['eyebrow'] ?? '')) ?></div>

@@ -42,8 +42,17 @@ DirectoryIndex index.php index.html
   </FilesMatch>
 </IfModule>
 
+# The home page's herd: Apache must hand these out as video, and support the
+# slice requests the browser makes while playing.
+<IfModule mod_mime.c>
+  AddType video/mp4 .mp4 .m4v
+  AddType video/webm .webm
+  AddType video/quicktime .mov
+</IfModule>
+
 <IfModule mod_expires.c>
   ExpiresActive On
+  ExpiresByType video/mp4 "access plus 30 days"
   ExpiresByType image/jpeg "access plus 30 days"
   ExpiresByType image/png "access plus 30 days"
   ExpiresByType image/webp "access plus 30 days"

@@ -314,7 +314,7 @@ function mt_is_static_file(string $route): bool
     if (!str_starts_with($candidate, MT_ROOT . DIRECTORY_SEPARATOR)) {
         return false;
     }
-    return (bool) preg_match('#\.(css|js|mjs|png|jpe?g|webp|gif|svg|ico|pdf|woff2?|ttf|txt|map|json)$#i', $candidate);
+    return (bool) preg_match('#\.(css|js|mjs|png|jpe?g|webp|gif|svg|ico|pdf|woff2?|ttf|txt|map|json|mp4|m4v|mov|webm)$#i', $candidate);
 }
 
 /* -------------------------------------------------------------------------

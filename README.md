@@ -96,6 +96,15 @@ never looks broken while that is pending:
 - **Public website** — hero, about, the psychology lens, club details, history
   timeline, events, calendar, gallery, core team, two registration forms and
   contact details, with the original drifting bubbles and orbit artwork.
+- **The herd on the front page** — the club's own horse footage plays behind
+  the home hero from the moment the page opens: muted, looping, pinned to the
+  window so it keeps running while the visitor scrolls, with the bubbles
+  drifting over it and a warm cream veil keeping every word readable. It is one
+  small file (`assets/media/horses-running.mp4`, ~1.5 MB for 17 seconds), cut
+  from the three clips the club uploaded and re-encoded for the web, plus a
+  still frame (`horses-running-poster.jpg`) that is always there — if the clip
+  cannot play, or the visitor asked for less motion or is on a metered
+  connection, the still frame stays and the page is never blank.
 - **Photo gallery** — masonry album, event filters, caption search and a
   full-frame viewer (arrow keys, swipe, click-outside to close). Captions appear
   only when the club typed one; an event name on its own shows as a small badge.
@@ -113,7 +122,7 @@ never looks broken while that is pending:
     fee, the payment state, the serial, a QR code and the entry rules — payment
     proof *and* pass are required at the door.
   - **No refunds**, except when the club cancels an event: then the fee is
-    returned within 12 working days. That rule is printed in the form and on the
+    returned within 24 working days. That rule is printed in the form and on the
     pass.
 - **Club dashboard** — overview, site copy, statistics, team, events, gallery
   photos, the **event register** and the form inbox, plus JSON export/import and
@@ -146,6 +155,7 @@ views/                 templates: layout.php, dashboard.php, public/*.php
                        (public/health.php is the /health page — self-contained,
                        it needs no stylesheet or script of its own)
 assets/                app.css, app.js, manage.css, manage.js, images
+assets/media/          the home page's herd: horses-running.mp4 + its still
 data/                  site.json (content), config.php (password), backups/
 uploads/               photos uploaded from the dashboard
 tools/preview-server.mjs      local runner for machines without PHP
@@ -156,7 +166,7 @@ tools/test.mjs                automated checks over pages, API, security, forms
 ## Development
 
 ```bash
-npm test          # runs the PHP app in isolation and checks 164 behaviours
+npm test          # runs the PHP app in isolation and checks 260 behaviours
 ```
 
 The test suite boots the real application, then exercises pages, the JSON API,
