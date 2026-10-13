@@ -99,20 +99,26 @@ never looks broken while that is pending:
 - **The herd** — the club's own horse footage plays behind every public page,
   pinned to the window and muted, with the bubbles drifting over it and a warm
   film of paper over the reading. It is cut from the three clips the club
-  uploaded and **stitched with a stream copy — not one frame is re-encoded**,
-  so the picture is exactly the camera's: 1080×720 at 5.0 Mbps, 19 seconds,
-  ~12 MB (`assets/media/horses-running.mp4`). Four locations: the white horse
-  leading the golden herd, the black horse galloping through snow, the stampede
-  through water, and the brown herd on the grass ridge. The slow stretches were
-  cut out, every cut lands on a keyframe, and the joins decode clean. A still
+  uploaded: 19 seconds, four locations — the white horse leading the golden
+  herd, the black horse galloping through snow, the stampede through water, and
+  the brown herd on the grass ridge. The slow stretches are cut out and the
+  joins decode clean.
+  - It is **enhanced for the screen**: each shot trimmed exactly (not by
+    keyframe), scaled to **1440×960** with Lanczos, given one light unsharp
+    pass, and encoded once at CRF 20 / `veryslow` — about **twice as sharp
+    where it actually lands on a 1600-px window** as the 1080×720 master it
+    replaces, and lighter on the wire: 9.9 MB instead of 12.1 MB
+    (`assets/media/horses-running.mp4`). A still
   frame (`horses-running-poster.jpg`) sits in the same place and is always
   there: if the clip cannot play, or the visitor asked for less motion or is on
   a metered connection, the still frame simply stays and the page is never
   blank.
   - It runs **continuously** — nothing pauses it while the page is open — and a
-    watchdog checks twice a second that its clock is still moving: a stall gets
-    a nudge first, and a quiet reload if that was not enough, so the herd can
-    never be caught frozen on screen.
+    watchdog checks about once a second that its clock is still moving: a stall
+    gets a nudge first, and a quiet reload if that was not enough. A reload
+    **carries on from the second the clip stopped** instead of snapping back to
+    the start, and a stall the browser reports itself gets the same treatment
+    straight away, so the herd can never be caught frozen on screen.
   - The herd runs behind **every public page** (home, gallery, calendar,
     members, register, pass and verify). Nothing is a solid wall: each block
     paints a thin film of its own paper and the horses move behind it. The film
@@ -192,6 +198,20 @@ never looks broken while that is pending:
   - **No refunds**, except when the club cancels an event: then the fee is
     returned within 24 working days. That rule is printed in the form and on the
     pass.
+  - The **pass PDF** is one A4 page, written by hand — no library, no extension.
+    The university's logo and its campus address stand at the **top left**, the
+    club's name is **centred** on the header band, the club crest sits at the
+    **top right**, and the university's mark appears again at the **foot with
+    the campus address** beneath it. The QR code has a framed corner of its own
+    with the facts to its left; tests walk every string in the PDF and fail if
+    one lands inside that frame, and check that the name and the pass label
+    share one centre line.
+  - The pictures go in without GD, Imagick or zlib: the club crest as JPEG
+    (`/DCTDecode`), the university mark as a PNG whose own IDAT stream is handed
+    to the PDF with PNG predictors (`/DecodeParms << /Predictor 15 … >>`). A
+    mark that cannot be read leaves its space empty rather than breaking the
+    pass; a picture with transparency is shipped as a print copy without alpha
+    (`assets/img/university-logo-print.png`).
 - **Club dashboard** — overview, site copy, statistics, team, events, gallery
   photos, the **event register** and the form inbox, plus JSON export/import and
   one-click backups. Everything the public site shows is edited from here.
@@ -273,7 +293,8 @@ Two notes for the launch:
 ## Development
 
 ```bash
-npm test          # runs the PHP app in isolation and checks 299 behaviours
+npm test          # runs the PHP app in isolation and checks 304 behaviours
+npm run lint      # load one PHP file in that runtime and print why it will not
 ```
 
 The test suite boots the real application, then exercises pages, the JSON API,

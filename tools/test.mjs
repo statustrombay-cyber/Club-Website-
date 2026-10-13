@@ -355,6 +355,39 @@ ok('the PDF is a finished document', String(pdf.body).includes('%%EOF') && Strin
 const pdfText = String(pdf.body);
 ok('the PDF names the holder, the serial and the terms', pdfText.includes('Riya Sharma') && pdfText.includes(registration.serial || '') && pdfText.includes('24 working days'));
 ok('the PDF carries the check page, never the private code', pdfText.includes('/verify/' + (registration.publicId || '')) && !pdfText.includes(passCode));
+/* The letterhead: the university's mark and its address top left, the club's
+   name in the middle, the club crest top right, and the university's big mark
+   with the campus address again at the foot. */
+ok('the pass shows the club crest and the university mark as real pictures',
+  pdfText.includes('/DCTDecode') && /\/Predictor 15 \/Colors 3 \/BitsPerComponent 8 \/Columns \d+/.test(pdfText),
+  'jpeg ' + (pdfText.match(/\/DCTDecode/g) || []).length + ', png ' + (pdfText.match(/\/Predictor 15/g) || []).length);
+ok('the university’s name and campus address stand at the top left',
+  pdfText.includes('Chhatrapati Shivaji Maharaj University') && pdfText.includes('Near Shedung Toll Plaza'));
+ok('the club’s own name is centred on the header, not pushed aside',
+  (() => {
+    const name = /BT [\d.]+ [\d.]+ [\d.]+ rg \/F2 17\.00 Tf ([\d.]+) [\d.]+ Td \(Mindful Tattva\) Tj ET/.exec(pdfText);
+    const label = /BT [\d.]+ [\d.]+ [\d.]+ rg \/F2 8\.00 Tf ([\d.]+) [\d.]+ Td \(EVENT PASS\) Tj ET/.exec(pdfText);
+    if (!name || !label) return false;
+    const nameX = Number(name[1]);
+    const labelX = Number(label[1]);
+    /* two strings of very different widths centre on one axis: their left edges
+       must sit within half a line of each other, and both well inside the page
+       (a left-aligned name would start at x = 66) */
+    return Math.abs(nameX - labelX) < 40 && nameX > 180 && nameX < 280;
+  })());
+ok('no word is ever printed over the QR code',
+  (() => {
+    const frame = /0\.850 0\.830 0\.820 RG 0\.8 w ([\d.]+) ([\d.]+) ([\d.]+) ([\d.]+) re S/.exec(pdfText);
+    if (!frame) return false;
+    const [x, y, w, h] = frame.slice(1).map(Number);
+    const ops = [...pdfText.matchAll(/BT [\d.]+ [\d.]+ [\d.]+ rg \/\w+ ([\d.]+) Tf ([\d.]+) ([\d.]+) Td \(/g)];
+    return ops.length > 20 && ops.every((m) => {
+      const size = Number(m[1]);
+      const tx = Number(m[2]);
+      const ty = Number(m[3]);
+      return !(tx >= x - 1 && tx <= x + w + 1 && ty >= y - size * 0.3 && ty <= y + h + 1);
+    });
+  })());
 
 /* a paid event: the UPI code appears, and the pass waits for the screenshot */
 console.log('\n— a paid event: the UPI code and the payment screenshot —');
@@ -929,8 +962,8 @@ for (const trak of moovBoxes.filter((box) => box.type === 'trak')) {
     clipH = clip.readUInt32BE(tkhd.at + 88) / 65536;
   }
 }
-ok('the herd is the club\'s own footage at full quality, not a squeezed copy',
-  clip.length > 8 * 1024 * 1024 && clip.length < 16 * 1024 * 1024
+ok('the herd is the club\'s own footage, enhanced — not a squeezed copy',
+  clip.length > 8 * 1024 * 1024 && clip.length < 12 * 1024 * 1024
   && fs.existsSync(path.join(ROOT, 'assets/media/horses-running-poster.jpg'))
   && fs.readdirSync(ROOT).every((name) => !/\.mp4$/i.test(name)),
   Math.round(clip.length / 1024) + ' KB');
@@ -938,9 +971,14 @@ ok('the clip is a real mp4 that browsers can start straight away',
   clip.slice(4, 8).toString('latin1') === 'ftyp'
   && topBoxes.some((box) => box.type === 'moov') && topBoxes.some((box) => box.type === 'mdat')
   && topBoxes.findIndex((box) => box.type === 'moov') < topBoxes.findIndex((box) => box.type === 'mdat'));
-ok('the clip keeps the original picture and runs through several locations',
-  clipSeconds > 17 && clipSeconds < 22 && clipW === 1080 && clipH === 720,
+ok('the clip is enhanced to 1440x960 and runs through several locations',
+  clipSeconds > 17 && clipSeconds < 22 && clipW === 1440 && clipH === 960,
   clipW + 'x' + clipH + ', ' + clipSeconds.toFixed(1) + 's');
+ok('a clip that stalls is nudged, reloaded, and carries on where it stopped',
+  appJs.includes('addEventListener(\'loadedmetadata\'')
+  && appJs.includes("addEventListener('stalled'")
+  && appJs.includes('resumeAt = Math.max(0, clock - 0.2)')
+  && appJs.includes('video.load()'));
 /* The gallery is one strip in the club's own order, with no categories. */
 const galleryBody = (await get('/gallery')).body;
 ok('the gallery has no event albums or category chips any more',
