@@ -188,10 +188,47 @@ tools/make-deploy-bundle.mjs  builds deploy-bundle.zip for the live server
 tools/test.mjs                automated checks over pages, API, security, forms
 ```
 
+### Before a deploy: walk the real thing
+
+```bash
+npm run preview                        # or any running copy of the site
+node tools/deploy-check.mjs            # in a second terminal
+```
+
+`tools/deploy-check.mjs` signs in with the club password and walks every real
+workflow against the running site the way a person would: create an event, edit
+it, register a student, open the pass, verify it with the club's QR link,
+download the register as CSV and the backup as JSON, run a **paid** event
+(register, upload the payment screenshot, watch the serial appear only then,
+mark the payment verified), upload and caption a gallery photo, file it under
+an event, recaption it, submit the membership form — then delete everything it
+made and confirm it is gone. It prints a line per check and exits non-zero if
+anything fails. Point it at the live site once the bundle is uploaded:
+
+```bash
+node tools/deploy-check.mjs https://mindfultattva.site.je
+```
+
+`tools/clean-test-data.mjs` removes anything an interrupted run left behind,
+including uploaded files no record points at.
+
+Two notes for the launch:
+
+- The club area **reads** (the register list, the CSV download and the backup
+  download) are protected by the session alone, because the dashboard fetches
+  them with ordinary links and a link cannot send a header. Anything that
+  **writes** still needs the token, so a stray page cannot change the club's
+  content.
+- A paid pass is issued when the student uploads their payment screenshot —
+  that is the club's rule, and the club then verifies the payment. A student
+  who pays in cash has no screenshot to upload, so the club cannot issue that
+  pass from the dashboard today. A club-side "issue the pass" button can be
+  added on request.
+
 ## Development
 
 ```bash
-npm test          # runs the PHP app in isolation and checks 264 behaviours
+npm test          # runs the PHP app in isolation and checks 273 behaviours
 ```
 
 The test suite boots the real application, then exercises pages, the JSON API,

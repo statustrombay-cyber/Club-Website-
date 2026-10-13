@@ -47,5 +47,35 @@ for (const item of (submissions.body.items || [])) {
     if (done.status === 200) removed.submissions += 1;
   }
 }
+/* Uploaded files that no record points at are leftovers from an interrupted
+   run (or from this check itself): the club's real photos and payment proofs
+   are always referenced by a gallery row or a registration. */
+import fs from 'node:fs';
+import path from 'node:path';
+const site = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'data/site.json'), 'utf8'));
+const referenced = new Set();
+for (const row of site.gallery || []) if (String(row.image || '').startsWith('/uploads/')) referenced.add(String(row.image));
+for (const row of site.registrations || []) {
+  for (const key of ['proofPath', 'proof', 'screenshot', 'receipt']) {
+    if (String(row[key] || '').startsWith('/uploads/')) referenced.add(String(row[key]));
+  }
+}
+function walk(dir, out = []) {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) walk(full, out); else out.push(full);
+  }
+  return out;
+}
+let files = 0;
+const uploads = path.join(process.cwd(), 'uploads');
+if (fs.existsSync(uploads)) {
+  for (const file of walk(uploads)) {
+    const url = '/' + path.relative(process.cwd(), file).split(path.sep).join('/');
+    if (!referenced.has(url)) { fs.unlinkSync(file); files += 1; }
+  }
+}
+removed.files = files;
+
 console.log('cleaned:', JSON.stringify(removed));
 console.log('left — registrations:', (await req('/api/registrations')).body.count, '· events:', ((await req('/api/events')).body.items || []).length, '· gallery:', ((await req('/api/gallery')).body.items || []).length, '· submissions:', ((await req('/api/submissions')).body.items || []).length);
