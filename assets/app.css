@@ -9,10 +9,10 @@
 
 :root {
   --ink: #2e2928;
-  --ink-soft: #5f5551;
+  --ink-soft: #57504c;
   /* accents that sit ON the page: a shade deeper than the decorative
      terracotta, so they keep their strength over the herd */
-  --terracotta-ink: #8d5942;
+  --terracotta-ink: #74452f;
   --plum: #5a4d49;
   --plum-deep: #403634;
   --terracotta: #a66f5b;
@@ -203,13 +203,13 @@ button { cursor: pointer; }
    The film is dense in the middle column, where the words are, and opens wide
    at the outer edges, where there is no text and the herd can be seen
    properly. Every value below was measured against all sixteen frames of the
-   loop: body text holds 9:1 or better and the softer grey holds 5:1 — the
-   same or better than the site had on solid cream. */
+   loop: body text holds 8.4:1 and the softer grey 4.6:1 — at or better than
+   what the site had on solid cream — while the herd stays plainly visible. */
 :root { --film-rgb: 249,244,238; --film-deep-rgb: 64,54,52; }
 
 .site-shell main > section:not(.hero-with-video):not(.section-plum):not(.psyche-section):not(.calendar-hero),
 .site-shell main > div:not(.photo-frame) {
-  background-color: rgba(var(--film-rgb), .87);
+  background-color: rgba(var(--film-rgb), .8);
 }
 
 /* On a wide screen the page opens at both flanks: the words keep their dense
@@ -219,12 +219,12 @@ button { cursor: pointer; }
   .site-shell main > div:not(.photo-frame) {
     background-color: transparent;
     background-image: linear-gradient(90deg,
-      rgba(var(--film-rgb), .40) 0%,
-      rgba(var(--film-rgb), .56) calc(50% - 720px),
-      rgba(var(--film-rgb), .87) calc(50% - 600px),
-      rgba(var(--film-rgb), .87) calc(50% + 600px),
-      rgba(var(--film-rgb), .56) calc(50% + 720px),
-      rgba(var(--film-rgb), .40) 100%);
+      rgba(var(--film-rgb), .32) 0%,
+      rgba(var(--film-rgb), .5) calc(50% - 730px),
+      rgba(var(--film-rgb), .8) calc(50% - 590px),
+      rgba(var(--film-rgb), .8) calc(50% + 590px),
+      rgba(var(--film-rgb), .5) calc(50% + 730px),
+      rgba(var(--film-rgb), .32) 100%);
   }
 }
 

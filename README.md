@@ -113,9 +113,20 @@ never looks broken while that is pending:
     watchdog checks twice a second that its clock is still moving: a stall gets
     a nudge first, and a quiet reload if that was not enough, so the herd can
     never be caught frozen on screen.
-  - The herd is the front page's **opening, not wallpaper**: every section
-    after the hero paints its own paper, so no paragraph can ever end up
-    sitting on top of the video. The top bar is thin enough to see it through.
+  - The herd runs behind **every public page** (home, gallery, calendar,
+    members, register, pass and verify). Nothing is a solid wall: each block
+    paints a thin film of its own paper and the horses move behind it. The film
+    is dense in the middle column, where the words are, and opens at the outer
+    edges, where there is nothing to read. Every value was measured against all
+    sixteen frames of the loop at its hardest pixels: body text holds 8.4:1 and
+    the softer grey 4.6:1 in the reading column, the cards and panels 5.5:1 or
+    better, cream text on the dark blocks 6.8:1. The film is lighter than it
+    was at first (0.87 → 0.80) because the club asked to see more of the herd;
+    the softer grey (`--ink-soft: #57504c`) and the small-caps labels
+    (`--terracotta-ink: #74452f`) were deepened at the same time, so nothing
+    reads worse than it did on solid paper — the labels improved.
+  - The club's own area stays plain: the dashboard and the sign-in page have
+    their own shell and no video behind them.
   - The server hands it out as `video/mp4` with **byte-range support** (a real
     `206` with `Content-Range`), which browsers — Safari above all — require
     before they will play or seek it.

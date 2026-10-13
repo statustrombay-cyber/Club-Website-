@@ -876,17 +876,17 @@ ok('the herd never stops on its own — nothing pauses it while the page is open
   && appJs.includes('video.currentTime = clock + 0.1') && appJs.includes('video.load()')
   && /document\.hidden\) pause\(\); else play\(\)/.test(appJs));
 ok('no block of the page is a solid wall: the herd shows through all of them',
-  /\.site-shell main > section:not\(\.hero-with-video\)[^{]*,\s*\n\.site-shell main > div:not\(\.photo-frame\) \{\s*\n\s*background-color: rgba\(var\(--film-rgb\), \.87\);/.test(appCss)
+  /\.site-shell main > section:not\(\.hero-with-video\)[^{]*,\s*\n\.site-shell main > div:not\(\.photo-frame\) \{\s*\n\s*background-color: rgba\(var\(--film-rgb\), \.8\);/.test(appCss)
   && !/main > section:not\(\.hero-with-video\)[^{]*\{[^}]*background(-color)?: var\(--cream\)/.test(appCss));
 ok('the film opens up at the edges, where no words are',
-  /@media \(min-width: 1150px\)/.test(appCss) && /rgba\(var\(--film-rgb\), \.40\) 0%/.test(appCss));
+  /@media \(min-width: 1150px\)/.test(appCss) && /rgba\(var\(--film-rgb\), \.32\) 0%/.test(appCss));
 ok('the dark blocks stay dark glass, with the herd moving behind them',
   /\.site-shell main > \.section-plum \{ background: rgba\(var\(--film-deep-rgb\), \.84\); \}/.test(appCss)
   && /main > \.psyche-section \{[^}]*rgba\(59,39,69,\.84\)/.test(appCss));
 ok('the closest-set text keeps more paper: cards are thinner, not opaque',
   /\.event-card, \.calendar-item, \.club-panel, \.fact-card \{ background: rgba\(255,250,241,\.55\); \}/.test(appCss));
 ok('the softer grey and the accent labels were deepened for the film',
-  /--ink-soft: #5f5551;/.test(appCss) && /--terracotta-ink: #8d5942;/.test(appCss)
+  /--ink-soft: #57504c;/.test(appCss) && /--terracotta-ink: #74452f;/.test(appCss)
   && !/color: var\(--terracotta\);/.test(appCss.slice(appCss.indexOf('.eyebrow'), appCss.indexOf('.eyebrow') + 200)));
 ok('the top bar no longer hides the herd',
   /\.nav:before \{[^}]*background: rgba\(255,250,241,\.16\)/.test(appCss));
