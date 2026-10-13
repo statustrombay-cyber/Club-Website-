@@ -332,11 +332,6 @@
   function numberedLabel(item) {
     return numberedEventName(item);
   }
-  function eventOptions(selectedId) {
-    const rows = sorted(state.events).map((event) =>
-      `<option value="${esc(event.id)}" ${String(selectedId) === String(event.id) ? 'selected' : ''}>${esc(numberedEventName(event))}</option>`).join('');
-    return `<option value="" ${selectedId ? '' : 'selected'}>— not filed under an event yet —</option>${rows}`;
-  }
 
   function cardShell(type, id, label, index, body) {
     return `
@@ -447,7 +442,6 @@
           <input data-field="caption" value="${esc(item.caption)}" placeholder="Optional — what is this photo about?">
         </label>
         <label>Which event is this photo from?
-          <select data-field="eventId">${eventOptions(item.eventId)}</select>
         </label>
         <div class="form-grid">
           <label>Date (optional)<input data-field="date" value="${esc(item.date || '')}" placeholder="24 October 2026"></label>

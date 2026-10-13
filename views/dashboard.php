@@ -150,9 +150,9 @@ $panelTitle = $panelTitles[$panelIndex];
       <?php if ($panel === 'gallery'): ?>
       <section class="panel is-active" id="panel-gallery">
         <div class="panel-head">
-          <div><h2>Photo album (gallery)</h2><p>This is the club's gallery management. Upload a photo, then choose <b>which event it came from</b> — the album is filed under
-            Event 1, Event 2 … so photos from one gathering are never shown inside another. Captions are optional and completely yours: whatever you type here is
-            exactly what visitors see. Every photo you add appears on the website's gallery page at once, inside its event's album.</p></div>
+          <div><h2>Photo album (gallery)</h2><p>Upload a photo, give it a caption and a <b>display order</b>: order 1 leads the gallery,
+            order 2 comes next, and so on. There are no categories — a photo is just a photo, and the caption is completely yours. Whatever you type here is
+            exactly what visitors see, on the gallery page and in the slideshow at the top of it.</p></div>
           <div class="row-actions">
             <a class="btn-sm" href="/gallery" target="_blank" rel="noreferrer">Open the gallery ↗</a>
             <button class="btn-sm primary" type="button" id="addPhoto">+ Add photo</button>

@@ -9,10 +9,10 @@
 
 :root {
   --ink: #2e2928;
-  --ink-soft: #4f4945;
+  --ink-soft: #463f3b;
   /* accents that sit ON the page: a shade deeper than the decorative
      terracotta, so they keep their strength over the herd */
-  --terracotta-ink: #623420;
+  --terracotta-ink: #54291a;
   --plum: #5a4d49;
   --plum-deep: #403634;
   --terracotta: #a66f5b;
@@ -175,7 +175,7 @@ button { cursor: pointer; }
 .hero-media { position: static; }
 .hero-still, .hero-video {
   position: fixed; inset: 0; width: 100%; height: 100%;
-  object-fit: cover; object-position: 50% 58%;
+  object-fit: cover; object-position: 50% 62%;
   pointer-events: none;
 }
 .hero-still { z-index: -2; }
@@ -183,8 +183,8 @@ button { cursor: pointer; }
 .hero-veil {
   position: absolute; inset: 0; z-index: -1; pointer-events: none;
   background:
-    linear-gradient(100deg, rgba(247,242,237,.96) 0%, rgba(247,242,237,.93) 26%, rgba(247,242,237,.78) 46%, rgba(247,242,237,.34) 62%, rgba(247,242,237,.08) 100%),
-    linear-gradient(180deg, rgba(247,242,237,.48) 0%, rgba(247,242,237,.12) 22%, rgba(247,242,237,0) 50%, rgba(247,242,237,.28) 78%, var(--paper) 99%);
+    linear-gradient(100deg, rgba(247,242,237,.94) 0%, rgba(247,242,237,.88) 30%, rgba(247,242,237,.62) 48%, rgba(247,242,237,.2) 66%, rgba(247,242,237,.04) 100%),
+    linear-gradient(180deg, rgba(247,242,237,.3) 0%, rgba(247,242,237,.08) 20%, rgba(247,242,237,0) 48%, rgba(247,242,237,.24) 78%, var(--paper) 99%);
 }
 @media (max-width: 900px) {
   .hero-with-video { min-height: 560px; min-height: min(680px, 92svh); }
@@ -209,7 +209,7 @@ button { cursor: pointer; }
 
 .site-shell main > section:not(.hero-with-video):not(.section-plum):not(.psyche-section):not(.calendar-hero),
 .site-shell main > div:not(.photo-frame) {
-  background-color: rgba(var(--film-rgb), .74);
+  background-color: rgba(var(--film-rgb), .69);
 }
 
 /* On a wide screen the page opens at both flanks: the words keep their dense
@@ -219,12 +219,12 @@ button { cursor: pointer; }
   .site-shell main > div:not(.photo-frame) {
     background-color: transparent;
     background-image: linear-gradient(90deg,
-      rgba(var(--film-rgb), .2) 0%,
-      rgba(var(--film-rgb), .34) calc(50% - 760px),
-      rgba(var(--film-rgb), .74) calc(50% - 600px),
-      rgba(var(--film-rgb), .74) calc(50% + 600px),
-      rgba(var(--film-rgb), .34) calc(50% + 760px),
-      rgba(var(--film-rgb), .2) 100%);
+      rgba(var(--film-rgb), .14) 0%,
+      rgba(var(--film-rgb), .26) calc(50% - 760px),
+      rgba(var(--film-rgb), .69) calc(50% - 600px),
+      rgba(var(--film-rgb), .69) calc(50% + 600px),
+      rgba(var(--film-rgb), .26) calc(50% + 760px),
+      rgba(var(--film-rgb), .14) 100%);
   }
 }
 
@@ -248,7 +248,7 @@ button { cursor: pointer; }
 
 /* Cards hold the closest-set text, so they keep a little more paper than the
    block behind them — thin enough that the herd still moves across them. */
-.event-card, .calendar-item, .club-panel, .fact-card { background: rgba(255,250,241,.48); }
+.event-card, .calendar-item, .club-panel, .fact-card { background: rgba(255,250,241,.42); }
 .team-card { background: rgba(237,229,223,.5); }
 .psyche-card { background: rgba(249,216,176,.6); }
 .psyche-card-two { background: rgba(189,207,181,.6); }
@@ -293,10 +293,22 @@ button { cursor: pointer; }
 .psyche-grid { position: relative; z-index: 1; display: grid; grid-template-columns: .85fr 1.15fr; gap: 90px; align-items: center; }
 .psyche-copy h2 { max-width: 560px; margin: 12px 0 22px; color: #fff8ee; font-size: clamp(2.7rem, 5.5vw, 5rem); }
 .psyche-copy > p { max-width: 470px; margin: 0; color: rgba(255,248,238,.72); font-size: .98rem; }
-.curiosity-loop { position: relative; display: grid; place-items: center; width: 180px; height: 180px; margin-top: 42px; border: 1px solid rgba(255,248,238,.42); border-radius: 50%; color: #ffe5b1; text-align: center; font-family: var(--font-display); font-size: 1rem; line-height: 1.1; transform: rotate(-12deg); }
+/* The club's circle of words, clear of the left edge and with the club crest
+   riding its two golden rings. The rings are an unrotated box; only the ring
+   line and the crest inside it turn, so the words stay upright. */
+.curiosity-loop { position: relative; display: grid; place-items: center; width: 180px; height: 180px; margin: 42px clamp(8px, 5vw, 64px) 6px auto; border: 1px solid rgba(255,248,238,.42); border-radius: 50%; color: #ffe5b1; text-align: center; font-family: var(--font-display); font-size: 1rem; line-height: 1.1; }
+.curiosity-loop b { transform: rotate(-12deg); }
 .curiosity-loop:before, .curiosity-loop:after { content: ''; position: absolute; border: 1px solid rgba(255,248,238,.32); border-radius: 50%; }
-.curiosity-loop:before { inset: 16px -14px 16px 14px; transform: rotate(55deg); }
-.curiosity-loop:after { inset: -17px 18px 14px -15px; transform: rotate(-34deg); }
+.curiosity-loop:before { width: 208px; height: 148px; transform: rotate(55deg); animation: orbitSpin 19s linear infinite; }
+.curiosity-loop:after { width: 150px; height: 214px; transform: rotate(-34deg); animation: orbitSpin 26s linear reverse infinite; }
+.loop-orbit { position: absolute; inset: 0; display: block; transform: rotate(var(--start, 0deg)); animation: orbitSpin var(--speed, 19s) linear infinite; }
+.loop-orbit-b { animation-direction: reverse; animation-duration: 26s; }
+.loop-orbit img { position: absolute; width: 34px; height: 34px; border-radius: 50%; object-fit: cover; background: #f7f2ed; box-shadow: 0 0 0 3px rgba(255,248,238,.16), 0 6px 16px rgba(20,10,26,.35); }
+.loop-orbit-a { --start: 18deg; --speed: 19s; }
+.loop-orbit-a img { left: 50%; top: -17px; margin-left: -17px; }
+.loop-orbit-b { --start: 200deg; }
+.loop-orbit-b img { left: -17px; top: 50%; margin-top: -17px; }
+.curiosity-loop:before, .curiosity-loop:after { content: ''; position: absolute; border: 1px solid rgba(255,248,238,.32); border-radius: 50%; }
 .curiosity-loop span { position: absolute; width: 7px; height: 7px; border-radius: 50%; background: var(--coral); }
 .curiosity-loop span:nth-child(1) { top: 21px; right: 31px; }
 .curiosity-loop span:nth-child(2) { bottom: 25px; left: 25px; background: var(--sage); }
@@ -368,7 +380,7 @@ button { cursor: pointer; }
 .card-visual { min-height: 218px; }
 .card-visual:before, .gallery-visual:before { content: ''; position: absolute; width: 120px; height: 120px; left: 22px; bottom: -32px; border: 1px solid rgba(255,250,240,.65); border-radius: 50%; box-shadow: 25px -10px 0 -24px rgba(255,250,240,.8), 25px -10px 0 -23px rgba(255,250,240,.8); transform: rotate(25deg); }
 .card-visual:after, .gallery-visual:after { content: '✳'; position: absolute; right: 18px; top: 18px; color: rgba(255,250,240,.7); font-size: 1.4rem; }
-.card-visual.has-image, .gallery-visual.has-image { background-size: contain; background-position: center; background-repeat: no-repeat; background-color: #fffaf1; }
+.card-visual.has-image, .gallery-visual.has-image { background-size: cover; background-position: center; background-repeat: no-repeat; background-color: rgba(46,32,51,.9); }
 .card-visual.has-image:before, .card-visual.has-image:after, .gallery-visual.has-image:before, .gallery-visual.has-image:after { display: none; }
 .visual-label { position: absolute; left: 19px; bottom: 18px; right: 12px; color: #fff9ef; font-family: var(--font-display); font-size: 1.25rem; line-height: 1; }
 .event-body { display: flex; flex-direction: column; padding: 24px 24px 21px; }
@@ -420,7 +432,7 @@ button { cursor: pointer; }
 .team-card { min-height: 318px; display: flex; flex-direction: column; padding: 22px; border-radius: var(--radius-md); background: var(--paper); transition: transform .3s ease, box-shadow .3s ease; }
 .team-card:hover { transform: translateY(-8px); box-shadow: 0 20px 38px rgba(61,39,66,.12); }
 .team-avatar { position: relative; display: grid; place-items: center; width: 76px; height: 76px; overflow: hidden; margin-bottom: 26px; border-radius: 45% 55% 50% 40%; background: #e5b477; color: var(--plum); font-family: var(--font-display); font-size: 1.7rem; transform: rotate(-6deg); }
-.team-avatar.has-image { background-size: contain; background-position: center; background-repeat: no-repeat; background-color: #fffaf1; }
+.team-avatar.has-image { background-size: cover; background-position: center; background-repeat: no-repeat; background-color: rgba(46,32,51,.9); }
 .team-avatar.has-image span { display: none; }
 .team-card h3 { margin: 0 0 5px; font-family: var(--font-display); font-size: 1.55rem; font-weight: 400; line-height: 1.02; }
 .team-role { color: var(--terracotta-ink); font-size: .7rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
@@ -551,15 +563,15 @@ html.js .scroll-reveal.is-visible { opacity: 1; transform: none; }
     .gallery-hero p { max-width: 560px; margin: 0; color: rgba(255,249,239,.72); font-size: 1rem; }
     .gallery-shell { padding: 76px 0 110px; }
     .gallery-showcase { display: grid; grid-template-columns: 1.2fr .8fr; gap: 20px; align-items: stretch; }
-    .gallery-stage { position: relative; min-height: 560px; overflow: hidden; border-radius: 30px; background: linear-gradient(145deg, #c6715b, #eab381); box-shadow: 0 24px 60px rgba(61,39,66,.15); }
-    .gallery-stage-image { position: absolute; inset: 0; background-position: center; background-size: contain; background-repeat: no-repeat; background-color: #fffaf1; transition: opacity .4s ease, transform .7s ease; }
-    .gallery-stage:hover .gallery-stage-image { transform: scale(1.035); }
-    .gallery-stage:after { content: ''; position: absolute; inset: 0; background: linear-gradient(0deg, rgba(38,23,47,.82), transparent 66%); pointer-events: none; }
-    .gallery-stage-copy { position: absolute; z-index: 2; left: 30px; right: 30px; bottom: 29px; }
-    .gallery-stage-copy small { color: #f4c17f; font-size: .68rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
-    .gallery-stage-copy h2 { margin: 8px 0 0; color: #fff9ef; font-family: Georgia, serif; font-size: clamp(2rem, 4vw, 3.5rem); font-weight: 400; line-height: 1; }
+    .gallery-stage { position: relative; overflow: hidden; border-radius: 26px; background: rgba(var(--film-rgb), .9); box-shadow: 0 24px 60px rgba(61,39,66,.15); display: flex; flex-direction: column; }
+    .gallery-stage-image { position: relative; inset: auto; display: block; width: 100%; height: clamp(300px, 46vw, 520px); background-position: center; background-size: cover; background-repeat: no-repeat; background-color: rgba(46,32,51,.9); transition: opacity .4s ease, transform .7s ease; }
+    .gallery-stage-image.has-image:hover { transform: scale(1.012); }
+    /* no dark sheet over the photo any more: the caption has its own cream band */
+    .gallery-stage-copy { position: relative; z-index: 2; padding: 20px 26px 22px; background: rgba(var(--film-rgb), .9); border-top: 1px solid rgba(90,77,73,.14); }
+    .gallery-stage-copy small { color: var(--terracotta-ink); font-size: .68rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    .gallery-stage-copy h2 { margin: 6px 0 0; color: var(--plum-deep); font-family: Georgia, serif; font-size: clamp(2rem, 4vw, 3.5rem); font-weight: 400; line-height: 1; }
     .gallery-controls { display: flex; align-items: center; justify-content: space-between; margin-top: 19px; }
-    .gallery-control { display: inline-grid; place-items: center; width: 43px; height: 43px; border: 1px solid rgba(255,249,239,.3); border-radius: 50%; color: #fff9ef; background: rgba(52,33,61,.7); font-size: 1.2rem; cursor: pointer; }
+    .gallery-control { display: inline-grid; place-items: center; width: 43px; height: 43px; border: 1px solid rgba(90,77,73,.22); border-radius: 50%; color: var(--plum-deep); background: rgba(255,255,255,.7); font-size: 1.2rem; cursor: pointer; }
     .gallery-control:hover { background: #c86f58; }
     .gallery-counter { color: rgba(255,249,239,.75); font-size: .75rem; font-weight: 800; letter-spacing: .12em; }
     .gallery-side-note { display: flex; flex-direction: column; justify-content: space-between; padding: 28px; border-radius: 27px; background: #fffaf1; box-shadow: 0 20px 48px rgba(61,39,66,.08); }
@@ -574,7 +586,7 @@ html.js .scroll-reveal.is-visible { opacity: 1; transform: none; }
     .archive-card { position: relative; min-height: 285px; overflow: hidden; border-radius: 19px; background: linear-gradient(145deg, #c6715b, #eab381); box-shadow: 0 13px 27px rgba(61,39,66,.08); }
     .archive-card:nth-child(2n) { background: linear-gradient(145deg, #8da18d, #d1b587); }
     .archive-card:nth-child(3n) { background: linear-gradient(145deg, #604062, #c97c67); }
-    .archive-image { position: absolute; inset: 0; background-position: center; background-size: contain; background-repeat: no-repeat; background-color: #fffaf1; }
+    .archive-image { position: absolute; inset: 0; background-position: center; background-size: cover; background-repeat: no-repeat; background-color: rgba(46,32,51,.9); }
     .archive-card:after { content: ''; position: absolute; inset: 0; background: linear-gradient(0deg, rgba(38,23,47,.75), transparent 72%); }
     .archive-caption { position: absolute; z-index: 1; left: 18px; right: 18px; bottom: 17px; color: #fff9ef; font-family: Georgia, serif; font-size: 1.35rem; line-height: 1.05; }
     .gallery-empty { grid-column: 1 / -1; display: grid; place-items: center; min-height: 200px; padding: 30px; border: 1px dashed rgba(78,49,85,.22); border-radius: 20px; color: #625c6d; text-align: center; }
@@ -951,38 +963,6 @@ html.photo-frame-open { overflow: hidden; }
   font-size: .62rem; font-weight: 800; letter-spacing: .09em; text-transform: uppercase;
 }
 .calendar-event-number { color: var(--terracotta-ink); font-weight: 800; }
-
-/* ----------------------------------------------------------- event albums */
-/* One album per event. The heading carries the event's number, its name and
-   how many photos belong to it, so two events are never read as one. */
-.album { margin-top: 34px; }
-.album:first-of-type { margin-top: 22px; }
-.album-head {
-  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 16px;
-  padding: 16px 20px; margin-bottom: 16px;
-  border: 1px solid var(--line); border-left: 4px solid var(--terracotta);
-  border-radius: 18px; background: var(--cream);
-}
-.album-head h3 { margin: 0; color: var(--plum-deep); font-family: var(--font-display); font-size: 1.4rem; font-weight: 400; }
-.album-head p { margin: 3px 0 0; color: var(--ink-soft); font-size: .78rem; }
-.album-number {
-  display: inline-grid; place-items: center; padding: 7px 12px; border-radius: 99px;
-  background: rgba(200,111,88,.15); color: var(--terracotta-ink);
-  font-size: .68rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; white-space: nowrap;
-}
-.album-count { color: var(--ink-soft); font-size: .72rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
-/* the small event tag on a photo tile */
-.gallery-chip {
-  position: absolute; left: 12px; top: 12px; z-index: 2;
-  padding: 5px 10px; border-radius: 99px;
-  background: rgba(255,250,241,.92); color: var(--plum-deep);
-  font-size: .6rem; font-weight: 800; letter-spacing: .09em; text-transform: uppercase;
-}
-@media (max-width: 620px) {
-  .album-head { grid-template-columns: minmax(0, 1fr); gap: 10px; }
-  .album-count { justify-self: start; }
-}
-
 
 /* --------------------------------------------------------------- speed -----
    A long page is cheap to scroll when the browser is allowed to skip the

@@ -150,7 +150,6 @@ function mt_gallery_item(array $item): string
       <figure class="gallery-item">
         <?php if ($image !== ''): ?>
           <button type="button" class="gallery-visual has-image" aria-label="Open <?= e($alt) ?> full size"<?= mt_background_style($image, $alt) ?>>
-            <?php if (trim((string) ($item['eventLabel'] ?? '')) !== ''): ?><span class="gallery-chip"><?= e((string) $item['eventLabel']) ?></span><?php endif; ?>
             <span class="gallery-zoom" aria-hidden="true">⤢</span>
           </button>
         <?php else: ?>
@@ -211,7 +210,6 @@ function mt_archive_card(array $item): string
     ob_start(); ?>
       <article class="archive-card">
         <button type="button" class="archive-image" aria-label="Open <?= e($alt) ?> full size"<?= mt_background_style($image, $alt) ?>>
-          <?php if (trim((string) ($item['eventLabel'] ?? '')) !== ''): ?><span class="gallery-chip"><?= e((string) $item['eventLabel']) ?></span><?php endif; ?>
           <span class="gallery-zoom" aria-hidden="true">⤢</span>
         </button>
         <div class="archive-caption"><?= e($caption) ?></div>

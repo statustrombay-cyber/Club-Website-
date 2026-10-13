@@ -10,73 +10,23 @@
  */
 $photos = mt_sorted(mt_gallery_photos($db['gallery'] ?? []));
 
-/* Every event keeps its own album. A photo is filed under the event the club
-   chose for it, so photos from one gathering can never appear inside another:
-   Event 1 · Welcome Circle, Event 2 · …, and anything the club has not filed
-   yet stays in a separate "not filed yet" group at the end. */
-$events = mt_events_for_display($db);
-$byEvent = [];
-$unfiled = [];
-foreach ($photos as $item) {
-    $eventId = trim((string) ($item['eventId'] ?? ''));
-    $label   = trim((string) ($item['event'] ?? ''));
-    $matched = null;
-    foreach ($events as $event) {
-        $sameId   = $eventId !== '' && (string) ($event['id'] ?? '') === $eventId;
-        $sameName = $eventId === '' && $label !== '' && strcasecmp($label, (string) ($event['title'] ?? '')) === 0;
-        if ($sameId || $sameName) {
-            $matched = (string) ($event['id'] ?? '');
-            break;
-        }
-    }
-    if ($matched === null) {
-        $unfiled[] = $item;
-        continue;
-    }
-    $byEvent[$matched][] = $item;
-}
-
+/* The club's photos, in the order the club set: order 1 first, order 2 next.
+   There are no categories any more — a photo is just a photo with a caption,
+   so the gallery is one strip and the club decides what leads it. */
 $slides = [];
 foreach ($photos as $item) {
     $image = mt_safe_image($item['image'] ?? '');
+    if ($image === '') {
+        continue;
+    }
     $caption = trim((string) ($item['caption'] ?? '')) !== '' ? (string) $item['caption'] : 'Mindful Tattva memory';
     $slides[] = [
         'caption' => $caption,
-        'kicker'  => trim((string) ($item['event'] ?? $item['kicker'] ?? '')) !== '' ? (string) ($item['event'] ?? $item['kicker']) : 'Mindful Tattva memory',
         'image'   => $image,
         'alt'     => trim((string) ($item['alt'] ?? '')) !== '' ? (string) $item['alt'] : $caption,
     ];
 }
 
-/* The album, grouped: each event first (in number order), then anything unfiled. */
-$albums = [];
-foreach ($events as $event) {
-    $eventId = (string) ($event['id'] ?? '');
-    $eventPhotos = $byEvent[$eventId] ?? [];
-    if (!$eventPhotos) {
-        continue;
-    }
-    /* each photo knows which album it is in, so the tile wears its number */
-    $tagged = [];
-    foreach ($eventPhotos as $photoRow) {
-        $photoRow['eventLabel'] = mt_event_label($event);
-        $tagged[] = $photoRow;
-    }
-    $albums[] = [
-        'label'  => mt_event_label($event),
-        'title'  => (string) ($event['title'] ?? ''),
-        'meta'   => mt_event_line($event),
-        'photos' => $tagged,
-    ];
-}
-if ($unfiled) {
-    $albums[] = [
-        'label'  => 'Not filed yet',
-        'title'  => 'Photos waiting for their event',
-        'meta'   => 'The club will file these under an event from the club area.',
-        'photos' => $unfiled,
-    ];
-}
 $first = $slides[0] ?? null;
 $stage = $first && $first['image'] !== '';
 $galleryJson = json_encode(
@@ -99,8 +49,8 @@ $galleryJson = json_encode(
         <div class="gallery-stage-image<?= $stage ? ' has-image' : '' ?>" id="galleryStageImage" role="img"
              aria-label="<?= e($first['alt'] ?? 'Gallery photo') ?>"<?= mt_background_style($first['image'] ?? '') ?>></div>
         <div class="gallery-stage-copy">
-          <small id="galleryStageKicker"><?= e($first['kicker'] ?? 'Mindful Tattva memory') ?></small>
-          <h2 id="galleryStageCaption"><?= e($first['caption'] ?? 'Your first club memory') ?></h2>
+          <small id="galleryStageKicker"><?= $stage ? 'Mindful Tattva gallery' : 'The album is waiting' ?></small>
+          <h2 id="galleryStageCaption"><?= e($stage ? (string) $first['caption'] : 'Your first club memory') ?></h2>
           <div class="gallery-controls">
             <button class="gallery-control" id="galleryPrev" aria-label="Previous photo">←</button>
             <span class="gallery-counter" id="galleryCounter">01 / <?= str_pad((string) max(1, count($slides)), 2, '0', STR_PAD_LEFT) ?></span>
@@ -124,27 +74,15 @@ $galleryJson = json_encode(
         <div><div class="eyebrow">The archive</div><h2>Look back,<br>feel forward.</h2></div>
         <p><?= e((string) ($site['galleryIntro'] ?? 'Photos and captions added by the club appear here automatically.')) ?></p>
       </div>
-      <?php if ($albums): ?>
-        <?php foreach ($albums as $album): ?>
-          <section class="album">
-            <header class="album-head">
-              <span class="album-number"><?= e($album['label']) ?></span>
-              <div>
-                <h3><?= e($album['title']) ?></h3>
-                <p><?= e($album['meta']) ?></p>
-              </div>
-              <span class="album-count"><?= count($album['photos']) ?> <?= count($album['photos']) === 1 ? 'photo' : 'photos' ?></span>
-            </header>
-            <div class="archive-grid" id="archiveGrid">
-              <?php foreach ($album['photos'] as $photo): ?>
-                <?= mt_archive_card($photo) ?>
-              <?php endforeach; ?>
-            </div>
-          </section>
-        <?php endforeach; ?>
+      <?php if ($slides): ?>
+        <div class="archive-grid" id="archiveGrid">
+          <?php foreach ($photos as $photo): ?>
+            <?= mt_archive_card($photo) ?>
+          <?php endforeach; ?>
+        </div>
       <?php else: ?>
         <div class="archive-grid">
-          <?= mt_gallery_empty('No event photos yet.', 'The first photo the club uploads will begin the archive.') ?>
+          <?= mt_gallery_empty('No photos yet.', 'The first photo the club uploads will begin the album.') ?>
         </div>
       <?php endif; ?>
     </div>

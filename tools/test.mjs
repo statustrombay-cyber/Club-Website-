@@ -743,20 +743,34 @@ ok('a photo can be filed under an event',
   filedPhoto.status === 201 && numberedId !== '' && filedItem.eventId === numberedId,
   'sent ' + numberedId + ' · saved ' + filedItem.eventId);
 
-const albumPage = await get('/gallery');
-const albumNames = [...albumPage.body.matchAll(/<h3>([^<]+)<\/h3>\s*<p>/g)].map((m) => m[1]);
-ok('the album page groups photos under their event',
-  albumNames.includes('Second gathering') && albumPage.body.includes('Event ' + numberedNumber),
-  JSON.stringify(albumNames));
-ok('each album block carries its own photo count', /album-count/.test(albumPage.body));
-const secondAlbumHead = albumPage.body.indexOf('Second gathering');
-const filedPhotoAt = albumPage.body.indexOf('Filed photo');
-const nextAlbumHead = /class="album-head"/.test(albumPage.body)
-  ? albumPage.body.slice(secondAlbumHead + 10).search(/class="album"/)
-  : -1;
-ok('a filed photo sits inside its own event album, not another',
-  secondAlbumHead > 0 && filedPhotoAt > secondAlbumHead && (nextAlbumHead < 0 || filedPhotoAt < secondAlbumHead + 10 + nextAlbumHead),
-  'photo at ' + filedPhotoAt + ', album at ' + secondAlbumHead);
+/* The club asked for no categories: a photo is a caption and an order. */
+const orderOne = await sendJson('/api/gallery', 'POST', {
+  caption: 'Leads the album', alt: 'Leading photo', image: '/assets/photos/mt-club-logo.jpg', order: 1,
+}, FRESH);
+const orderTwo = await sendJson('/api/gallery', 'POST', {
+  caption: 'Comes next', alt: 'Second photo', image: '/assets/photos/mt-club-logo.jpg', order: 2,
+}, FRESH);
+const orderedPage = await get('/gallery');
+ok('the gallery is one strip with no categories in it',
+  !/class="album\b/.test(orderedPage.body) && !/gallery-chip/.test(orderedPage.body)
+  && !/album-count/.test(orderedPage.body) && !/<h3>Second gathering<\/h3>/.test(orderedPage.body));
+const firstAt = orderedPage.body.indexOf('Leads the album');
+const secondAt = orderedPage.body.indexOf('Comes next');
+ok('the club\'s order decides what comes first',
+  firstAt > 0 && secondAt > firstAt, 'order 1 at ' + firstAt + ', order 2 at ' + secondAt);
+ok('the slideshow is built from the same photos, in the same order',
+  orderedPage.body.indexOf('Leads the album') < orderedPage.body.indexOf('Comes next')
+  && /<script type="application\/json" id="gallery-data">/.test(orderedPage.body)
+  && orderedPage.body.indexOf('gallery-data') > orderedPage.body.indexOf('archive-grid'));
+ok('every photo is a picture in a frame, not a colour block',
+  !/background-size: contain/.test(appCss)
+  && /\.archive-image \{[^}]*background-size: cover/.test(appCss)
+  && /\.gallery-stage-image \{[^}]*background-size: cover/.test(appCss));
+/* clean up the two extra photos so the site stays exactly as the club left it */
+await request({ uri: '/api/gallery/' + ((asJson(orderOne).item || {}).id || 'x'), method: 'DELETE', ...FRESH });
+await request({ uri: '/api/gallery/' + ((asJson(orderTwo).item || {}).id || 'x'), method: 'DELETE', ...FRESH });
+const afterAlbumCleanup = await get('/gallery');
+ok('the extra photos are gone again', !afterAlbumCleanup.body.includes('Leads the album') && !afterAlbumCleanup.body.includes('Comes next'));
 const homeAlbums = await get('/');
 ok('the event cards and calendar entries wear their number',
   /class="visual-number">Event \d+/.test(homeAlbums.body) || /calendar-event-number">Event \d+/.test(homeAlbums.body));
@@ -791,6 +805,12 @@ ok('every condition is a short line, none is a paragraph',
 /* psi stays, but only in its two homes: the lens section and the album */
 ok('the psi sign is kept where it means something',
   homeAlbums.body.includes('psyche-psi') && (await get('/gallery')).body.includes('mini-psi'));
+ok('the club crest orbits the circle of words in the lens',
+  (homeAlbums.body.match(/loop-orbit/g) || []).length >= 2
+  && /\.loop-orbit \{[^}]*animation: orbitSpin/.test(appCss)
+  && /\.curiosity-loop \{[^}]*margin: 42px clamp/.test(appCss));
+ok('the circle of words sits clear of the left edge',
+  /\.curiosity-loop \{[^}]*margin:[^;]*auto/.test(appCss) && /\.curiosity-loop b \{ transform: rotate\(-12deg\); \}/.test(appCss));
 ok('the club emblem appears between sections on the home page',
   (homeAlbums.body.match(/logo-medallion/g) || []).length >= 2);
 ok('the club emblem sits in the members stage, and the frame script is live',
@@ -848,8 +868,8 @@ for (const trak of moovBoxes.filter((box) => box.type === 'trak')) {
     clipH = clip.readUInt32BE(tkhd.at + 88) / 65536;
   }
 }
-ok('the herd is one small file, not the raw uploads',
-  clip.length > 2 * 1024 * 1024 && clip.length < 2.8 * 1024 * 1024
+ok('the herd is the club\'s own footage at full quality, not a squeezed copy',
+  clip.length > 8 * 1024 * 1024 && clip.length < 16 * 1024 * 1024
   && fs.existsSync(path.join(ROOT, 'assets/media/horses-running-poster.jpg'))
   && fs.readdirSync(ROOT).every((name) => !/\.mp4$/i.test(name)),
   Math.round(clip.length / 1024) + ' KB');
@@ -857,9 +877,29 @@ ok('the clip is a real mp4 that browsers can start straight away',
   clip.slice(4, 8).toString('latin1') === 'ftyp'
   && topBoxes.some((box) => box.type === 'moov') && topBoxes.some((box) => box.type === 'mdat')
   && topBoxes.findIndex((box) => box.type === 'moov') < topBoxes.findIndex((box) => box.type === 'mdat'));
-ok('the clip is short, sharp and the right shape',
-  clipSeconds > 10 && clipSeconds < 13 && clipW >= 1280 && clipW <= 1440 && Math.abs(clipW / clipH - 4 / 3) < 0.01,
+ok('the clip keeps the original picture and runs through several locations',
+  clipSeconds > 17 && clipSeconds < 22 && clipW === 1080 && clipH === 720,
   clipW + 'x' + clipH + ', ' + clipSeconds.toFixed(1) + 's');
+/* The gallery is one strip in the club's own order, with no categories. */
+const galleryBody = (await get('/gallery')).body;
+ok('the gallery has no event albums or category chips any more',
+  !/class="album\b/.test(galleryBody) && !/gallery-chip/.test(galleryBody) && !/Not filed yet/.test(galleryBody)
+  && !/class="album\b/.test(appCss) && !/\.gallery-chip \{/.test(appCss));
+ok('the photo editor no longer asks which event a photo came from',
+  !/data-field="eventId"/.test(fs.readFileSync(path.join(ROOT, 'assets/manage.js'), 'utf8'))
+  && /data-field="order"/.test(fs.readFileSync(path.join(ROOT, 'assets/manage.js'), 'utf8')));
+ok('the gallery is one strip in the club\'s order',
+  /<div class="archive-grid" id="archiveGrid">/.test(galleryBody)
+  && galleryBody.indexOf('archiveGrid') > 0
+  && (galleryBody.match(/class="archive-card"/g) || []).length === (galleryBody.match(/class="archive-image"/g) || []).length);
+ok('the slideshow frame is a photo, not a colour block',
+  /class="gallery-stage-image[^"]*"[^>]*background-image:url\(/.test(galleryBody)
+  && !/background-size: contain/.test(appCss)
+  && /\.gallery-stage-image \{[^}]*background-size: cover/.test(appCss));
+ok('the slideshow piles every photo in order and turns by itself',
+  /const slides = \(readJson\('gallery-data'\)\.slides \|\| \[\]\)/.test(appJs)
+  && /slides\.length < 2\) return;/.test(appJs) && /go\(index \+ 1\); \}, 4800\)/.test(appJs));
+
 ok('the front page plays the herd, muted and looping, behind everything',
   /<video[^>]*id="heroVideo"[^>]*muted[^>]*loop[^>]*playsinline[^>]*autoplay/.test(homeAlbums.body)
   && homeAlbums.body.includes('/assets/media/horses-running.mp4')
@@ -887,17 +927,17 @@ ok('the herd never stops on its own — nothing pauses it while the page is open
   && appJs.includes('video.currentTime = clock + 0.1') && appJs.includes('video.load()')
   && /document\.hidden\) pause\(\); else play\(\)/.test(appJs));
 ok('no block of the page is a solid wall: the herd shows through all of them',
-  /\.site-shell main > section:not\(\.hero-with-video\)[^{]*,\s*\n\.site-shell main > div:not\(\.photo-frame\) \{\s*background-color: rgba\(var\(--film-rgb\), \.74\);/.test(appCss)
+  /\.site-shell main > section:not\(\.hero-with-video\)[^{]*,\s*\n\.site-shell main > div:not\(\.photo-frame\) \{\s*background-color: rgba\(var\(--film-rgb\), \.69\);/.test(appCss)
   && !/main > section:not\(\.hero-with-video\)[^{]*\{[^}]*background(-color)?: var\(--cream\)/.test(appCss));
 ok('the film opens up at the edges, where no words are',
-  /@media \(min-width: 1150px\)/.test(appCss) && /rgba\(var\(--film-rgb\), \.2\) 0%/.test(appCss));
+  /@media \(min-width: 1150px\)/.test(appCss) && /rgba\(var\(--film-rgb\), \.14\) 0%/.test(appCss));
 ok('the dark blocks stay dark glass, with the herd moving behind them',
   /\.site-shell main > \.section-plum \{ background: rgba\(var\(--film-deep-rgb\), \.76\); \}/.test(appCss)
   && /main > \.psyche-section \{[^}]*rgba\(59,39,69,\.78\)/.test(appCss));
 ok('the closest-set text keeps more paper: cards are thinner, not opaque',
-  /\.event-card, \.calendar-item, \.club-panel, \.fact-card \{ background: rgba\(255,250,241,\.48\); \}/.test(appCss));
+  /\.event-card, \.calendar-item, \.club-panel, \.fact-card \{ background: rgba\(255,250,241,\.42\); \}/.test(appCss));
 ok('the softer grey and the accent labels were deepened for the film',
-  /--ink-soft: #4f4945;/.test(appCss) && /--terracotta-ink: #623420;/.test(appCss)
+  /--ink-soft: #463f3b;/.test(appCss) && /--terracotta-ink: #54291a;/.test(appCss)
   && !/color: var\(--terracotta\);/.test(appCss.slice(appCss.indexOf('.eyebrow'), appCss.indexOf('.eyebrow') + 200)));
 ok('the top bar no longer hides the herd',
   /\.nav:before \{[^}]*background: rgba\(255,250,241,\.16\)/.test(appCss));

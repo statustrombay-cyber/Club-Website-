@@ -13,24 +13,7 @@ $history    = mt_sorted($db['history'] ?? []);
 $numbered   = mt_events_numbered($db['events'] ?? []);
 /* Each photo on the home grid carries the number of the event it belongs to,
    so the grid never reads as one mixed pile. */
-$eventByPhotoId = [];
-foreach ($numbered as $eventRow) {
-    $eventByPhotoId[(string) ($eventRow['id'] ?? '')] = mt_event_label($eventRow);
-}
-$gallery = [];
-foreach (array_slice(mt_sorted(mt_gallery_photos($db['gallery'] ?? [])), 0, 6) as $photoRow) {
-    $photoEventId = trim((string) ($photoRow['eventId'] ?? ''));
-    if ($photoEventId === '') {
-        $label = trim((string) ($photoRow['event'] ?? ''));
-        foreach ($numbered as $eventRow) {
-            if ($label !== '' && strcasecmp($label, (string) ($eventRow['title'] ?? '')) === 0) {
-                $photoEventId = (string) ($eventRow['id'] ?? '');
-            }
-        }
-    }
-    $photoRow['eventLabel'] = $eventByPhotoId[$photoEventId] ?? '';
-    $gallery[] = $photoRow;
-}
+$gallery = array_slice(mt_sorted(mt_gallery_photos($db['gallery'] ?? [])), 0, 6);
 $team       = array_values(array_filter(
     mt_sorted(mt_named_team($db['team'] ?? [])),
     static fn($person) => ($person['group'] ?? 'management') === 'management'
@@ -104,7 +87,11 @@ $phone      = trim((string) ($site['clubPhone'] ?? ''));
       <div class="eyebrow">The psychology lens</div>
       <h2 class="display">A club for the lives we are actually living.</h2>
       <p>Psychology is not only something we study. It is how we notice our thoughts, hold space for another person, move through change and build a life that feels more like our own.</p>
-      <div class="curiosity-loop"><span></span><span></span><span></span><b>curiosity<br>→ connection<br>→ growth</b></div>
+      <div class="curiosity-loop">
+        <i class="loop-orbit loop-orbit-a" aria-hidden="true"><img src="<?= e(mt_safe_image($site['logoImage'] ?? '') ?: '/assets/photos/mt-club-logo.jpg') ?>" alt="" loading="lazy" decoding="async"></i>
+        <i class="loop-orbit loop-orbit-b" aria-hidden="true"><img src="<?= e(mt_safe_image($site['logoImage'] ?? '') ?: '/assets/photos/mt-club-logo.jpg') ?>" alt="" loading="lazy" decoding="async"></i>
+        <b>curiosity<br>→ connection<br>→ growth</b>
+      </div>
     </div>
     <div class="psyche-cards">
       <article class="psyche-card psyche-card-one"><span class="psyche-index">01</span><div class="psyche-icon">◌</div><h3>Notice</h3><p>Pause long enough to meet your inner world with a little more honesty and kindness.</p></article>
