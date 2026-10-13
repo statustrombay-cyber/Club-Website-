@@ -188,7 +188,17 @@ const photoId = photo.body && photo.body.item && photo.body.item.id;
 check('the photo is filed in the album', photo.status === 201 && Boolean(photoId), 'status ' + photo.status);
 
 const galleryPage = await req('/gallery');
-check('the photo and its event appear on the gallery page', String(galleryPage.body).includes('Deploy check photo ' + stamp) && String(galleryPage.body).includes('Deploy check circle ' + stamp));
+check('the photo and its caption appear on the gallery page', String(galleryPage.body).includes('Deploy check photo ' + stamp)
+  && String(galleryPage.body).includes('class="archive-image"'));
+const slideOne = await req('/api/gallery', { method: 'POST', csrf, json: { image: imagePath, caption: 'Slideshow lead ' + stamp, order: 1, visible: true } });
+const slideTwo = await req('/api/gallery', { method: 'POST', csrf, json: { image: imagePath, caption: 'Slideshow second ' + stamp, order: 2, visible: true } });
+const orderedGallery = String((await req('/gallery')).body);
+check('the club\'s display order decides what leads the gallery',
+  orderedGallery.indexOf('Slideshow lead ' + stamp) > 0
+  && orderedGallery.indexOf('Slideshow lead ' + stamp) < orderedGallery.indexOf('Slideshow second ' + stamp));
+for (const item of [slideOne, slideTwo]) {
+  await req('/api/gallery/' + ((item.body || {}).item || {}).id, { method: 'DELETE', csrf });
+}
 
 const recaptioned = await req('/api/gallery/' + photoId, { method: 'PUT', csrf, json: { image: imagePath, caption: 'Recaptioned ' + stamp, eventId, order: 1, visible: true } });
 check('the photo can be recaptioned', recaptioned.status === 200 && String(JSON.stringify(recaptioned.body)).includes('Recaptioned ' + stamp));
