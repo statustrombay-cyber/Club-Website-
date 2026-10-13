@@ -1,7 +1,7 @@
 <?php
 /**
- * Shared shell for the public site: the drifting bubbles, the depth overlay,
- * the announcement strip, the live event banner, the navigation and the footer.
+ * Shared shell for the public site: the drifting bubbles, the announcement
+ * strip, the live event banner, the navigation and the footer.
  *
  * @var string $content   Rendered page body.
  * @var array  $site      Club copy from the store.
@@ -52,11 +52,11 @@ $nav = [
   <meta name="description" content="<?= e(mb_substr($description, 0, 180)) ?>">
   <meta name="theme-color" content="#403634">
   <meta name="color-scheme" content="light">
+  <link rel="icon" href="/assets/img/favicon-48.png" sizes="48x48" type="image/png">
   <link rel="icon" href="/assets/img/favicon-32.png" sizes="32x32" type="image/png">
   <link rel="icon" href="/assets/img/favicon-192.png" sizes="192x192" type="image/png">
-  <link rel="shortcut icon" href="/assets/img/favicon-48.png" type="image/png">
+  <link rel="icon" href="/favicon.ico" sizes="any">
   <link rel="apple-touch-icon" sizes="180x180" href="/assets/img/apple-touch-icon.png">
-  <link rel="mask-icon" href="/assets/img/favicon.svg" color="#4e3155">
   <meta property="og:type" content="website">
   <meta property="og:title" content="<?= e($fullTitle) ?>">
   <meta property="og:description" content="<?= e(mb_substr($description, 0, 180)) ?>">
@@ -70,7 +70,6 @@ $nav = [
     <span class="bubble bubble-d"></span><span class="bubble bubble-e"></span><span class="bubble bubble-f"></span>
     <span class="bubble bubble-g"></span>
   </div>
-  <div class="depth-overlay" aria-hidden="true"></div>
   <div class="gold-thread" aria-hidden="true">
     <span class="thread-rail"></span><span class="thread-fill" id="threadFill"></span>
     <span class="thread-bead" id="threadBead"></span>
@@ -94,7 +93,7 @@ $nav = [
     <header class="nav-wrap">
       <div class="container nav">
         <a class="brand" href="/" aria-label="<?= e($clubName) ?> home">
-          <span class="brand-mark" id="brandMark"><img src="<?= e($logo) ?>" alt="<?= e($clubName) ?> logo"></span>
+          <span class="brand-mark" id="brandMark"><img src="<?= e($logo) ?>" alt="<?= e($clubName) ?> logo" loading="lazy" decoding="async"></span>
           <span class="brand-name" id="brandName"><?= e($clubName) ?></span>
         </a>
         <button class="menu-button" id="menuButton" aria-label="Open menu" aria-expanded="false" aria-controls="navLinks">☰</button>
@@ -119,11 +118,11 @@ $nav = [
     <footer class="footer">
       <div class="container footer-row">
         <a class="brand" href="/">
-          <span class="brand-mark" id="footerMark"><img src="<?= e($logo) ?>" alt="<?= e($clubName) ?> logo"></span>
+          <span class="brand-mark" id="footerMark"><img src="<?= e($logo) ?>" alt="<?= e($clubName) ?> logo" loading="lazy" decoding="async"></span>
           <span class="brand-name" id="footerName"><?= e($clubName) ?></span>
         </a>
         <div class="footer-institution">
-          <img src="/assets/img/university-logo.png" alt="<?= e((string) ($site['universityName'] ?? '')) ?>">
+          <img src="/assets/img/university-logo.png" alt="<?= e((string) ($site['universityName'] ?? '')) ?>" loading="lazy" decoding="async">
           <span><?= e($department) ?> · Psychology Club</span>
         </div>
         <div class="footer-links">

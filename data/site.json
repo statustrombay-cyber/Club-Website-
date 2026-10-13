@@ -1,6 +1,6 @@
 {
-  "revision": 20,
-  "updatedAt": "2026-10-12T16:56:23+00:00",
+  "revision": 24,
+  "updatedAt": "2026-10-13T02:27:40+00:00",
   "site": {
     "clubName": "Mindful Tattva",
     "shortName": "MT",
@@ -110,18 +110,20 @@
       "closesAt": "2026-10-23T18:00",
       "openHours": 0,
       "capacity": 0,
-      "brochureUrl": ""
+      "brochureUrl": "",
+      "number": 1
     }
   ],
   "gallery": [
     {
       "id": "gallery-1",
-      "caption": "",
+      "caption": "Welcome Circle",
       "alt": "Mindful Tattva club logo",
       "image": "/assets/photos/mt-club-logo.jpg",
       "event": "",
       "date": "",
-      "order": 1
+      "order": 1,
+      "eventId": ""
     }
   ],
   "registrations": [],

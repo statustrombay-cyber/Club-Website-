@@ -393,6 +393,79 @@ function mt_verify_url(array $registration): string
     return mt_base_url() . '/verify/' . rawurlencode($publicId);
 }
 
+/**
+ * The number an event is filed under.
+ *
+ * Events are numbered in the order they were added (1, 2, 3 …). The number is
+ * the club's own filing system: photos are filed under it, the calendar and
+ * the event cards show it, and nothing from one event is ever shown inside
+ * another. Numbers are never reused, so a deleted event leaves a gap instead
+ * of shuffling the rest.
+ */
+function mt_events_numbered(array $events): array
+{
+    $used = [];
+    foreach ($events as $event) {
+        $number = (int) ($event['number'] ?? 0);
+        if ($number > 0) {
+            $used[$number] = true;
+        }
+    }
+    $next = $used ? (max(array_keys($used)) + 1) : 1;
+    foreach ($events as $index => $event) {
+        if ((int) ($event['number'] ?? 0) > 0) {
+            continue;
+        }
+        /* An older event with no number keeps its place in the list. */
+        while (isset($used[$next])) {
+            $next++;
+        }
+        $events[$index]['number'] = $next;
+        $used[$next] = true;
+        $next++;
+    }
+
+    return $events;
+}
+
+/** The next free event number, for a brand-new event. */
+function mt_next_event_number(array $events): int
+{
+    $numbered = mt_events_numbered($events);
+    $highest = 0;
+    foreach ($numbered as $event) {
+        $highest = max($highest, (int) ($event['number'] ?? 0));
+    }
+
+    return $highest + 1;
+}
+
+/** "Event 3" — how the club and the site refer to one event. */
+function mt_event_label(array $event): string
+{
+    $number = (int) ($event['number'] ?? 0);
+
+    return $number > 0 ? 'Event ' . $number : 'Event';
+}
+
+/** Every event, numbered, ready to be shown. */
+function mt_events_for_display(array $database): array
+{
+    return mt_sorted(mt_events_numbered($database['events'] ?? []));
+}
+
+/** One event by its id, or null. */
+function mt_event_by_id(array $database, string $id): ?array
+{
+    foreach (($database['events'] ?? []) as $event) {
+        if ((string) ($event['id'] ?? '') === $id) {
+            return $event;
+        }
+    }
+
+    return null;
+}
+
 /** "A••••  S••••" — enough to recognise yourself, not enough to abuse. */
 function mt_mask_name(string $name): string
 {

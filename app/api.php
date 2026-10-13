@@ -277,6 +277,11 @@ function mt_api_collection(string $collection, string $method, ?string $id): voi
         $result = mt_db_transaction(function (array &$db) use ($collection, $input): array {
             $item = mt_sanitize_item($collection, $input);
             $item['id'] = mt_next_id(substr($collection, 0, -1));
+            if ($collection === 'events' && (int) ($item['number'] ?? 0) <= 0) {
+                /* Events are filed by number: the site and the photo album both
+                   refer to "Event 3", so a new one takes the next free number. */
+                $item['number'] = mt_next_event_number($db['events'] ?? []);
+            }
             $db[$collection][] = $item;
             return $item;
         });
@@ -294,6 +299,11 @@ function mt_api_collection(string $collection, string $method, ?string $id): voi
                 $found = true;
                 $item = mt_sanitize_item($collection, $input, $existing);
                 $item['id'] = $id;
+                if ($collection === 'events') {
+                    $item['number'] = (int) ($existing['number'] ?? 0) > 0
+                        ? (int) $existing['number']
+                        : mt_next_event_number($db['events'] ?? []);
+                }
                 $db[$collection][$index] = $item;
                 return $item;
             }

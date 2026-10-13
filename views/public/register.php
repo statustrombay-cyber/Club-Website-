@@ -136,14 +136,14 @@ $email = trim((string) ($site['email'] ?? ''));
 
             <div class="terms-note">
               <strong>Terms &amp; conditions</strong>
-              <ul>
-                <li>By registering you agree to follow the terms and conditions of the event.</li>
+              <ol>
+                <li>By registering, you agree to the terms and conditions of this event.</li>
                 <li>The registration fee is <strong>non-refundable</strong>.</li>
-                <li>Decisions of the club about the event are final. The club may cancel the event or change the date
-                  or venue without prior notice.</li>
+                <li>The club's decision on the event is final.</li>
+                <li>The club may cancel the event, or change its date or venue, without prior notice.</li>
                 <li>If the club cancels the event, the fee is refunded within <strong>24 working days</strong>.</li>
-                <li>One pass per person, valid for this event only; carry a photo ID.</li>
-              </ul>
+                <li>One pass per person, valid for this event only — carry a photo ID.</li>
+              </ol>
             </div>
           </form>
         <?php endif; ?>

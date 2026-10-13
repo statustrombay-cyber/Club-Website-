@@ -51,7 +51,6 @@ button { cursor: pointer; }
 
 .bubble-field { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
 .bubble-field + * { position: relative; z-index: 1; }
-.depth-overlay { position: fixed; inset: 0; z-index: 4; pointer-events: none; opacity: var(--depth-opacity, 0); background: linear-gradient(180deg, rgba(6,5,9,.02), rgba(4,3,7,.82)); mix-blend-mode: multiply; transition: opacity 1.2s ease; }
 .bubble { position: absolute; display: block; width: var(--size, 18px); height: var(--size, 18px); border: 1px solid rgba(200,111,88,.3); border-radius: 50%; background: radial-gradient(circle at 30% 25%, rgba(255,249,239,.8), rgba(232,155,121,.16) 36%, rgba(78,49,85,.03) 72%); box-shadow: inset -5px -6px 12px rgba(78,49,85,.08), 0 0 18px rgba(232,155,121,.12); animation: bubbleDrift var(--duration, 15s) ease-in-out infinite; }
 .bubble-a { left: 6%; top: 26%; --size: 21px; --duration: 14s; }
 .bubble-b { left: 18%; top: 76%; --size: 11px; --duration: 18s; animation-delay: -5s; }
@@ -495,6 +494,8 @@ html.js .scroll-reveal.is-visible { opacity: 1; transform: none; }
     .members-hero .outline-button { color: #fff9ef; border-color: rgba(255,249,239,.3); }
     .psi-orbit { position: relative; display: grid; place-items: center; min-height: 380px; }
     .psi-mark { position: relative; z-index: 2; color: #f6d39d; font-family: Georgia, serif; font-size: 10rem; line-height: 1; text-shadow: 0 0 34px rgba(246,211,157,.25); animation: psiFloat 5s ease-in-out infinite; }
+    /* the club's own emblem, held in the same orbit the psi used to sit in */
+    .orbit-logo { position: relative; z-index: 2; width: min(250px, 62vw); height: min(250px, 62vw); object-fit: cover; border-radius: 50%; box-shadow: 0 22px 48px rgba(61,39,66,.28); animation: psiFloat 6s ease-in-out infinite; }
     .psi-orbit:before, .psi-orbit:after { content: ''; position: absolute; border: 1px solid rgba(255,249,239,.36); border-radius: 50%; }
     .psi-orbit:before { width: 300px; height: 185px; transform: rotate(28deg); animation: orbitSpin 17s linear infinite; }
     .psi-orbit:after { width: 245px; height: 310px; transform: rotate(-36deg); animation: orbitSpin 23s linear reverse infinite; }
@@ -523,7 +524,11 @@ html.js .scroll-reveal.is-visible { opacity: 1; transform: none; }
     .member-photo-placeholder { display: grid; place-items: center; color: #4e3155; background: #e5b477; font-family: Georgia, serif; font-size: 1.35rem; font-weight: 700; }
     .member-card.has-photo h4 { margin-top: 0; }
     .member-card:hover { transform: translateY(-8px) rotate(.4deg); box-shadow: 0 23px 42px rgba(61,39,66,.13); }
-    .member-card:after { content: 'Ψ'; position: absolute; right: 17px; bottom: -14px; color: rgba(200,111,88,.12); font-family: Georgia, serif; font-size: 5.5rem; }
+    .member-card:after {
+      content: ''; position: absolute; right: 14px; bottom: 12px; width: 44px; height: 44px;
+      border-radius: 50%; opacity: .16; filter: grayscale(.15);
+      background: url('/assets/photos/mt-club-logo.jpg') center/cover no-repeat;
+    }
     .member-card h4 { position: relative; z-index: 1; margin: 34px 0 8px; color: #34213d; font-family: Georgia, serif; font-size: 1.55rem; font-weight: 400; line-height: 1.05; }
     .member-card .member-role { position: relative; z-index: 1; color: #c86f58; font-size: .72rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
     .member-phone { position: relative; z-index: 1; display: inline-block; margin-top: 16px; color: #4e3155; font-size: .78rem; font-weight: 800; }
@@ -668,10 +673,19 @@ html.js .scroll-reveal.is-visible { opacity: 1; transform: none; }
 .register-form input:focus { outline: none; border-color: var(--terracotta); box-shadow: 0 0 0 4px rgba(200,111,88,.14); }
 .register-submit { justify-self: start; min-width: 260px; }
 .form-banner { padding: 12px 16px; border-radius: 14px; background: rgba(200,111,88,.12); }
-.terms-note { padding: 18px 20px; border-radius: 18px; background: #f7f2ed; color: var(--ink-soft); font-size: .78rem; }
-.terms-note strong { display: block; margin-bottom: 8px; color: var(--plum-deep); font-family: var(--font-display); font-size: 1.02rem; font-weight: 400; }
-.terms-note ul { margin: 0; padding-left: 18px; }
-.terms-note li { margin-bottom: 5px; }
+/* One numbered line per condition, each hanging off its own number, so the
+   block reads as evenly spaced lines instead of a ragged list. */
+.terms-note { padding: 20px 22px; border-radius: 18px; background: #f9f5f0; border: 1px solid var(--line); color: var(--ink-soft); font-size: .8rem; }
+.terms-note strong { display: block; margin-bottom: 12px; color: var(--plum-deep); font-family: var(--font-display); font-size: 1.05rem; font-weight: 400; }
+.terms-note ol { list-style: none; counter-reset: term; margin: 0; padding: 0; display: grid; gap: 9px; }
+.terms-note li { position: relative; margin: 0; padding-left: 30px; line-height: 1.55; }
+.terms-note li:before {
+  counter-increment: term; content: counter(term);
+  position: absolute; left: 0; top: .05em; width: 20px; height: 20px;
+  display: grid; place-items: center; border-radius: 50%;
+  background: rgba(200,111,88,.16); color: var(--terracotta);
+  font-size: .66rem; font-weight: 800; line-height: 1;
+}
 
 /* ---- payment ---- */
 .pay-card { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 24px; align-items: center; margin: 0; padding: 22px; border: 1px dashed rgba(78,49,85,.28); border-radius: 22px; background: #fffaf1; }
@@ -766,6 +780,116 @@ html.js .scroll-reveal.is-visible { opacity: 1; transform: none; }
 @media (max-width: 1180px) { .gold-thread { display: none; } }
 @media (prefers-reduced-motion: reduce) { .gold-thread { display: none; } }
 
+
+/* ---------------------------------------------------------- club medallions */
+/* The club's own emblem, set into the page between sections the way the title
+   page of a programme sets a crest. */
+.logo-medallion { display: grid; justify-items: center; gap: 12px; margin: 0 auto; padding: 8px 0; }
+.logo-medallion img { width: 58px; height: 58px; border-radius: 50%; object-fit: cover; box-shadow: 0 10px 26px rgba(61,39,66,.18), 0 0 0 6px rgba(255,250,241,.65); }
+.logo-medallion span { color: var(--ink-soft); font-size: .66rem; font-weight: 800; letter-spacing: .2em; text-transform: uppercase; }
+.logo-medallion:before, .logo-medallion:after { content: ''; width: 1px; height: 26px; background: linear-gradient(180deg, rgba(215,162,70,.5), transparent); }
+.logo-medallion:after { background: linear-gradient(180deg, transparent, rgba(215,162,70,.5)); }
+
+
+/* --------------------------------------------------------------- photo frame */
+/* Clicking a photo opens it big, in a warm frame of its own. */
+.gallery-visual, .archive-image, .gallery-stage-image.has-image { cursor: zoom-in; border: 0; padding: 0; }
+.gallery-zoom {
+  position: absolute; right: 14px; top: 14px; z-index: 2;
+  display: grid; place-items: center; width: 34px; height: 34px;
+  border-radius: 50%; background: rgba(255,250,241,.9); color: var(--plum-deep);
+  font-size: 1rem; line-height: 1; opacity: 0; transition: opacity .2s ease, transform .2s ease;
+}
+.gallery-item:hover .gallery-zoom, .archive-card:hover .gallery-zoom, .gallery-visual:focus-visible .gallery-zoom, .archive-image:focus-visible .gallery-zoom { opacity: 1; }
+.photo-frame {
+  position: fixed; inset: 0; z-index: 300;
+  display: grid; place-items: center; padding: 26px;
+  background: rgba(40,28,34,.72);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+}
+.photo-frame-card {
+  width: min(980px, 100%); max-height: calc(100svh - 60px);
+  display: grid; gap: 0; margin: 0; overflow: hidden;
+  border-radius: 22px; background: var(--cream);
+  box-shadow: 0 30px 70px rgba(30,18,24,.42);
+  border: 1px solid rgba(255,250,241,.5);
+}
+.photo-frame-card img { display: block; width: 100%; max-height: calc(100svh - 150px); object-fit: contain; background: #241d20; }
+.photo-frame-card figcaption {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 14px 18px; color: var(--plum-deep); font-family: var(--font-display); font-size: 1.05rem;
+}
+.photo-frame-hint { color: var(--ink-soft); font-family: var(--font-body); font-size: .68rem; letter-spacing: .06em; text-transform: uppercase; }
+.photo-frame-close {
+  position: absolute; right: 22px; top: 22px; z-index: 2;
+  width: 44px; height: 44px; border: 0; border-radius: 50%;
+  background: rgba(255,250,241,.92); color: var(--plum-deep); font-size: 1.05rem;
+  box-shadow: 0 10px 24px rgba(30,18,24,.3);
+}
+.photo-frame-close:hover { background: #fff; }
+html.photo-frame-open { overflow: hidden; }
+@media (max-width: 620px) {
+  .photo-frame { padding: 14px; }
+  .photo-frame-card { border-radius: 18px; }
+  .photo-frame-close { right: 14px; top: 14px; width: 40px; height: 40px; }
+  .photo-frame-card img { max-height: calc(100svh - 170px); }
+}
+
+
+/* the event's number, worn where the event appears */
+.visual-number {
+  position: absolute; right: 12px; top: 12px; z-index: 2;
+  padding: 5px 10px; border-radius: 99px;
+  background: rgba(255,250,241,.92); color: var(--plum-deep);
+  font-size: .62rem; font-weight: 800; letter-spacing: .09em; text-transform: uppercase;
+}
+.calendar-event-number { color: var(--terracotta); font-weight: 800; }
+
+/* ----------------------------------------------------------- event albums */
+/* One album per event. The heading carries the event's number, its name and
+   how many photos belong to it, so two events are never read as one. */
+.album { margin-top: 34px; }
+.album:first-of-type { margin-top: 22px; }
+.album-head {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 16px;
+  padding: 16px 20px; margin-bottom: 16px;
+  border: 1px solid var(--line); border-left: 4px solid var(--terracotta);
+  border-radius: 18px; background: var(--cream);
+}
+.album-head h3 { margin: 0; color: var(--plum-deep); font-family: var(--font-display); font-size: 1.4rem; font-weight: 400; }
+.album-head p { margin: 3px 0 0; color: var(--ink-soft); font-size: .78rem; }
+.album-number {
+  display: inline-grid; place-items: center; padding: 7px 12px; border-radius: 99px;
+  background: rgba(200,111,88,.15); color: var(--terracotta);
+  font-size: .68rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; white-space: nowrap;
+}
+.album-count { color: var(--ink-soft); font-size: .72rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+/* the small event tag on a photo tile */
+.gallery-chip {
+  position: absolute; left: 12px; top: 12px; z-index: 2;
+  padding: 5px 10px; border-radius: 99px;
+  background: rgba(255,250,241,.92); color: var(--plum-deep);
+  font-size: .6rem; font-weight: 800; letter-spacing: .09em; text-transform: uppercase;
+}
+@media (max-width: 620px) {
+  .album-head { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .album-count { justify-self: start; }
+}
+
+
+/* --------------------------------------------------------------- speed -----
+   A long page is cheap to scroll when the browser is allowed to skip the
+   sections that are off screen. content-visibility does exactly that; the
+   intrinsic size keeps the scrollbar honest, and browsers that do not know the
+   property simply ignore it. */
+.section, .gallery-item, .archive-card, .member-card, .event-card, .calendar-month, .album, .timeline-item {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 340px;
+}
+img { content-visibility: auto; }
+/* the bubbles and the gold thread are decoration: they never block a tap */
+.bubble-field, .gold-thread { pointer-events: none; }
+
 /* ---- phones: the same layout, stacked, nothing overlapping ---- */
 @media (max-width: 900px) {
   .register-grid { grid-template-columns: 1fr; }
@@ -849,7 +973,7 @@ html.js .scroll-reveal.is-visible { opacity: 1; transform: none; }
 
 /* printing a pass should give exactly the pass */
 @media print {
-  .bubble-field, .depth-overlay, .announcement, .event-banner, .nav-wrap, .footer, .gold-thread,
+  .bubble-field, .announcement, .event-banner, .nav-wrap, .footer, .gold-thread,
   .pass-actions, .pass-note, .club-panel, .btn-row { display: none !important; }
   .pass-shell { padding: 0; background: #fff; }
   .pass-ticket { box-shadow: none; width: 100%; }

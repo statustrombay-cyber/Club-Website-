@@ -20,7 +20,11 @@ $club = $club ?? 'Mindful Tattva';
   <meta name="robots" content="noindex, nofollow">
   <title>Sign in · <?= e($club) ?></title>
   <meta name="theme-color" content="#34213d">
-  <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
+  <!-- the club logo in the tab, the same one the public site shows -->
+  <link rel="icon" href="/assets/img/favicon-48.png" sizes="48x48" type="image/png">
+  <link rel="icon" href="/assets/img/favicon-192.png" sizes="192x192" type="image/png">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/img/apple-touch-icon.png">
   <link rel="stylesheet" href="/assets/app.css">
   <link rel="stylesheet" href="/assets/manage.css">
 </head>

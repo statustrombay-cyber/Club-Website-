@@ -29,8 +29,9 @@ $bodyClass = 'members-page';
         <a class="outline-button" href="/#join">Join the club</a>
       </div>
     </div>
-    <div class="psi-orbit" aria-label="Psi symbol for psychology">
-      <span class="psi-dot psi-dot-one"></span><span class="psi-dot psi-dot-two"></span><span class="psi-mark">Ψ</span>
+    <div class="psi-orbit logo-orbit" aria-label="<?= e((string) ($site['clubName'] ?? 'Mindful Tattva')) ?> emblem">
+      <span class="psi-dot psi-dot-one"></span><span class="psi-dot psi-dot-two"></span>
+      <img class="orbit-logo" src="<?= e(mt_safe_image($site['logoImage'] ?? '') ?: '/assets/photos/mt-club-logo.jpg') ?>" alt="<?= e((string) ($site['clubName'] ?? 'Mindful Tattva')) ?>" loading="lazy" decoding="async">
     </div>
   </div>
 </section>

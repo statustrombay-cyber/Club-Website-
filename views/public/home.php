@@ -7,10 +7,30 @@
  * @var array $site  Club copy.
  */
 $site       = $db['site'];
-$events     = array_values(array_filter(mt_sorted($db['events'] ?? []), static fn($event) => !empty($event['published'])));
+$events     = array_values(array_filter(mt_events_numbered($db['events'] ?? []), static fn($event) => !empty($event['published'])));
 $openEvents = mt_open_events($db);
 $history    = mt_sorted($db['history'] ?? []);
-$gallery    = array_slice(mt_sorted(mt_gallery_photos($db['gallery'] ?? [])), 0, 6);
+$numbered   = mt_events_numbered($db['events'] ?? []);
+/* Each photo on the home grid carries the number of the event it belongs to,
+   so the grid never reads as one mixed pile. */
+$eventByPhotoId = [];
+foreach ($numbered as $eventRow) {
+    $eventByPhotoId[(string) ($eventRow['id'] ?? '')] = mt_event_label($eventRow);
+}
+$gallery = [];
+foreach (array_slice(mt_sorted(mt_gallery_photos($db['gallery'] ?? [])), 0, 6) as $photoRow) {
+    $photoEventId = trim((string) ($photoRow['eventId'] ?? ''));
+    if ($photoEventId === '') {
+        $label = trim((string) ($photoRow['event'] ?? ''));
+        foreach ($numbered as $eventRow) {
+            if ($label !== '' && strcasecmp($label, (string) ($eventRow['title'] ?? '')) === 0) {
+                $photoEventId = (string) ($eventRow['id'] ?? '');
+            }
+        }
+    }
+    $photoRow['eventLabel'] = $eventByPhotoId[$photoEventId] ?? '';
+    $gallery[] = $photoRow;
+}
 $team       = array_values(array_filter(
     mt_sorted(mt_named_team($db['team'] ?? [])),
     static fn($person) => ($person['group'] ?? 'management') === 'management'
@@ -123,6 +143,12 @@ $phone      = trim((string) ($site['clubPhone'] ?? ''));
   </div>
 </section>
 
+
+<div class="logo-medallion" aria-hidden="true">
+  <img src="<?= e(mt_safe_image($site['logoImage'] ?? '') ?: '/assets/photos/mt-club-logo.jpg') ?>" alt="" loading="lazy" decoding="async">
+  <span>Mindful Tattva</span>
+</div>
+
 <section class="section section-tint" id="events">
   <div class="container">
     <div class="section-head">
@@ -184,6 +210,14 @@ $phone      = trim((string) ($site['clubPhone'] ?? ''));
     </div>
   </div>
 </section>
+
+
+<div class="logo-medallion" aria-hidden="true">
+  <img src="<?= e(mt_safe_image($site['logoImage'] ?? '') ?: '/assets/photos/mt-club-logo.jpg') ?>" alt="" loading="lazy" decoding="async">
+  <span>Mindful Tattva</span>
+</div>
+
+<?= mt_photo_frame() ?>
 
 <section class="section section-tint" id="team">
   <div class="container">
@@ -269,7 +303,7 @@ $phone      = trim((string) ($site['clubPhone'] ?? ''));
     <div class="contact-card">
       <div class="contact-row university-contact-row">
         <div class="contact-icon">⌘</div>
-        <img class="contact-seal" src="/assets/img/csmu-seal.png" alt="<?= e((string) ($site['universityName'] ?? '')) ?> seal">
+        <img class="contact-seal" src="/assets/img/csmu-seal.png" alt="<?= e((string) ($site['universityName'] ?? '')) ?> seal" loading="lazy" decoding="async">
         <div>
           <small>Our institution</small>
           <strong class="contact-university-name" id="contactUniversityName"><?= e((string) ($site['universityName'] ?? '')) ?></strong>

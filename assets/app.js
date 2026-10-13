@@ -5,7 +5,7 @@
    the club's own content. This file only adds movement and the small moments
    of interaction:
 
-     · the drifting bubbles and the depth that gathers as you scroll
+     · the drifting bubbles and the sections that lift into place
      · the reveal that lifts each section into place
      · the mobile menu
      · the photo gallery's stage on the gallery page
@@ -26,24 +26,6 @@
     return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   };
 
-  /* ------------------------------------------------------- depth & reveal */
-  function setupDepth() {
-    if (window.__mtDepthAtmosphere) return;
-    window.__mtDepthAtmosphere = true;
-    let frame = 0;
-    const update = function () {
-      frame = 0;
-      const max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
-      const progress = Math.min(1, Math.max(0, window.scrollY / max));
-      const opacity = Math.max(0, Math.min(.5, (progress - .08) * .62));
-      document.documentElement.style.setProperty('--depth-opacity', opacity.toFixed(3));
-    };
-    const onScroll = function () { if (!frame) frame = window.requestAnimationFrame(update); };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onScroll);
-    update();
-  }
-
   function setupReveal() {
     const targets = $$('.section, .detail-card, .event-card, .gallery-item, .team-card, .calendar-item, .member-card, .psyche-card');
     if (!('IntersectionObserver' in window) || reduced()) {
@@ -63,6 +45,54 @@
         node.style.transitionDelay = Math.min(index * 35, 280) + 'ms';
       }
       observer.observe(node);
+    });
+  }
+
+  /* ---------------------------------------------------------- photo frame */
+  /* Clicking any photo (the home grid, the gallery stage tiles or the archive)
+     opens it big in a frame. Escape, the ✕ or a tap outside closes it. */
+  function setupPhotoFrame() {
+    const frame = $('#photoFrame');
+    const image = $('#photoFrameImage');
+    const caption = $('#photoFrameCaption');
+    if (!frame || !image) return;
+
+    function close() {
+      frame.hidden = true;
+      document.documentElement.classList.remove('photo-frame-open');
+      image.removeAttribute('src');
+      if (window.__mtPhotoReturn && document.body.contains(window.__mtPhotoReturn)) {
+        window.__mtPhotoReturn.focus({ preventScroll: true });
+      }
+    }
+
+    function open(button, source, text) {
+      image.src = source;
+      image.alt = text || '';
+      if (caption) caption.textContent = text || '';
+      frame.hidden = false;
+      document.documentElement.classList.add('photo-frame-open');
+      window.__mtPhotoReturn = button;
+      const closeButton = $('#photoFrameClose');
+      if (closeButton) closeButton.focus({ preventScroll: true });
+    }
+
+    document.addEventListener('click', function (event) {
+      const button = event.target.closest ? event.target.closest('.gallery-visual.has-image, .archive-image, .gallery-stage-image.has-image') : null;
+      if (button) {
+        const style = button.getAttribute('style') || '';
+        const match = /url\((['"]?)([^'")]+)\1\)/.exec(style);
+        if (match) {
+          event.preventDefault();
+          const stageCaption = button.id === 'galleryStageImage' ? ($('#galleryStageCaption') || {}).textContent : '';
+          open(button, match[2], stageCaption || button.getAttribute('aria-label') || '');
+        }
+        return;
+      }
+      if (!frame.hidden && (event.target === frame || event.target.closest('.photo-frame-close'))) close();
+    });
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape' && !frame.hidden) close();
     });
   }
 
@@ -230,9 +260,9 @@
   }
 
   function start() {
-    setupDepth();
     setupReveal();
     setupMenu();
+    setupPhotoFrame();
     setupGalleryStage();
     setupForms();
     setupGoldThread();

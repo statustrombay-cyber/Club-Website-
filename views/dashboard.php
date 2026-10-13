@@ -36,7 +36,11 @@ $panelTitle = $panelTitles[$panelIndex];
   <meta name="robots" content="noindex, nofollow">
   <title>Club dashboard · <?= e($club) ?></title>
   <meta name="theme-color" content="#34213d">
-  <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
+  <!-- the club logo in the tab, the same one the public site shows -->
+  <link rel="icon" href="/assets/img/favicon-48.png" sizes="48x48" type="image/png">
+  <link rel="icon" href="/assets/img/favicon-192.png" sizes="192x192" type="image/png">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/img/apple-touch-icon.png">
   <link rel="stylesheet" href="/assets/app.css">
   <link rel="stylesheet" href="/assets/manage.css">
 </head>
@@ -119,7 +123,8 @@ $panelTitle = $panelTitles[$panelIndex];
       <?php if ($panel === 'events'): ?>
       <section class="panel is-active" id="panel-events">
         <div class="panel-head">
-          <div><h2>Events &amp; calendar</h2><p>Pick the month (it places the event in the yearly calendar) and type the day and year, the time and the venue.
+          <div><h2>Events &amp; calendar</h2><p>Every event is filed under its own number — <b>Event 1</b>, <b>Event 2</b> — so photos, registrations and the calendar never mix two
+            events together. Pick the month (it places the event in the yearly calendar) and type the day and year, the time and the venue.
             Set a fee and the UPI ID and the registration form shows the payment QR code; set the window and registration closes by itself.</p></div>
           <button class="btn-sm primary" type="button" id="addEvent">+ Add event</button>
         </div>
@@ -145,9 +150,9 @@ $panelTitle = $panelTitles[$panelIndex];
       <?php if ($panel === 'gallery'): ?>
       <section class="panel is-active" id="panel-gallery">
         <div class="panel-head">
-          <div><h2>Photo album (gallery)</h2><p>This is the club's gallery management: upload event photos here, then write the caption, the album label, the date and the order.
-            Captions are optional and completely yours — whatever you type here is exactly what visitors see, and photos without a caption simply show as photos.
-            Every photo you add appears on the website's gallery page at once.</p></div>
+          <div><h2>Photo album (gallery)</h2><p>This is the club's gallery management. Upload a photo, then choose <b>which event it came from</b> — the album is filed under
+            Event 1, Event 2 … so photos from one gathering are never shown inside another. Captions are optional and completely yours: whatever you type here is
+            exactly what visitors see. Every photo you add appears on the website's gallery page at once, inside its event's album.</p></div>
           <div class="row-actions">
             <a class="btn-sm" href="/gallery" target="_blank" rel="noreferrer">Open the gallery ↗</a>
             <button class="btn-sm primary" type="button" id="addPhoto">+ Add photo</button>

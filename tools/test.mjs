@@ -207,7 +207,8 @@ const home = await get('/');
 ok('GET / returns 200', home.status === 200, 'status ' + home.status + ' ' + String(home.body).slice(0, 200));
 ok('the home page renders without PHP errors', clean(home.body), phpErrors(home.body));
 ok('the original design is back: the drifting bubbles', home.body.includes('bubble-field') && home.body.includes('bubble bubble-e'));
-ok('the depth overlay and the page shell are there', home.body.includes('depth-overlay') && home.body.includes('site-shell'));
+ok('the page shell and the bubbles are there', home.body.includes('site-shell') && home.body.includes('bubble-field'));
+ok('nothing darkens the page as it scrolls', !home.body.includes('depth-overlay') && !fs.readFileSync(path.join(ROOT, 'assets/app.css'), 'utf8').includes('depth-overlay'));
 ok('the announcement strip is written by the backend', home.body.includes('class="announcement"') && home.body.includes('reflection, connection'));
 ok('the live event banner shows the published event', home.body.includes('id="eventBanner"') && home.body.includes('Mindful Tattva Welcome Circle'));
 ok('the navigation carries the club menu', ['#about', '#psychology', '#history', '#events', '/gallery', '/calendar', '#team', '/members', '#join', '#contact']
@@ -301,7 +302,9 @@ ok('the form carries a CSRF token', registerPage.body.includes('name="csrf" valu
 ok('the event facts come from the backend', registerPage.body.includes('24 October 2026') && registerPage.body.includes('Seminar Hall'));
 ok('a free event says so instead of showing a payment QR', registerPage.body.includes('Free entry') && !registerPage.body.includes('upi://pay'));
 ok('the terms are stated in the form', /non-refundable/i.test(registerPage.body) && /24 working days/.test(registerPage.body)
-  && /decisions of the club/i.test(registerPage.body) && /without prior notice/i.test(registerPage.body));
+  && /(club'?s decision|decisions of the club)/i.test(registerPage.body)
+  && /without prior notice/i.test(registerPage.body)
+  && /<ol>/.test(registerPage.body) && (registerPage.body.match(/<li>/g) || []).length >= 5);
 ok('the form never asks “anything the club should know”', !/anything the club should know/i.test(registerPage.body) && !/name="note"/.test(registerPage.body));
 ok('the form does not feed the browser name and phone suggestions', !/autocomplete="(name|tel|email|street-address)"/i.test(registerPage.body)
   && !/name="(name|email|phone)"[^>]*value="(?!")/.test(registerPage.body));
@@ -692,6 +695,95 @@ ok('a long word cannot push a column off the screen',
   /\.hero-grid > \*, \.about-grid > \*/.test(appCss) && /h1, h2, h3, \.display \{ overflow-wrap: break-word/.test(appCss));
 ok('the calendar headline is light on its dark banner',
   /\.calendar-hero h1 \{[^}]*color:\s*#fffaf1/.test(appCss));
+
+/* ---- event albums: nothing from one event is ever shown inside another ----
+   The password tests above signed every other device out, so the club signs
+   in once more before filing anything. The harness hands back raw bodies, so
+   every answer is parsed here. */
+const freshLogin = await sendJson('/api/login', 'POST', { password: 'Csmu@MT' });
+const FRESH = { session: freshLogin.session || {}, headers: { 'X-CSRF-Token': (freshLogin.session || {}).csrf || '' } };
+const asJson = (result) => { try { return JSON.parse(String((result || {}).body || '{}')) || {}; } catch (error) { return {}; } };
+
+const eventsBefore = (asJson(await sendJson('/api/events', 'GET', undefined, FRESH)).items || []);
+const highestBefore = eventsBefore.reduce((top, event) => Math.max(top, Number(event.number) || 0), 0);
+const numberedEvent = await sendJson('/api/events', 'POST', {
+  title: 'Second gathering', month: 12, day: 5, year: 2026, time: '5:00 PM', location: 'CSMU campus',
+  kicker: 'Circle', fee: 0, published: true, order: 90,
+}, FRESH);
+const numberedItem = asJson(numberedEvent).item || {};
+const numberedId = numberedItem.id || '';
+const numberedNumber = Number(numberedItem.number) || 0;
+ok('a new event is filed under the next number',
+  numberedEvent.status === 201 && numberedNumber === highestBefore + 1,
+  numberedEvent.status + ' number=' + numberedNumber + ' (highest was ' + highestBefore + ')');
+
+const filedPhoto = await sendJson('/api/gallery', 'POST', {
+  caption: 'Filed photo', alt: 'A filed photo', eventId: numberedId, image: '/assets/photos/mt-club-logo.jpg', order: 1,
+}, FRESH);
+const filedItem = asJson(filedPhoto).item || {};
+ok('a photo can be filed under an event',
+  filedPhoto.status === 201 && numberedId !== '' && filedItem.eventId === numberedId,
+  'sent ' + numberedId + ' · saved ' + filedItem.eventId);
+
+const albumPage = await get('/gallery');
+const albumNames = [...albumPage.body.matchAll(/<h3>([^<]+)<\/h3>\s*<p>/g)].map((m) => m[1]);
+ok('the album page groups photos under their event',
+  albumNames.includes('Second gathering') && albumPage.body.includes('Event ' + numberedNumber),
+  JSON.stringify(albumNames));
+ok('each album block carries its own photo count', /album-count/.test(albumPage.body));
+const secondAlbumHead = albumPage.body.indexOf('Second gathering');
+const filedPhotoAt = albumPage.body.indexOf('Filed photo');
+const nextAlbumHead = /class="album-head"/.test(albumPage.body)
+  ? albumPage.body.slice(secondAlbumHead + 10).search(/class="album"/)
+  : -1;
+ok('a filed photo sits inside its own event album, not another',
+  secondAlbumHead > 0 && filedPhotoAt > secondAlbumHead && (nextAlbumHead < 0 || filedPhotoAt < secondAlbumHead + 10 + nextAlbumHead),
+  'photo at ' + filedPhotoAt + ', album at ' + secondAlbumHead);
+const homeAlbums = await get('/');
+ok('the event cards and calendar entries wear their number',
+  /class="visual-number">Event \d+/.test(homeAlbums.body) || /calendar-event-number">Event \d+/.test(homeAlbums.body));
+
+/* clean up the extra event and photo so the site stays exactly as the club left it */
+await request({ uri: '/api/gallery/' + filedItem.id, method: 'DELETE', ...FRESH });
+await request({ uri: '/api/events/' + numberedId, method: 'DELETE', ...FRESH });
+const afterCleanup = await get('/gallery');
+ok('the extra album is gone again', !afterCleanup.body.includes('Second gathering'));
+
+/* ---- the photo frame: photos open big, on both pages ---- */
+ok('the photo frame is on the gallery page', afterCleanup.body.includes('id="photoFrame"'));
+ok('every gallery photo is clickable', /class="archive-image" aria-label="Open/.test(afterCleanup.body));
+ok('the home grid photos are clickable too', /class="gallery-visual has-image" aria-label="Open/.test(homeAlbums.body));
+/* ---- the other things the club asked for in this round ---- */
+const loginPageIcons = (await get('/dashboard')).body;
+ok('the club area asks for the club logo in the tab',
+  loginPageIcons.includes('favicon-48.png') && loginPageIcons.includes('favicon-192.png') && loginPageIcons.includes('/favicon.ico'));
+ok('the public pages ask for the club logo too',
+  homeAlbums.body.includes('favicon-48.png') && homeAlbums.body.includes('/favicon.ico'));
+ok('no psi or sparkle icon is left in any page head', !/rel="(mask-)?icon"[^>]*favicon\.svg/.test(homeAlbums.body + loginPageIcons));
+const iconFile = fs.readFileSync(path.join(ROOT, 'favicon.ico'));
+ok('a real favicon.ico sits at the web root (browsers ask for it directly)',
+  iconFile.slice(0, 4).equals(Buffer.from([0, 0, 1, 0])) && iconFile.length > 2000, iconFile.length + ' bytes');
+
+const termsBlock = (/<div class="terms-note">([\s\S]*?)<\/div>/.exec(registerPage.body) || [])[1] || '';
+const termsLines = [...termsBlock.matchAll(/<li>/g)].length;
+ok('the conditions are numbered lines, one each', /<ol>/.test(termsBlock) && termsLines >= 5, termsLines + ' lines');
+ok('every condition is a short line, none is a paragraph',
+  [...termsBlock.matchAll(/<li>([\s\S]*?)<\/li>/g)].every((m) => m[1].replace(/<[^>]+>/g, '').trim().length <= 130));
+
+/* psi stays, but only in its two homes: the lens section and the album */
+ok('the psi sign is kept where it means something',
+  homeAlbums.body.includes('psyche-psi') && (await get('/gallery')).body.includes('mini-psi'));
+ok('the club emblem appears between sections on the home page',
+  (homeAlbums.body.match(/logo-medallion/g) || []).length >= 2);
+ok('the club emblem sits in the members stage, and the frame script is live',
+  (await get('/members')).body.includes('orbit-logo') && appJs.includes('setupPhotoFrame'));
+ok('the club emblem is faded into the member cards instead of psi',
+  /\.member-card:after \{[^}]*mt-club-logo/.test(appCss) && !/\.member-card:after \{[^}]*content: 'Ψ'/.test(appCss));
+ok('the page skips work for what is off screen (a faster scroll)',
+  /\.section, \.gallery-item[^{]*\{[^}]*content-visibility: auto/.test(appCss));
+ok('the pictures below the fold wait until they are reached',
+  (fs.readFileSync(path.join(ROOT, 'views/public/members.php'), 'utf8').match(/loading="lazy"/g) || []).length >= 1
+  && (fs.readFileSync(path.join(ROOT, 'views/layout.php'), 'utf8').match(/loading="lazy"/g) || []).length >= 2);
 
 /* The club area itself, on a phone: the section strip scrolls sideways, the
    counters and editors go one per row, and a long word cannot widen a page. */

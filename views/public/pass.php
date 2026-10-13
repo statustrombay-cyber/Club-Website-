@@ -127,7 +127,7 @@ $pdfPath = '/api/pass/' . rawurlencode($serial !== '' ? $serial : (string) $regi
       <article class="pass-ticket">
         <header class="pass-head">
           <div class="pass-club">
-            <img src="<?= e(mt_safe_image($site['logoImage'] ?? '') ?: '/assets/photos/mt-club-logo.jpg') ?>" alt="">
+            <img src="<?= e(mt_safe_image($site['logoImage'] ?? '') ?: '/assets/photos/mt-club-logo.jpg') ?>" alt="" loading="lazy" decoding="async">
             <span>
               <small><?= e((string) ($site['clubName'] ?? 'Mindful Tattva')) ?> · event pass</small>
               <strong><?= e((string) ($site['department'] ?? '')) ?></strong>

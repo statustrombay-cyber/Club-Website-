@@ -82,6 +82,7 @@ function mt_event_card(array $event, ?array $registration = null): string
       <article class="event-card">
         <div class="card-visual<?= $image !== '' ? ' has-image' : '' ?>"<?= mt_background_style($image) ?>>
           <span class="visual-label"><?= e($label) ?></span>
+          <?php if ((int) ($event['number'] ?? 0) > 0): ?><span class="visual-number"><?= e(mt_event_label($event)) ?></span><?php endif; ?>
         </div>
         <div class="event-body">
           <div class="event-date"><?= e(mt_event_date_display($event)) ?></div>
@@ -148,7 +149,10 @@ function mt_gallery_item(array $item): string
     ob_start(); ?>
       <figure class="gallery-item">
         <?php if ($image !== ''): ?>
-          <div class="gallery-visual has-image" role="img" aria-label="<?= e($alt) ?>"<?= mt_background_style($image, $alt) ?>></div>
+          <button type="button" class="gallery-visual has-image" aria-label="Open <?= e($alt) ?> full size"<?= mt_background_style($image, $alt) ?>>
+            <?php if (trim((string) ($item['eventLabel'] ?? '')) !== ''): ?><span class="gallery-chip"><?= e((string) $item['eventLabel']) ?></span><?php endif; ?>
+            <span class="gallery-zoom" aria-hidden="true">⤢</span>
+          </button>
         <?php else: ?>
           <div class="gallery-visual" role="img" aria-label="<?= e($alt) ?>"><span class="gallery-placeholder">Photo placeholder</span></div>
         <?php endif; ?>
@@ -206,9 +210,30 @@ function mt_archive_card(array $item): string
     $alt = trim((string) ($item['alt'] ?? '')) !== '' ? (string) $item['alt'] : $caption;
     ob_start(); ?>
       <article class="archive-card">
-        <div class="archive-image" role="img" aria-label="<?= e($alt) ?>"<?= mt_background_style($image, $alt) ?>></div>
+        <button type="button" class="archive-image" aria-label="Open <?= e($alt) ?> full size"<?= mt_background_style($image, $alt) ?>>
+          <?php if (trim((string) ($item['eventLabel'] ?? '')) !== ''): ?><span class="gallery-chip"><?= e((string) $item['eventLabel']) ?></span><?php endif; ?>
+          <span class="gallery-zoom" aria-hidden="true">⤢</span>
+        </button>
         <div class="archive-caption"><?= e($caption) ?></div>
       </article>
+    <?php
+    return (string) ob_get_clean();
+}
+
+/** The frame a photo opens into: one big picture, its caption, and a way out. */
+function mt_photo_frame(): string
+{
+    ob_start(); ?>
+      <div class="photo-frame" id="photoFrame" role="dialog" aria-modal="true" aria-label="Photo" hidden>
+        <button type="button" class="photo-frame-close" id="photoFrameClose" aria-label="Close the photo">✕</button>
+        <figure class="photo-frame-card">
+          <img id="photoFrameImage" src="" alt="" decoding="async">
+          <figcaption>
+            <span id="photoFrameCaption"></span>
+            <span class="photo-frame-hint">Tap anywhere to close</span>
+          </figcaption>
+        </figure>
+      </div>
     <?php
     return (string) ob_get_clean();
 }
@@ -237,7 +262,10 @@ function mt_month_card(int $index, string $month, array $events): string
           <?php if ($events): ?>
             <?php foreach ($events as $event): ?>
               <article class="calendar-event">
-                <div class="calendar-event-date"><?= e(mt_event_date_display($event)) ?></div>
+                <div class="calendar-event-date">
+                  <?php if ((int) ($event['number'] ?? 0) > 0): ?><span class="calendar-event-number"><?= e(mt_event_label($event)) ?></span> · <?php endif; ?>
+                  <?= e(mt_event_date_display($event)) ?>
+                </div>
                 <h4><?= e((string) ($event['title'] ?? 'Mindful Tattva activity')) ?></h4>
                 <p><?= e(trim((string) ($event['time'] ?? '')) !== '' ? (string) $event['time'] : 'Time to be confirmed') ?>
                   · <?= e(trim((string) ($event['location'] ?? '')) !== '' ? (string) $event['location'] : 'Location to be confirmed') ?></p>

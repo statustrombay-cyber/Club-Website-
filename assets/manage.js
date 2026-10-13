@@ -323,6 +323,21 @@
       </div>`;
   }
 
+  /* Events are filed by number: "Event 2 · Stress-buster workshop". */
+  function numberedEventName(item) {
+    const number = Number(item && item.number) || 0;
+    const title = String((item && item.title) || 'New activity').trim() || 'New activity';
+    return number > 0 ? 'Event ' + number + ' · ' + title : title;
+  }
+  function numberedLabel(item) {
+    return numberedEventName(item);
+  }
+  function eventOptions(selectedId) {
+    const rows = sorted(state.events).map((event) =>
+      `<option value="${esc(event.id)}" ${String(selectedId) === String(event.id) ? 'selected' : ''}>${esc(numberedEventName(event))}</option>`).join('');
+    return `<option value="" ${selectedId ? '' : 'selected'}>— not filed under an event yet —</option>${rows}`;
+  }
+
   function cardShell(type, id, label, index, body) {
     return `
       <article class="editor-card" data-type="${type}" data-id="${esc(id)}">
@@ -377,7 +392,7 @@
     if (!wrap) return;
     wrap.innerHTML = sorted(state.events).map((item, index) => {
       const parts = eventParts(item);
-      return cardShell('events', item.id, 'Event', index, `
+      return cardShell('events', item.id, numberedLabel(item), index, `
         <div class="form-grid">
           <label class="span-2">Title<input data-field="title" value="${esc(item.title)}" placeholder="Workshop title"></label>
           <label>Month
@@ -431,8 +446,8 @@
         <label>Caption <span class="muted" style="font-weight:400">(leave empty to show the photo with no caption)</span>
           <input data-field="caption" value="${esc(item.caption)}" placeholder="Optional — what is this photo about?">
         </label>
-        <label>Album label <span class="muted" style="font-weight:400">(groups photos on the gallery page)</span>
-          <input data-field="event" value="${esc(item.event || '')}" placeholder="e.g. Welcome Circle">
+        <label>Which event is this photo from?
+          <select data-field="eventId">${eventOptions(item.eventId)}</select>
         </label>
         <div class="form-grid">
           <label>Date (optional)<input data-field="date" value="${esc(item.date || '')}" placeholder="24 October 2026"></label>
@@ -499,11 +514,14 @@
     const defaults = {
       team: { name: '', role: 'Core team', group: 'management', phone: '', bio: '', image: '', showOnHome: true, order: (state.team.length + 1) * 10 },
       events: { title: '', month: 1, day: '', year: '', time: 'Time to be announced', location: 'CSMU campus', kicker: 'Mindful Tattva', description: '', image: '', brochureUrl: '', fee: 0, upiId: '', upiName: 'Mindful Tattva', registrationOpen: false, windowMode: 'date', closesAt: '', openHours: 24, capacity: 0, published: false, order: (state.events.length + 1) * 10 },
-      gallery: { caption: '', alt: '', event: '', date: '', image: '', order: (state.gallery.length + 1) * 10 },
+      gallery: { caption: '', alt: '', eventId: '', event: '', date: '', image: '', order: (state.gallery.length + 1) * 10 },
     };
     try {
-      await api(`/api/${type}`, { method: 'POST', body: JSON.stringify(defaults[type]) });
-      toast('Added — now fill in the details and press Save');
+      const created = await api(`/api/${type}`, { method: 'POST', body: JSON.stringify(defaults[type]) });
+      const createdNumber = Number(created && created.item && created.item.number) || 0;
+      toast(type === 'events' && createdNumber > 0
+        ? 'Event ' + createdNumber + ' added — fill in the details and press Save'
+        : 'Added — now fill in the details and press Save');
       const fresh = await api(`/api/${type}`);
       state[type] = fresh.items || [];
       renderAll();
@@ -542,7 +560,7 @@
   /* -------------------------------------------------------- event registers */
   function eventTitle(id) {
     const event = state.events.find((item) => item.id === id);
-    return event ? event.title : 'Event removed';
+    return event ? numberedEventName(event) : 'Event removed';
   }
 
   function registrationCard(item) {

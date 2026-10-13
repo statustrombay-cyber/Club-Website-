@@ -256,11 +256,21 @@ function mt_sanitize_item(string $collection, array $input, array $existing = []
             $openedAt = mt_clean_text($input['openedAt'] ?? ($existing['openedAt'] ?? ''), 40);
             $item['openedAt'] = $openedAt !== '' ? $openedAt : mt_now_iso();
             $item['capacity'] = max(0, (int) ($input['capacity'] ?? ($existing['capacity'] ?? 0)));
+
+            /* Every event carries its own number. It is the club's filing
+               system: photos are filed under it, and nothing from one event
+               ever lands in another. New events are numbered by the API. */
+            $number = (int) ($input['number'] ?? ($existing['number'] ?? 0));
+            $item['number'] = max(0, $number);
             break;
 
         case 'gallery':
             $item['caption'] = mt_clean_text($input['caption'] ?? ($existing['caption'] ?? ''), 300);
             $item['alt']     = mt_clean_text($input['alt'] ?? ($existing['alt'] ?? ''), 300);
+            /* Which event this photo belongs to. The id is the real link; the
+               free-text label stays for photos that arrived before events were
+               numbered. */
+            $item['eventId'] = mt_clean_text($input['eventId'] ?? ($existing['eventId'] ?? ''), 80);
             $item['event']   = mt_clean_text($input['event'] ?? ($existing['event'] ?? ''), 180);
             $item['date']    = mt_clean_text($input['date'] ?? ($existing['date'] ?? ''), 80);
             $item['image']   = mt_safe_image($input['image'] ?? ($existing['image'] ?? ''));
