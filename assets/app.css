@@ -9,10 +9,10 @@
 
 :root {
   --ink: #2e2928;
-  --ink-soft: #57504c;
+  --ink-soft: #4f4945;
   /* accents that sit ON the page: a shade deeper than the decorative
      terracotta, so they keep their strength over the herd */
-  --terracotta-ink: #74452f;
+  --terracotta-ink: #623420;
   --plum: #5a4d49;
   --plum-deep: #403634;
   --terracotta: #a66f5b;
@@ -203,13 +203,13 @@ button { cursor: pointer; }
    The film is dense in the middle column, where the words are, and opens wide
    at the outer edges, where there is no text and the herd can be seen
    properly. Every value below was measured against all sixteen frames of the
-   loop: body text holds 8.4:1 and the softer grey 4.6:1 — at or better than
-   what the site had on solid cream — while the herd stays plainly visible. */
-:root { --film-rgb: 249,244,238; --film-deep-rgb: 64,54,52; }
+   loop: body text holds 7.4:1 and the softer grey 4.6:1 — at or better than
+   what the site had on solid cream — while the herd is plainly in view. */
+:root { --film-rgb: 252,248,243; --film-deep-rgb: 64,54,52; }
 
 .site-shell main > section:not(.hero-with-video):not(.section-plum):not(.psyche-section):not(.calendar-hero),
 .site-shell main > div:not(.photo-frame) {
-  background-color: rgba(var(--film-rgb), .8);
+  background-color: rgba(var(--film-rgb), .74);
 }
 
 /* On a wide screen the page opens at both flanks: the words keep their dense
@@ -219,12 +219,12 @@ button { cursor: pointer; }
   .site-shell main > div:not(.photo-frame) {
     background-color: transparent;
     background-image: linear-gradient(90deg,
-      rgba(var(--film-rgb), .32) 0%,
-      rgba(var(--film-rgb), .5) calc(50% - 730px),
-      rgba(var(--film-rgb), .8) calc(50% - 590px),
-      rgba(var(--film-rgb), .8) calc(50% + 590px),
-      rgba(var(--film-rgb), .5) calc(50% + 730px),
-      rgba(var(--film-rgb), .32) 100%);
+      rgba(var(--film-rgb), .2) 0%,
+      rgba(var(--film-rgb), .34) calc(50% - 760px),
+      rgba(var(--film-rgb), .74) calc(50% - 600px),
+      rgba(var(--film-rgb), .74) calc(50% + 600px),
+      rgba(var(--film-rgb), .34) calc(50% + 760px),
+      rgba(var(--film-rgb), .2) 100%);
   }
 }
 
@@ -236,20 +236,20 @@ button { cursor: pointer; }
 .calendar-page main > section { --film-rgb: 251,248,241; }
 
 /* The dark blocks stay dark — dark glass, with the herd moving behind it. */
-.site-shell main > .section-plum { background: rgba(var(--film-deep-rgb), .84); }
+.site-shell main > .section-plum { background: rgba(var(--film-deep-rgb), .76); }
 .site-shell main > .psyche-section {
-  background: linear-gradient(135deg, rgba(59,39,69,.84) 0%, rgba(88,54,92,.84) 52%, rgba(121,80,97,.84) 100%);
+  background: linear-gradient(135deg, rgba(59,39,69,.78) 0%, rgba(88,54,92,.78) 52%, rgba(121,80,97,.78) 100%);
 }
 .site-shell main > .calendar-hero {
-  background: linear-gradient(135deg, rgba(52,33,61,.84), rgba(112,75,97,.84));
+  background: linear-gradient(135deg, rgba(52,33,61,.78), rgba(112,75,97,.78));
 }
-.footer { background: rgba(41,26,49,.87); }
+.footer { background: rgba(41,26,49,.8); }
 .event-banner { background: linear-gradient(90deg, rgba(243,211,166,.9), rgba(247,188,147,.9)); }
 
 /* Cards hold the closest-set text, so they keep a little more paper than the
    block behind them — thin enough that the herd still moves across them. */
-.event-card, .calendar-item, .club-panel, .fact-card { background: rgba(255,250,241,.55); }
-.team-card { background: rgba(237,229,223,.58); }
+.event-card, .calendar-item, .club-panel, .fact-card { background: rgba(255,250,241,.48); }
+.team-card { background: rgba(237,229,223,.5); }
 .psyche-card { background: rgba(249,216,176,.6); }
 .psyche-card-two { background: rgba(189,207,181,.6); }
 .psyche-card-three { background: rgba(237,157,128,.6); }
