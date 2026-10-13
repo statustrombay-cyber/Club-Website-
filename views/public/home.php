@@ -11,8 +11,7 @@ $events     = array_values(array_filter(mt_events_numbered($db['events'] ?? []),
 $openEvents = mt_open_events($db);
 $history    = mt_sorted($db['history'] ?? []);
 $numbered   = mt_events_numbered($db['events'] ?? []);
-/* Each photo on the home grid carries the number of the event it belongs to,
-   so the grid never reads as one mixed pile. */
+/* The home strip: the same photos a visitor meets first on the gallery page. */
 $gallery = array_slice(mt_sorted(mt_gallery_photos($db['gallery'] ?? [])), 0, 6);
 $team       = array_values(array_filter(
     mt_sorted(mt_named_team($db['team'] ?? [])),
