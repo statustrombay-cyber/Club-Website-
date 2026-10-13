@@ -822,10 +822,17 @@ ok('small planets turn around the circle of words in the lens',
 ok('the circle of words sits at the left, clear of the screen edge',
   /\.curiosity-loop \{[^}]*margin: 42px 0 6px 6px/.test(appCss)
   && /\.curiosity-loop b \{[^}]*transform: rotate\(-12deg\)/.test(appCss));
-ok('a golden line runs through curiosity, connection and growth, and its light travels',
-  homeAlbums.body.includes('loop-thread')
-  && /\.loop-thread \{[^}]*linear-gradient/.test(appCss)
-  && /\.loop-spark \{[^}]*animation: lineRun/.test(appCss));
+ok('every planet rides its own ring: same box, same centre, same angle and speed',
+  /\.curiosity-loop:before, \.curiosity-loop:after, \.loop-orbit \{[^}]*left: 50%; top: 50%/.test(appCss)
+  && /\.curiosity-loop:before, \.curiosity-loop:after, \.loop-orbit \{[^}]*margin-left: calc\(var\(--w\) \/ -2\)/.test(appCss)
+  && /\.curiosity-loop:before \{ --w: 208px; --h: 148px; --start: 55deg; --speed: 19s; \}/.test(appCss)
+  && /\.loop-orbit-a \{ --w: 208px; --h: 148px; --start: 55deg; --speed: 19s;/.test(appCss)
+  && /\.loop-orbit-b \{ --w: 150px; --h: 214px; --start: -34deg; --speed: 26s;/.test(appCss)
+  /* an auto margin cannot centre a box wider than its circle — that was the
+     bug that left the planets orbiting beside their rings */
+  && !/\.loop-orbit \{[^}]*inset: 0; margin: auto/.test(appCss));
+ok('nothing else was drawn between the rings', !/loop-thread|loop-spark/.test(appCss) && !homeAlbums.body.includes('loop-thread'));
+ok('the words of the lens stay above the rings and the planets', /\.curiosity-loop b \{[^}]*z-index: 3/.test(appCss) && /\.loop-orbit \{[^}]*z-index: 2/.test(appCss));
 ok('one golden line runs through the beginning, our why and the next chapter',
   homeAlbums.body.includes('timeline-spine')
   && /\.timeline-spine \{[^}]*overflow: hidden/.test(appCss)
@@ -835,6 +842,34 @@ ok('the page keeps moving: a golden streak over the hero and a sheen on the lens
   homeAlbums.body.includes('hero-comet')
   && /\.hero-comet \{[^}]*animation: cometRun/.test(appCss)
   && /\.psyche-card:hover:before \{[^}]*translateX/.test(appCss));
+ok('the club’s own words drift past in a band under the hero, seamless and quiet',
+  (homeAlbums.body.match(/class="values-run"/g) || []).length === 2
+  && homeAlbums.body.includes('aria-hidden="true">') && homeAlbums.body.includes('values-marquee')
+  && /\.values-track \{[^}]*animation: marqueeRun 52s linear infinite/.test(appCss)
+  && /@keyframes marqueeRun \{ from \{ transform: translateX\(0\); \} to \{ transform: translateX\(-50%\); \} \}/.test(appCss));
+ok('a gold bar across the top shows how much of the page is read',
+  layoutSource.includes('id="readProgress"')
+  && /\.read-progress \{[^}]*position: fixed/.test(appCss)
+  && appJs.includes("bar.style.transform = 'scaleX('"));
+ok('the way back up appears once the page has been read a little',
+  layoutSource.includes('id="toTop"') && /\.to-top\.is-on \{[^}]*opacity: 1/.test(appCss)
+  && appJs.includes("toTop.classList.toggle('is-on', y > 700)"));
+ok('the top bar reads a little more solid once the visitor has scrolled',
+  /\.nav:before \{[^}]*background: rgba\(255,250,241,\.16\)/.test(appCss)
+  && /body\.is-scrolled \.nav:before \{[^}]*rgba\(255,250,241,\.34\)/.test(appCss)
+  && appJs.includes("classList.toggle('is-scrolled', y > 40)"));
+ok('the club area never carries the public dressing: it has its own body',
+  fs.readFileSync(path.join(ROOT, 'views/dashboard.php'), 'utf8').includes('<body class="dash-body">')
+  && fs.readFileSync(path.join(ROOT, 'views/login.php'), 'utf8').includes('<body class="dash-body login-body">')
+  && !/id="readProgress"|id="toTop"/.test(fs.readFileSync(path.join(ROOT, 'views/dashboard.php'), 'utf8') + fs.readFileSync(path.join(ROOT, 'views/login.php'), 'utf8')));
+ok('the club timeline keeps a slow golden heartbeat, and the photos breathe on hover',
+  /\.timeline-dot \{[^}]*animation: dotPulse/.test(appCss)
+  && /@keyframes dotPulse/.test(appCss)
+  && /\.gallery-item:hover \.gallery-visual\.has-image, \.archive-card:hover \.archive-image \{ transform: scale\(1\.045\)/.test(appCss)
+  && /\.nav-action:after, \.solid-button:after \{/.test(appCss));
+ok('the hero’s own words arrive one line after another',
+  /\.hero \.fade-in > \* \{ animation: fadeIn/.test(appCss)
+  && /\.hero \.fade-in > \*:nth-child\(3\) \{ animation-delay: \.2s/.test(appCss));
 ok('the club emblem appears between sections on the home page',
   (homeAlbums.body.match(/logo-medallion/g) || []).length >= 2);
 ok('the club emblem sits in the members stage, and the frame script is live',

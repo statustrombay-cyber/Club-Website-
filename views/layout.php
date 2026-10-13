@@ -74,6 +74,7 @@ $nav = [
     <span class="thread-rail"></span><span class="thread-fill" id="threadFill"></span>
     <span class="thread-bead" id="threadBead"></span>
   </div>
+  <div class="read-progress" aria-hidden="true"><i id="readProgress"></i></div>
 
   <?php /* The club's horses, behind every public page. A still frame is always
            there and the compressed clip plays over it — muted, in a loop —
@@ -127,6 +128,8 @@ $nav = [
     </header>
 
     <main id="top"><?= $content ?></main>
+
+    <a class="to-top" id="toTop" href="#top" aria-label="Back to top">↑</a>
 
     <footer class="footer">
       <div class="container footer-row">

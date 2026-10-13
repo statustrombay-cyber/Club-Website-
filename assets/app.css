@@ -96,7 +96,9 @@ button { cursor: pointer; }
 .event-banner-pulse { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--terracotta); box-shadow: 0 0 0 5px rgba(200,111,88,.13); }
 .nav-wrap { position: relative; z-index: 10; }
 .nav { position: relative; }
-.nav:before { content: ''; position: absolute; inset: 11px -16px; z-index: -1; border: 1px solid rgba(78,49,85,.07); border-radius: 25px; background: rgba(255,250,241,.16); box-shadow: 0 10px 26px rgba(61,39,66,.04); backdrop-filter: blur(9px); -webkit-backdrop-filter: blur(9px); }
+.nav:before { content: ''; position: absolute; inset: 11px -16px; z-index: -1; border: 1px solid rgba(78,49,85,.07); border-radius: 25px; background: rgba(255,250,241,.16); box-shadow: 0 10px 26px rgba(61,39,66,.04); backdrop-filter: blur(9px); -webkit-backdrop-filter: blur(9px); transition: background .35s ease, box-shadow .35s ease; }
+/* scrolled: the bar reads a touch more solid, so words stay clear over the herd */
+body.is-scrolled .nav:before { background: rgba(255,250,241,.34); box-shadow: 0 14px 34px rgba(61,39,66,.1); }
 .nav { 
   display: flex;
   align-items: center;
@@ -129,6 +131,10 @@ button { cursor: pointer; }
 .nav-action, .solid-button { color: #fffaf0; background: var(--plum); box-shadow: 0 9px 20px rgba(78,49,85,.2); }
 .outline-button { color: var(--plum); background: transparent; border: 1px solid var(--line); }
 .nav-action:hover, .solid-button:hover, .outline-button:hover { transform: translateY(-2px); }
+/* a soft light crosses the filled buttons on hover */
+.nav-action, .solid-button { position: relative; overflow: hidden; }
+.nav-action:after, .solid-button:after { content: ''; position: absolute; inset: 0; pointer-events: none; transform: translateX(-130%); background: linear-gradient(100deg, transparent 38%, rgba(255,236,190,.4) 50%, transparent 62%); transition: transform .75s ease; }
+.nav-action:hover:after, .solid-button:hover:after { transform: translateX(130%); }
 .nav-action:hover, .solid-button:hover { background: var(--plum-deep); box-shadow: 0 12px 22px rgba(78,49,85,.26); }
 .outline-button:hover { border-color: var(--terracotta-ink); color: var(--terracotta-ink); }
 .menu-button { display: none; border: 0; background: transparent; color: var(--plum); font-size: 1.4rem; }
@@ -293,27 +299,29 @@ button { cursor: pointer; }
 .psyche-grid { position: relative; z-index: 1; display: grid; grid-template-columns: .85fr 1.15fr; gap: 90px; align-items: center; }
 .psyche-copy h2 { max-width: 560px; margin: 12px 0 22px; color: #fff8ee; font-size: clamp(2.7rem, 5.5vw, 5rem); }
 .psyche-copy > p { max-width: 470px; margin: 0; color: rgba(255,248,238,.72); font-size: .98rem; }
-/* The club's circle of words, clear of the left edge and with the club crest
-   riding its two golden rings. The rings are an unrotated box; only the ring
-   line and the crest inside it turn, so the words stay upright. */
 /* The circle of words sits at the left of its column, with just enough room
    that neither the rings nor the planets riding them can leave the screen. */
 .curiosity-loop { position: relative; display: grid; place-items: center; width: 180px; height: 180px; margin: 42px 0 6px 6px; border: 1px solid rgba(255,248,238,.42); border-radius: 50%; color: #ffe5b1; text-align: center; font-family: var(--font-display); font-size: 1rem; line-height: 1.1; }
-/* a golden line runs through curiosity -> connection -> growth, and its light
-   travels up and down the line, never stopping */
-.loop-thread { position: absolute; left: 50%; top: 22%; width: 2px; height: 56%; margin-left: -1px; overflow: hidden; border-radius: 999px; background: linear-gradient(180deg, rgba(255,229,177,.12), rgba(224,169,78,.9) 45%, rgba(255,229,177,.12)); box-shadow: 0 0 14px rgba(224,169,78,.4); }
-.loop-spark { position: absolute; left: 0; top: 0; display: block; width: 100%; height: 100%; background: linear-gradient(180deg, transparent 0 36%, #fff3d6 50%, transparent 64% 100%); animation: lineRun 4.8s ease-in-out infinite alternate; }
-.curiosity-loop:before, .curiosity-loop:after { content: ''; position: absolute; border: 1px solid rgba(255,248,238,.32); border-radius: 50%; animation: orbitTurn var(--speed, 19s) linear infinite; }
-.curiosity-loop:before { width: 208px; height: 148px; --start: 55deg; --speed: 19s; }
-.curiosity-loop:after { width: 150px; height: 214px; --start: -34deg; --speed: 26s; animation-direction: reverse; }
+/* Rings and planets share one geometry: the same box, centred on the circle
+   the same way, at the same angle and the same speed. (An auto margin cannot
+   centre a box that is wider than the circle — it collapses to nothing and
+   leaves the planet orbiting beside its ring. This cannot.) */
+.curiosity-loop:before, .curiosity-loop:after, .loop-orbit {
+  position: absolute; left: 50%; top: 50%;
+  width: var(--w); height: var(--h);
+  margin-left: calc(var(--w) / -2); margin-top: calc(var(--h) / -2);
+}
+.curiosity-loop:before, .curiosity-loop:after { content: ''; border: 1px solid rgba(255,248,238,.32); border-radius: 50%; animation: orbitTurn var(--speed, 19s) linear infinite; }
+.curiosity-loop:before { --w: 208px; --h: 148px; --start: 55deg; --speed: 19s; }
+.curiosity-loop:after { --w: 150px; --h: 214px; --start: -34deg; --speed: 26s; animation-direction: reverse; }
 /* the planets: small round bodies riding the two golden rings */
-.loop-orbit { position: absolute; inset: 0; margin: auto; display: block; animation: orbitTurn var(--speed, 19s) linear infinite; }
+.loop-orbit { z-index: 2; display: block; animation: orbitTurn var(--speed, 19s) linear infinite; }
 .loop-orbit:after { content: ''; position: absolute; left: 0; top: 50%; width: var(--size, 15px); height: var(--size, 15px); border-radius: 50%; transform: translate(-50%, -50%); background: radial-gradient(circle at 32% 28%, #fff4da, var(--tone, #d7a246) 55%, rgba(94,58,24,.92)); box-shadow: 0 0 12px rgba(215,162,70,.45); }
-.loop-orbit-a { width: 208px; height: 148px; --start: 55deg; --speed: 19s; --size: 15px; --tone: #d7a246; }
-.loop-orbit-a2 { width: 208px; height: 148px; --start: 55deg; --speed: 19s; --size: 9px; --tone: #b8c3b0; }
+.loop-orbit-a { --w: 208px; --h: 148px; --start: 55deg; --speed: 19s; --size: 15px; --tone: #d7a246; }
+.loop-orbit-a2 { --w: 208px; --h: 148px; --start: 55deg; --speed: 19s; --size: 9px; --tone: #b8c3b0; }
 .loop-orbit-a2:after { left: auto; right: 0; transform: translate(50%, -50%); }
-.loop-orbit-b { width: 150px; height: 214px; --start: -34deg; --speed: 26s; --size: 12px; --tone: #c9aaa0; animation-direction: reverse; }
-.curiosity-loop b { position: relative; z-index: 1; transform: rotate(-12deg); font-weight: 400; }
+.loop-orbit-b { --w: 150px; --h: 214px; --start: -34deg; --speed: 26s; --size: 12px; --tone: #c9aaa0; animation-direction: reverse; }
+.curiosity-loop b { position: relative; z-index: 3; transform: rotate(-12deg); font-weight: 400; }
 /* a ring turns a full circle, so it never snaps back to where it began */
 @keyframes orbitTurn { from { transform: rotate(var(--start, 0deg)); } to { transform: rotate(calc(var(--start, 0deg) + 360deg)); } }
 @keyframes lineRun { from { transform: translateY(-100%); } to { transform: translateY(100%); } }
@@ -374,7 +382,10 @@ button { cursor: pointer; }
    our why and the next chapter, and a light travels back and forth along it. */
 .timeline-spine { position: absolute; left: 5px; top: 9px; bottom: 9px; width: 3px; overflow: hidden; border-radius: 999px; background: linear-gradient(180deg, rgba(215,162,70,.92), rgba(200,111,88,.6) 45%, rgba(215,162,70,.92)); box-shadow: 0 0 14px rgba(215,162,70,.32); }
 .timeline-glint { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: linear-gradient(180deg, transparent 0 38%, #ffe7b4 50%, transparent 62% 100%); animation: lineRun 6.5s ease-in-out infinite alternate; }
-.timeline-dot { position: absolute; z-index: 1; left: -32px; top: 4px; width: 13px; height: 13px; border: 3px solid var(--paper); border-radius: 50%; background: #d7a246; box-shadow: 0 0 0 1px #d7a246, 0 0 16px rgba(215,162,70,.45); }
+.timeline-dot { position: absolute; z-index: 1; left: -32px; top: 4px; width: 13px; height: 13px; border: 3px solid var(--paper); border-radius: 50%; background: #d7a246; animation: dotPulse 3.4s ease-in-out infinite; }
+.timeline-item:nth-of-type(2) .timeline-dot { animation-delay: .45s; }
+.timeline-item:nth-of-type(3) .timeline-dot { animation-delay: .9s; }
+.timeline-item:nth-of-type(4) .timeline-dot { animation-delay: 1.35s; }
 .timeline-item:last-child { padding-bottom: 0; }
 .timeline-year, .timeline-item h3, .timeline-item p { min-width: 0; }
 .timeline-year { padding-top: 2px; color: var(--terracotta-ink); font-size: .74rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
@@ -439,6 +450,8 @@ button { cursor: pointer; }
    picture is drawn whole, with a softened copy of itself filling the frame
    behind it. A square crest and a wide photograph both look like pictures. */
 .gallery-visual.has-image, .archive-image, .gallery-stage-image.has-image { background-size: contain; background-position: center; background-repeat: no-repeat; background-color: #2b1a2b; }
+.gallery-visual.has-image, .archive-image { transition: transform .7s cubic-bezier(.16,.78,.22,1); }
+.gallery-item:hover .gallery-visual.has-image, .archive-card:hover .archive-image { transform: scale(1.045); }
 .gallery-visual.has-image:before, .archive-image:before, .gallery-stage-image.has-image:before {
   content: ''; position: absolute; z-index: 0; inset: -14%; display: block;
   background-image: inherit; background-size: cover; background-position: center; background-repeat: no-repeat;
@@ -509,6 +522,8 @@ html.js .scroll-reveal.is-visible { opacity: 1; transform: none; }
 @keyframes stickerPulse { 0%, 100% { transform: rotate(13deg) scale(1); } 50% { transform: rotate(8deg) scale(1.07); } }
 @keyframes breathe { 0%, 100% { transform: scale(.95); opacity: .75; } 50% { transform: scale(1.05); opacity: .3; } }
 @keyframes fillDrift { from { transform: scale(1.02) translate3d(-1.5%, 1%, 0); } to { transform: scale(1.14) translate3d(1.5%, -1.5%, 0); } }
+@keyframes dotPulse { 0%, 100% { box-shadow: 0 0 0 1px #d7a246, 0 0 16px rgba(215,162,70,.45); } 50% { box-shadow: 0 0 0 1px #d7a246, 0 0 0 7px rgba(215,162,70,.13), 0 0 22px rgba(215,162,70,.62); } }
+@keyframes marqueeRun { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 @keyframes cometRun { 0%, 70% { opacity: 0; transform: translate3d(0, 0, 0) rotate(9deg); } 74% { opacity: .9; } 94% { opacity: 0; transform: translate3d(140vw, 11vh, 0) rotate(9deg); } 100% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { *, *:before, *:after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; } }
 
@@ -946,6 +961,37 @@ html.js .scroll-reveal.is-visible { opacity: 1; transform: none; }
 .logo-medallion:after { background: linear-gradient(180deg, transparent, rgba(215,162,70,.5)); }
 
 
+/* ------------------------------------------------------ the moving pieces */
+/* The thin band of the club's own words drifting past under the hero. Two
+   copies sit side by side and the track slides exactly one copy across, so the
+   loop has no seam. The band is decoration, so it is hidden from screen
+   readers — the club's words are never written twice for anyone. */
+.values-marquee { position: relative; overflow: hidden; padding: 15px 0; border-top: 1px solid rgba(215,162,70,.26); border-bottom: 1px solid rgba(215,162,70,.26); }
+.values-track { display: flex; width: max-content; animation: marqueeRun 52s linear infinite; }
+.values-marquee:hover .values-track { animation-play-state: paused; }
+.values-run { display: flex; align-items: center; gap: 24px; padding-right: 24px; }
+.values-run span { color: var(--terracotta-ink); font-size: .7rem; font-weight: 800; letter-spacing: .28em; text-transform: uppercase; white-space: nowrap; }
+.values-run i { color: rgba(215,162,70,.85); font-size: .68rem; font-style: normal; }
+@media (prefers-reduced-motion: reduce) { .values-track { animation: none; } }
+
+/* The bar at the very top of the window: how much of the page is read. */
+.read-progress { position: fixed; z-index: 12; top: 0; left: 0; right: 0; height: 3px; pointer-events: none; background: rgba(244,193,127,.16); }
+.read-progress i { display: block; width: 100%; height: 100%; transform: scaleX(0); transform-origin: 0 50%; background: linear-gradient(90deg, #d7a246, #e0a94e 55%, #c86f58); box-shadow: 0 0 12px rgba(224,169,78,.5); }
+
+/* The way back up, once the page has been read a little. */
+.to-top { position: fixed; z-index: 12; right: 20px; bottom: 22px; display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; color: #fffaf0; background: var(--plum); box-shadow: 0 12px 26px rgba(64,54,52,.3); font-size: 1.1rem; opacity: 0; transform: translateY(14px); pointer-events: none; transition: opacity .3s ease, transform .3s ease, background .2s ease; }
+.to-top.is-on { opacity: 1; transform: none; pointer-events: auto; }
+.to-top:hover { background: var(--plum-deep); }
+.to-top:before { content: ''; position: absolute; inset: -5px; border: 1px solid rgba(215,162,70,.6); border-radius: 50%; animation: breathe 4.6s ease-in-out infinite; }
+
+/* The hero's own words arrive one line after another. */
+.hero .fade-in > * { animation: fadeIn .9s cubic-bezier(.16,.78,.22,1) both; }
+.hero .fade-in > *:nth-child(2) { animation-delay: .1s; }
+.hero .fade-in > *:nth-child(3) { animation-delay: .2s; }
+.hero .fade-in > *:nth-child(4) { animation-delay: .3s; }
+.hero .fade-in > *:nth-child(5) { animation-delay: .4s; }
+.hero .fade-in > *:nth-child(6) { animation-delay: .5s; }
+
 /* A golden streak crosses the hero now and then: the page never sits still. */
 .hero-comet { position: absolute; z-index: 0; top: 16%; left: -16%; width: 210px; height: 1px; pointer-events: none; opacity: 0; transform: rotate(9deg); background: linear-gradient(90deg, transparent, rgba(255,236,190,.9), transparent); box-shadow: 0 0 12px rgba(244,193,127,.5); animation: cometRun 16s ease-in-out 4s infinite; }
 
@@ -1099,6 +1145,7 @@ html.photo-frame-open { overflow: hidden; }
 /* printing a pass should give exactly the pass */
 @media print {
   .bubble-field, .announcement, .event-banner, .nav-wrap, .footer, .gold-thread,
+  .read-progress, .to-top, .values-marquee,
   .pass-actions, .pass-note, .club-panel, .btn-row { display: none !important; }
   .pass-shell { padding: 0; background: #fff; }
   .pass-ticket { box-shadow: none; width: 100%; }

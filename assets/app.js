@@ -253,6 +253,40 @@
     window.addEventListener('resize', schedule);
   }
 
+  /* ------------------------------------------------------ scroll dressing */
+  /* Three small things that answer the scroll: the gold bar across the top of
+     the window, the frosted top bar tightening a little, and the way back up
+     appearing once the page has been read a bit. One frame, one handler. */
+  function setupScrollUi() {
+    const bar = $('#readProgress');
+    const toTop = $('#toTop');
+    if (!bar && !toTop) return;
+
+    let frame = 0;
+    function paint() {
+      frame = 0;
+      const y = window.scrollY || window.pageYOffset || 0;
+      const scrollable = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+      const read = Math.min(1, Math.max(0, y / scrollable));
+      if (bar) bar.style.transform = 'scaleX(' + read.toFixed(4) + ')';
+      document.body.classList.toggle('is-scrolled', y > 40);
+      if (toTop) toTop.classList.toggle('is-on', y > 700);
+    }
+    function schedule() {
+      if (!frame) frame = window.requestAnimationFrame(paint);
+    }
+
+    paint();
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule);
+    if (toTop) {
+      toTop.addEventListener('click', function (event) {
+        event.preventDefault();
+        window.scrollTo({ top: 0, behavior: reduced() ? 'auto' : 'smooth' });
+      });
+    }
+  }
+
   /* ------------------------------------------------------- content updates */
   function setupLiveUpdates() {
     const boot = readJson('mt-bootstrap');
@@ -344,6 +378,7 @@
     setupGalleryStage();
     setupForms();
     setupGoldThread();
+    setupScrollUi();
     setupLiveUpdates();
   }
 

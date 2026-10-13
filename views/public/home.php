@@ -59,6 +59,22 @@ $phone      = trim((string) ($site['clubPhone'] ?? ''));
   </div>
 </section>
 
+<?php
+/* A thin band of the club's own words drifting past under the hero: two
+   copies side by side, sliding exactly one copy across, so the loop has no
+   seam. It is decoration, so it stays out of the reading order. */
+$clubWords = ['mind', 'body', 'connection', 'curiosity', 'growth', 'community', 'kindness', 'a pause'];
+?>
+<div class="values-marquee" aria-hidden="true">
+  <div class="values-track">
+    <?php for ($copy = 0; $copy < 2; $copy++): ?>
+      <div class="values-run">
+        <?php foreach ($clubWords as $word): ?><span><?= e($word) ?></span><i>✦</i><?php endforeach; ?>
+      </div>
+    <?php endfor; ?>
+  </div>
+</div>
+
 <section class="section section-tint" id="about">
   <div class="container about-grid">
     <div class="about-note">
@@ -91,7 +107,6 @@ $phone      = trim((string) ($site['clubPhone'] ?? ''));
       <h2 class="display">A club for the lives we are actually living.</h2>
       <p>Psychology is not only something we study. It is how we notice our thoughts, hold space for another person, move through change and build a life that feels more like our own.</p>
       <div class="curiosity-loop">
-        <span class="loop-thread" aria-hidden="true"><i class="loop-spark"></i></span>
         <i class="loop-orbit loop-orbit-a" aria-hidden="true"></i>
         <i class="loop-orbit loop-orbit-a2" aria-hidden="true"></i>
         <i class="loop-orbit loop-orbit-b" aria-hidden="true"></i>

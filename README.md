@@ -149,14 +149,32 @@ never looks broken while that is pending:
     column, far enough in that neither golden ring nor the **small planets**
     riding them can leave the screen (it used to be pushed right, which cut it
     at the left edge on a narrow screen);
-  - a **golden line runs through** curiosity, connection and growth, and one
-    more runs the height of the club timeline — through the beginning, our why
-    and the next chapter — each with a light travelling back and forth along it;
-  - a golden streak crosses the hero now and then, a sheen crosses the lens
-    cards on hover, the softened copy behind every photo drifts slowly, and the
+  - **each planet is locked to its own ring.** A ring and the planet that rides
+    it are the same box — same width and height, centred the same way, at the
+    same angle, turning at the same speed in the same direction — so the planet
+    travels exactly along the ellipse. (An `auto` margin cannot centre a box
+    wider than its circle: it collapses to nothing, and the planet ends up
+    orbiting *beside* its ring. That was the bug; the numbers are asserted in
+    the tests.)
+  - one **golden line runs the height of the club timeline** — through the
+    beginning, our why and the next chapter — with a light travelling back and
+    forth along it, and the dots keep a slow golden heartbeat;
+  - a thin band of the club's own words (**mind · body · connection · …**)
+    drifts past under the hero — two copies side by side, sliding exactly one
+    copy across, so the loop has no seam;
+  - a **gold bar across the top of the window** shows how much of the page is
+    read, the top bar frosts a little once you have scrolled, and a **way back
+    up** appears once the page has been read a bit;
+  - a golden streak crosses the hero now and then, the hero's words arrive one
+    line after another, a soft light crosses the filled buttons on hover, the
+    photos breathe in slightly under the pointer, a sheen crosses the lens cards
+    on hover, the softened copy behind every photo drifts slowly, and the
     drifting bubbles and the scroll-linked gold thread are unchanged.
   - It is all CSS, so a visitor who asked for **less motion** sees the site
     still, and nothing here can cover a word.
+  - The club's own area is untouched by all of it: the dashboard and the sign-in
+    page render their own body, so no gold bar and no floating pill ever appear
+    over the club's work.
 - **Event registration** — one form per event. The club sets the venue, the
   date, the fee and the registration window in the dashboard; the form reads all
   of it back.
@@ -252,7 +270,7 @@ Two notes for the launch:
 ## Development
 
 ```bash
-npm test          # runs the PHP app in isolation and checks 289 behaviours
+npm test          # runs the PHP app in isolation and checks 299 behaviours
 ```
 
 The test suite boots the real application, then exercises pages, the JSON API,
