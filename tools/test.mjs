@@ -853,9 +853,11 @@ ok('the front page plays the herd, muted and looping, behind everything',
   /<video[^>]*id="heroVideo"[^>]*muted[^>]*loop[^>]*playsinline[^>]*autoplay/.test(homeAlbums.body)
   && homeAlbums.body.includes('/assets/media/horses-running.mp4')
   && homeAlbums.body.includes('id="heroStill"'));
-ok('the herd belongs to the front page only',
-  !(await get('/gallery')).body.includes('id="heroVideo"') && !(await get('/members')).body.includes('id="heroVideo"')
-  && !(await get('/calendar')).body.includes('id="heroStill"'));
+ok('the herd runs behind every public page',
+  (await Promise.all(['/', '/gallery', '/calendar', '/members', '/register', '/pass', '/verify']
+    .map((route) => get(route)))).every((page) => page.body.includes('id="heroVideo"') && page.body.includes('id="heroStill"')));
+ok('the club\'s own area stays plain: no video behind the dashboard',
+  !(await get('/dashboard')).body.includes('id="heroVideo"'));
 ok('the herd is behind the words and the bubbles, and cannot be clicked',
   /\.hero-still, \.hero-video \{[^}]*position: fixed/.test(appCss)
   && /\.hero-still \{ z-index: -2; \}/.test(appCss) && /\.hero-video \{ z-index: -1; \}/.test(appCss)
@@ -873,8 +875,19 @@ ok('the herd never stops on its own — nothing pauses it while the page is open
   !/observe\(hero\)/.test(appJs) && appJs.includes('window.setInterval(function () {')
   && appJs.includes('video.currentTime = clock + 0.1') && appJs.includes('video.load()')
   && /document\.hidden\) pause\(\); else play\(\)/.test(appJs));
-ok('no word on the page can ever sit on top of the video',
-  /\.site-shell main > section:not\(\.hero-with-video\)[^{]*,\s*\n\.site-shell main > div:not\(\.photo-frame\) \{ background-color: var\(--cream\); \}/.test(appCss));
+ok('no block of the page is a solid wall: the herd shows through all of them',
+  /\.site-shell main > section:not\(\.hero-with-video\)[^{]*,\s*\n\.site-shell main > div:not\(\.photo-frame\) \{\s*\n\s*background-color: rgba\(var\(--film-rgb\), \.87\);/.test(appCss)
+  && !/main > section:not\(\.hero-with-video\)[^{]*\{[^}]*background(-color)?: var\(--cream\)/.test(appCss));
+ok('the film opens up at the edges, where no words are',
+  /@media \(min-width: 1150px\)/.test(appCss) && /rgba\(var\(--film-rgb\), \.40\) 0%/.test(appCss));
+ok('the dark blocks stay dark glass, with the herd moving behind them',
+  /\.site-shell main > \.section-plum \{ background: rgba\(var\(--film-deep-rgb\), \.84\); \}/.test(appCss)
+  && /main > \.psyche-section \{[^}]*rgba\(59,39,69,\.84\)/.test(appCss));
+ok('the closest-set text keeps more paper: cards are thinner, not opaque',
+  /\.event-card, \.calendar-item, \.club-panel, \.fact-card \{ background: rgba\(255,250,241,\.55\); \}/.test(appCss));
+ok('the softer grey and the accent labels were deepened for the film',
+  /--ink-soft: #5f5551;/.test(appCss) && /--terracotta-ink: #8d5942;/.test(appCss)
+  && !/color: var\(--terracotta\);/.test(appCss.slice(appCss.indexOf('.eyebrow'), appCss.indexOf('.eyebrow') + 200)));
 ok('the top bar no longer hides the herd',
   /\.nav:before \{[^}]*background: rgba\(255,250,241,\.16\)/.test(appCss));
 ok('the herd layer sits outside the page shell, so the bubbles drift over it',

@@ -75,20 +75,18 @@ $nav = [
     <span class="thread-bead" id="threadBead"></span>
   </div>
 
-  <?php if ($route === 'home'): ?>
-    <?php /* The club's horses, behind the front page. A still frame is always
-             there and the compressed clip plays over it — muted, in a loop —
-             pinned to the window so it keeps running while the visitor
-             scrolls. It sits behind the bubbles and behind every word, and it
-             is never dark: the hero's veil (warm cream) does the legibility. */ ?>
-    <div class="hero-media" aria-hidden="true">
-      <img class="hero-still" id="heroStill" src="/assets/media/horses-running-poster.jpg" alt="" decoding="async">
-      <video class="hero-video" id="heroVideo" muted loop playsinline autoplay preload="auto"
-             poster="/assets/media/horses-running-poster.jpg" tabindex="-1">
-        <source src="/assets/media/horses-running.mp4" type="video/mp4">
-      </video>
-    </div>
-  <?php endif; ?>
+  <?php /* The club's horses, behind every public page. A still frame is always
+           there and the compressed clip plays over it — muted, in a loop —
+           pinned to the window, so the herd keeps running while the visitor
+           scrolls and every block reads through a thin film of its own paper.
+           It is never dark and never in front of a word. */ ?>
+  <div class="hero-media" aria-hidden="true">
+    <img class="hero-still" id="heroStill" src="/assets/media/horses-running-poster.jpg" alt="" decoding="async">
+    <video class="hero-video" id="heroVideo" muted loop playsinline autoplay preload="auto"
+           poster="/assets/media/horses-running-poster.jpg" tabindex="-1">
+      <source src="/assets/media/horses-running.mp4" type="video/mp4">
+    </video>
+  </div>
 
   <div class="site-shell">
     <?php if (trim((string) ($site['announcement'] ?? '')) !== ''): ?>
