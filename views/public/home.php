@@ -104,12 +104,12 @@ $clubWords = ['mind', 'body', 'connection', 'curiosity', 'growth', 'community', 
 </section>
 
 <section class="section psyche-section" id="mind">
-  <?php /* The club's own stage, back as they remembered it: their logo at the
-           centre — no psi sign — with four sentences orbiting it like planets,
-           the way the very first home page had them turning around the crest.
-           Everything here is decoration except the words, which are real text:
-           the pills are read by a screen reader once, the turning is CSS only,
-           and it stops for anyone who asks for less motion. */ ?>
+  <?php /* The club's own stage: their logo held in a big round lens at the
+           centre, with four words of the mind riding a wheel around it like a
+           ferris wheel — the wheel turns, the words travel and never tip over,
+           so every one of them can be read at every moment. The words are real
+           text, the turning is CSS only, and it stops for anyone who asks for
+           less motion. */ ?>
   <span id="psychology" aria-hidden="true"></span>
   <div class="container psyche-grid">
     <div class="psyche-copy">
@@ -119,20 +119,17 @@ $clubWords = ['mind', 'body', 'connection', 'curiosity', 'growth', 'community', 
         and how connection changes the story.</p>
       <div class="psi-focus-note"><span></span><strong>slow down — look inward — stay curious</strong></div>
     </div>
-    <div class="psi-stage" role="img" aria-label="The Mindful Tattva logo at the centre of four thoughts that turn around it: Notice what you feel. Curiosity opens a door. Connection changes the story. There is depth beneath the surface.">
+    <div class="psi-stage" role="img" aria-label="The Mindful Tattva logo at the centre of a turning wheel that carries four words around it: unconscious, subconscious, conscious, mind.">
       <div class="psi-stage-glow" aria-hidden="true"></div>
       <div class="psi-quotes" aria-hidden="true">
-        <span class="psi-quote psi-quote-one">Notice what you feel.</span>
-        <span class="psi-quote psi-quote-two">Curiosity opens a door.</span>
-        <span class="psi-quote psi-quote-three">Connection changes the story.</span>
-        <span class="psi-quote psi-quote-four">There is depth beneath the surface.</span>
+        <span class="psi-quote psi-quote-one">unconscious</span>
+        <span class="psi-quote psi-quote-two">subconscious</span>
+        <span class="psi-quote psi-quote-three">conscious</span>
+        <span class="psi-quote psi-quote-four">mind</span>
       </div>
       <div class="psi-core">
-        <span class="psi-core-logo">
-          <img src="<?= e(mt_safe_image($site['logoImage'] ?? '') ?: '/assets/photos/mt-club-logo.jpg') ?>"
-               alt="<?= e((string) ($site['clubName'] ?? 'Mindful Tattva')) ?> logo" loading="lazy" decoding="async">
-        </span>
-        <small>mind in motion</small>
+        <img src="<?= e(mt_safe_image($site['logoImage'] ?? '') ?: '/assets/photos/mt-club-logo.jpg') ?>"
+             alt="<?= e((string) ($site['clubName'] ?? 'Mindful Tattva')) ?> logo" loading="lazy" decoding="async">
       </div>
     </div>
   </div>

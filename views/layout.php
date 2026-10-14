@@ -30,16 +30,16 @@ $mapUrl    = 'https://www.google.com/maps/search/?api=1&query=' . urlencode($add
 $banner    = mt_featured_event($db);
 
 $nav = [
-    ['/#about', 'About'],
-    ['/#psychology', 'The lens'],
-    ['/#history', 'Our story'],
-    ['/#events', 'Events'],
-    ['/gallery', 'Gallery'],
-    ['/calendar', 'Calendar'],
-    ['/#team', 'Core team'],
-    ['/members', 'Members'],
-    ['/#join', 'Join'],
-    ['/#contact', 'Contact'],
+    ['/#about', 'About', ''],
+    ['/#psychology', 'The lens', 'nav-lens'],
+    ['/#history', 'Our story', ''],
+    ['/#events', 'Events', ''],
+    ['/gallery', 'Gallery', ''],
+    ['/calendar', 'Calendar', ''],
+    ['/#team', 'Core team', ''],
+    ['/members', 'Members', ''],
+    ['/#join', 'Join', ''],
+    ['/#contact', 'Contact', ''],
 ];
 ?>
 <!doctype html>
@@ -127,13 +127,13 @@ $nav = [
         </a>
         <button class="menu-button" id="menuButton" aria-label="Open menu" aria-expanded="false" aria-controls="navLinks">☰</button>
         <nav class="nav-links" id="navLinks" aria-label="Main">
-          <?php foreach ($nav as [$href, $label]): ?>
+          <?php foreach ($nav as [$href, $label, $class]): ?>
             <?php
               /* On the home page the anchors stay on the page; elsewhere they point home. */
               $isAnchor = str_starts_with($href, '/#');
               $target = $isAnchor && $route === 'home' ? substr($href, 1) : $href;
             ?>
-            <a href="<?= e($target) ?>"><?= e($label) ?></a>
+            <a href="<?= e($target) ?>"<?= $class !== '' ? ' class="' . e($class) . '"' : '' ?>><?= e($label) ?></a>
           <?php endforeach; ?>
           <?php if ($instagram !== ''): ?>
             <a class="nav-action" id="instagramNav" href="<?= e($instagram) ?>" target="_blank" rel="noreferrer noopener">Instagram ↗</a>

@@ -1044,10 +1044,14 @@ ok('a gold bar across the top shows how much of the page is read',
 ok('the way back up appears once the page has been read a little',
   layoutSource.includes('id="toTop"') && /\.to-top\.is-on \{[^}]*opacity: 1/.test(appCss)
   && appJs.includes("toTop.classList.toggle('is-on', y > 700)"));
+const navGlass = {
+  rest: Number((appCss.match(/\.nav:before \{[^}]*background: rgba\(255,250,241,([\d.]+)\)/) || [])[1]),
+  scrolled: Number((appCss.match(/body\.is-scrolled \.nav:before \{[^}]*rgba\(255,250,241,([\d.]+)\)/) || [])[1]),
+};
 ok('the top bar reads a little more solid once the visitor has scrolled',
-  /\.nav:before \{[^}]*background: rgba\(255,250,241,\.16\)/.test(appCss)
-  && /body\.is-scrolled \.nav:before \{[^}]*rgba\(255,250,241,\.34\)/.test(appCss)
-  && appJs.includes("classList.toggle('is-scrolled', y > 40)"));
+  navGlass.rest > 0 && navGlass.scrolled > navGlass.rest
+  && appJs.includes("classList.toggle('is-scrolled', y > 40)"),
+  'rest ' + navGlass.rest + ' → scrolled ' + navGlass.scrolled);
 ok('no bold word inside a condition is turned into a block of its own',
   /\.terms-note > strong \{ display: block/.test(appCss)
   && !/\.terms-note strong \{ display: block/.test(appCss)
@@ -1238,8 +1242,12 @@ ok('the closest-set text keeps more paper: cards are thinner, not opaque',
 ok('the softer grey and the accent labels were deepened for the film',
   /--ink-soft: #463f3b;/.test(appCss) && /--terracotta-ink: #54291a;/.test(appCss)
   && !/color: var\(--terracotta\);/.test(appCss.slice(appCss.indexOf('.eyebrow'), appCss.indexOf('.eyebrow') + 200)));
-ok('the top bar no longer hides the herd',
-  /\.nav:before \{[^}]*background: rgba\(255,250,241,\.16\)/.test(appCss));
+/* The club saw a menu word vanish behind a running horse: the bar carries a
+   stronger pane now, but it is still a pane — the herd shows through it. */
+ok('the top bar shows the herd through its own glass, and never blacks it out',
+  navGlass.rest > 0 && navGlass.rest < navGlass.scrolled && navGlass.scrolled < 1
+  && /\.nav:before \{[^}]*backdrop-filter: blur/.test(appCss),
+  'glass ' + navGlass.rest + ' → ' + navGlass.scrolled);
 ok('the herd layer sits outside the page shell, so the bubbles drift over it',
   layoutSource.indexOf('heroVideo') > 0 && layoutSource.indexOf('heroVideo') < layoutSource.indexOf('site-shell'));
 ok('the server hands the clip out as video, in slices',
@@ -1391,52 +1399,112 @@ ok('no line inside a tile is jammed against the one above it',
 ok('a team card has room too', /\.team-card \{[^}]*gap: 12px/.test(round37Css));
 ok('the register tiles under the events are separated', /\.register-list \{ display: grid; gap: 12px/.test(round37Css));
 
-console.log('\n— round 37: the Mind section —');
+console.log('\n— round 37/38: the Mind section —');
 const round37Home = fs.readFileSync(path.join(ROOT, 'views/public/home.php'), 'utf8');
-const mindStart = round37Home.indexOf('ps yche-section'.replace(' ', ''));
-const mindSection = mindStart === -1 ? '' : round37Home.slice(mindStart, round37Home.indexOf('<section class="section details-section"'));
-ok('the club\'s turning section is back, named Mind', /class="section psyche-section" id="mind"/.test(round37Home)
+const mindSection = round37Home.slice(round37Home.indexOf('class="section psyche-section" id="mind"'), round37Home.indexOf('<section class="section details-section"'));
+ok('the club\'s turning section is named Mind', /class="section psyche-section" id="mind"/.test(round37Home)
   && mindSection.includes('>Mind<'));
-ok('the club logo sits at the centre, not the psi sign',
-  mindSection.includes('psi-core-logo') && mindSection.includes("mt_safe_image($site['logoImage']")
+ok('the club logo sits at the centre, and the psi sign is gone',
+  mindSection.includes('class="psi-core"') && mindSection.includes("mt_safe_image($site['logoImage']")
   && mindSection.includes("'/assets/photos/mt-club-logo.jpg'") && !mindSection.includes('Ψ'));
-const orbitLines = ['Notice what you feel.', 'Curiosity opens a door.', 'Connection changes the story.', 'There is depth beneath the surface.'];
-ok('the four sentences orbit the logo', orbitLines.every((line) => mindSection.includes(line)));
-ok('the sentences travel round the logo like planets',
-  /\.psi-quotes \{[^}]*animation: quoteSpin/.test(round37Css) && /\.psi-core \{[^}]*psiCoreFloat/.test(round37Css)
-  && /\.psi-stage-glow \{[^}]*psiPulse/.test(round37Css));
-ok('the stage is a square, so every sentence rides the same circle',
-  /\.psi-stage \{[^}]*aspect-ratio: 1 \/ 1/.test(round37Css));
-ok('every sentence is placed by its own centre on one ring',
-  (round37Css.match(/calc\(50% [+-] 33\.5%\)/g) || []).length === 4
-  && (round37Css.match(/transform: translate\(-50%, -50%\)/g) || []).length >= 4);
-ok('the stage is drawn to one set of proportions, not fixed pixels',
-  /\.psi-stage \{[^}]*width: min\(100%, 480px\)/.test(round37Css)
-  && /\.psi-core \{[^}]*width: 29%/.test(round37Css)
-  && /\.psi-quote \{[^}]*max-width: 29%/.test(round37Css)
-  && /\.psi-quote \{[\s\S]{0,600}?font-size: max\(\.7rem, 2\.88cqw\)/.test(round37Css));
-/* The drawing's arithmetic, taken from the stylesheet itself: a pill is at most
-   29% wide and three lines tall (2.88cqw of type, 1.7cqw of padding), and it
-   rides at 33.5% of the stage from the middle. The logo takes 29%. Whatever the
-   screen, the pill's nearest point stays clear of the logo. */
+ok('the lens is big, and no label crowds the logo', !mindSection.includes('mind in motion')
+  && /\.psi-core \{[^}]*width: 37%/.test(round37Css)
+  && !/\.psi-core small/.test(round37Css));
+const mindWords = ['unconscious', 'subconscious', 'conscious', 'mind'];
+ok('the four words of the mind ride the wheel', mindWords.every((word) => new RegExp('psi-quote-[a-z]+">' + word + '<').test(mindSection))
+  && (mindSection.match(/class="psi-quote psi-quote-/g) || []).length === 4);
+ok('each word is one line, and can never wrap onto a second',
+  /\.psi-quote \{[^}]*white-space: nowrap/.test(round37Css));
+ok('the wheel turns and never stops', /\.psi-quotes \{[^}]*animation: quoteSpin 32s linear infinite/.test(round37Css)
+  && /@keyframes quoteSpin \{ to \{ transform: rotate\(360deg\); \} \}/.test(round37Css));
+ok('every word rides round and stays the right way up — never inverted',
+  /@keyframes quoteHold \{[^}]*translate\(-50%, -50%\) rotate\(0deg\)[^}]*\}[^}]*rotate\(-360deg\)/.test(round37Css)
+  && /\.psi-quote \{[^}]*animation: quoteHold 4s linear infinite/.test(round37Css));
+/* One turn of the wheel must equal a whole number of the words' own turns, or a
+   word drifts off upright as the wheel goes round. */
 {
-  const ring = Number((round37Css.match(/\.psi-quote-one\s*\{ top: calc\(50% - ([\d.]+)%\)/) || [])[1]);
-  const pillHalf = Number((round37Css.match(/\.psi-quote \{[\s\S]{0,600}?max-width: ([\d.]+)%/) || [])[1]) / 2;
-  const coreHalf = Number((round37Css.match(/\.psi-core \{[\s\S]{0,500}?width: ([\d.]+)%/) || [])[1]) / 2;
-  const tallPill = 3 * 2.88 * 1.15 + 2 * 1.7;
-  const reach = Math.hypot(pillHalf, tallPill / 2);
-  ok('no sentence can ever reach the logo', ring - reach - coreHalf >= 2,
-    'clearance ' + (ring - reach - coreHalf).toFixed(1) + '% of the stage');
-  ok('and none of them leaves the stage', ring + reach <= 50, 'outer edge ' + (ring + reach).toFixed(1) + '%');
+  const wheel = Number((round37Css.match(/quoteSpin (\d+(?:\.\d+)?)s/) || [])[1]);
+  const word = Number((round37Css.match(/quoteHold (\d+(?:\.\d+)?)s/) || [])[1]);
+  ok('the wheel and the words are locked together, to the second',
+    Number.isFinite(wheel) && Number.isFinite(word) && Math.abs(wheel / word - Math.round(wheel / word)) < 1e-9,
+    wheel + 's / ' + word + 's');
 }
-ok('the four sentences are readable in place when motion is off',
-  /prefers-reduced-motion: reduce\)[\s\S]{0,140}\.psi-quotes[\s\S]{0,90}animation: none/.test(round37Css));
-ok('the Mind section keeps the club\'s own copy', mindSection.includes('Every mind has more than one layer.')
-  && mindSection.includes('slow down — look inward — stay curious'));
+ok('the club\'s logo floats, and the hub keeps its own slow turn',
+  /\.psi-core \{[^}]*psiCoreFloat/.test(round37Css) && /\.psi-stage-glow \{[^}]*psiPulse/.test(round37Css)
+  && /@keyframes axisSpin \{/.test(round37Css) && /@keyframes axisSpinReverse \{/.test(round37Css));
+ok('the stage is a square, so every word rides one true circle',
+  /\.psi-stage \{[^}]*aspect-ratio: 1 \/ 1/.test(round37Css));
+ok('the four words sit at the four quarters of the wheel',
+  (round37Css.match(/calc\(50% [-+] 33\.5%\)/g) || []).length === 4);
+ok('with less motion the wheel stands still, the words upright in place',
+  /prefers-reduced-motion: reduce\)[\s\S]{0,160}\.psi-quotes[\s\S]{0,200}?animation: none/.test(round37Css)
+  && /\.psi-quote \{ animation: none; transform: translate\(-50%, -50%\); \}/.test(round37Css));
+ok('the Mind section keeps the club\'s own copy',
+  mindSection.includes('Every mind has more than one layer.') && mindSection.includes('slow down — look inward — stay curious'));
 ok('the Mind section keeps its own cards', (mindSection.match(/class="psyche-card /g) || []).length === 3);
+
+/* The drawing's arithmetic, taken from the stylesheet itself: how far a word
+   reaches from its own centre (its widest letter span and its tallest line) must
+   always leave the lens clear and stay inside the wheel, whatever the screen.
+   The letters are counted wide (0.58em each) so the check errs on the safe side. */
+{
+  const num = (re, src = round37Css) => Number((src.match(re) || [])[1]);
+  const ring = num(/\.psi-quote-one\s*\{ top: calc\(50% - ([\d.]+)%\)/);
+  const coreWide = num(/\.psi-core \{[\s\S]{0,300}?width: ([\d.]+)%/);
+  const corePhone = num(/\.psi-core \{ width: ([\d.]+)%; \}/);
+  const fontWide = [num(/\.psi-quote \{[\s\S]{0,400}?clamp\(([\d.]+)rem/), num(/\.psi-quote \{[\s\S]{0,400}?rem, ([\d.]+)cqw/), num(/\.psi-quote \{[\s\S]{0,400}?cqw, ([\d.]+)rem/)];
+  const fontPhone = [num(/\.psi-quote \{ padding: max\(5px[\s\S]{0,120}?clamp\(([\d.]+)rem/), num(/\.psi-quote \{ padding: max\(5px[\s\S]{0,120}?rem, ([\d.]+)cqw/), num(/\.psi-quote \{ padding: max\(5px[\s\S]{0,120}?cqw, ([\d.]+)rem/)];
+  const worst = { clear: Infinity, outer: 0, at: '' };
+  const stages = [];
+  for (let stage = 260; stage <= 600; stage += 10) stages.push(stage);
+  stages.forEach((stage) => {
+    const phone = stage <= 520;
+    const [floor, scale, cap] = (phone ? fontPhone : fontWide).map((v) => (Number.isFinite(v) ? v : 0));
+    const font = Math.min(cap * 16, Math.max(floor * 16, (scale / 100) * stage));
+    const padX = phone ? Math.max(7, 0.020 * stage) : Math.max(8, 0.022 * stage);
+    const padY = phone ? Math.max(5, 0.013 * stage) : Math.max(6, 0.014 * stage);
+    const coreHalf = (phone ? corePhone : coreWide) / 2;
+    mindWords.forEach((word) => {
+      const width = word.length * 0.58 * font + 2 * padX;
+      const height = font + 2 * padY;
+      const reach = Math.hypot(width / 2, height / 2) / stage * 100;
+      const clear = ring - reach - coreHalf;
+      const outer = ring + reach;
+      if (clear < worst.clear) { worst.clear = clear; worst.at = word + ' on a ' + stage + 'px stage'; worst.outer = outer; }
+    });
+  });
+  ok('no word on the wheel can ever touch the club\'s logo', worst.clear > 0,
+    'tightest gap ' + worst.clear.toFixed(1) + '% of the stage (' + worst.at + ')');
+  ok('and no word ever leaves the wheel', worst.outer <= 50.5, 'furthest reach ' + worst.outer.toFixed(1) + '% (half a stage is 50%)');
+}
 const mindPage = await get('/');
 ok('the Mind section renders whole on the live page',
-  mindPage.body.includes('psi-stage') && mindPage.body.includes('psi-core-logo') && mindPage.body.includes('quoteSpin'));
+  mindPage.body.includes('psi-stage') && mindPage.body.includes('subconscious') && mindPage.body.includes('quoteHold')
+  && !mindPage.body.includes('mind in motion'));
+
+console.log('\n— round 38: The lens, and the words over the herd —');
+const navLayout = fs.readFileSync(path.join(ROOT, 'views/layout.php'), 'utf8');
+ok('the Mind doorway in the menu has a class of its own', /\['\/#psychology', 'The lens', 'nav-lens'\]/.test(navLayout));
+ok('the menu writes that class onto the link', navLayout.includes('$class !== ') && navLayout.includes('e($class)'));
+ok('it wears a colour the horse video cannot wash out',
+  /\.nav-links a\.nav-lens \{[^}]*color: #6f2f14/.test(round37Css)
+  && /\.nav-links a\.nav-lens \{[^}]*text-shadow: 0 1px 10px rgba\(255,250,241,\.95\)/.test(round37Css));
+ok('it hops, gently, the way the club asked',
+  /@keyframes lensHop \{ 0%, 100% \{ transform: translateY\(0\); \} 50% \{ transform: translateY\(-4px\); \} \}/.test(round37Css)
+  && /\.nav-links a\.nav-lens \{[^}]*animation: lensHop/.test(round37Css));
+ok('the hop stops for anyone who asks for less motion',
+  /prefers-reduced-motion: reduce\) \{ \.nav-links a\.nav-lens \{ animation: none; \} \}/.test(round37Css));
+/* In the stacked phone menu every row must be one row: the Mind doorway sits
+   with its neighbours and holds still, or the list reads as broken. */
+ok('in the stacked menu the doorway is one tidy row like the rest',
+  /\.nav-links a\.nav-lens \{ display: block; animation: none; \}/.test(round37Css)
+  && /\.nav-links a\.nav-lens:before \{ display: inline-block; vertical-align: middle/.test(round37Css));
+ok('the bar carries its own glass, so no word has to fight the herd alone',
+  /\.nav:before \{[^}]*background: rgba\(255,250,241,\.46\)/.test(round37Css));
+const navPage = await get('/');
+ok('the menu renders with the mark, on the live page',
+  navPage.body.includes('class="nav-lens"') && navPage.body.includes('>The lens</a>')
+  && (navPage.body.match(/class="nav-lens"/g) || []).length === 1);
 
 console.log('\n— clean output check —');
 for (const route of ['/', '/gallery', '/calendar', '/members', '/register?event=event-welcome-circle', '/dashboard', '/does-not-exist']) {
