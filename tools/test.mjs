@@ -328,13 +328,20 @@ ok('the pass page opens with the private code from the link', passPage.status ==
 ok('the pass page renders without PHP errors', clean(passPage.body), phpErrors(passPage.body));
 ok('the pass carries the serial and the holder', passPage.body.includes(registration.serial || 'x') && passPage.body.includes('Riya Sharma'));
 ok('the pass carries the event, the date and the venue', passPage.body.includes('Welcome Circle') && passPage.body.includes('24 October 2026') && passPage.body.includes('Seminar Hall'));
-ok('the pass carries a scannable QR code', /<svg[^>]*viewBox="0 0 \d+ \d+"[^>]*shape-rendering="crispEdges"/.test(passPage.body)
-  && passPage.body.includes('/verify/' + (registration.publicId || '')), 'no verify link in the QR');
+ok('the pass carries a scannable QR code', /<svg[^>]*viewBox="0 0 \d+ \d+"[^>]*shape-rendering="crispEdges"/.test(passPage.body));
+/* an svg carries a namespace that starts with http:// — what matters is a link a
+   visitor can follow, and the club's own page wording */
+const passPageOffence = (/\/verify\/|check page|Scan to check|opens the club site|href="https?:\/\/(?!www\.instagram)/i.exec(passPage.body) || [])[0] || '';
+ok('the pass page advertises no check page and no address',
+  passPageOffence === '',
+  passPageOffence === '' ? '' : 'found ' + JSON.stringify(passPageOffence) + ' near ' + JSON.stringify((() => { const at = passPage.body.search(/\/verify\/|check page|Scan to check|opens the club site|href="https?:\/\/(?!www\.instagram)/i); return passPage.body.slice(Math.max(0, at - 120), at + 160); })()));
 const codeSpot = passPage.body.indexOf(passCode);
 ok('the pass page never prints the private code it was opened with', codeSpot < 0,
   codeSpot < 0 ? '' : JSON.stringify(passPage.body.slice(Math.max(0, codeSpot - 90), codeSpot + 40)));
 ok('the pass states the no-refund rule and the 24 working days', /non-refundable/i.test(passPage.body) && /24 working days/.test(passPage.body));
-ok('the pass says the payment proof must be shown at entry', /payment proof/i.test(passPage.body));
+ok('the pass tells the student to keep it safe and bring it, and that it is checked at the door',
+  /keep this pass safe/i.test(passPage.body) && /checked at the door/i.test(passPage.body)
+  && !/verification/i.test(passPage.body) && !/club register/i.test(passPage.body));
 
 const wrongCode = await get('/pass/MT-AAAAA-AAAAA-AAAAA-AAAAA');
 ok('a made-up pass code is refused', wrongCode.status === 404, 'status ' + wrongCode.status);
@@ -343,10 +350,14 @@ ok('the pass page without a link explains where the link is', noCode.status === 
 
 /* the check page a scanned QR opens: public, and careful with what it says */
 const verifyPage = await get('/verify/' + encodeURIComponent(registration.publicId || 'x'));
-ok('the QR opens a public check page', verifyPage.status === 200 && /This pass is real/i.test(verifyPage.body));
-ok('the check page masks the holder', verifyPage.body.includes(mtMask(registration.name)) && !verifyPage.body.includes(registration.email));
+ok('the QR opens the club\'s own page and that page says the pass is true',
+  verifyPage.status === 200 && /This pass is verified as true\./i.test(verifyPage.body));
+ok('the scanned page masks the holder and shows no contact details',
+  verifyPage.body.includes(mtMask(registration.name)) && !verifyPage.body.includes(registration.email));
+ok('the scanned page explains no steps and offers no form to fill in',
+  !/<form/i.test(verifyPage.body) && !/Check this pass|scan the QR|register holds/i.test(verifyPage.body));
 const verifyMiss = await get('/verify/v000000000000000000');
-ok('a made-up check link says no match', verifyMiss.status === 404 && /No pass matches/i.test(verifyMiss.body));
+ok('a made-up code says the pass could not be found', verifyMiss.status === 404 && /could not be found/i.test(verifyMiss.body));
 
 const passSession = passPage.session || {};
 let pdf = await get('/api/pass/' + encodeURIComponent(registration.serial || 'x'), { session: passSession });
@@ -354,7 +365,16 @@ ok('a free event issues the pass straight away', pdf.status === 200 && String(pd
 ok('the PDF is a finished document', String(pdf.body).includes('%%EOF') && String(pdf.body).includes('/Type /Catalog'));
 const pdfText = String(pdf.body);
 ok('the PDF names the holder, the serial and the terms', pdfText.includes('Riya Sharma') && pdfText.includes(registration.serial || '') && pdfText.includes('24 working days'));
-ok('the PDF carries the check page, never the private code', pdfText.includes('/verify/' + (registration.publicId || '')) && !pdfText.includes(passCode));
+const pdfWords = [...pdfText.matchAll(/Td \(((?:[^()\\]|\\.)*)\) Tj/g)].map((m) => m[1]).join(' | ');
+ok('the printed words of the pass carry no address, no check page and no private code',
+  pdfWords.length > 100
+  && !/https?:\/\/|\/verify\/|www\.|localhost|\.site\.je/i.test(pdfWords)
+  && !pdfWords.includes(passCode)
+  && !/verification|check this pass/i.test(pdfWords));
+ok('the PDF tells the holder to keep the pass safe and to bring it',
+  pdfWords.includes('Keep this pass safe and bring it with you')
+  && pdfWords.includes('payment screenshot')
+  && !pdfWords.includes('club register'));
 /* The letterhead: the university's mark and its address top left, the club's
    name in the middle, the club crest top right, and the university's big mark
    with the campus address again at the foot. */
@@ -374,6 +394,31 @@ ok('the club’s own name is centred on the header, not pushed aside',
        must sit within half a line of each other, and both well inside the page
        (a left-aligned name would start at x = 66) */
     return Math.abs(nameX - labelX) < 40 && nameX > 180 && nameX < 280;
+  })());
+ok('every line of the terms sits inside its own colour box',
+  (() => {
+    /* the box is the sand rectangle; the terms are the small text inside it.
+       Nothing may fall below its bottom edge or stand above its top edge. */
+    const box = /0\.945 0\.933 0\.925 rg 70\.00 ([\d.]+) 455\.28 ([\d.]+) re/.exec(pdfText);
+    if (!box) return false;
+    const boxBottom = Number(box[1]);
+    const boxTop = boxBottom + Number(box[2]);
+    const lines = [...pdfText.matchAll(/BT [\d. ]+rg \/F1 ([\d.]+) Tf 82\.00 ([\d.]+) Td \(/g)]
+      .filter((m) => Number(m[1]) < 9.2)
+      .map((m) => Number(m[2]));
+    return lines.length >= 6 && lines.every((y) => y > boxBottom + 3 && y < boxTop - 3);
+  })());
+ok('the terms box never climbs up into the facts above it',
+  (() => {
+    /* the box used to grow upward on a long rule set and paint over the second
+       line of a long venue name; the ceiling is measured from the facts now */
+    const box = /0\.945 0\.933 0\.925 rg 70\.00 ([\d.]+) 455\.28 ([\d.]+) re/.exec(pdfText);
+    if (!box) return false;
+    const boxTop = Number(box[1]) + Number(box[2]);
+    const facts = [...pdfText.matchAll(/\/F1 10\.00 Tf ([\d.]+) ([\d.]+) Td \(/g)]
+      .filter((m) => Number(m[1]) < 300)
+      .map((m) => Number(m[2]));
+    return facts.length >= 6 && Math.min(...facts) > boxTop + 6;
   })());
 ok('no word is ever printed over the QR code',
   (() => {
@@ -454,7 +499,7 @@ ok('the serial appears only now, with the pass', /^MTP-\d{4}-\d{4}$/.test(issued
 /* The pass QR is what the door reads: rebuild the matrix the page ships and
    make sure it is a real QR symbol — three finders, timing rows, right size —
    and that it never carries the private code. */
-const qrSvg = (/<svg[^>]*aria-label="Verification code[^"]*"[^>]*viewBox="0 0 (\d+) \d+"[^>]*>(.*?)<\/svg>/.exec(paidPassAfter.body) || []);
+const qrSvg = (/<svg[^>]*aria-label="Code for pass[^"]*"[^>]*viewBox="0 0 (\d+) \d+"[^>]*>(.*?)<\/svg>/.exec(paidPassAfter.body) || []);
 const qrGrid = (() => {
   if (!qrSvg[2]) return null;
   const total = Number(qrSvg[1]);

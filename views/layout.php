@@ -19,7 +19,7 @@ $routeClass = preg_replace('/[^a-z0-9-]/', '', strtolower(explode('/', $route)[0
 $bodyClass = trim(($bodyClass ?? '') . ' page-' . $routeClass);
 $clubName  = (string) ($site['clubName'] ?? 'Mindful Tattva');
 $department = (string) ($site['department'] ?? '');
-$fullTitle = $pageTitle ? $pageTitle . ' · ' . $clubName : $clubName . ' · Psychology Club';
+$fullTitle = $pageTitle ? $pageTitle . ' — ' . $clubName : $clubName . ' — Psychology Club';
 $description = (string) ($site['intro'] ?? '');
 $logo      = mt_safe_image($site['logoImage'] ?? '') ?: '/assets/photos/mt-club-logo.jpg';
 $instagram = mt_safe_url($site['instagramUrl'] ?? '');
@@ -139,7 +139,7 @@ $nav = [
         </a>
         <div class="footer-institution">
           <img src="/assets/img/university-logo.png" alt="<?= e((string) ($site['universityName'] ?? '')) ?>" loading="lazy" decoding="async">
-          <span><?= e($department) ?> · Psychology Club</span>
+          <span><?= e($department) ?> — Psychology Club</span>
         </div>
         <div class="footer-links">
           <a href="/members">Members</a>
@@ -148,7 +148,7 @@ $nav = [
           <a href="#top">Back to top ↑</a>
         </div>
       </div>
-      <div class="container creator-credit"><span class="credit-heart" aria-hidden="true">♥</span> Made with love by Mohd Shafiq · Vice President</div>
+      <div class="container creator-credit"><span class="credit-heart" aria-hidden="true">♥</span> Made with love by Mohd Shafiq — Vice President</div>
     </footer>
   </div>
 

@@ -11,7 +11,7 @@
 <section class="section panel-section verify-section" id="pass-lookup">
   <div class="container">
     <div class="club-panel verify-panel">
-      <span class="eyebrow plain">Mindful Tattva · event pass</span>
+      <span class="eyebrow plain">Mindful Tattva — event pass</span>
       <h1 class="display">Find your pass</h1>
       <p class="muted">
         Your pass opens from the private link you were given when you registered — it looks like

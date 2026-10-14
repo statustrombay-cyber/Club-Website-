@@ -269,7 +269,7 @@ made and confirm it is gone. It prints a line per check and exits non-zero if
 anything fails. Point it at the live site once the bundle is uploaded:
 
 ```bash
-node tools/deploy-check.mjs https://mindfultattva.site.je
+node tools/deploy-check.mjs https://your-new-domain.example
 ```
 
 `tools/clean-test-data.mjs` removes anything an interrupted run left behind,

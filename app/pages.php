@@ -503,7 +503,7 @@ function mt_public_verify(string $publicId): void
 
     if ($registration === null) {
         mt_send_html(mt_page('public/verify', [
-            'pageTitle' => 'Check a pass',
+            'pageTitle' => 'Pass',
             'checked'   => $publicId !== '',
             'verdict'   => 'unknown',
             'registration' => [],
@@ -517,7 +517,7 @@ function mt_public_verify(string $publicId): void
     $cancelled = (string) ($registration['status'] ?? '') === 'cancelled';
 
     mt_send_html(mt_page('public/verify', [
-        'pageTitle'    => 'Check a pass',
+        'pageTitle'    => 'Pass',
         'checked'      => true,
         'verdict'      => $cancelled ? 'cancelled' : ($ready ? 'valid' : 'pending'),
         'registration' => $registration,

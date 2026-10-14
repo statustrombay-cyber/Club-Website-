@@ -51,7 +51,7 @@ $phone      = trim((string) ($site['clubPhone'] ?? ''));
       <div class="art-card">
         <div class="art-sun"></div>
         <div class="art-orbit"></div>
-        <div class="art-copy"><small>mind · body · connection</small><strong>pause<br>and notice.</strong></div>
+        <div class="art-copy"><small>mind, body, connection</small><strong>pause<br>and notice.</strong></div>
       </div>
       <div class="art-note">You are allowed to take up space.</div>
       <div class="art-sticker">come as<br>you are</div>
@@ -292,7 +292,7 @@ $clubWords = ['mind', 'body', 'connection', 'curiosity', 'growth', 'community', 
                 <div>
                   <strong><?= e((string) $open['title']) ?></strong>
                   <span><?= e(mt_event_line($open)) ?></span>
-                  <span class="register-fee"><?= e(mt_event_fee($open) > 0 ? mt_money(mt_event_fee($open)) . ' · UPI payment' : 'Free entry') ?></span>
+                  <span class="register-fee"><?= e(mt_event_fee($open) > 0 ? mt_money(mt_event_fee($open)) . ' — UPI payment' : 'Free entry') ?></span>
                 </div>
                 <a class="solid-button" href="/register?event=<?= e((string) $open['id']) ?>">Register ↗</a>
               </li>
@@ -326,7 +326,7 @@ $clubWords = ['mind', 'body', 'connection', 'curiosity', 'growth', 'community', 
         <div>
           <small>Our institution</small>
           <strong class="contact-university-name" id="contactUniversityName"><?= e((string) ($site['universityName'] ?? '')) ?></strong>
-          <span id="contactDepartmentName"><?= e((string) ($site['department'] ?? '')) ?> · Psychology Club</span>
+          <span id="contactDepartmentName"><?= e((string) ($site['department'] ?? '')) ?> — Psychology Club</span>
         </div>
       </div>
       <?php if ($instagram !== ''): ?>

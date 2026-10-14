@@ -312,7 +312,6 @@ function mt_pass_pdf(array $registration, array $event, array $site): string
     $club = (string) ($site['clubName'] ?? 'Mindful Tattva');
     $university = (string) ($site['universityName'] ?? '');
     $department = (string) ($site['department'] ?? '');
-    $siteUrl = preg_replace('#^https?://#', '', mt_base_url()) ?? mt_base_url();
 
     $ops = [];
     $text = static function (float $x, float $y, string $value, float $size, bool $bold, array $color) use (&$ops): void {
@@ -447,6 +446,7 @@ function mt_pass_pdf(array $registration, array $event, array $site): string
     ];
     $columnWidth = 118.0;
     $factY = $titleY - 30;
+    $factsBottom = $factY;   // the lowest line the facts reach, for the box below
     foreach ($facts as $index => [$label, $value]) {
         $column = $index % 2;
         $row = intdiv($index, 2);
@@ -460,6 +460,7 @@ function mt_pass_pdf(array $registration, array $event, array $site): string
         $wrapped = mt_pdf_wrap($value, 10, $columnWidth - 6);
         foreach (array_slice($wrapped, 0, 2) as $lineIndex => $valueLine) {
             $text($x, $rowY - 13 - $lineIndex * 11, $valueLine, 10, false, $ink);
+            $factsBottom = min($factsBottom, $rowY - 13 - $lineIndex * 11);
         }
     }
 
@@ -499,42 +500,80 @@ function mt_pass_pdf(array $registration, array $event, array $site): string
     } catch (Throwable $error) {
         mt_log('Pass QR could not be drawn: ' . $error->getMessage());
     }
-    $qrCaption = 'Scan to check this pass';
+    /* The QR is scanned with an ordinary lens scanner and lands on the club's
+       own page, which answers for the pass. Nothing about the address, and
+       nothing about how it is checked, is printed here. */
+    $qrCaption = 'Scan to confirm this pass';
     $text($qrX + ($qrSize - mt_pdf_width($qrCaption, 8, true)) / 2, $qrY - 20, $qrCaption, 8, true, $terracotta);
-    $qrNote = 'opens the club site';
-    $text($qrX + ($qrSize - mt_pdf_width($qrNote, 8)) / 2, $qrY - 31, $qrNote, 8, false, $soft);
 
     /* the rules every pass carries */
     $ruleLines = [
-        'Show this pass and your payment proof (the screenshot you uploaded) at the entry desk. Entry is given only when the pass serial matches the club register.',
-        'This pass is for one person, for this event only, and cannot be sold or transferred. Please bring a photo ID for verification.',
+        'Keep this pass safe and bring it with you — printed on paper or shown on your phone.',
+        'At the door, show this pass together with your payment screenshot (the one you uploaded while registering).',
+        'This pass is for one person, for this event only, and cannot be sold or transferred. Please carry a photo ID.',
         'Registration fees are non-refundable. By registering you agree to the terms and conditions of the event.',
         'Decisions of the club about the event are final. The club may cancel the event or change the date or venue without prior notice.',
         'If the club cancels the event, the fee is refunded within 24 working days.',
     ];
-    $ruleRows = [];
-    foreach ($ruleLines as $rule) {
-        foreach (mt_pdf_wrap($rule, 8.6, $inner - 68) as $ruleRow) {
-            $ruleRows[] = $ruleRow;
+    /* The terms box is measured from the words it actually holds. Two things
+       must never happen: a rule falling out of the colour, and the box rising
+       into the facts above it (it used to swallow the second line of a long
+       venue name). So the ceiling is taken from the lowest fact line, and if
+       the words need more room than that, the type closes up — a step at a
+       time, and if the club ever writes far more than six rules, right up to
+       the smallest size the page will print. */
+    $boxFloor   = 196.0;                    // the footer rule sits at y 178
+    $boxCeiling = min(404.0, $factsBottom - 16.0);
+    $room       = max(72.0, $boxCeiling - $boxFloor);
+    $boxTop     = 330.0;
+    $boxHeight  = 0.0;
+    $boxLeading = 11.0;
+    $boxGap     = 3.0;
+    $ruleSize   = 8.6;
+    $ruleRows   = [];
+    foreach ([[8.6, 11.0, 3.0], [8.4, 10.6, 2.6], [8.2, 10.2, 2.2], [8.0, 10.0, 2.0],
+              [7.8, 9.6, 1.8], [7.4, 9.0, 1.4], [7.0, 8.6, 1.2], [6.6, 8.2, 1.0]] as [$trySize, $tryLeading, $tryGap]) {
+        $tryRows = [];
+        foreach ($ruleLines as $rule) {
+            foreach (mt_pdf_wrap($rule, $trySize, $inner - 68) as $tryRow) {
+                $tryRows[] = $tryRow;
+            }
+        }
+        $tryHeight = 34.0 + count($tryRows) * $tryLeading + max(0, count($ruleLines) - 1) * $tryGap;
+        $ruleSize   = $trySize;
+        $boxLeading = $tryLeading;
+        $boxGap     = $tryGap;
+        $ruleRows   = $tryRows;
+        $boxHeight  = $tryHeight;
+        if ($tryHeight <= $room) {
+            break;
         }
     }
-    $boxTop = 330.0;
-    $boxHeight = 34.0 + count($ruleRows) * 11 + (count($ruleLines) - 1) * 3;
+    if ($boxHeight > $room) {
+        /* every step failed: close the leading right up, so the words still
+           land inside the colour with nothing hidden */
+        $boxLeading = max($ruleSize * 1.12, ($room - 34.0 - max(0, count($ruleLines) - 1) * $boxGap) / max(1, count($ruleRows)));
+        $boxHeight  = 34.0 + count($ruleRows) * $boxLeading + max(0, count($ruleLines) - 1) * $boxGap;
+    }
+    $boxTop = min($boxTop, $boxCeiling);
+    if ($boxTop - $boxHeight < $boxFloor) {
+        $boxTop = min($boxCeiling, $boxFloor + $boxHeight);   // grow upward, never past the floor
+    }
     $rect($margin + 22, $boxTop - $boxHeight, $inner - 44, $boxHeight, $sand);
     $text($margin + 34, $boxTop - 20, 'ENTRY & REFUND TERMS', 8.5, true, $plum);
     $lineY = $boxTop - 34;
     foreach ($ruleLines as $rule) {
-        foreach (mt_pdf_wrap($rule, 8.6, $inner - 68) as $wrapped) {
-            $text($margin + 34, $lineY, $wrapped, 8.6, false, $ink);
-            $lineY -= 11;
+        foreach (mt_pdf_wrap($rule, $ruleSize, $inner - 68) as $wrapped) {
+            $text($margin + 34, $lineY, $wrapped, $ruleSize, false, $ink);
+            $lineY -= $boxLeading;
         }
-        $lineY -= 3;
+        $lineY -= $boxGap;
     }
 
     /* footer inside the card */
     $line($margin + 22, 178, $box - 22, 178, [0.86, 0.84, 0.83]);
     $text($margin + 22, 162, 'Registered on ' . (string) ($registration['createdAt'] ?? ''), 8.5, false, $soft);
-    $text($margin + 22, 149, 'Check this pass: ' . $siteUrl . '/verify/' . (string) ($registration['publicId'] ?? ''), 8.5, false, $soft);
+    $text($margin + 22, 149, 'Issued by the club on registration — keep it safe.', 8.5, false, $soft);
     $serial = (string) ($registration['serial'] ?? '');
     $issued = 'Issued by ' . $club . ($serial !== '' ? ' - ' . $serial : '');
     $text($box - 22 - mt_pdf_width($issued, 8.5), 162, $issued, 8.5, false, $soft);
@@ -548,7 +587,6 @@ function mt_pass_pdf(array $registration, array $event, array $site): string
     }
     $text($margin + 42, 92, $club, 11, true, $plum);
     $text($margin + 42, 79, $department, 7.6, false, $soft);
-    $text($margin + 42, 68, $siteUrl, 7.2, false, $soft);
     if ($universityImage) {
         $bigTop = 54.0;
         $bigWide = $bigTop * ($universityImage['w'] / max(1, $universityImage['h']));

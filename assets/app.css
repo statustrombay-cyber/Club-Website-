@@ -845,17 +845,14 @@ html.js .scroll-reveal.is-visible { opacity: 1; transform: none; }
 .form-banner { padding: 12px 16px; border-radius: 14px; background: rgba(200,111,88,.12); }
 /* One numbered line per condition, each hanging off its own number, so the
    block reads as evenly spaced lines instead of a ragged list. */
-.terms-note { padding: 20px 22px; border-radius: 18px; background: #f9f5f0; border: 1px solid var(--line); color: var(--ink-soft); font-size: .8rem; }
+/* The conditions a registration carries: plain, aligned lines. No bullets, no
+   counters, nothing floating between the sentences — the club asked for the
+   stray dots and the ragged edges to go. */
+.terms-note { padding: 22px 24px; border-radius: 18px; background: #f9f5f0; border: 1px solid var(--line); color: var(--ink-soft); font-size: .82rem; }
 .terms-note strong { display: block; margin-bottom: 12px; color: var(--plum-deep); font-family: var(--font-display); font-size: 1.05rem; font-weight: 400; }
-.terms-note ol { list-style: none; counter-reset: term; margin: 0; padding: 0; display: grid; gap: 9px; }
-.terms-note li { position: relative; margin: 0; padding-left: 30px; line-height: 1.55; }
-.terms-note li:before {
-  counter-increment: term; content: counter(term);
-  position: absolute; left: 0; top: .05em; width: 20px; height: 20px;
-  display: grid; place-items: center; border-radius: 50%;
-  background: rgba(200,111,88,.16); color: var(--terracotta-ink);
-  font-size: .66rem; font-weight: 800; line-height: 1;
-}
+.terms-note ol { list-style: none; counter-reset: none; margin: 0; padding: 0; display: grid; gap: 9px; }
+.terms-note li { position: static; margin: 0; padding: 0; line-height: 1.6; }
+.terms-note li:before { content: none; }
 
 /* ---- payment ---- */
 .pay-card { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 24px; align-items: center; margin: 0; padding: 22px; border: 1px dashed rgba(78,49,85,.28); border-radius: 22px; background: #fffaf1; }
@@ -913,12 +910,12 @@ html.js .scroll-reveal.is-visible { opacity: 1; transform: none; }
 .pass-qr-note { color: var(--terracotta-ink); font-size: .64rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
 .pass-rules { padding: 16px 18px; border-radius: 16px; background: #f7f2ed; font-size: .78rem; color: var(--ink-soft); }
 .pass-rules strong { color: var(--plum-deep); }
-.pass-rules ul { margin: 8px 0 0; padding-left: 18px; }
-.pass-rules li { margin-bottom: 4px; }
+.pass-rules ul { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 8px; }
+.pass-rules li { margin: 0; padding: 0; line-height: 1.6; }
 .pass-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 22px; }
 .pass-note { margin-top: 12px; color: var(--ink-soft); font-size: .74rem; }
 
-/* ---- the pass check page (what a scanned QR opens) ---- */
+/* ---- the page a scanned pass opens ---- */
 .verify-section { padding-top: 64px; }
 .verify-panel { width: min(660px, 100%); text-align: left; }
 .verify-verdict { display: flex; align-items: flex-start; gap: 16px; margin: 18px 0 6px; padding: 20px 22px; border-radius: 20px; background: #f7f2ed; }

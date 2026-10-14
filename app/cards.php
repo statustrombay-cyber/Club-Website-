@@ -91,14 +91,14 @@ function mt_event_card(array $event, ?array $registration = null): string
             <p><?= e((string) $event['description']) ?></p>
           <?php endif; ?>
           <?php if ($facts): ?>
-            <span class="event-link"><?= e(implode(' · ', $facts)) ?></span>
+            <span class="event-link"><?= e(implode(', ', $facts)) ?></span>
           <?php endif; ?>
 
           <div class="event-actions">
             <span class="event-fee<?= $fee > 0 ? '' : ' is-free' ?>"><?= e($fee > 0 ? mt_money($fee) : 'Free entry') ?></span>
             <?php if ($state['open']): ?>
               <?php if ($registration && mt_registration_pass_ready($registration)): ?>
-                <a class="solid-button" href="/verify/<?= e(rawurlencode((string) ($registration['publicId'] ?? ''))) ?>">Your pass ↗</a>
+                <a class="solid-button" href="/pass">Your pass ↗</a>
               <?php else: ?>
                 <a class="solid-button" href="/register?event=<?= e((string) $event['id']) ?>">Register ↗</a>
               <?php endif; ?>
@@ -333,12 +333,12 @@ function mt_month_card(int $index, string $month, array $events): string
             <?php foreach ($events as $event): ?>
               <article class="calendar-event">
                 <div class="calendar-event-date">
-                  <?php if ((int) ($event['number'] ?? 0) > 0): ?><span class="calendar-event-number"><?= e(mt_event_label($event)) ?></span> · <?php endif; ?>
+                  <?php if ((int) ($event['number'] ?? 0) > 0): ?><span class="calendar-event-number"><?= e(mt_event_label($event)) ?></span> — <?php endif; ?>
                   <?= e(mt_event_date_display($event)) ?>
                 </div>
                 <h4><?= e((string) ($event['title'] ?? 'Mindful Tattva activity')) ?></h4>
                 <p><?= e(trim((string) ($event['time'] ?? '')) !== '' ? (string) $event['time'] : 'Time to be confirmed') ?>
-                  · <?= e(trim((string) ($event['location'] ?? '')) !== '' ? (string) $event['location'] : 'Location to be confirmed') ?></p>
+                  — <?= e(trim((string) ($event['location'] ?? '')) !== '' ? (string) $event['location'] : 'Location to be confirmed') ?></p>
                 <?php if (trim((string) ($event['description'] ?? '')) !== ''): ?>
                   <p><?= e((string) $event['description']) ?></p>
                 <?php endif; ?>

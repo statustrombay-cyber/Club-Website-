@@ -48,7 +48,7 @@ $openEvents = mt_open_events($db);
       <a class="calendar-card calendar-link-card" href="/register?event=<?= e((string) $open['id']) ?>">
         <div class="eyebrow">Registration open</div>
         <h2><?= e((string) $open['title']) ?></h2>
-        <p><?= e(mt_event_line($open)) ?> · <?= e(mt_event_fee($open) > 0 ? mt_money(mt_event_fee($open)) : 'Free entry') ?></p>
+        <p><?= e(mt_event_line($open)) ?> — <?= e(mt_event_fee($open) > 0 ? mt_money(mt_event_fee($open)) : 'Free entry') ?></p>
         <span>Register and get your pass ↗</span>
       </a>
     <?php endforeach; ?>

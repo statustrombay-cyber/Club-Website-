@@ -34,8 +34,6 @@ $chipClass = match ($status) {
     default        => 'is-pending',
 };
 $serial = trim((string) ($registration['serial'] ?? ''));
-$verifyUrl = mt_verify_url($registration);
-$verifyPath = '/verify/' . rawurlencode((string) ($registration['publicId'] ?? ''));
 /* The PDF is fetched by serial: this browser already holds the pass code in its
    session, so the link on the page never has to print it. */
 $pdfPath = '/api/pass/' . rawurlencode($serial !== '' ? $serial : (string) $registration['id']);
@@ -84,7 +82,7 @@ $pdfPath = '/api/pass/' . rawurlencode($serial !== '' ? $serial : (string) $regi
     <?php if ($stage === 'pay' || $stage === 'proof-rejected'): ?>
 
       <div class="club-panel pay-panel">
-        <span class="eyebrow plain">Step 2 of 2 · payment</span>
+        <span class="eyebrow plain">Step 2 of 2 — payment</span>
         <h2><?= e($stage === 'proof-rejected' ? 'Please upload the screenshot again' : 'Pay ' . mt_money($fee) . ' to hold your seat') ?></h2>
         <?php if ($stage === 'proof-rejected'): ?>
           <p class="muted">The club could not accept the last screenshot. A clear screenshot of the payment receipt is
@@ -129,7 +127,7 @@ $pdfPath = '/api/pass/' . rawurlencode($serial !== '' ? $serial : (string) $regi
           <div class="pass-club">
             <img src="<?= e(mt_safe_image($site['logoImage'] ?? '') ?: '/assets/photos/mt-club-logo.jpg') ?>" alt="" loading="lazy" decoding="async">
             <span>
-              <small><?= e((string) ($site['clubName'] ?? 'Mindful Tattva')) ?> · event pass</small>
+              <small><?= e((string) ($site['clubName'] ?? 'Mindful Tattva')) ?> — event pass</small>
               <strong><?= e((string) ($site['department'] ?? '')) ?></strong>
             </span>
           </div>
@@ -153,19 +151,21 @@ $pdfPath = '/api/pass/' . rawurlencode($serial !== '' ? $serial : (string) $regi
             </dl>
           </div>
           <div class="pass-qr">
-            <?= mt_qr_svg(mt_pass_qr_link($registration), 148, 'Verification code for pass ' . $serial) ?>
-            <span class="pass-qr-note">Scan to check</span>
+            <?= mt_qr_svg(mt_pass_qr_link($registration), 148, 'Code for pass ' . $serial) ?>
+            <span class="pass-qr-note">Scan to confirm this pass</span>
           </div>
         </div>
 
         <div class="pass-rules">
           <strong>Entry &amp; refund terms</strong>
           <ul>
-            <li>Show this pass <strong>and your payment proof</strong> at the entry desk. Entry is given only when the
-              pass serial matches the club register.</li>
-            <li>One person, this event only. The pass cannot be sold or transferred — please carry a photo ID.</li>
-            <li>By registering you agree to the terms and conditions of the event. The fee is
-              <strong>non-refundable</strong>.</li>
+            <li>Keep this pass safe and bring it with you — printed on paper or shown on your phone.</li>
+            <li>At the door, show this pass together with your payment screenshot (the one you uploaded while
+              registering).</li>
+            <li>This pass is for one person, for this event only, and cannot be sold or transferred. Please carry a
+              photo ID.</li>
+            <li>Registration fees are <strong>non-refundable</strong>. By registering you agree to the terms and
+              conditions of the event.</li>
             <li>Decisions of the club about the event are final. The club may cancel the event or change the date or
               venue without prior notice.</li>
             <li>If the club cancels the event, the fee is refunded within <strong>24 working days</strong>.</li>
@@ -175,7 +175,6 @@ $pdfPath = '/api/pass/' . rawurlencode($serial !== '' ? $serial : (string) $regi
         <div class="pass-actions">
           <?php if ($ready): ?>
             <a class="solid-button" href="<?= e($pdfPath) ?>">Download your pass (PDF) ↗</a>
-            <a class="outline-button" href="<?= e($verifyPath) ?>" target="_blank" rel="noreferrer">Open the check page ↗</a>
           <?php else: ?>
             <span class="status-chip <?= e($chipClass) ?>"><?= e(mt_payment_label($status)) ?></span>
           <?php endif; ?>
@@ -184,8 +183,8 @@ $pdfPath = '/api/pass/' . rawurlencode($serial !== '' ? $serial : (string) $regi
         </div>
         <p class="pass-note">
           <?php if ($ready): ?>
-            Anyone can confirm this pass is real by scanning its code — that page shows the event and the pass state,
-            never your contact details. Keep this link to yourself: it is the only way to open this page.
+            Keep this pass safe — it is checked at the door. Keep this page's link to yourself: it is the only way to
+            open your pass.
           <?php else: ?>
             The pass is issued once the payment screenshot arrives.
           <?php endif; ?>
@@ -194,22 +193,5 @@ $pdfPath = '/api/pass/' . rawurlencode($serial !== '' ? $serial : (string) $regi
 
     <?php endif; ?>
 
-    <div class="club-panel pass-intro">
-      <h3>The club's help line</h3>
-      <p class="muted">
-        <?php if (trim((string) ($site['email'] ?? '')) !== ''): ?>
-          Write to <a href="mailto:<?= e((string) $site['email']) ?>"><?= e((string) $site['email']) ?></a>
-        <?php endif; ?>
-        <?php if (trim((string) ($site['clubPhone'] ?? '')) !== ''): ?>
-          · call <a href="tel:<?= e(preg_replace('/[^+\d]/', '', (string) $site['clubPhone']) ?? '') ?>"><?= e((string) $site['clubPhone']) ?></a>
-        <?php endif; ?>
-        <?php if ($serial !== ''): ?>
-          — quoting your pass serial <strong><?= e($serial) ?></strong>.
-        <?php else: ?> — quoting the name and phone number you registered with.
-        <?php endif; ?>
-      </p>
-      <p class="muted">If you are struggling and need to speak to someone right now: Tele-MANAS 14416 (free, 24×7) or
-        KIRAN 1800-599-0019.</p>
-    </div>
   </div>
 </section>

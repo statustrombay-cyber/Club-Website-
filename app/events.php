@@ -90,7 +90,9 @@ function mt_event_line(array $event): string
         trim((string) ($event['time'] ?? '')),
         trim((string) ($event['location'] ?? '')),
     ], static fn($part) => $part !== '');
-    return implode(' · ', $parts);
+    /* Commas, not the floating middots: the club asked for the stray dots
+       between the details to go. */
+    return implode(', ', $parts);
 }
 
 function mt_event_fee(array $event): float
