@@ -74,6 +74,21 @@ $nav = [
     <span class="thread-rail"></span><span class="thread-fill" id="threadFill"></span>
     <span class="thread-bead" id="threadBead"></span>
   </div>
+  <?php /* Decoration that never stops: warm lights drifting behind every
+           block, a scatter of sparkles and a few soft petals falling through
+           them. It sits behind the words, it cannot be clicked, and it eases
+           upward as the page is read — so the page keeps breathing while it is
+           scrolled. A visitor who asks for less motion gets it still. */ ?>
+  <div class="drift-field" id="driftField" aria-hidden="true">
+    <span class="drift-blob blob-a"></span><span class="drift-blob blob-b"></span><span class="drift-blob blob-c"></span>
+    <span class="drift-sparkle sparkle-a"></span><span class="drift-sparkle sparkle-b"></span>
+    <span class="drift-sparkle sparkle-c"></span><span class="drift-sparkle sparkle-d"></span>
+    <span class="drift-sparkle sparkle-e"></span><span class="drift-sparkle sparkle-f"></span>
+    <span class="drift-sparkle sparkle-g"></span><span class="drift-sparkle sparkle-h"></span>
+    <span class="drift-petal petal-a"></span><span class="drift-petal petal-b"></span>
+    <span class="drift-petal petal-c"></span><span class="drift-petal petal-d"></span>
+    <span class="drift-petal petal-e"></span><span class="drift-petal petal-f"></span>
+  </div>
   <div class="read-progress" aria-hidden="true"><i id="readProgress"></i></div>
 
   <?php /* The club's horses, behind every public page. A still frame is always

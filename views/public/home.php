@@ -48,6 +48,7 @@ $phone      = trim((string) ($site['clubPhone'] ?? ''));
       </div>
     </div>
     <div class="hero-art fade-in" aria-label="Abstract Mindful Tattva artwork">
+      <span class="breathe-ring" aria-hidden="true"><i></i></span>
       <div class="art-card">
         <div class="art-sun"></div>
         <div class="art-orbit"></div>

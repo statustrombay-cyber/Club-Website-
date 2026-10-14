@@ -67,7 +67,11 @@ button { cursor: pointer; }
 .bubble-e { left: 47%; top: 42%; --size: 9px; --duration: 12s; animation-delay: -9s; }
 .bubble-f { right: 4%; top: 83%; --size: 35px; --duration: 23s; animation-delay: -11s; }
 .bubble-g { left: 34%; top: 8%; --size: 13px; --duration: 16s; animation-delay: -4s; }
-.site-shell { position: relative; z-index: 1; overflow: hidden; }
+/* overflow-x: clip, not overflow: hidden — hidden makes this box a scroll
+   container of its own, and a pinned bar inside it would never travel with the
+   page. The club text still never pushes the page sideways: body keeps
+   overflow-x: hidden as the guard, and clip honours it without the side effect. */
+.site-shell { position: relative; z-index: 1; overflow-x: clip; }
 .container { width: min(1160px, calc(100% - 48px)); margin: 0 auto; }
 .narrow { width: min(860px, calc(100% - 48px)); margin: 0 auto; }
 .eyebrow, .kicker {
@@ -94,7 +98,28 @@ button { cursor: pointer; }
 .event-banner-inner strong { font-weight: 800; }
 .event-banner-inner span:last-child { color: rgba(52,33,61,.72); }
 .event-banner-pulse { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--terracotta); box-shadow: 0 0 0 5px rgba(200,111,88,.13); }
-.nav-wrap { position: relative; z-index: 10; }
+/* The bar travels with the page, from the first screen to the last: the menu
+   is always one tap away, and the glass reads a little stronger as it moves. */
+.nav-wrap { position: sticky; top: 0; z-index: 60; }
+/* A soft scrim slides under the bar once the page is moving, so the words stay
+   clear whatever passes behind them — the herd included. */
+.nav-wrap:before {
+  content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  opacity: 0; transition: opacity .35s ease;
+  background: linear-gradient(180deg, rgba(247,242,237,.95), rgba(247,242,237,.72) 66%, rgba(247,242,237,0));
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+}
+body.is-scrolled .nav-wrap:before { opacity: 1; }
+/* A hairline of the club's gold sits under the bar while it travels, the way
+   the thread and the rules below it do. */
+.nav-wrap:after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 1px;
+  opacity: 0; pointer-events: none; transition: opacity .35s ease;
+  background: linear-gradient(90deg, transparent, rgba(215,162,70,.55), transparent);
+}
+body.is-scrolled .nav-wrap:after { opacity: 1; }
+/* An anchor jump lands below the pinned bar, never under it. */
+main [id] { scroll-margin-top: 104px; }
 .nav { position: relative; }
 .nav:before { content: ''; position: absolute; inset: 11px -16px; z-index: -1; border: 1px solid rgba(78,49,85,.07); border-radius: 25px; background: rgba(255,250,241,.16); box-shadow: 0 10px 26px rgba(61,39,66,.04); backdrop-filter: blur(9px); -webkit-backdrop-filter: blur(9px); transition: background .35s ease, box-shadow .35s ease; }
 /* scrolled: the bar reads a touch more solid, so words stay clear over the herd */
@@ -853,6 +878,10 @@ html.js .scroll-reveal.is-visible { opacity: 1; transform: none; }
 .terms-note ol { list-style: none; counter-reset: none; margin: 0; padding: 0; display: grid; gap: 9px; }
 .terms-note li { position: static; margin: 0; padding: 0; line-height: 1.6; }
 .terms-note li:before { content: none; }
+/* The browser's own marker is told the same thing, so no bullet, dot or number
+   can appear beside a condition in any browser. */
+.terms-note li::marker { content: none; }
+.pass-rules li::marker { content: none; }
 
 /* ---- payment ---- */
 .pay-card { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 24px; align-items: center; margin: 0; padding: 22px; border: 1px dashed rgba(78,49,85,.28); border-radius: 22px; background: #fffaf1; }
@@ -1140,9 +1169,73 @@ html.photo-frame-open { overflow: hidden; }
   .menu-button { font-size: 1.6rem; line-height: 1; padding: 8px 6px; }
 }
 
+/* ------------------------------------------------- the drifting lights ----
+   Warm lights that never stop moving, a scatter of sparkles and a few soft
+   petals falling through them. All of it sits behind the words, none of it can
+   be clicked, and it eases upward as the page is read so the page keeps
+   breathing while it is scrolled. Anyone who asks for less motion gets the
+   lights still and the petals gone. */
+.drift-field { position: fixed; inset: -80px; z-index: 0; overflow: hidden; pointer-events: none; }
+.drift-blob { position: absolute; display: block; border-radius: 50%; filter: blur(48px); opacity: .42; }
+.blob-a { width: 44vw; height: 44vw; left: -9vw; top: 2vh; background: radial-gradient(circle at 42% 44%, rgba(232,155,121,.55), rgba(232,155,121,0) 70%); animation: blobDriftA 34s ease-in-out infinite; }
+.blob-b { width: 38vw; height: 38vw; right: -7vw; top: 30vh; background: radial-gradient(circle at 52% 48%, rgba(184,195,176,.62), rgba(184,195,176,0) 72%); animation: blobDriftB 43s ease-in-out infinite; }
+.blob-c { width: 33vw; height: 33vw; left: 30vw; bottom: -4vh; background: radial-gradient(circle at 50% 50%, rgba(215,162,70,.5), rgba(215,162,70,0) 74%); animation: blobDriftC 38s ease-in-out infinite; }
+@keyframes blobDriftA { 0%, 100% { transform: translate3d(0, 0, 0) scale(1); } 50% { transform: translate3d(6vw, 5vh, 0) scale(1.14); } }
+@keyframes blobDriftB { 0%, 100% { transform: translate3d(0, 0, 0) scale(1.06); } 50% { transform: translate3d(-5vw, -6vh, 0) scale(.93); } }
+@keyframes blobDriftC { 0%, 100% { transform: translate3d(0, 0, 0) scale(1); } 50% { transform: translate3d(4vw, -5vh, 0) scale(1.12); } }
+
+.drift-sparkle { position: absolute; width: var(--size, 7px); height: var(--size, 7px); border-radius: 50%; opacity: 0; background: radial-gradient(circle at 35% 35%, #fff7e6, rgba(224,169,78,.85) 58%, rgba(224,169,78,0)); box-shadow: 0 0 12px rgba(224,169,78,.5); animation: sparkleTwinkle 7s ease-in-out infinite; }
+.sparkle-a { left: 12%; top: 16%; animation-delay: -1s; }
+.sparkle-b { left: 27%; top: 64%; --size: 5px; animation-delay: -3.4s; }
+.sparkle-c { right: 16%; top: 12%; --size: 9px; animation-delay: -5.1s; }
+.sparkle-d { right: 30%; top: 44%; --size: 6px; animation-delay: -2.2s; }
+.sparkle-e { left: 44%; top: 30%; --size: 5px; animation-delay: -6.3s; }
+.sparkle-f { right: 8%; top: 72%; animation-delay: -4.4s; }
+.sparkle-g { left: 6%; top: 84%; --size: 8px; animation-delay: -0.6s; }
+.sparkle-h { left: 62%; top: 88%; --size: 6px; animation-delay: -2.9s; }
+@keyframes sparkleTwinkle { 0%, 100% { opacity: 0; transform: scale(.55); } 45% { opacity: .9; transform: scale(1); } }
+
+.drift-petal { position: absolute; top: -14vh; width: var(--size, 13px); height: var(--size, 13px); border-radius: 62% 38% 55% 45%; opacity: 0; background: linear-gradient(140deg, rgba(249,216,176,.95), rgba(201,170,160,.78)); box-shadow: 0 0 10px rgba(215,162,70,.18); animation: petalFall 26s linear infinite; }
+.petal-a { left: 9%; animation-delay: -3s; }
+.petal-b { left: 31%; --size: 10px; animation-duration: 31s; animation-delay: -12s; }
+.petal-c { right: 22%; --size: 16px; animation-duration: 29s; animation-delay: -7s; }
+.petal-d { right: 7%; --size: 11px; animation-duration: 34s; animation-delay: -19s; }
+.petal-e { left: 55%; --size: 9px; animation-duration: 27s; animation-delay: -23s; }
+.petal-f { left: 73%; --size: 14px; animation-duration: 33s; animation-delay: -15s; }
+@keyframes petalFall {
+  0% { transform: translate3d(0, 0, 0) rotate(0deg); opacity: 0; }
+  6% { opacity: .85; }
+  88% { opacity: .55; }
+  100% { transform: translate3d(7vw, 118vh, 0) rotate(320deg); opacity: 0; }
+}
+
+/* The club's whole idea, drawn: a ring that breathes slowly in and out behind
+   the hero artwork. */
+.breathe-ring {
+  position: absolute; inset: 0; margin: auto; width: 84%; aspect-ratio: 1 / 1;
+  border-radius: 50%; border: 1px solid rgba(215,162,70,.42);
+  pointer-events: none; animation: breatheRing 9s ease-in-out infinite;
+}
+.breathe-ring i { position: absolute; inset: 13%; border-radius: 50%; border: 1px solid rgba(200,111,88,.3); animation: breatheRing 9s ease-in-out 1.2s infinite; }
+@keyframes breatheRing { 0%, 100% { transform: scale(.975); opacity: .45; } 50% { transform: scale(1.035); opacity: 1; } }
+
+/* A phone gets the same lights at a smaller cost: a softer blur, one less
+   light, so scrolling stays smooth on a small screen. */
+@media (max-width: 700px) {
+  .drift-blob { filter: blur(30px); opacity: .36; }
+  .blob-c { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drift-blob, .drift-sparkle { animation: none; }
+  .drift-sparkle { opacity: .55; }
+  .drift-petal { display: none; }
+  .breathe-ring, .breathe-ring i { animation: none; opacity: .55; }
+}
+
 /* printing a pass should give exactly the pass */
 @media print {
-  .bubble-field, .announcement, .event-banner, .nav-wrap, .footer, .gold-thread,
+  .bubble-field, .drift-field, .announcement, .event-banner, .nav-wrap, .footer, .gold-thread,
   .read-progress, .to-top, .values-marquee,
   .pass-actions, .pass-note, .club-panel, .btn-row { display: none !important; }
   .pass-shell { padding: 0; background: #fff; }

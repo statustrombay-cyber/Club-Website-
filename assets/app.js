@@ -105,11 +105,22 @@
       const open = nav.classList.toggle('open');
       button.setAttribute('aria-expanded', open ? 'true' : 'false');
     });
+    const close = function () {
+      nav.classList.remove('open');
+      button.setAttribute('aria-expanded', 'false');
+    };
     $$('a', nav).forEach(function (link) {
-      link.addEventListener('click', function () {
-        nav.classList.remove('open');
-        button.setAttribute('aria-expanded', 'false');
-      });
+      link.addEventListener('click', close);
+    });
+    /* Tapping anywhere else — the page, another link — puts the panel away, so
+       a pinned bar never leaves a menu open over the words. */
+    document.addEventListener('click', function (event) {
+      if (!nav.classList.contains('open')) return;
+      if (nav.contains(event.target) || button.contains(event.target)) return;
+      close();
+    });
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape' && nav.classList.contains('open')) close();
     });
   }
 
@@ -287,6 +298,32 @@
     }
   }
 
+  /* ----------------------------------------------------- the drifting lights */
+  /* The warm lights behind every block ease upward as the page is read, so the
+     page keeps moving gently under the visitor's hand. One transform, set in
+     the same kind of frame as the rest of the dressing — and none at all when
+     less motion has been asked for. */
+  function setupDriftField() {
+    const field = $('#driftField');
+    if (!field || reduced()) return;
+
+    let frame = 0;
+    function paint() {
+      frame = 0;
+      const y = window.scrollY || window.pageYOffset || 0;
+      /* the layer is oversize by 80px, so the shift can never open a gap */
+      const shift = Math.max(-72, Math.min(72, -y * 0.022));
+      field.style.transform = 'translate3d(0,' + shift.toFixed(1) + 'px,0)';
+    }
+    function schedule() {
+      if (!frame) frame = window.requestAnimationFrame(paint);
+    }
+
+    paint();
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule);
+  }
+
   /* ------------------------------------------------------- content updates */
   function setupLiveUpdates() {
     const boot = readJson('mt-bootstrap');
@@ -396,6 +433,7 @@
     setupForms();
     setupGoldThread();
     setupScrollUi();
+    setupDriftField();
     setupLiveUpdates();
   }
 

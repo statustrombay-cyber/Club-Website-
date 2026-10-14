@@ -763,6 +763,12 @@ ok('reveals are hidden only under html.js', /html\.js \.scroll-reveal \{/.test(a
 ok('a script that never arrives cannot hide content', /classList\.remove\('js'\)/.test(layoutSource));
 ok('the bubbles keep their motion', ['bubbleDrift', 'orbitSpin', 'psiPulse', 'fadeIn', 'breathe', 'stickerPulse'].every((name) => appCss.includes('@keyframes ' + name)));
 ok('the mobile menu is styled', /\.nav-links\.open/.test(appCss) || /nav-links\.open/.test(appCss));
+ok('the menu puts itself away when the visitor taps elsewhere',
+  appJs.includes('if (nav.contains(event.target) || button.contains(event.target)) return;')
+  && appJs.includes("if (event.key === 'Escape' && nav.classList.contains('open')) close();"));
+ok('a phone keeps the lights at a smaller cost',
+  /\.drift-blob \{ filter: blur\(30px\); opacity: \.36; \}/.test(appCss)
+  && /\.blob-c \{ display: none; \}/.test(appCss));
 ok('the pass prints as the pass', /@media print/.test(appCss) && /\.pass-ticket/.test(appCss));
 ok('the payment card and the upload row are styled', appCss.includes('.pay-card') && appCss.includes('.upload-row') && appCss.includes('.status-chip'));
 ok('the register panel and the pass cards are styled', appCss.includes('.fact-card') && appCss.includes('.register-form') && appCss.includes('.pass-ticket'));
@@ -938,6 +944,38 @@ ok('the top bar reads a little more solid once the visitor has scrolled',
   /\.nav:before \{[^}]*background: rgba\(255,250,241,\.16\)/.test(appCss)
   && /body\.is-scrolled \.nav:before \{[^}]*rgba\(255,250,241,\.34\)/.test(appCss)
   && appJs.includes("classList.toggle('is-scrolled', y > 40)"));
+ok('the conditions carry no dots and no numbered chips',
+  /\.terms-note ol \{[^}]*list-style: none/.test(appCss)
+  && /\.terms-note li:before \{ content: none; \}/.test(appCss)
+  && /\.terms-note li::marker \{ content: none; \}/.test(appCss)
+  && /\.pass-rules li::marker \{ content: none; \}/.test(appCss)
+  && !/\.terms-note li:before \{[^}]*counter\(term\)/.test(appCss)
+  && !/counter-reset: term/.test(appCss));
+ok('the top bar travels with the page, so the menu is always at hand',
+  /\.nav-wrap \{ position: sticky; top: 0; z-index: 60; \}/.test(appCss)
+  && /\.site-shell \{[^}]*overflow-x: clip/.test(appCss)
+  && !/\.site-shell \{ position: relative; z-index: 1; overflow: hidden; \}/.test(appCss)
+  && /body\.is-scrolled \.nav-wrap:before \{ opacity: 1; \}/.test(appCss)
+  && /body\.is-scrolled \.nav-wrap:after \{ opacity: 1; \}/.test(appCss)
+  && layoutSource.includes('id="menuButton"') && layoutSource.includes('class="nav-wrap"'));
+ok('warm lights drift behind every page and settle when less motion is asked for',
+  layoutSource.includes('class="drift-field"') && layoutSource.includes('id="driftField"')
+  && /\.drift-blob \{[^}]*filter: blur/.test(appCss)
+  && /@keyframes blobDriftA/.test(appCss)
+  && /\.drift-sparkle \{[^}]*animation: sparkleTwinkle/.test(appCss)
+  && /\.drift-petal \{[^}]*animation: petalFall/.test(appCss)
+  && /\.drift-blob, \.drift-sparkle \{ animation: none; \}/.test(appCss)
+  && /\.drift-petal \{ display: none; \}/.test(appCss)
+  && appJs.includes('setupDriftField') && appJs.includes("field.style.transform = 'translate3d(0,'"));
+ok('the lights keep moving while the page is scrolled, gently',
+  appJs.includes("const shift = Math.max(-72, Math.min(72, -y * 0.022));")
+  && /\.drift-field \{ position: fixed; inset: -80px; z-index: 0/.test(appCss));
+ok('a ring breathes slowly behind the hero artwork',
+  home.body.includes('breathe-ring') && /@keyframes breatheRing/.test(appCss)
+  && /\.breathe-ring \{\s*\n  position: absolute; inset: 0; margin: auto; width: 84%; aspect-ratio: 1 \/ 1;/.test(appCss)
+  && /\.breathe-ring, \.breathe-ring i \{ animation: none; opacity: \.55; \}/.test(appCss));
+ok('an anchor jump lands below the pinned bar, not under it',
+  /main \[id\] \{ scroll-margin-top: 104px; \}/.test(appCss));
 ok('the club area never carries the public dressing: it has its own body',
   fs.readFileSync(path.join(ROOT, 'views/dashboard.php'), 'utf8').includes('<body class="dash-body">')
   && fs.readFileSync(path.join(ROOT, 'views/login.php'), 'utf8').includes('<body class="dash-body login-body">')
