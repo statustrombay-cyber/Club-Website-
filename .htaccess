@@ -33,6 +33,15 @@ DirectoryIndex index.php index.html
 <IfModule mod_headers.c>
   Header set X-Content-Type-Options "nosniff"
   Header set Referrer-Policy "strict-origin-when-cross-origin"
+
+  # Pages are written fresh from the club's own content every time they are
+  # asked for, so a browser must never hold an old one: the club edits words,
+  # events and passes from the dashboard, and a student should never be shown
+  # yesterday's page (or yesterday's styles, which travel inside the page).
+  # The files under assets/ keep their own long cache below.
+  <FilesMatch "\.(php|html?)$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
 </IfModule>
 
 # Protect the private data folder and the app folder.
@@ -57,6 +66,9 @@ DirectoryIndex index.php index.html
   ExpiresByType image/png "access plus 30 days"
   ExpiresByType image/webp "access plus 30 days"
   ExpiresByType image/svg+xml "access plus 30 days"
+  # ...but a page is never stale: an expiry in the past means the browser asks
+  # again, and gets the club's latest words.
+  ExpiresByType text/html "access plus 0 seconds"
   ExpiresByType text/css "access plus 7 days"
   ExpiresByType application/javascript "access plus 7 days"
 </IfModule>

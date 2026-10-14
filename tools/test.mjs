@@ -1138,6 +1138,9 @@ ok('the server hands the clip out as video, in slices',
   /\.mp4': 'video\/mp4'/.test(fs.readFileSync(path.join(ROOT, 'tools/preview-server.mjs'), 'utf8'))
   && /Content-Range/.test(fs.readFileSync(path.join(ROOT, 'tools/preview-server.mjs'), 'utf8'))
   && /AddType video\/mp4/.test(fs.readFileSync(path.join(ROOT, '.htaccess'), 'utf8')));
+ok('a page is never served from a stale cache, the club’s latest words always are',
+  /Cache-Control "no-cache, must-revalidate"/.test(fs.readFileSync(path.join(ROOT, '.htaccess'), 'utf8'))
+  && /ExpiresByType text\/html "access plus 0 seconds"/.test(fs.readFileSync(path.join(ROOT, '.htaccess'), 'utf8')));
 
 /* The club area itself, on a phone: the section strip scrolls sideways, the
    counters and editors go one per row, and a long word cannot widen a page. */
