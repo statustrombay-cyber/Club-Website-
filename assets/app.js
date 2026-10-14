@@ -418,6 +418,21 @@
     }, 45000);
   }
 
+  /* -------------------------------------------------------- the front door */
+  /* The welcome screen leaves on its own — the stylesheet times it out. This
+     only makes it quicker to leave: a tap, a key press, a wheel or a scroll
+     sends it away at once, so nobody has to wait for decoration. */
+  function setupSplash() {
+    const splash = $('#splash');
+    if (!splash) return;
+    const away = function () { splash.classList.add('is-done'); };
+    splash.addEventListener('click', away);
+    window.addEventListener('keydown', away, { once: true });
+    window.addEventListener('wheel', away, { once: true, passive: true });
+    window.addEventListener('touchstart', away, { once: true, passive: true });
+    window.setTimeout(function () { splash.setAttribute('hidden', 'hidden'); }, 4200);
+  }
+
   /* ------------------------------------------------------------ the herd */
   /* The front page's horses. The still frame is already in the HTML, so this
      only plays the clip — and keeps it running: the herd is never paused while
@@ -504,6 +519,7 @@
   }
 
   function start() {
+    setupSplash();
     setupReveal();
     setupMenu();
     setupHeroVideo();

@@ -74,6 +74,14 @@ button { cursor: pointer; }
 .site-shell { position: relative; z-index: 1; overflow-x: clip; }
 .container { width: min(1160px, calc(100% - 48px)); margin: 0 auto; }
 .narrow { width: min(860px, calc(100% - 48px)); margin: 0 auto; }
+/* Every small label carries a lamp of the club's gold that breathes, so the
+   page has a quiet pulse running through it without a single word moving. */
+.eyebrow:before, .kicker:before {
+  content: ''; display: inline-block; width: 6px; height: 6px; margin-right: 9px;
+  border-radius: 50%; vertical-align: middle; background: #e8b25c;
+  box-shadow: 0 0 8px rgba(232,178,92,.6);
+  animation: lightPulse 3.2s ease-in-out infinite;
+}
 .eyebrow, .kicker {
   color: var(--terracotta-ink);
   font-size: .73rem;
@@ -148,23 +156,41 @@ body.is-scrolled .nav:before { background: rgba(255,250,241,.62); box-shadow: 0 
 .nav-links { display: flex; align-items: center; gap: 14px; font-size: .78rem; color: var(--ink-soft); }
 .nav-links a { transition: color .2s ease; }
 .nav-links a:hover { color: var(--terracotta-ink); }
-/* The way to the Mind section. It sits over the herd on the club's own glass, so
-   it wears a deep terracotta the video cannot wash out, carries a small gold
-   mark of the club's, keeps a cream glow so the letters separate from a running
-   horse behind them — and gives a small hop, so the eye finds it. */
+/* The way to the Mind section. Colouring the word was not enough — it could
+   still be lost against a running horse — so the doorway is now a filled chip
+   in the club's own terracotta with cream letters: nothing behind it can hide
+   it. It carries a gold beacon that pulses like a small lamp, a soft glow that
+   breathes around the chip, and a small hop, so the eye finds it at a glance. */
 .nav-links a.nav-lens {
-  display: inline-flex; align-items: center; gap: 6px;
-  color: #6f2f14; font-weight: 800;
-  text-shadow: 0 1px 10px rgba(255,250,241,.95), 0 0 22px rgba(255,250,241,.8);
-  animation: lensHop 2.8s ease-in-out infinite;
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 8px 14px 8px 12px; border-radius: 999px;
+  color: #fff8ee; font-weight: 800;
+  background: linear-gradient(180deg, #9c4a2c, #7d3520);
+  box-shadow: 0 0 0 1px rgba(255,248,238,.28), 0 10px 24px rgba(90,45,30,.3), 0 0 26px rgba(224,169,78,.35);
+  text-shadow: 0 1px 6px rgba(60,25,15,.55);
+  animation: lensHop 2.8s ease-in-out infinite, lensGlow 3.6s ease-in-out infinite;
 }
 .nav-links a.nav-lens:before {
   content: ''; width: 7px; height: 7px; border-radius: 50%;
-  background: var(--saffron); box-shadow: 0 0 0 4px rgba(215,162,70,.22);
+  background: #ffd98a;
+  box-shadow: 0 0 10px rgba(255,217,138,.95), 0 0 0 3px rgba(255,217,138,.22);
+  animation: lightPulse 2.4s ease-in-out infinite;
 }
-.nav-links a.nav-lens:hover { color: var(--terracotta-ink); }
+.nav-links a.nav-lens:hover { color: #fff8ee; background: linear-gradient(180deg, #a9532f, #7d3520); }
 @keyframes lensHop { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
-@media (prefers-reduced-motion: reduce) { .nav-links a.nav-lens { animation: none; } }
+@keyframes lensGlow {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(255,248,238,.28), 0 10px 24px rgba(90,45,30,.3), 0 0 18px rgba(224,169,78,.28); }
+  50% { box-shadow: 0 0 0 1px rgba(255,248,238,.4), 0 12px 28px rgba(90,45,30,.34), 0 0 34px rgba(255,205,120,.6); }
+}
+/* A small lamp that breathes: used by the doorway, the eyebrows and the band. */
+@keyframes lightPulse {
+  0%, 100% { opacity: .55; box-shadow: 0 0 6px rgba(255,205,120,.4); }
+  50% { opacity: 1; box-shadow: 0 0 14px rgba(255,205,120,.95); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-links a.nav-lens { animation: none; }
+  .nav-links a.nav-lens:before { animation: none; }
+}
 .nav-action, .outline-button, .solid-button {
   display: inline-flex; align-items: center; justify-content: center; gap: 10px;
   border: 0; border-radius: 999px; padding: 12px 19px;
@@ -365,7 +391,7 @@ body.is-scrolled .nav:before { background: rgba(255,250,241,.62); box-shadow: 0 
    touch the club's logo, at any screen size. Type and padding are measured
    against the stage (cqw), so the whole drawing keeps those proportions — and a
    word is never allowed to wrap: one word, one line, always. */
-.psi-stage { position: relative; display: grid; place-items: center; width: min(100%, 520px); aspect-ratio: 1 / 1; margin: 0 auto; container-type: inline-size; isolation: isolate; }
+.psi-stage { position: relative; display: grid; place-items: center; width: min(100%, 560px); aspect-ratio: 1 / 1; margin: 0 auto; container-type: inline-size; isolation: isolate; }
 .psi-stage-glow {
   position: absolute; width: 66%; aspect-ratio: 1; border-radius: 50%;
   border: 1px solid rgba(255,248,238,.2);
@@ -381,7 +407,7 @@ body.is-scrolled .nav:before { background: rgba(255,250,241,.62); box-shadow: 0 
 .psi-stage-glow:after { inset: 17%; border-color: rgba(244,193,127,.22); animation: axisSpinReverse 46s linear infinite; }
 /* The lens: the club's logo filling it, ringed in the club's cream. */
 .psi-core {
-  position: relative; z-index: 2; width: 37%; aspect-ratio: 1; border-radius: 50%;
+  position: relative; z-index: 2; width: 28%; aspect-ratio: 1; border-radius: 50%;
   overflow: hidden; background: rgba(255,248,238,.12);
   border: 1px solid rgba(255,248,238,.5);
   box-shadow: 0 26px 74px rgba(0,0,0,.26), inset 0 0 0 6px rgba(255,248,238,.1);
@@ -391,20 +417,21 @@ body.is-scrolled .nav:before { background: rgba(255,250,241,.62); box-shadow: 0 
 .psi-quotes { position: absolute; z-index: 3; inset: 0; animation: quoteSpin 32s linear infinite; }
 .psi-quote {
   position: absolute; white-space: nowrap;
-  padding: max(6px, 1.4cqw) max(8px, 2.2cqw);
+  padding: max(6px, 1.3cqw) max(6px, 2.1cqw);
   border: 1px solid rgba(255,248,238,.4); border-radius: 999px;
   color: #fff8ee; background: rgba(255,248,238,.16); text-shadow: 0 1px 8px rgba(52,30,45,.5);
   box-shadow: 0 12px 28px rgba(0,0,0,.16);
   backdrop-filter: blur(13px); -webkit-backdrop-filter: blur(13px);
-  font-family: var(--font-display); font-weight: 700; letter-spacing: .06em;
-  font-size: clamp(.6rem, 2.6cqw, .95rem); line-height: 1;
+  font-family: var(--font-display); font-weight: 700; letter-spacing: .01em;
+  font-size: clamp(.72rem, 4.2cqw, 1.45rem); line-height: 1;
   animation: quoteHold 4s linear infinite;
 }
-/* One word at each quarter of the wheel: top, right, foot, left. */
-.psi-quote-one   { top: calc(50% - 33.5%); left: 50%; }
-.psi-quote-two   { top: 50%; left: calc(50% + 33.5%); }
-.psi-quote-three { top: calc(50% + 33.5%); left: 50%; }
-.psi-quote-four  { top: 50%; left: calc(50% - 33.5%); }
+/* Three words, evenly spaced: one at the top and two at the feet, a third of
+   the wheel apart, so the ring reads as three equal seats and nothing crowds
+   the club's logo. */
+.psi-quote-one   { top: calc(50% - 33%);   left: 50%; }
+.psi-quote-two   { top: calc(50% + 16.5%); left: calc(50% + 28.58%); }
+.psi-quote-three { top: calc(50% + 16.5%); left: calc(50% - 28.58%); }
 @keyframes quoteSpin { to { transform: rotate(360deg); } }
 /* Eight of these to one turn of the wheel: the word rides round and stays up. */
 @keyframes quoteHold {
@@ -426,8 +453,8 @@ body.is-scrolled .nav:before { background: rgba(255,250,241,.62); box-shadow: 0 
 /* On a phone the lens comes in a little and the words ride a slightly smaller
    circle, so the whole wheel fits a narrow screen with nothing crowding. */
 @media (max-width: 560px) {
-  .psi-core { width: 31%; }
-  .psi-quote { padding: max(5px, 1.3cqw) max(7px, 2cqw); letter-spacing: .05em; font-size: clamp(.58rem, 2.4cqw, .9rem); }
+  .psi-core { width: 26%; }
+  .psi-quote { padding: max(5px, 1.2cqw) max(5px, 1.9cqw); font-size: clamp(.7rem, 4.1cqw, 1.5rem); }
 }
 
 /* The circle of words sits at the left of its column, with just enough room
@@ -1388,4 +1415,110 @@ html.photo-frame-open { overflow: hidden; }
   .pass-ticket { box-shadow: none; width: 100%; }
   .pass-ticket:before, .pass-ticket:after { display: none; }
   .pass-qr, .pass-rules { break-inside: avoid; }
+}
+
+/* ==========================================================================
+   The club's name running across the page — a band between sections
+   --------------------------------------------------------------------------
+   Big, bold, white and slightly transparent: the club's name slides slowly to
+   the right, for ever, wherever the page is between two blocks. The track holds
+   two identical halves and is drawn with a trailing space on each word rather
+   than a gap, so the moment one half leaves the screen the other is exactly in
+   its place — the run never stutters and never shows a seam. A soft haze of the
+   club's plum sits under the letters, so white stays readable over the herd,
+   over paper and over the dark blocks alike. It is decoration: it takes no
+   clicks, it says nothing to a screen reader, and it stops for anyone who asks
+   for less motion.
+   ========================================================================== */
+.brand-band { position: relative; overflow: hidden; padding: 30px 0; pointer-events: none; }
+.brand-band:before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(90deg, rgba(59,42,70,0), rgba(59,42,70,.34) 22%, rgba(59,42,70,.34) 78%, rgba(59,42,70,0));
+}
+.brand-band:after {
+  content: ''; position: absolute; left: 8%; right: 8%; top: 50%; height: 1px; transform: translateY(-50%);
+  background: linear-gradient(90deg, transparent, rgba(255,248,238,.28), transparent);
+}
+.brand-band-track { position: relative; z-index: 1; display: flex; width: max-content; animation: brandRun 68s linear infinite; }
+.brand-band-track span {
+  display: block; padding-right: 5vw; white-space: nowrap;
+  font-family: var(--font-display); font-weight: 700; letter-spacing: .01em;
+  font-size: clamp(2.4rem, 7.4vw, 5.8rem); line-height: 1;
+  color: rgba(255,255,255,.5);
+  text-shadow: 0 2px 30px rgba(46,28,40,.45);
+}
+/* A lamp at each end of the band, breathing like the rest of the page. */
+.brand-band i {
+  position: absolute; z-index: 2; top: 50%; width: 9px; height: 9px; margin-top: -4px;
+  border-radius: 50%; background: #ffd98a;
+  box-shadow: 0 0 12px rgba(255,217,138,.9);
+  animation: lightPulse 3s ease-in-out infinite;
+}
+.brand-band i:first-child { left: 26px; }
+.brand-band i:last-child { right: 26px; animation-delay: 1.5s; }
+@keyframes brandRun { from { transform: translateX(-50%); } to { transform: translateX(0); } }
+@media (prefers-reduced-motion: reduce) {
+  .brand-band-track { animation: none; }
+  .brand-band i { animation: none; opacity: .6; }
+}
+
+/* ==========================================================================
+   The front door — "Welcome to Club Mindful Tattva"
+   --------------------------------------------------------------------------
+   A solid plum screen. The club's name sweeps in from the right, settles, and
+   drifts slowly on to the left, then the solid screen lifts away and the site
+   is there. Nothing here waits on JavaScript: the screen takes itself away on a
+   timer, and any tap or key press sends it away at once. Anyone who asks for
+   less motion never sees it at all.
+   ========================================================================== */
+.splash {
+  position: fixed; inset: 0; z-index: 300;
+  display: grid; place-items: center; text-align: center;
+  background: #3d2a49;
+  background-image: radial-gradient(circle at 50% 42%, rgba(224,169,78,.22), rgba(61,42,73,0) 58%);
+  animation: splashAway .7s ease 3.1s forwards;
+}
+.splash-copy { display: grid; gap: 14px; padding: 0 6vw; animation: splashDrift 3.6s ease-in-out forwards; }
+.splash-welcome {
+  color: rgba(255,248,238,.72); font-size: clamp(.82rem, 1.6vw, 1.05rem);
+  font-weight: 800; letter-spacing: .34em; text-transform: uppercase;
+}
+.splash-name {
+  font-family: var(--font-display); font-weight: 700; line-height: .98;
+  font-size: clamp(2.6rem, 9vw, 7rem); white-space: nowrap;
+  color: #fff8ee; text-shadow: 0 6px 40px rgba(0,0,0,.35);
+  animation: splashIn 1.5s cubic-bezier(.16,.84,.28,1) both;
+}
+.splash.is-done { opacity: 0; visibility: hidden; transition: opacity .6s ease, visibility 0s linear .6s; }
+@keyframes splashIn { from { transform: translateX(112vw); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes splashDrift { from { transform: translateX(0); } to { transform: translateX(-4vw); } }
+@keyframes splashAway { to { opacity: 0; visibility: hidden; } }
+@media (prefers-reduced-motion: reduce) { .splash { display: none; } }
+/* Once the screen has done its work it is gone for good, not merely unseen. */
+.splash[hidden] { display: none; }
+
+/* ==========================================================================
+   The butterfly on the bar
+   --------------------------------------------------------------------------
+   She rides beside the club's name on the pinned bar, so she is there while the
+   whole page is read. Her wings beat all the time, and she breathes up and down
+   on the spot: no scrolling needed, no video, no picture — four small paths and
+   two animations. She is decoration, so she says nothing to a screen reader and
+   holds still for anyone who asks for less motion.
+   ========================================================================== */
+.nav-butterfly { display: inline-block; width: 26px; height: 22px; margin-left: 10px; animation: flutterBob 3.4s ease-in-out infinite; }
+.nav-butterfly svg { display: block; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 3px 8px rgba(90,50,60,.28)); }
+.bf-wing { transform-origin: 13px 11px; }
+.bf-wing-left { animation: wingLeft .42s ease-in-out infinite alternate; }
+.bf-wing-right { animation: wingRight .42s ease-in-out infinite alternate; }
+.bf-body { transform-origin: 13px 11px; }
+@keyframes wingLeft { from { transform: scaleX(1); } to { transform: scaleX(.34); } }
+@keyframes wingRight { from { transform: scaleX(-1); } to { transform: scaleX(-.34); } }
+@keyframes flutterBob {
+  0%, 100% { transform: translate(0, 0) rotate(-3deg); }
+  50% { transform: translate(2px, -6px) rotate(4deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-butterfly, .bf-wing-left, .bf-wing-right { animation: none; }
+  .bf-wing-right { transform: scaleX(-1); }
 }

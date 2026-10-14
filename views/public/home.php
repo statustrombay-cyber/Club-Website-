@@ -119,13 +119,12 @@ $clubWords = ['mind', 'body', 'connection', 'curiosity', 'growth', 'community', 
         and how connection changes the story.</p>
       <div class="psi-focus-note"><span></span><strong>slow down — look inward — stay curious</strong></div>
     </div>
-    <div class="psi-stage" role="img" aria-label="The Mindful Tattva logo at the centre of a turning wheel that carries four words around it: unconscious, subconscious, conscious, mind.">
+    <div class="psi-stage" role="img" aria-label="The Mindful Tattva logo at the centre of a turning wheel that carries three words around it: unconscious, subconscious, conscious.">
       <div class="psi-stage-glow" aria-hidden="true"></div>
       <div class="psi-quotes" aria-hidden="true">
         <span class="psi-quote psi-quote-one">unconscious</span>
         <span class="psi-quote psi-quote-two">subconscious</span>
         <span class="psi-quote psi-quote-three">conscious</span>
-        <span class="psi-quote psi-quote-four">mind</span>
       </div>
       <div class="psi-core">
         <img src="<?= e(mt_safe_image($site['logoImage'] ?? '') ?: '/assets/photos/mt-club-logo.jpg') ?>"
@@ -142,6 +141,8 @@ $clubWords = ['mind', 'body', 'connection', 'curiosity', 'growth', 'community', 
     </div>
   </div>
 </section>
+
+<?= mt_brand_band((string) ($site['clubName'] ?? 'Mindful Tattva')) ?>
 
 <section class="section details-section" id="details">
   <div class="container">
@@ -330,6 +331,8 @@ $clubWords = ['mind', 'body', 'connection', 'curiosity', 'growth', 'community', 
     </div>
   </div>
 </section>
+
+<?= mt_brand_band((string) ($site['clubName'] ?? 'Mindful Tattva')) ?>
 
 <section class="section section-plum" id="contact">
   <div class="container contact-grid">

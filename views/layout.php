@@ -28,6 +28,9 @@ $phone     = trim((string) ($site['clubPhone'] ?? ''));
 $address   = trim((string) ($site['address'] ?? ''));
 $mapUrl    = 'https://www.google.com/maps/search/?api=1&query=' . urlencode($address !== '' ? $address : (string) ($site['universityName'] ?? ''));
 $banner    = mt_featured_event($db);
+/* The welcome screen belongs to the front page and nowhere else: a student
+   opening a pass or a check page must never wait for decoration. */
+$splash    = in_array($route, ['home', 'index.php'], true);
 
 $nav = [
     ['/#about', 'About', ''],
@@ -64,6 +67,21 @@ $nav = [
   <link rel="stylesheet" href="/assets/app.css">
 </head>
 <body class="<?= e($bodyClass) ?>">
+
+  <?php /* The club's own front door. The name sweeps in from the right, settles,
+           drifts slowly to the left, and the solid screen lifts away to reveal
+           the site. It is pure decoration: it is skipped entirely for anyone who
+           asks for less motion, it goes away on its own without JavaScript, and
+           any tap or key press skips it straight away. It belongs to the front
+           page only — never to the club area, a pass or a check page. */ ?>
+  <?php if ($splash): ?>
+    <div class="splash" id="splash" aria-hidden="true">
+      <div class="splash-copy">
+        <span class="splash-welcome">Welcome to Club</span>
+        <span class="splash-name"><?= e($clubName) ?></span>
+      </div>
+    </div>
+  <?php endif; ?>
 
   <div class="bubble-field" aria-hidden="true">
     <span class="bubble bubble-a"></span><span class="bubble bubble-b"></span><span class="bubble bubble-c"></span>
@@ -124,6 +142,27 @@ $nav = [
         <a class="brand" href="/" aria-label="<?= e($clubName) ?> home">
           <span class="brand-mark" id="brandMark"><img src="<?= e($logo) ?>" alt="<?= e($clubName) ?> logo" loading="lazy" decoding="async"></span>
           <span class="brand-name" id="brandName"><?= e($clubName) ?></span>
+          <span class="nav-butterfly" aria-hidden="true">
+            <svg viewBox="0 0 26 22" focusable="false">
+              <defs>
+                <linearGradient id="bfWingA" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#f0c176"/><stop offset="1" stop-color="#d98d72"/>
+                </linearGradient>
+                <linearGradient id="bfWingB" x1="0" y1="1" x2="1" y2="0">
+                  <stop offset="0" stop-color="#d98d72"/><stop offset="1" stop-color="#e8a86a"/>
+                </linearGradient>
+              </defs>
+              <g class="bf-wing bf-wing-left">
+                <path d="M13 11C8.6 2.2 2.2 1.2 1.5 7.1.9 12 6.3 14 13 11Z" fill="url(#bfWingA)"/>
+                <path d="M13 12C8.6 13.8 4.4 16.6 6.6 19.8 8.5 22.4 12.3 18 13 12Z" fill="url(#bfWingB)"/>
+              </g>
+              <g class="bf-wing bf-wing-right">
+                <path d="M13 11C8.6 2.2 2.2 1.2 1.5 7.1.9 12 6.3 14 13 11Z" fill="url(#bfWingA)"/>
+                <path d="M13 12C8.6 13.8 4.4 16.6 6.6 19.8 8.5 22.4 12.3 18 13 12Z" fill="url(#bfWingB)"/>
+              </g>
+              <path class="bf-body" d="M13 5.6c1.2 2 1.2 9 0 11-1.2-2-1.2-9 0-11Z" fill="#4c3247"/>
+            </svg>
+          </span>
         </a>
         <button class="menu-button" id="menuButton" aria-label="Open menu" aria-expanded="false" aria-controls="navLinks">☰</button>
         <nav class="nav-links" id="navLinks" aria-label="Main">

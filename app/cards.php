@@ -116,6 +116,34 @@ function mt_event_card(array $event, ?array $registration = null): string
     return (string) ob_get_clean();
 }
 
+/**
+ * The club's name, running across the page between two blocks.
+ *
+ * Two identical halves in one track, each word carrying its own trailing space
+ * instead of a gap, so the run loops without a seam. Decoration only: no link,
+ * nothing for a screen reader, and it holds still for anyone who asks for less
+ * motion (the stylesheet decides that).
+ */
+function mt_brand_band(string $name): string
+{
+    $name = trim($name);
+    if ($name === '') {
+        return '';
+    }
+    ob_start(); ?>
+  <div class="brand-band" aria-hidden="true">
+    <i></i>
+    <div class="brand-band-track">
+      <?php for ($copy = 0; $copy < 2; $copy++): ?>
+        <?php for ($i = 0; $i < 4; $i++): ?><span><?= e($name) ?></span><?php endfor; ?>
+      <?php endfor; ?>
+    </div>
+    <i></i>
+  </div>
+    <?php
+    return (string) ob_get_clean();
+}
+
 /** A core team card on the home page. */
 function mt_team_card(array $member): string
 {
