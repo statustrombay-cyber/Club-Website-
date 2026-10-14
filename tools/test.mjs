@@ -805,6 +805,16 @@ const upload = await sendJson('/api/upload', 'POST', {
 ok('a base64 upload is stored', upload.status === 201, String(upload.body).slice(0, 200));
 const badUpload = await sendJson('/api/upload', 'POST', { dataUrl: 'data:text/html;base64,PHNjcmlwdD4=', kind: 'image' }, AUTH);
 ok('non-image uploads are refused', badUpload.status === 415 || badUpload.status === 400, 'status ' + badUpload.status);
+const uploadedUrl = upload.status === 201 ? (JSON.parse(String(upload.body)).url || '') : '';
+/* The harness hands static files to PHP, so whether the host serves an upload
+   is checked over real HTTP in tools/deploy-check.mjs; here the store's own
+   answer is what matters. */
+ok('an uploaded picture is stored under uploads/YYYY/MM with its own name',
+  /^\/uploads\/\d{4}\/\d{2}\/[a-z0-9-]+\.(png|jpe?g|webp|gif)$/i.test(uploadedUrl)
+  && Number(JSON.parse(String(upload.body)).bytes) > 0,
+  uploadedUrl || 'no url');
+ok('an uploaded picture is never named after the visitor', !/upload|pasted|data/i.test(uploadedUrl.split('/').pop() || 'x'), uploadedUrl);
+ok('the CSV opens straight in a spreadsheet', Buffer.from(String(csv.body), 'utf8').slice(0, 3).toString('hex') === 'efbbbf');
 const wrongPassword = await sendJson('/api/password', 'POST', { current: 'nope', password: 'newpass123' }, AUTH);
 ok('password change needs the current password', wrongPassword.status === 403, 'status ' + wrongPassword.status);
 const changePassword = await sendJson('/api/password', 'POST', { current: 'Csmu@MT', password: 'Csmu@MT2' }, AUTH);
@@ -1310,6 +1320,123 @@ await php.writeFile('/site/assets/app.css', cssBackup);
 await php.writeFile('/site/assets/app.js', jsBackup);
 const restored = await get('/');
 ok('the real stylesheet comes back once the files are restored', !/id="mt-baseline"/.test(restored.body) && /bubble-field/.test(restored.body));
+
+console.log('\n— round 37: the published gate —');
+/* The club's complaint: an event made from the dashboard did not show on the
+   main page or the calendar. Two causes, both settled here — a new event now
+   arrives shown, and the tick is the one gate on every public surface. */
+const round37Css = fs.readFileSync(path.join(ROOT, 'assets/app.css'), 'utf8');
+const manageJs = fs.readFileSync(path.join(ROOT, 'assets/manage.js'), 'utf8');
+
+ok('a new event from the dashboard arrives shown on the website',
+  /published: true,\s*order:/.test(manageJs) && !/published: false,\s*order:/.test(manageJs));
+ok('the dashboard says plainly when an event is hidden from the website',
+  manageJs.includes('Hidden from the website') && manageJs.includes('function refreshHiddenFlag')
+  && manageCss.includes('.hidden-flag'));
+ok('the tick explains itself', /Show on the home page and the calendar/.test(manageJs)
+  && /untick this to keep an event private/.test(manageJs));
+ok('the register buttons and the calendar only offer shown events',
+  /function mt_open_events[\s\S]{0,700}empty\(\$event\['published'\]\)/.test(fs.readFileSync(path.join(ROOT, 'app/events.php'), 'utf8')));
+
+const hiddenEvent = await sendJson('/api/events', 'POST', {
+  title: 'Round37 Hidden Draft', kicker: 'Club gathering', description: 'kept back',
+  month: 12, day: 24, year: 2026, time: '3:00 PM', location: 'CSMU campus',
+  registrationOpen: true, windowMode: 'date', closesAt: '', capacity: 0, published: false, order: 970,
+}, FRESH);
+/* The harness hands back raw bodies, so every answer is parsed. */
+const hiddenItem = asJson(hiddenEvent).item || {};
+const hiddenId = hiddenItem.id || '';
+ok('the dashboard can hold an event back', hiddenEvent.status === 201 && Boolean(hiddenId) && hiddenItem.published === false,
+  hiddenEvent.status + ' ' + JSON.stringify(asJson(hiddenEvent)).slice(0, 200));
+const hiddenHome = await get('/');
+const hiddenCalendar = await get('/calendar');
+ok('a held-back event is nowhere on the main page',
+  !hiddenHome.body.includes('Round37 Hidden Draft') && !hiddenHome.body.includes('event=' + hiddenId));
+ok('a held-back event is nowhere on the calendar',
+  !hiddenCalendar.body.includes('Round37 Hidden Draft') && !hiddenCalendar.body.includes('event=' + hiddenId));
+const hiddenRegister = await get('/register?event=' + hiddenId);
+ok('a held-back event cannot be reached by its own link',
+  hiddenRegister.status !== 500 && !hiddenRegister.body.includes('Round37 Hidden Draft') && !hiddenRegister.body.includes('value="' + hiddenId),
+  hiddenRegister.status + ' mentions:' + hiddenRegister.body.includes('Round37 Hidden Draft'));
+const hiddenApi = await sendJson('/api/registrations', 'POST', {
+  eventId: hiddenId, name: 'Round Thirty Seven', email: 'round37@example.com', phone: '9876500001',
+}, { session: {} });
+ok('nobody can register for a held-back event', hiddenApi.status === 404);
+
+const shown = await request({ uri: '/api/events/' + hiddenId, method: 'PUT', json: { published: true }, post: { published: true }, ...FRESH });
+ok('ticking it puts it on the website', shown.status === 200 && (asJson(shown).item || {}).published === true,
+  shown.status + ' ' + JSON.stringify(asJson(shown)).slice(0, 200));
+const shownHome = await get('/');
+const shownCalendar = await get('/calendar');
+ok('the event now stands on the main page', shownHome.body.includes('Round37 Hidden Draft'));
+ok('the event now stands on the calendar', shownCalendar.body.includes('Round37 Hidden Draft'));
+const shownRegister = await get('/register?event=' + hiddenId);
+ok('and its register link opens', shownRegister.status === 200 && shownRegister.body.includes('Round37 Hidden Draft'),
+  shownRegister.status);
+
+const held = await request({ uri: '/api/events/' + hiddenId, method: 'PUT', json: { published: false }, post: { published: false }, ...FRESH });
+const heldHome = await get('/');
+const heldCalendar = await get('/calendar');
+ok('unticking it takes it back off both', held.status === 200
+  && !heldHome.body.includes('Round37 Hidden Draft') && !heldCalendar.body.includes('Round37 Hidden Draft'));
+await request({ uri: '/api/events/' + hiddenId, method: 'DELETE', ...FRESH });
+ok('the probe event is gone', !(await get('/')).body.includes('Round37 Hidden Draft'));
+
+console.log('\n— round 37: the event tile has room to breathe —');
+ok('the lines inside an event tile keep their own space',
+  /\.event-body \{[^}]*flex-direction: column; gap: 12px/.test(round37Css));
+ok('the tiles themselves are separated', /\.event-grid \{[^}]*gap: 22px/.test(round37Css));
+ok('no line inside a tile is jammed against the one above it',
+  /\.event-body h3 \{ margin: 0;/.test(round37Css) && /\.event-window \{ display: block; margin-top: 0;/.test(round37Css));
+ok('a team card has room too', /\.team-card \{[^}]*gap: 12px/.test(round37Css));
+ok('the register tiles under the events are separated', /\.register-list \{ display: grid; gap: 12px/.test(round37Css));
+
+console.log('\n— round 37: the Mind section —');
+const round37Home = fs.readFileSync(path.join(ROOT, 'views/public/home.php'), 'utf8');
+const mindStart = round37Home.indexOf('ps yche-section'.replace(' ', ''));
+const mindSection = mindStart === -1 ? '' : round37Home.slice(mindStart, round37Home.indexOf('<section class="section details-section"'));
+ok('the club\'s turning section is back, named Mind', /class="section psyche-section" id="mind"/.test(round37Home)
+  && mindSection.includes('>Mind<'));
+ok('the club logo sits at the centre, not the psi sign',
+  mindSection.includes('psi-core-logo') && mindSection.includes("mt_safe_image($site['logoImage']")
+  && mindSection.includes("'/assets/photos/mt-club-logo.jpg'") && !mindSection.includes('Ψ'));
+const orbitLines = ['Notice what you feel.', 'Curiosity opens a door.', 'Connection changes the story.', 'There is depth beneath the surface.'];
+ok('the four sentences orbit the logo', orbitLines.every((line) => mindSection.includes(line)));
+ok('the sentences travel round the logo like planets',
+  /\.psi-quotes \{[^}]*animation: quoteSpin/.test(round37Css) && /\.psi-core \{[^}]*psiCoreFloat/.test(round37Css)
+  && /\.psi-stage-glow \{[^}]*psiPulse/.test(round37Css));
+ok('the stage is a square, so every sentence rides the same circle',
+  /\.psi-stage \{[^}]*aspect-ratio: 1 \/ 1/.test(round37Css));
+ok('every sentence is placed by its own centre on one ring',
+  (round37Css.match(/calc\(50% [+-] 33\.5%\)/g) || []).length === 4
+  && (round37Css.match(/transform: translate\(-50%, -50%\)/g) || []).length >= 4);
+ok('the stage is drawn to one set of proportions, not fixed pixels',
+  /\.psi-stage \{[^}]*width: min\(100%, 480px\)/.test(round37Css)
+  && /\.psi-core \{[^}]*width: 29%/.test(round37Css)
+  && /\.psi-quote \{[^}]*max-width: 29%/.test(round37Css)
+  && /\.psi-quote \{[\s\S]{0,600}?font-size: max\(\.7rem, 2\.88cqw\)/.test(round37Css));
+/* The drawing's arithmetic, taken from the stylesheet itself: a pill is at most
+   29% wide and three lines tall (2.88cqw of type, 1.7cqw of padding), and it
+   rides at 33.5% of the stage from the middle. The logo takes 29%. Whatever the
+   screen, the pill's nearest point stays clear of the logo. */
+{
+  const ring = Number((round37Css.match(/\.psi-quote-one\s*\{ top: calc\(50% - ([\d.]+)%\)/) || [])[1]);
+  const pillHalf = Number((round37Css.match(/\.psi-quote \{[\s\S]{0,600}?max-width: ([\d.]+)%/) || [])[1]) / 2;
+  const coreHalf = Number((round37Css.match(/\.psi-core \{[\s\S]{0,500}?width: ([\d.]+)%/) || [])[1]) / 2;
+  const tallPill = 3 * 2.88 * 1.15 + 2 * 1.7;
+  const reach = Math.hypot(pillHalf, tallPill / 2);
+  ok('no sentence can ever reach the logo', ring - reach - coreHalf >= 2,
+    'clearance ' + (ring - reach - coreHalf).toFixed(1) + '% of the stage');
+  ok('and none of them leaves the stage', ring + reach <= 50, 'outer edge ' + (ring + reach).toFixed(1) + '%');
+}
+ok('the four sentences are readable in place when motion is off',
+  /prefers-reduced-motion: reduce\)[\s\S]{0,140}\.psi-quotes[\s\S]{0,90}animation: none/.test(round37Css));
+ok('the Mind section keeps the club\'s own copy', mindSection.includes('Every mind has more than one layer.')
+  && mindSection.includes('slow down — look inward — stay curious'));
+ok('the Mind section keeps its own cards', (mindSection.match(/class="psyche-card /g) || []).length === 3);
+const mindPage = await get('/');
+ok('the Mind section renders whole on the live page',
+  mindPage.body.includes('psi-stage') && mindPage.body.includes('psi-core-logo') && mindPage.body.includes('quoteSpin'));
 
 console.log('\n— clean output check —');
 for (const route of ['/', '/gallery', '/calendar', '/members', '/register?event=event-welcome-circle', '/dashboard', '/does-not-exist']) {

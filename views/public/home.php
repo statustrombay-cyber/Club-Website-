@@ -103,20 +103,41 @@ $clubWords = ['mind', 'body', 'connection', 'curiosity', 'growth', 'community', 
   </div>
 </section>
 
-<section class="section psyche-section" id="psychology">
+<section class="section psyche-section" id="mind">
+  <?php /* The club's own stage, back as they remembered it: their logo at the
+           centre — no psi sign — with four sentences orbiting it like planets,
+           the way the very first home page had them turning around the crest.
+           Everything here is decoration except the words, which are real text:
+           the pills are read by a screen reader once, the turning is CSS only,
+           and it stops for anyone who asks for less motion. */ ?>
+  <span id="psychology" aria-hidden="true"></span>
   <div class="container psyche-grid">
     <div class="psyche-copy">
-      <div class="psyche-psi" aria-label="Psi symbol for psychology">Ψ <span>psychology</span></div>
-      <div class="eyebrow">The psychology lens</div>
-      <h2 class="display">A club for the lives we are actually living.</h2>
-      <p>Psychology is not only something we study. It is how we notice our thoughts, hold space for another person, move through change and build a life that feels more like our own.</p>
-      <div class="curiosity-loop">
-        <i class="loop-orbit loop-orbit-a" aria-hidden="true"></i>
-        <i class="loop-orbit loop-orbit-a2" aria-hidden="true"></i>
-        <i class="loop-orbit loop-orbit-b" aria-hidden="true"></i>
-        <b>curiosity<br>→ connection<br>→ growth</b>
+      <div class="eyebrow">Mind</div>
+      <h2 class="display">Every mind has more than one layer.</h2>
+      <p>Mindful Tattva makes space for the questions beneath the surface: what we notice, what we carry
+        and how connection changes the story.</p>
+      <div class="psi-focus-note"><span></span><strong>slow down — look inward — stay curious</strong></div>
+    </div>
+    <div class="psi-stage" role="img" aria-label="The Mindful Tattva logo at the centre of four thoughts that turn around it: Notice what you feel. Curiosity opens a door. Connection changes the story. There is depth beneath the surface.">
+      <div class="psi-stage-glow" aria-hidden="true"></div>
+      <div class="psi-quotes" aria-hidden="true">
+        <span class="psi-quote psi-quote-one">Notice what you feel.</span>
+        <span class="psi-quote psi-quote-two">Curiosity opens a door.</span>
+        <span class="psi-quote psi-quote-three">Connection changes the story.</span>
+        <span class="psi-quote psi-quote-four">There is depth beneath the surface.</span>
+      </div>
+      <div class="psi-core">
+        <span class="psi-core-logo">
+          <img src="<?= e(mt_safe_image($site['logoImage'] ?? '') ?: '/assets/photos/mt-club-logo.jpg') ?>"
+               alt="<?= e((string) ($site['clubName'] ?? 'Mindful Tattva')) ?> logo" loading="lazy" decoding="async">
+        </span>
+        <small>mind in motion</small>
       </div>
     </div>
+  </div>
+
+  <div class="container">
     <div class="psyche-cards">
       <article class="psyche-card psyche-card-one"><span class="psyche-index">01</span><div class="psyche-icon">◌</div><h3>Notice</h3><p>Pause long enough to meet your inner world with a little more honesty and kindness.</p></article>
       <article class="psyche-card psyche-card-two"><span class="psyche-index">02</span><div class="psyche-icon">◒</div><h3>Connect</h3><p>Turn conversations into bridges—between ideas, people and the many parts of ourselves.</p></article>

@@ -113,6 +113,12 @@
 /* What happened, said on the card itself: Saving… then the time it saved.
    The line holds its space so the buttons never jump while it changes. */
 .save-state { min-width: 0; color: #4a6242; font-size: .72rem; font-weight: 700; }
+/* An event kept off the website says so on its card, in the club's own colours. */
+.hidden-flag {
+  display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 999px;
+  background: rgba(215,162,70,.22); color: #7c5714; font-size: .68rem; font-weight: 800; letter-spacing: .04em;
+}
+.hidden-flag:before { content: '◌'; font-size: .8rem; }
 .save-state.is-error { color: #a0431f; }
 .editor-card { transition: box-shadow .3s ease, border-color .3s ease; }
 .editor-card.is-saved { border-color: rgba(74,98,66,.5); box-shadow: 0 0 0 3px rgba(74,98,66,.12); }

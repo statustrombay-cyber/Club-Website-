@@ -341,6 +341,26 @@
     return type === 'team' ? 'Member' : 'Photo';
   }
 
+  /* Events (and only events) can be kept off the website while the club works
+     on them: the card says so plainly, so nobody has to wonder why an event is
+     not showing up on the main page or the calendar. */
+  function refreshHiddenFlag(card, item) {
+    if (!card || card.dataset.type !== 'events') return;
+    const actions = $('.row-actions', card);
+    if (!actions) return;
+    const stale = $('.hidden-flag', actions);
+    const hidden = (item || {}).published !== true;
+    if (hidden && !stale) {
+      const flag = document.createElement('span');
+      flag.className = 'hidden-flag';
+      flag.title = 'This event is not on the website yet';
+      flag.textContent = 'Hidden from the website';
+      actions.insertBefore(flag, actions.firstChild);
+    } else if (!hidden && stale) {
+      stale.remove();
+    }
+  }
+
   function refreshCardLabel(card, item) {
     const node = card ? $('[data-card-label]', card) : null;
     if (!node) return;
@@ -354,6 +374,9 @@
         <div class="editor-card-head">
           <span data-card-label>${esc(label)} ${String(index + 1).padStart(2, '0')}</span>
           <div class="row-actions">
+            ${type === 'events' && item && item.published !== true
+              ? '<span class="hidden-flag" title="This event is not on the website yet">Hidden from the website</span>'
+              : ''}
             <span class="save-state" data-save-state aria-live="polite"></span>
             <button class="btn-sm primary" type="button" data-save-item>Save</button>
             <button class="btn-sm danger" type="button" data-delete-item>Delete</button>
@@ -435,7 +458,8 @@
           </label>
           <label class="span-2"><span><input type="checkbox" data-field="registrationOpen" ${item.registrationOpen === false ? '' : 'checked'}> Registration is open
             <span class="muted" style="font-weight:400">— with no closing date above, it stays open. Nothing closes on its own.</span></span></label>
-          <label class="span-2"><span><input type="checkbox" data-field="published" ${item.published === true ? 'checked' : ''}> Publish on the home page and the calendar</span></label>
+          <label class="span-2"><span><input type="checkbox" data-field="published" ${item.published === true ? 'checked' : ''}> Show on the home page and the calendar
+            <span class="muted" style="font-weight:400">— untick this to keep an event private while you prepare it. On the website it appears the moment you tick it and press Save.</span></span></label>
         </div>
         ${uploadField('image', 'event photo', item.image)}`);
     }).join('') || '<div class="editor-card"><h3>No events yet.</h3><p class="muted">Use “+ Add event” to plan the next activity.</p></div>';
@@ -518,6 +542,7 @@
       const index = list.findIndex((item) => item.id === id);
       if (index >= 0 && result.item) list[index] = result.item;
       refreshCardLabel(card, result.item || body);
+      refreshHiddenFlag(card, result.item || body);
       setBusy(card, true, 'Saved ✓');
       setState(card, 'Saved ✓ at ' + stamp() + ' — live on the website', 'ok');
       card.classList.add('is-saved');
@@ -562,7 +587,7 @@
        it is given a working title so the club can see it in the list at once. */
     const defaults = {
       team: { name: 'New member', role: 'Core team', group: 'management', phone: '', bio: '', image: '', showOnHome: true, order: (state.team.length + 1) * 10 },
-      events: { title: 'New Mindful Tattva event', month: 1, day: '', year: '', time: 'Time to be announced', location: 'CSMU campus', kicker: 'Mindful Tattva', description: '', image: '', brochureUrl: '', fee: 0, upiId: '', upiName: 'Mindful Tattva', registrationOpen: true, windowMode: 'date', closesAt: '', capacity: 0, published: false, order: (state.events.length + 1) * 10 },
+      events: { title: 'New Mindful Tattva event', month: 1, day: '', year: '', time: 'Time to be announced', location: 'CSMU campus', kicker: 'Mindful Tattva', description: '', image: '', brochureUrl: '', fee: 0, upiId: '', upiName: 'Mindful Tattva', registrationOpen: true, windowMode: 'date', closesAt: '', capacity: 0, published: true, order: (state.events.length + 1) * 10 },
       gallery: { caption: 'New photo', alt: '', eventId: '', event: '', date: '', image: '', order: (state.gallery.length + 1) * 10 },
     };
     const addButton = { team: '#addTeam', events: '#addEvent', gallery: '#addPhoto' }[type];

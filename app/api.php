@@ -571,7 +571,7 @@ function mt_api_registration_create(): void
     $db = mt_db();
     $eventId = trim((string) ($input['eventId'] ?? ''));
     $event = $eventId !== '' ? mt_event_find($db, $eventId) : null;
-    if ($event === null) {
+    if ($event === null || empty($event['published'])) {
         mt_fail(404, 'That event is no longer listed.');
         return;
     }

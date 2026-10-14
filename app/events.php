@@ -255,11 +255,21 @@ function mt_event_registration_state(array $db, array $event): array
     return ['open' => true, 'reason' => 'open', 'label' => $window['label']];
 }
 
-/** The events a visitor can still register for, soonest first. */
+/**
+ * The events a visitor can still register for, soonest first.
+ *
+ * An event the club has not shown on the website is not an event a visitor can
+ * find or register for: the tick in the dashboard is the one gate, and it holds
+ * everywhere — the event tiles, the calendar, the register buttons and the
+ * register form's own list.
+ */
 function mt_open_events(array $db): array
 {
     $open = [];
     foreach ($db['events'] as $event) {
+        if (empty($event['published'])) {
+            continue;
+        }
         $state = mt_event_registration_state($db, $event);
         if ($state['open']) {
             $event['_window'] = $state;

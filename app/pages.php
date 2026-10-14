@@ -303,6 +303,12 @@ function mt_public_register(): void
     $db = mt_db();
     $eventId = trim((string) ($_GET['event'] ?? ''));
     $event = $eventId !== '' ? mt_event_find($db, $eventId) : null;
+    /* An event the club has not shown on the website cannot be reached by its
+       link either: /register?event=... behaves exactly as if the event were not
+       there, so a private draft stays private. */
+    if ($event !== null && empty($event['published'])) {
+        $event = null;
+    }
 
     if ($event === null) {
         $open = mt_open_events($db);

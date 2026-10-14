@@ -182,6 +182,15 @@ const uploaded = await req('/api/upload', { method: 'POST', csrf, form: uploadFo
 const imagePath = uploaded.body && (uploaded.body.path || uploaded.body.url);
 check('a photo uploads from the club area', (uploaded.status === 200 || uploaded.status === 201) && Boolean(imagePath), 'status ' + uploaded.status + ' ' + JSON.stringify(uploaded.body).slice(0, 90));
 
+/* An upload is only useful if the browser can read it back: the host must
+   serve /uploads/... as a picture, not as a script or a 404. */
+if (imagePath) {
+  const served = await req(imagePath);
+  check('the uploaded photo is served back as a picture',
+    served.status === 200 && /^image\//.test(String(served.type || '')),
+    'status ' + served.status + ' type ' + served.type);
+}
+
 const photo = await req('/api/gallery', {
   method: 'POST', csrf,
   json: { image: imagePath, caption: 'Deploy check photo ' + stamp, eventId, order: 1, visible: true },
