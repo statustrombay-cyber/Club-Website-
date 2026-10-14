@@ -108,15 +108,21 @@ $email = trim((string) ($site['email'] ?? ''));
 
             <div class="form-grid">
               <label class="field-span-2">Full name
-                <input name="name" required placeholder="Your name" autocomplete="off" value="<?= e((string) ($values['name'] ?? '')) ?>">
+                <input name="name" required placeholder="Your name" autocomplete="off" value="<?= e((string) ($values['name'] ?? '')) ?>"
+                       data-rule="name" pattern="[A-Za-z][A-Za-z .'\-]{1,119}"
+                       title="Letters only, please — no numbers, no symbols.">
               </label>
               <?php if (!empty($errors['name'])): ?><div class="field-error field-span-2"><?= e($errors['name']) ?></div><?php endif; ?>
 
               <label>Email address
-                <input name="email" type="email" required placeholder="you@example.com" autocomplete="off" inputmode="email" value="<?= e((string) ($values['email'] ?? '')) ?>">
+                <input name="email" type="email" required placeholder="you@example.com" autocomplete="off" inputmode="email"
+                       data-rule="email" value="<?= e((string) ($values['email'] ?? '')) ?>"
+                       title="A full address we can write to, like you@example.com">
               </label>
               <label>Phone number
-                <input name="phone" type="tel" required placeholder="+91 …" autocomplete="off" inputmode="tel" value="<?= e((string) ($values['phone'] ?? '')) ?>">
+                <input name="phone" type="tel" required placeholder="98765 43210" autocomplete="off" inputmode="numeric"
+                       data-rule="phone" maxlength="16" value="<?= e((string) ($values['phone'] ?? '')) ?>"
+                       title="A 10-digit Indian mobile number, starting 6, 7, 8 or 9.">
               </label>
               <label>Course / programme
                 <input name="course" placeholder="Your programme" autocomplete="off" value="<?= e((string) ($values['course'] ?? '')) ?>">
@@ -133,6 +139,8 @@ $email = trim((string) ($site['email'] ?? ''));
               <?= $paid ? 'Send and continue to payment ↗' : 'Send and get my pass ↗' ?>
             </button>
             <div class="form-status" aria-live="polite"></div>
+            <p class="field-hint">Please use your own 10-digit mobile number and an email address you can open — the
+              pass and the club's messages go there.</p>
 
             <div class="terms-note">
               <strong>Terms &amp; conditions</strong>

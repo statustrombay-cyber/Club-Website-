@@ -333,12 +333,28 @@
     return numberedEventName(item);
   }
 
+  /* The small line at the top of a card, built the same way every time so a
+     save can refresh it in place — without re-rendering the panel and throwing
+     away what the club is still typing in another card. */
+  function labelFor(type, item, index) {
+    if (type === 'events') return numberedLabel(item || {});
+    return type === 'team' ? 'Member' : 'Photo';
+  }
+
+  function refreshCardLabel(card, item) {
+    const node = card ? $('[data-card-label]', card) : null;
+    if (!node) return;
+    const index = Number(card.dataset.index || 0);
+    node.textContent = labelFor(card.dataset.type, item, index) + ' ' + String(index + 1).padStart(2, '0');
+  }
+
   function cardShell(type, id, label, index, body) {
     return `
-      <article class="editor-card" data-type="${type}" data-id="${esc(id)}">
+      <article class="editor-card" data-type="${type}" data-id="${esc(id)}" data-index="${index}">
         <div class="editor-card-head">
-          <span>${esc(label)} ${String(index + 1).padStart(2, '0')}</span>
+          <span data-card-label>${esc(label)} ${String(index + 1).padStart(2, '0')}</span>
           <div class="row-actions">
+            <span class="save-state" data-save-state aria-live="polite"></span>
             <button class="btn-sm primary" type="button" data-save-item>Save</button>
             <button class="btn-sm danger" type="button" data-delete-item>Delete</button>
           </div>
@@ -414,19 +430,11 @@
             <input data-field="upiId" value="${esc(item.upiId || '')}" placeholder="clubname@upi">
           </label>
           <label>UPI payee name<input data-field="upiName" value="${esc(item.upiName || '')}" placeholder="Mindful Tattva"></label>
-          <label>Registration window
-            <select data-field="windowMode">
-              <option value="date" ${(item.windowMode || 'date') === 'date' ? 'selected' : ''}>Until a date &amp; time</option>
-              <option value="hours" ${item.windowMode === 'hours' ? 'selected' : ''}>A number of hours after opening</option>
-            </select>
-          </label>
-          <label>Closes at <span class="muted" style="font-weight:400">(used by “until a date”)</span>
+          <label class="span-2">Closes at <span class="muted" style="font-weight:400">(leave it empty and registration never closes by itself)</span>
             <input data-field="closesAt" type="datetime-local" value="${esc(item.closesAt || '')}">
           </label>
-          <label>Open for how many hours <span class="muted" style="font-weight:400">(1–24)</span>
-            <input data-field="openHours" type="number" min="1" max="24" value="${esc(item.openHours ?? 24)}">
-          </label>
-          <label class="span-2"><span><input type="checkbox" data-field="registrationOpen" ${item.registrationOpen ? 'checked' : ''}> Registration is open (closes by itself at the time above)</span></label>
+          <label class="span-2"><span><input type="checkbox" data-field="registrationOpen" ${item.registrationOpen === false ? '' : 'checked'}> Registration is open
+            <span class="muted" style="font-weight:400">— with no closing date above, it stays open. Nothing closes on its own.</span></span></label>
           <label class="span-2"><span><input type="checkbox" data-field="published" ${item.published === true ? 'checked' : ''}> Publish on the home page and the calendar</span></label>
         </div>
         ${uploadField('image', 'event photo', item.image)}`);
@@ -472,19 +480,56 @@
     return body;
   }
 
+  /* Saving, deleting and adding all say what is happening, on the card as well
+     as in the toast: the button reads Saving… while the club waits, then Saved ✓
+     with the time beside it, and the card holds a quiet green edge for a moment.
+     The panel is never re-rendered under the club's hands, so an edit in another
+     card is never thrown away. */
+  function setBusy(card, busy, label) {
+    if (!card) return;
+    $$('.btn-sm', card).forEach((button) => { button.disabled = Boolean(busy); });
+    const save = $('[data-save-item]', card);
+    if (save && label) save.textContent = label;
+  }
+
+  function setState(card, message, kind) {
+    const node = card ? $('[data-save-state]', card) : null;
+    if (!node) return;
+    node.textContent = message || '';
+    node.classList.toggle('is-ok', kind === 'ok');
+    node.classList.toggle('is-error', kind === 'error');
+  }
+
+  function stamp() {
+    const now = new Date();
+    return String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+  }
+
   async function saveItem(card) {
     if (!card) return;
     const type = card.dataset.type;
     const id = card.dataset.id;
     const body = readItem(card);
+    setBusy(card, true, 'Saving…');
+    setState(card, 'Saving…', '');
     try {
       const result = await api(`/api/${type}/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(body) });
       const list = state[type] || [];
       const index = list.findIndex((item) => item.id === id);
       if (index >= 0 && result.item) list[index] = result.item;
-      toast('Saved ✓ and live on the website');
-      renderAll();
+      refreshCardLabel(card, result.item || body);
+      setBusy(card, true, 'Saved ✓');
+      setState(card, 'Saved ✓ at ' + stamp() + ' — live on the website', 'ok');
+      card.classList.add('is-saved');
+      toast('Saved ✓ — the website is updated');
+      window.setTimeout(() => {
+        setBusy(card, false, 'Save');
+        card.classList.remove('is-saved');
+      }, 2600);
+      renderOverview();
     } catch (error) {
+      setBusy(card, false, 'Save');
+      setState(card, error.message, 'error');
       toast(error.message, true);
     }
   }
@@ -494,33 +539,61 @@
     const type = card.dataset.type;
     const id = card.dataset.id;
     if (!window.confirm('Delete this item? This cannot be undone (a backup is kept in Backups & settings).')) return;
+    setBusy(card, true, 'Deleting…');
+    setState(card, 'Deleting…', '');
     try {
       await api(`/api/${type}/${encodeURIComponent(id)}`, { method: 'DELETE' });
       state[type] = (state[type] || []).filter((item) => item.id !== id);
-      toast('Deleted');
-      renderAll();
+      /* just this card leaves the page — nothing else is touched or redrawn */
+      card.classList.add('is-deleting');
+      window.setTimeout(() => { card.remove(); renderOverview(); }, 260);
+      toast('Deleted ✓');
     } catch (error) {
+      setBusy(card, false, 'Save');
+      setState(card, error.message, 'error');
       toast(error.message, true);
     }
   }
 
   async function addItem(type) {
+    /* A new item arrives with something written on it and ready to use: a new
+       event is open for registration the moment it is created (and only a
+       closing date & time will ever close it — nothing closes by itself), and
+       it is given a working title so the club can see it in the list at once. */
     const defaults = {
-      team: { name: '', role: 'Core team', group: 'management', phone: '', bio: '', image: '', showOnHome: true, order: (state.team.length + 1) * 10 },
-      events: { title: '', month: 1, day: '', year: '', time: 'Time to be announced', location: 'CSMU campus', kicker: 'Mindful Tattva', description: '', image: '', brochureUrl: '', fee: 0, upiId: '', upiName: 'Mindful Tattva', registrationOpen: false, windowMode: 'date', closesAt: '', openHours: 24, capacity: 0, published: false, order: (state.events.length + 1) * 10 },
-      gallery: { caption: '', alt: '', eventId: '', event: '', date: '', image: '', order: (state.gallery.length + 1) * 10 },
+      team: { name: 'New member', role: 'Core team', group: 'management', phone: '', bio: '', image: '', showOnHome: true, order: (state.team.length + 1) * 10 },
+      events: { title: 'New Mindful Tattva event', month: 1, day: '', year: '', time: 'Time to be announced', location: 'CSMU campus', kicker: 'Mindful Tattva', description: '', image: '', brochureUrl: '', fee: 0, upiId: '', upiName: 'Mindful Tattva', registrationOpen: true, windowMode: 'date', closesAt: '', capacity: 0, published: false, order: (state.events.length + 1) * 10 },
+      gallery: { caption: 'New photo', alt: '', eventId: '', event: '', date: '', image: '', order: (state.gallery.length + 1) * 10 },
     };
+    const addButton = { team: '#addTeam', events: '#addEvent', gallery: '#addPhoto' }[type];
+    const button = addButton ? $(addButton) : null;
+    const original = button ? button.textContent : '';
+    if (button) { button.disabled = true; button.textContent = 'Adding…'; }
     try {
       const created = await api(`/api/${type}`, { method: 'POST', body: JSON.stringify(defaults[type]) });
       const createdNumber = Number(created && created.item && created.item.number) || 0;
-      toast(type === 'events' && createdNumber > 0
-        ? 'Event ' + createdNumber + ' added — fill in the details and press Save'
-        : 'Added — now fill in the details and press Save');
       const fresh = await api(`/api/${type}`);
       state[type] = fresh.items || [];
       renderAll();
+      const newId = created && created.item ? created.item.id : '';
+      const card = newId ? $('[data-id="' + newId + '"]') : null;
+      if (card) {
+        /* the club is taken to what was just made, with the first field ready
+           to type in — no guessing whether anything happened */
+        if (typeof card.scrollIntoView === 'function') card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const first = $('[data-field="title"], [data-field="name"], [data-field="caption"]', card);
+        if (first && typeof first.focus === 'function') window.setTimeout(() => first.focus({ preventScroll: true }), 320);
+        card.classList.add('is-saved');
+        window.setTimeout(() => card.classList.remove('is-saved'), 2600);
+      }
+      toast(type === 'events' && createdNumber > 0
+        ? 'Event ' + createdNumber + ' added ✓ — fill in the details, then press Save'
+        : 'Added ✓ — fill in the details, then press Save');
+      renderOverview();
     } catch (error) {
       toast(error.message, true);
+    } finally {
+      if (button) { button.disabled = false; button.textContent = original; }
     }
   }
 

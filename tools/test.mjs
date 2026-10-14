@@ -318,7 +318,12 @@ const registered = await sendJson('/api/registrations', 'POST', {
 let registration = {};
 try { registration = JSON.parse(registered.body); } catch (error) { /* reported below */ }
 ok('a registration from the frontend is stored', registered.status === 201, registered.status + ' ' + String(registered.body).slice(0, 200));
-ok('the pass serial is issued in order', /^MTP-\d{4}-\d{4}$/.test(registration.serial || ''), String(registration.serial));
+/* The serial carries the date of the event it is for, so the club can sort a
+   stack of passes by eye (MTP-24OCT26-0001); an event with no date yet falls
+   back to the year, which is the shape the club already knows. */
+const SERIAL_SHAPE = /^MTP-(\d{2}[A-Z]{3}\d{2}|\d{4})-\d{4}$/;
+ok('the pass serial carries the event date and is issued in order',
+  /^MTP-24OCT26-0001$/.test(registration.serial || ''), String(registration.serial));
 ok('the response hands the student a private pass link', /^\/pass\/MT(-[2-9A-HJ-NP-Z]{5}){4}(\?new=1)?$/.test(registration.passUrl || ''), String(registration.passUrl));
 
 const passCode = registration.passUrl ? registration.passUrl.split('?')[0].replace('/pass/', '') : '';
@@ -381,19 +386,30 @@ ok('the PDF tells the holder to keep the pass safe and to bring it',
 ok('the pass shows the club crest and the university mark as real pictures',
   pdfText.includes('/DCTDecode') && /\/Predictor 15 \/Colors 3 \/BitsPerComponent 8 \/Columns \d+/.test(pdfText),
   'jpeg ' + (pdfText.match(/\/DCTDecode/g) || []).length + ', png ' + (pdfText.match(/\/Predictor 15/g) || []).length);
-ok('the university’s name and campus address stand at the top left',
-  pdfText.includes('Chhatrapati Shivaji Maharaj University') && pdfText.includes('Near Shedung Toll Plaza'));
+ok('no mark is printed on the header band, both marks sit at the foot',
+  (() => {
+    /* every picture is drawn as "q w 0 0 h x y cm /Name Do Q"; the header band
+       lives above y 618, so nothing may be placed up there any more */
+    const placements = [...pdfText.matchAll(/q ([\d.]+) 0 0 ([\d.]+) ([\d.]+) ([\d.]+) cm \/(\w+) Do Q/g)]
+      .map((m) => ({ y: Number(m[4]), h: Number(m[2]) }));
+    if (placements.length < 2) return false;
+    return placements.filter((p) => p.y + p.h > 618).length === 0
+      && placements.filter((p) => p.y + p.h <= 618).length >= 2;
+  })(),
+  'pictures: ' + JSON.stringify((pdfText.match(/cm \/(\w+) Do/g) || [])));
+ok('the campus address stands at the foot of the pass', pdfText.includes('Near Shedung Toll Plaza'));
 ok('the club’s own name is centred on the header, not pushed aside',
   (() => {
-    const name = /BT [\d.]+ [\d.]+ [\d.]+ rg \/F2 17\.00 Tf ([\d.]+) [\d.]+ Td \(Mindful Tattva\) Tj ET/.exec(pdfText);
+    const name = /BT [\d.]+ [\d.]+ [\d.]+ rg \/F2 19\.00 Tf ([\d.]+) [\d.]+ Td \(Mindful Tattva\) Tj ET/.exec(pdfText);
     const label = /BT [\d.]+ [\d.]+ [\d.]+ rg \/F2 8\.00 Tf ([\d.]+) [\d.]+ Td \(EVENT PASS\) Tj ET/.exec(pdfText);
     if (!name || !label) return false;
     const nameX = Number(name[1]);
     const labelX = Number(label[1]);
-    /* two strings of very different widths centre on one axis: their left edges
-       must sit within half a line of each other, and both well inside the page
-       (a left-aligned name would start at x = 66) */
-    return Math.abs(nameX - labelX) < 40 && nameX > 180 && nameX < 280;
+    /* Two strings of different widths centre on one axis, so their left edges
+       sit apart by design — but both must be in the middle of the page. The
+       measured header puts the name at 235 and the label at 277 on a 595.28pt
+       page; a left-aligned name would sit at x = 66. */
+    return Math.abs(nameX - labelX) < 60 && nameX > 200 && nameX < 280 && labelX > 250 && labelX < 305;
   })());
 ok('every line of the terms sits inside its own colour box',
   (() => {
@@ -407,6 +423,27 @@ ok('every line of the terms sits inside its own colour box',
       .filter((m) => Number(m[1]) < 9.2)
       .map((m) => Number(m[2]));
     return lines.length >= 6 && lines.every((y) => y > boxBottom + 3 && y < boxTop - 3);
+  })());
+ok('no line of the pass runs past the edge of the page or its box',
+  (() => {
+    /* The club saw the word "prior" land outside the terms box. The width table
+       here is the one the PDF itself measures with (Helvetica), so a line that
+       would overrun is caught before it is printed. */
+    const widths = { ' ': 278, 'i': 222, 'j': 222, 'l': 222, 'f': 278, 't': 278, 'r': 333, 'I': 278, '.': 278, ',': 278, '-': 333, 'm': 833, 'w': 722, 'M': 833, 'W': 944 };
+    const measure = (text, size) => [...text].reduce((sum, ch) => sum + (widths[ch] || 500), 0) / 1000 * size;
+    const ops = [...pdfText.matchAll(/BT [\d.]+ [\d.]+ [\d.]+ rg \/F\d ([\d.]+) Tf ([\d.]+) ([\d.]+) Td \(((?:[^()\\]|\\.)*)\) Tj ET/g)]
+      .map((m) => ({ size: Number(m[1]), x: Number(m[2]), text: m[4].replace(/\\([()\\])/g, '$1') }));
+    if (ops.length < 30) return false;
+    const termsBox = /0\.945 0\.933 0\.925 rg 70\.00 [\d.]+ 455\.28 [\d.]+ re/.exec(pdfText);
+    const boxRight = termsBox ? 70 + 455.28 : 547.28;
+    return ops.every((op) => {
+      const right = op.x + measure(op.text, op.size);
+      /* every line sits inside the printable page, and the small lines in the
+         terms area (x = 82) stay inside the colour box as well */
+      if (right > 595.28 - 20) return false;
+      if (op.x === 82 && op.size < 9.2 && right > boxRight - 8) return false;
+      return true;
+    });
   })());
 ok('the terms box never climbs up into the facts above it',
   (() => {
@@ -440,7 +477,7 @@ const paidEvent = await sendJson('/api/events', 'POST', {
   title: 'Stress-buster workshop', kicker: 'Workshop', month: 11, day: 14, year: 2026, time: '3:00 PM',
   location: 'CSMU campus · Room 204', description: 'A hands-on workshop.', published: true,
   fee: 150, upiId: 'mindfultattva@upi', upiName: 'Mindful Tattva', registrationOpen: true,
-  windowMode: 'hours', openHours: 24, capacity: 40,
+  closesAt: '', capacity: 40,
 }, AUTH);
 const paidEventId = paidEvent.status === 201 ? JSON.parse(paidEvent.body).item.id : '';
 ok('an event with a fee can be created from the dashboard', paidEvent.status === 201 && Boolean(paidEventId), String(paidEvent.body).slice(0, 200));
@@ -458,6 +495,36 @@ const paidRegistered = await sendJson('/api/registrations', 'POST', {
 const paidRegistration = JSON.parse(paidRegistered.body || '{}');
 ok('a registration for a paid event is accepted', paidRegistered.status === 201, paidRegistered.status + ' ' + String(paidRegistered.body).slice(0, 160));
 ok('the registration waits for the payment proof', paidRegistration.payment === 'pending', String(paidRegistration.payment));
+/* ---- what a registration will and will not accept ------------------------
+   The club asked for three things: a name of letters, an address that can
+   really receive mail, and a ten-digit Indian mobile number. */
+const reject = async (overrides) => sendJson('/api/registrations', 'POST', Object.assign({
+  eventId: paidEventId, name: 'Riya Sharma', email: 'riya@example.com', phone: '9876543210', csrf: paidCsrf,
+}, overrides), FORM);
+const badName = await reject({ name: 'Riya 123' });
+ok('a name with a number in it is refused', badName.status === 422 && /letters only/i.test(String(badName.body)), badName.status + ' ' + String(badName.body).slice(0, 120));
+/* markup is stripped on the way in before anything is judged, so the symbol
+   test uses symbols that survive that pass */
+const symbolName = await reject({ name: 'Riya @ 99' });
+ok('a name with symbols in it is refused', symbolName.status === 422, symbolName.status + ' ' + String(symbolName.body).slice(0, 120));
+const badEmail = await reject({ email: 'riya@@example' });
+ok('an address that could not receive mail is refused', badEmail.status === 422 && /email/i.test(String(badEmail.body)), badEmail.status + ' ' + String(badEmail.body).slice(0, 120));
+const dottedEmail = await reject({ email: 'riya..sharma@example.com' });
+ok('an address with a doubled dot is refused', dottedEmail.status === 422, dottedEmail.status + ' ' + String(dottedEmail.body).slice(0, 120));
+const shortPhone = await reject({ phone: '98765 4321' });
+ok('a phone number that is not ten digits is refused', shortPhone.status === 422 && /10-digit/i.test(String(shortPhone.body)), shortPhone.status + ' ' + String(shortPhone.body).slice(0, 130));
+const landline = await reject({ phone: '1234567890' });
+ok('a number that cannot be an Indian mobile is refused', landline.status === 422, landline.status + ' ' + String(landline.body).slice(0, 130));
+const countryCode = await reject({ phone: '+91 90000 00000' });
+ok('a number written with +91 and spaces is accepted',
+  countryCode.status === 201, countryCode.status + ' ' + String(countryCode.body).slice(0, 130));
+const storedPhone = countryCode.status === 201 ? JSON.parse(countryCode.body) : {};
+ok('and it is stored as the ten digits the club will dial',
+  (storedPhone.registration || {}).phone === undefined || JSON.stringify(storedPhone).includes('9000000000'),
+  JSON.stringify(storedPhone).slice(0, 160));
+if (countryCode.status === 201 && storedPhone.registration && storedPhone.registration.id) {
+  await request({ uri: '/api/registrations/' + encodeURIComponent(storedPhone.registration.id), method: 'DELETE', ...AUTH });
+}
 ok('no serial is issued before the payment arrives', !paidRegistration.serial, 'serial ' + String(paidRegistration.serial));
 const paidCode = paidRegistration.passUrl ? paidRegistration.passUrl.split('?')[0].replace('/pass/', '') : '';
 const paidPassUrl = '/pass/' + paidCode;
@@ -494,8 +561,8 @@ const paidPassAfter = await get('/pass?paid=1', { session: proofUpload.session |
 ok('the pass is issued once the proof is in', paidPassAfter.body.includes('Download your pass (PDF)'), paidPassAfter.status + ' ' + String(paidPassAfter.body).slice(0, 120));
 ok('the private code is nowhere in the pass page', !paidPassAfter.body.includes(paidCode));
 ok('the proof is recorded with the registration', /proof|Payment proof received|payment proof is with the club/i.test(paidPassAfter.body));
-const issuedSerial = (/MTP-\d{4}-\d{4}/.exec(paidPassAfter.body) || [''])[0];
-ok('the serial appears only now, with the pass', /^MTP-\d{4}-\d{4}$/.test(issuedSerial), issuedSerial);
+const issuedSerial = (/MTP-(?:\d{2}[A-Z]{3}\d{2}|\d{4})-\d{4}/.exec(paidPassAfter.body) || [''])[0];
+ok('the serial appears only now, with the pass', SERIAL_SHAPE.test(issuedSerial), issuedSerial);
 /* The pass QR is what the door reads: rebuild the matrix the page ships and
    make sure it is a real QR symbol — three finders, timing rows, right size —
    and that it never carries the private code. */
@@ -530,32 +597,49 @@ ok('the paid pass downloads as a PDF', paidPdf.status === 200 && String(paidPdf.
 const paidRow = ((JSON.parse((await get('/api/registrations', AUTH)).body).items) || []).find((item) => item.id === paidRegistration.id) || {};
 ok('the seat is held only now', paidRow.passReady === true && paidRow.serial === issuedSerial, JSON.stringify({ ready: paidRow.passReady, serial: paidRow.serial }));
 ok('the club can reprint any pass without the student’s code', (await get('/api/pass/' + encodeURIComponent(issuedSerial), AUTH)).status === 200);
+ok('the pass says the payment is received, and nothing more',
+  !/awaiting the club/i.test(paidPassAfter.body)
+  && !/awaiting the club/i.test(String(paidPdf.body))
+  && /Payment received/.test(paidPassAfter.body + String(paidRow.paymentLabel || '')));
 
-/* A window that is measured in hours must be built from the clock the test is
-   actually running on: one opened an hour ago is always inside a 24-hour run. */
-const hoursAgoLocal = (hours) => {
-  const d = new Date(Date.now() - hours * 3600 * 1000);
+/* A closing time is booked in the clock the test is actually running on. */
+const localStamp = (offsetHours) => {
+  const d = new Date(Date.now() + offsetHours * 3600 * 1000);
   const p = (n) => String(n).padStart(2, '0');
   return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes());
 };
 console.log('\n— the registration window —');
 const expired = await sendJson('/api/events', 'POST', {
   title: 'Closed circle', month: 12, day: 1, year: 2026, time: '11:00 AM', location: 'Seminar Hall',
-  published: true, fee: 0, registrationOpen: true, windowMode: 'hours', openHours: 1,
-  openedAt: '2020-01-01T09:00',
+  published: true, fee: 0, registrationOpen: true, closesAt: localStamp(-2),
 }, AUTH);
 const expiredId = expired.status === 201 ? JSON.parse(expired.body).item.id : '';
 const expiredPage = await get('/register?event=' + encodeURIComponent(expiredId));
 ok('a window that has passed closes the form by itself', expiredPage.body.includes('closed') && !expiredPage.body.includes('Send and get my pass'), expiredPage.status + ' ' + expiredPage.body.slice(0, 0));
 const expiredPost = await sendJson('/api/registrations', 'POST', { eventId: expiredId, name: 'Late Student', email: 'late@example.com', phone: '+91 90000 00001' });
 ok('a registration after the window closes is refused', expiredPost.status === 409, 'status ' + expiredPost.status);
-const hoursWindow = await sendJson('/api/events', 'POST', {
+/* The club asked for this plainly: nothing may close on its own. An event with
+   no closing date stays open — even years after it was opened — and the old
+   "open for N hours" window is gone from the dashboard and the store alike. */
+const alwaysOpen = await sendJson('/api/events', 'POST', {
   title: 'Two-hour window', month: 12, day: 2, year: 2026, time: '11:00 AM', location: 'Seminar Hall',
-  published: true, fee: 0, registrationOpen: true, windowMode: 'hours', openHours: 24, openedAt: hoursAgoLocal(1),
+  published: true, fee: 0, registrationOpen: true, openedAt: '2020-01-01T09:00',
 }, AUTH);
-const hoursId = hoursWindow.status === 201 ? JSON.parse(hoursWindow.body).item.id : '';
+const hoursId = alwaysOpen.status === 201 ? JSON.parse(alwaysOpen.body).item.id : '';
+const hoursItem = alwaysOpen.status === 201 ? JSON.parse(alwaysOpen.body).item : {};
 const hoursPage = await get('/register?event=' + encodeURIComponent(hoursId));
-ok('an hour-based window stays open inside its hours', hoursPage.body.includes('Send and get my pass'), hoursPage.status + ' ' + hoursPage.body.slice(0, 0));
+ok('an event with no closing date never closes by itself',
+  hoursPage.body.includes('Send and get my pass') && hoursItem.windowMode === 'date' && hoursItem.openHours === undefined,
+  hoursPage.status + ' ' + JSON.stringify({ mode: hoursItem.windowMode, openHours: hoursItem.openHours }));
+const futureWindow = await sendJson('/api/events', 'POST', {
+  title: 'Open until tomorrow', month: 12, day: 3, year: 2026, time: '11:00 AM', location: 'Seminar Hall',
+  published: true, fee: 0, registrationOpen: true, closesAt: localStamp(30),
+}, AUTH);
+const futureId = futureWindow.status === 201 ? JSON.parse(futureWindow.body).item.id : '';
+const futurePage = await get('/register?event=' + encodeURIComponent(futureId));
+ok('a closing date in the future keeps the form open, and it is stated',
+  futurePage.body.includes('Send and get my pass') && /Registration closes on/i.test(futurePage.body), futurePage.status + ' ' + futurePage.body.slice(0, 0));
+await request({ uri: '/api/events/' + encodeURIComponent(futureId), method: 'DELETE', ...AUTH });
 await request({ uri: '/api/events/' + encodeURIComponent(hoursId), method: 'DELETE', ...AUTH });
 await request({ uri: '/api/events/' + encodeURIComponent(expiredId), method: 'DELETE', ...AUTH });
 
@@ -572,7 +656,7 @@ const registerList = await get('/api/registrations', AUTH);
 const regItems = JSON.parse(registerList.body).items || [];
 ok('the dashboard reads every registration', registerList.status === 200 && regItems.length >= 2, 'count ' + regItems.length);
 ok('the register carries a pass serial for every issued pass',
-  regItems.filter((item) => item.passReady).every((item) => /^MTP-\d{4}-\d{4}$/.test(item.serial || '')));
+  regItems.filter((item) => item.passReady).every((item) => SERIAL_SHAPE.test(item.serial || '')));
 ok('the register marks which passes are ready',
   regItems.some((item) => item.id === waitingItem.id && item.passReady === false && !item.serial)
   && regItems.some((item) => item.serial === issuedSerial && item.passReady === true));
@@ -688,11 +772,21 @@ const plainDelete = await request({ uri: '/api/events/event-welcome-circle', met
 ok('a delete still needs the token, even signed in', plainDelete.status === 419, 'status ' + plainDelete.status);
 const editCopy = await sendJson('/api/site', 'PUT', { tagline: 'A calmer space to understand the mind.' }, AUTH);
 ok('site copy saves with a token', editCopy.status === 200, String(editCopy.body).slice(0, 160));
-const eventPatch = await sendJson('/api/events/event-welcome-circle', 'PUT', { fee: 0, windowMode: 'hours', openHours: 6, location: 'CSMU campus · Seminar Hall' }, AUTH);
-ok('an event keeps its typed venue and window', eventPatch.status === 200 && JSON.parse(eventPatch.body).item.openHours === 6, String(eventPatch.body).slice(0, 160));
+/* The club's own event is saved with the values it already carries: a test must
+   never quietly clear the club's closing date or overwrite the venue it typed. */
+const windowBefore = JSON.parse((await get('/api/events/event-welcome-circle', AUTH)).body).item || {};
+const keepLocation = windowBefore.location || 'CSMU campus · Seminar Hall';
+const eventPatch = await sendJson('/api/events/event-welcome-circle', 'PUT',
+  { fee: windowBefore.fee ?? 0, closesAt: windowBefore.closesAt ?? '', location: keepLocation }, AUTH);
+ok('an event keeps its typed venue, and carries no hours window any more',
+  eventPatch.status === 200 && JSON.parse(eventPatch.body).item.location === 'CSMU campus · Seminar Hall'
+  && JSON.parse(eventPatch.body).item.openHours === undefined
+  && JSON.parse(eventPatch.body).item.windowMode === 'date', String(eventPatch.body).slice(0, 220));
 const capture = await get('/api/events/event-welcome-circle', AUTH);
 const captured = JSON.parse(capture.body);
-ok('the venue is free text, not a fixed list', (captured.location || (captured.item || {}).location) === 'CSMU campus · Seminar Hall', String(capture.body).slice(0, 120));
+ok('the venue is free text, not a fixed list', (captured.location || (captured.item || {}).location) === keepLocation, String(capture.body).slice(0, 120));
+ok('and the club’s closing date came through the save untouched',
+  (JSON.parse(eventPatch.body).item || {}).closesAt === (windowBefore.closesAt || ''), String(eventPatch.body).slice(0, 160));
 
 console.log('\n— backups, uploads and settings —');
 const backups = await get('/api/backups', AUTH);
@@ -944,6 +1038,10 @@ ok('the top bar reads a little more solid once the visitor has scrolled',
   /\.nav:before \{[^}]*background: rgba\(255,250,241,\.16\)/.test(appCss)
   && /body\.is-scrolled \.nav:before \{[^}]*rgba\(255,250,241,\.34\)/.test(appCss)
   && appJs.includes("classList.toggle('is-scrolled', y > 40)"));
+ok('no bold word inside a condition is turned into a block of its own',
+  /\.terms-note > strong \{ display: block/.test(appCss)
+  && !/\.terms-note strong \{ display: block/.test(appCss)
+  && /\.terms-note li strong \{ color: var\(--plum-deep\); \}/.test(appCss));
 ok('the conditions carry no dots and no numbered chips',
   /\.terms-note ol \{[^}]*list-style: none/.test(appCss)
   && /\.terms-note li:before \{ content: none; \}/.test(appCss)
@@ -1152,11 +1250,44 @@ ok('the club cards go one per row on a phone',
   /\.login-card \{[^}]*padding: 26px 22px/.test(manageCss)
   && /\.stat-cards, \.editor-grid \{ grid-template-columns: 1fr/.test(manageCss)
   && /\.dash-main \{[^}]*padding: 20px 16px/.test(manageCss));
+ok('the club area has its own quiet background, and the decoration is used',
+  /\.ambient \{ position: fixed; inset: -60px; z-index: 0/.test(fs.readFileSync(path.join(ROOT, 'assets/manage.css'), 'utf8'))
+  && /@keyframes ambientDriftA/.test(fs.readFileSync(path.join(ROOT, 'assets/manage.css'), 'utf8'))
+  && /\.ambient-blob \{ animation: none; \}/.test(fs.readFileSync(path.join(ROOT, 'assets/manage.css'), 'utf8')));
 ok('a long word wraps instead of widening the page',
   /body \{[^}]*overflow-wrap: break-word/.test(appCss));
 ok('the script never hides or rewrites the page content', !/innerHTML\s*=/.test(appJs) || /galleryStageImage/.test(appJs));
 ok('the script asks the backend for the revision instead of re-rendering', appJs.includes('/api/site?since=') && appJs.includes('window.location.reload()'));
 ok('the dashboard talks to the registrations endpoint', fs.readFileSync(path.join(ROOT, 'assets/manage.js'), 'utf8').includes('/api/registrations'));
+
+/* --- what the club asked for on the form and in the dashboard ------------- */
+const manageSource = fs.readFileSync(path.join(ROOT, 'assets/manage.js'), 'utf8');
+ok('the registration form states the rules it keeps',
+  registerPage.body.includes('data-rule="name"') && registerPage.body.includes('data-rule="email"')
+  && registerPage.body.includes('data-rule="phone"') && registerPage.body.includes('field-hint'));
+ok('the browser half of the rules is in the script',
+  appJs.includes('fieldRules') && appJs.includes('checkForm(form)') && appJs.includes('10-digit Indian mobile number'));
+ok('the club dashboard says what happened when it saves',
+  manageSource.includes("setBusy(card, true, 'Saving…')") && manageSource.includes("setState(card, 'Saved ✓ at ' + stamp()")
+  && manageSource.includes('data-save-state')
+  && fs.readFileSync(path.join(ROOT, 'assets/manage.css'), 'utf8').includes('.save-state'));
+ok('the dashboard never redraws the whole panel over the club typing',
+  !/toast\('Saved ✓ and live on the website'\);\s*renderAll\(\);/.test(manageSource)
+  && manageSource.includes("card.classList.add('is-deleting')"));
+ok('save and delete sit level on a phone instead of stacking like bricks',
+  /\.row-actions \{ display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-items: center; \}/
+    .test(fs.readFileSync(path.join(ROOT, 'assets/manage.css'), 'utf8')));
+ok('the dashboard has no hours window and nothing closes on its own',
+  !/openHours|>hours</.test(manageSource)
+  && manageSource.includes('it stays open. Nothing closes on its own.')
+  && !/windowMode === 'hours'/.test(fs.readFileSync(path.join(ROOT, 'app/events.php'), 'utf8')));
+ok('a new event arrives open, with a working title and a jump to its card',
+  manageSource.includes("title: 'New Mindful Tattva event'") && manageSource.includes('registrationOpen: true')
+  && manageSource.includes('added ✓'));
+ok('the open events on the home page have space between them',
+  /\.register-list \{ display: grid; gap: 12px;/.test(appCss) && /\.register-list li \{/.test(appCss));
+ok('a complaint from the server is shown, not printed as a bare line',
+  /\.field-error \{[^}]*background: rgba\(180,83,60,\.1\)/.test(appCss));
 
 console.log('\n— a half-finished upload (the blank-site bug) —');
 const cssBackup = await php.readFile('/site/assets/app.css', { encoding: 'utf8' });

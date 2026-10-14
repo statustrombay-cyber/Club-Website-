@@ -18,7 +18,7 @@ const MT_COLLECTIONS = ['history', 'team', 'events', 'gallery'];
 const MT_TEAM_GROUPS = ['management', 'heads', 'volunteers'];
 
 /** How a registration window can close. */
-const MT_WINDOW_MODES = ['date', 'hours'];
+const MT_WINDOW_MODES = ['date'];   // kept for old data: the hours mode is gone
 
 function mt_db_defaults(): array
 {
@@ -245,14 +245,19 @@ function mt_sanitize_item(string $collection, array $input, array $existing = []
             $item['upiId']   = mt_clean_text($input['upiId'] ?? ($existing['upiId'] ?? ''), 120);
             $item['upiName'] = mt_clean_text($input['upiName'] ?? ($existing['upiName'] ?? ''), 120);
 
-            /* When registration opens and closes. */
+            /* When registration is open. There is no "open for N hours" mode
+               any more: an event opens when the club opens it and stays open —
+               for as long as it likes — until the club sets a closing date and
+               time, or closes it by hand. Nothing closes on its own. */
             $item['registrationOpen'] = mt_truthy($input['registrationOpen'] ?? ($existing['registrationOpen'] ?? true));
-            $mode = (string) ($input['windowMode'] ?? ($existing['windowMode'] ?? 'date'));
-            $item['windowMode'] = in_array($mode, MT_WINDOW_MODES, true) ? $mode : 'date';
+            $item['windowMode'] = 'date';
+            /* an event saved before the hours window was taken out keeps no
+               trace of it in the store */
+            unset($item['openHours']);
             $closesAt = mt_clean_text($input['closesAt'] ?? ($existing['closesAt'] ?? ''), 40);
             $item['closesAt'] = $closesAt;
-            $hours = (int) ($input['openHours'] ?? ($existing['openHours'] ?? 24));
-            $item['openHours'] = max(1, min(24, $hours > 0 ? $hours : 24));
+            /* an old "hours" event keeps its closing time only if one was
+               actually written down; otherwise it simply stays open */
             $openedAt = mt_clean_text($input['openedAt'] ?? ($existing['openedAt'] ?? ''), 40);
             $item['openedAt'] = $openedAt !== '' ? $openedAt : mt_now_iso();
             $item['capacity'] = max(0, (int) ($input['capacity'] ?? ($existing['capacity'] ?? 0)));

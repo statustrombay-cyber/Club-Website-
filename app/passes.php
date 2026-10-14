@@ -52,12 +52,17 @@ function mt_pdf_width(string $text, float $size, bool $bold = false): float
 /** Wrap a paragraph to a column width. */
 function mt_pdf_wrap(string $text, float $size, float $maxWidth, bool $bold = false): array
 {
+    /* The width table is an estimate, so every candidate is measured with a
+       small safety margin: a word can then never be laid down past the edge of
+       the box it belongs to (the club saw "prior" land outside the terms
+       box). */
+    $safeWidth = $maxWidth * 0.955;
     $words = preg_split('/\s+/', mt_pdf_text($text)) ?: [];
     $lines = [];
     $line = '';
     foreach ($words as $word) {
         $candidate = $line === '' ? $word : $line . ' ' . $word;
-        if (mt_pdf_width($candidate, $size, $bold) <= $maxWidth || $line === '') {
+        if (mt_pdf_width($candidate, $size, $bold) <= $safeWidth || $line === '') {
             $line = $candidate;
         } else {
             $lines[] = $line;
@@ -387,31 +392,28 @@ function mt_pass_pdf(array $registration, array $event, array $site): string
     $rect($margin, 618, $inner, 76, $plum);
 
     /* ------------------------------------------------------------------ the
-       club and the university, in their places: the university's mark and its
-       address top left, the club name in the middle, the club's crest top
-       right. */
-    $crestTop = 36.0;
-    if ($crestImage) {
-        $drawImage($box - 18 - $crestTop, 640, $crestTop, $crestTop, $crestImage);
+       letterhead. The band carries the club's name and nothing else: the two
+       marks - the club's crest and the university's - sit at the foot of the
+       page, where the club wanted them, and no picture is printed up here. */
+    $nameWidth = mt_pdf_width($club, 19, true);
+    $text(($width - $nameWidth) / 2, 664, $club, 19, true, [1, 0.976, 0.949]);
+    /* the department and the university, named under the club in one quiet
+       line - the band says who is issuing the pass without any mark */
+    $issuer = array_filter([
+        trim((string) ($site['department'] ?? '')),
+        trim((string) ($university ?? '')),
+    ], static fn($part) => $part !== '');
+    $issuerLine = implode(', ', $issuer);
+    if ($issuerLine !== '') {
+        $issuerLines = mt_pdf_wrap($issuerLine, 7.6, $inner - 120);
+        $issuerY = 652.0;
+        foreach (array_slice($issuerLines, 0, 2) as $issuerRow) {
+            $text(($width - mt_pdf_width($issuerRow, 7.6, false)) / 2, $issuerY, $issuerRow, 7.6, false, [0.976, 0.945, 0.910]);
+            $issuerY -= 9.4;
+        }
     }
-    if ($universityImage) {
-        $uniTop = 24.0;
-        $uniWide = $uniTop * ($universityImage['w'] / max(1, $universityImage['h']));
-        $drawImage($margin + 18, 666, $uniWide, $uniTop, $universityImage);
-    }
-    $text($margin + 18, 656, $university, 7.6, true, [0.976, 0.945, 0.910]);
-    /* wrapped narrow enough that the first line always stops well before the
-       pass label in the middle of the band */
-    $addressLines = mt_pdf_wrap($address, 6.2, 168);
-    $addressY = 646;
-    foreach (array_slice($addressLines, 0, 3) as $addressLine) {
-        $text($margin + 18, $addressY, $addressLine, 6.2, false, [0.902, 0.831, 0.769]);
-        $addressY -= 7.4;
-    }
-    $nameWidth = mt_pdf_width($club, 17, true);
-    $text(($width - $nameWidth) / 2, 664, $club, 17, true, [1, 0.976, 0.949]);
     $passLabel = 'EVENT PASS';
-    $text(($width - mt_pdf_width($passLabel, 8, true)) / 2, 648, $passLabel, 8, true, [0.957, 0.757, 0.561]);
+    $text(($width - mt_pdf_width($passLabel, 8, true)) / 2, 632, $passLabel, 8, true, [0.957, 0.757, 0.561]);
 
     /* who and which event */
     $y = 586.0;
@@ -592,11 +594,14 @@ function mt_pass_pdf(array $registration, array $event, array $site): string
         $bigWide = $bigTop * ($universityImage['w'] / max(1, $universityImage['h']));
         $drawImage($box - $bigWide, 52, $bigWide, $bigTop, $universityImage);
     }
-    /* the campus address, right under the university's own mark */
-    $footLines = array_slice(mt_pdf_wrap($address, 7.4, $inner - 170), 0, 3);
-    $footY = 42 - (count($footLines) - 1) * 10.5;
+    /* The campus address sits under the card, centred on the page and wrapped
+       well inside its margins: it used to be one long right-aligned line that
+       ran off the paper (the club saw "410206." hanging past the edge). It is
+       measured against the card, not the page, so it can never overrun. */
+    $footLines = array_slice(mt_pdf_wrap($address, 7.4, $inner - 24), 0, 3);
+    $footY = 46 - (count($footLines) - 1) * 10.5;
     foreach ($footLines as $footLine) {
-        $text($box - mt_pdf_width($footLine, 7.4), $footY, $footLine, 7.4, false, $soft);
+        $text(($width - mt_pdf_width($footLine, 7.4)) / 2, $footY, $footLine, 7.4, false, $soft);
         $footY += 10.5;
     }
 

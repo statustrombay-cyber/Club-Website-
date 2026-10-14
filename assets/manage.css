@@ -5,6 +5,20 @@
 
 .dash-body { background: #f4f0ea; }
 
+/* The club area had two decoration spans in its markup that no rule ever
+   picked up — an empty layer with nothing in it. Here it is: a warm, slow
+   drift behind the club's own pages, so the workspace feels like the same club
+   as the public site. It is decoration: it never takes a click, it is still for
+   anyone who asks for less motion, and it stays out of the printer. */
+.ambient { position: fixed; inset: -60px; z-index: 0; overflow: hidden; pointer-events: none; }
+.ambient-blob { position: absolute; display: block; border-radius: 50%; filter: blur(46px); opacity: .5; }
+.ambient-blob-a { width: 40vw; height: 40vw; left: -8vw; top: -6vh; background: radial-gradient(circle at 42% 44%, rgba(232,155,121,.45), rgba(232,155,121,0) 70%); animation: ambientDriftA 40s ease-in-out infinite; }
+.ambient-blob-b { width: 34vw; height: 34vw; right: -6vw; bottom: -8vh; background: radial-gradient(circle at 52% 48%, rgba(184,195,176,.5), rgba(184,195,176,0) 72%); animation: ambientDriftB 47s ease-in-out infinite; }
+@keyframes ambientDriftA { 0%, 100% { transform: translate3d(0, 0, 0) scale(1); } 50% { transform: translate3d(5vw, 4vh, 0) scale(1.1); } }
+@keyframes ambientDriftB { 0%, 100% { transform: translate3d(0, 0, 0) scale(1.05); } 50% { transform: translate3d(-4vw, -5vh, 0) scale(.94); } }
+.dash-shell, .login-wrap { position: relative; z-index: 1; }
+@media (prefers-reduced-motion: reduce) { .ambient-blob { animation: none; } }
+
 /* ------------------------------------------------------------------ login */
 .login-wrap { min-height: 100svh; display: grid; place-items: center; padding: 30px 20px; position: relative; z-index: 2; }
 .login-card {
@@ -95,7 +109,15 @@
 .editor-card input:focus, .editor-card textarea:focus, .editor-card select:focus {
   outline: none; border-color: var(--terracotta); box-shadow: 0 0 0 3px rgba(200, 111, 88, .13);
 }
-.row-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.row-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+/* What happened, said on the card itself: Saving… then the time it saved.
+   The line holds its space so the buttons never jump while it changes. */
+.save-state { min-width: 0; color: #4a6242; font-size: .72rem; font-weight: 700; }
+.save-state.is-error { color: #a0431f; }
+.editor-card { transition: box-shadow .3s ease, border-color .3s ease; }
+.editor-card.is-saved { border-color: rgba(74,98,66,.5); box-shadow: 0 0 0 3px rgba(74,98,66,.12); }
+.editor-card.is-deleting { opacity: .45; transform: scale(.99); transition: opacity .25s ease, transform .25s ease; }
+.btn-sm:disabled { opacity: .62; cursor: progress; }
 .btn-sm { padding: 8px 14px; font-size: .78rem; border-radius: 999px; border: 1px solid var(--line-strong); background: #fff; font-weight: 700; color: var(--plum); }
 .btn-sm:hover { border-color: var(--terracotta); color: var(--terracotta); }
 .btn-sm.primary { background: var(--plum); border-color: var(--plum); color: #fff8ef; }
@@ -152,6 +174,15 @@
   .panel-head .row-actions { width: 100%; }
   .panel-head .btn-sm { width: 100%; text-align: center; }
   .stat-cards, .editor-grid { grid-template-columns: 1fr; }
-  .row-actions { flex-wrap: wrap; }
+  /* Save and Delete sit level, side by side, the same width — never stacked
+     like bricks down the page. */
+  .editor-card-head { flex-wrap: wrap; row-gap: 8px; }
+  .editor-card-head > span { flex: 1 1 100%; }
+  .editor-card-head .row-actions { flex: 1 1 100%; }
+  /* every row of buttons in the club area lays out as equal halves on a phone —
+     Save beside Delete, never one stacked on the next like bricks */
+  .row-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-items: center; }
+  .row-actions .save-state { grid-column: 1 / -1; text-align: left; }
+  .row-actions > .btn-sm { width: 100%; text-align: center; }
   .toast { left: 16px; right: 16px; bottom: 16px; text-align: center; }
 }

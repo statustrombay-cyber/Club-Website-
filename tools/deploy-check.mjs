@@ -161,7 +161,9 @@ proof.append('proof', new Blob([png], { type: 'image/png' }), 'receipt.png');
 const proofUpload = await req('/pass', { method: 'POST', form: proof });
 check('the student uploads the payment screenshot', proofUpload.status === 303 || proofUpload.status === 200, 'status ' + proofUpload.status);
 const passAfterProof = await req('/pass?paid=1');
-const issued = (/MTP-\d{4}-\d{4}/.exec(String(passAfterProof.body)) || [''])[0];
+/* the serial carries the event's date: MTP-24OCT26-0001 (or the year, for an
+   event that has no date yet) */
+const issued = (/MTP-(?:\d{2}[A-Z]{3}\d{2}|\d{4})-\d{4}/.exec(String(passAfterProof.body)) || [''])[0];
 check('the pass and its serial are issued only now', /^MTP-/.test(issued) && /Download your pass/i.test(String(passAfterProof.body)), issued);
 const verified = await req('/api/registrations/' + (paidRow.id || 'x'), { method: 'PUT', csrf, json: { paymentStatus: 'verified' } });
 check('the club can mark the payment verified', verified.status === 200, 'status ' + verified.status);

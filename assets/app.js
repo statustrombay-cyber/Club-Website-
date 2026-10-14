@@ -196,10 +196,89 @@
     return body;
   }
 
+  /* ---------------------------------------------------- what a field must be
+     The same rules the club's own server keeps, said plainly in the browser so
+     a student is told before the form is sent: a name of letters, an address
+     that can really receive mail, and a ten-digit Indian mobile number. The
+     server checks all three again — this is only the friendly half. */
+  const fieldRules = {
+    name: function (value) {
+      const clean = String(value || '').trim().replace(/\s+/g, ' ');
+      if (!/^[\p{L}][\p{L} .'\-]*$/u.test(clean) || (clean.match(/\p{L}/gu) || []).length < 2) {
+        return 'Please write your name in letters only — no numbers or symbols.';
+      }
+      return '';
+    },
+    email: function (value) {
+      const clean = String(value || '').trim();
+      if (!/^[A-Za-z0-9._%+\-]+@[A-Za-z0-9\-]+(\.[A-Za-z0-9\-]+)*\.[A-Za-z]{2,}$/.test(clean)
+        || clean.indexOf('..') !== -1 || clean.charAt(0) === '.') {
+        return 'Please check the email address — it should look like you@example.com.';
+      }
+      return '';
+    },
+    phone: function (value) {
+      let digits = String(value || '').replace(/\D+/g, '');
+      if (digits.length > 10) {
+        if (digits.indexOf('0091') === 0) digits = digits.slice(4);
+        else if (digits.indexOf('91') === 0) digits = digits.slice(2);
+        else if (digits.charAt(0) === '0') digits = digits.replace(/^0+/, '');
+      }
+      if (digits.length > 10) digits = digits.slice(-10);
+      if (!/^[6-9][0-9]{9}$/.test(digits)) {
+        return 'Please add a 10-digit Indian mobile number, starting with 6, 7, 8 or 9.';
+      }
+      return '';
+    }
+  };
+
+  function checkField(input) {
+    const rule = input.dataset ? input.dataset.rule : '';
+    if (!rule || !fieldRules[rule]) return '';
+    return fieldRules[rule](input.value);
+  }
+
+  function checkForm(form) {
+    const fields = $$('[data-rule]', form);
+    for (let index = 0; index < fields.length; index += 1) {
+      const message = checkField(fields[index]);
+      if (message) {
+        fields[index].classList.add('is-invalid');
+        if (typeof fields[index].focus === 'function') fields[index].focus();
+        return message;
+      }
+      fields[index].classList.remove('is-invalid');
+    }
+    return '';
+  }
+
   function setupForms() {
+    /* a field tells the student as soon as they leave it */
+    $$('[data-rule]').forEach(function (input) {
+      input.addEventListener('blur', function () {
+        const message = checkField(input);
+        input.classList.toggle('is-invalid', Boolean(message));
+        const form = input.closest('form');
+        if (form) setStatus(form, message, Boolean(message));
+      });
+      input.addEventListener('input', function () {
+        if (!input.classList.contains('is-invalid')) return;
+        if (!checkField(input)) {
+          input.classList.remove('is-invalid');
+          const form = input.closest('form');
+          if (form) setStatus(form, '', false);
+        }
+      });
+    });
+
     $$('form[data-ajax-form]').forEach(function (form) {
       form.addEventListener('submit', async function (event) {
         event.preventDefault();
+        const complaint = checkForm(form);
+        if (complaint) {
+          setStatus(form, complaint, true);
+          return;
+        }
         const button = form.querySelector('button[type="submit"]');
         const original = button ? button.textContent : '';
         const payload = Object.fromEntries(new FormData(form).entries());

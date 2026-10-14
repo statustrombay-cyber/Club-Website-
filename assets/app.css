@@ -874,7 +874,12 @@ html.js .scroll-reveal.is-visible { opacity: 1; transform: none; }
    counters, nothing floating between the sentences — the club asked for the
    stray dots and the ragged edges to go. */
 .terms-note { padding: 22px 24px; border-radius: 18px; background: #f9f5f0; border: 1px solid var(--line); color: var(--ink-soft); font-size: .82rem; }
-.terms-note strong { display: block; margin-bottom: 12px; color: var(--plum-deep); font-family: var(--font-display); font-size: 1.05rem; font-weight: 400; }
+/* The heading only. Written as a direct child on purpose: as a plain descendant
+   it also caught every bold word inside a condition, pushed it onto a line of
+   its own and left the sentence's full stop dangling below it — which is the
+   stray "dot" the club kept seeing between the conditions. */
+.terms-note > strong { display: block; margin-bottom: 12px; color: var(--plum-deep); font-family: var(--font-display); font-size: 1.05rem; font-weight: 400; }
+.terms-note li strong { color: var(--plum-deep); }
 .terms-note ol { list-style: none; counter-reset: none; margin: 0; padding: 0; display: grid; gap: 9px; }
 .terms-note li { position: static; margin: 0; padding: 0; line-height: 1.6; }
 .terms-note li:before { content: none; }
@@ -882,6 +887,15 @@ html.js .scroll-reveal.is-visible { opacity: 1; transform: none; }
    can appear beside a condition in any browser. */
 .terms-note li::marker { content: none; }
 .pass-rules li::marker { content: none; }
+
+/* a field that was filled in badly, and the small note under a form */
+.form-status.is-error { color: #a0431f; }
+.register-form input.is-invalid, .club-form input.is-invalid { border-color: #b4533c; box-shadow: 0 0 0 4px rgba(180,83,60,.12); }
+.field-hint { margin: 12px 0 0; color: var(--ink-soft); font-size: .76rem; }
+.field-error {
+  margin-top: 8px; padding: 9px 12px; border-radius: 12px;
+  background: rgba(180,83,60,.1); color: #8d3a25; font-size: .78rem; font-weight: 600;
+}
 
 /* ---- payment ---- */
 .pay-card { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 24px; align-items: center; margin: 0; padding: 22px; border: 1px dashed rgba(78,49,85,.28); border-radius: 22px; background: #fffaf1; }
@@ -1021,6 +1035,24 @@ html.js .scroll-reveal.is-visible { opacity: 1; transform: none; }
 
 /* A golden streak crosses the hero now and then: the page never sits still. */
 .hero-comet { position: absolute; z-index: 0; top: 16%; left: -16%; width: 210px; height: 1px; pointer-events: none; opacity: 0; transform: rotate(9deg); background: linear-gradient(90deg, transparent, rgba(255,236,190,.9), transparent); box-shadow: 0 0 12px rgba(244,193,127,.5); animation: cometRun 16s ease-in-out 4s infinite; }
+
+/* ------------------------------------------------- the open registrations ---
+   One event per line, each with its own space around it — the club saw the two
+   events sitting with no gap between them. */
+.register-list { display: grid; gap: 12px; margin: 16px 0 0; padding: 0; list-style: none; }
+.register-list li {
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  padding: 14px 16px; border: 1px solid var(--line); border-radius: 16px; background: #fffdfa;
+}
+.register-list li > div { display: grid; gap: 3px; min-width: 0; }
+.register-list strong { color: var(--plum-deep); font-family: var(--font-display); font-size: 1.02rem; font-weight: 400; }
+.register-list span { color: var(--ink-soft); font-size: .78rem; overflow-wrap: anywhere; }
+.register-list .register-fee { color: var(--terracotta-ink); font-weight: 800; }
+.register-list li > a { flex: 0 0 auto; }
+@media (max-width: 620px) {
+  .register-list li { flex-direction: column; align-items: stretch; gap: 10px; }
+  .register-list li > a { width: 100%; text-align: center; }
+}
 
 /* --------------------------------------------------------------- photo frame */
 /* Clicking a photo opens it big, in a warm frame of its own. */

@@ -1,6 +1,6 @@
 {
-    "revision": 245,
-    "updatedAt": "2026-10-14T01:24:59+00:00",
+    "revision": 322,
+    "updatedAt": "2026-10-14T02:47:50+00:00",
     "site": {
         "clubName": "Mindful Tattva",
         "shortName": "MT",
@@ -108,10 +108,14 @@
             "registrationOpen": true,
             "windowMode": "date",
             "closesAt": "2026-10-23T18:00",
-            "openHours": 0,
             "capacity": 0,
             "brochureUrl": "",
-            "number": 1
+            "number": 1,
+            "attachment": "",
+            "registrationUrl": "",
+            "date": "24 October 2026",
+            "openedAt": "2026-10-14T08:12",
+            "order": 360863
         }
     ],
     "gallery": [

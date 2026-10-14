@@ -161,20 +161,13 @@ function mt_event_window(array $event): array
         return ['open' => false, 'closesAt' => null, 'label' => 'Registration is closed for this event.', 'reason' => 'closed'];
     }
 
-    $mode = (string) ($event['windowMode'] ?? 'date');
-
-    if ($mode === 'hours') {
-        $opened = mt_parse_local($event['openedAt'] ?? '');
-        if (!$opened) {
-            $opened = mt_now();
-        }
-        $hours = max(1, min(24, (int) ($event['openHours'] ?? 24)));
-        $closes = $opened->modify('+' . $hours . ' hour');
-    } else {
-        $closes = mt_parse_local($event['closesAt'] ?? '');
-        if (!$closes) {
-            return ['open' => true, 'closesAt' => null, 'label' => 'Registration is open.', 'reason' => 'always'];
-        }
+    /* A closing date and time is the only thing that can close registration by
+       itself. An event with none stays open until the club closes it by hand —
+       there is no "open for N hours" window any more, so nothing ever expires
+       quietly behind the club's back. */
+    $closes = mt_parse_local($event['closesAt'] ?? '');
+    if (!$closes) {
+        return ['open' => true, 'closesAt' => null, 'label' => 'Registration is open.', 'reason' => 'always'];
     }
 
     $iso = $closes->format('Y-m-d\TH:i');
@@ -287,17 +280,30 @@ function mt_open_events(array $db): array
  * It is issued when the pass is earned (right away for a free event, after the
  * payment screenshot arrives for a paid one), never while a seat is unpaid.
  */
-function mt_registration_serial(array $db): string
+function mt_registration_serial(array $db, array $event = []): string
 {
-    $year = mt_now()->format('Y');
+    /* The serial carries the date of the event it is for, so a stack of passes
+       at the door can be sorted by eye: MTP-24OCT26-0001 is the first pass for
+       the 24th of October 2026. The month is stored as a number (1–12), and the
+       name comes from the same list the pages print. */
+    $stamp = '';
+    $day   = (int) ($event['day'] ?? 0);
+    $month = (int) ($event['month'] ?? 0);
+    $year  = (int) ($event['year'] ?? 0);
+    if ($day >= 1 && $day <= 31 && $month >= 1 && $month <= 12 && $year >= 2000) {
+        $stamp = str_pad((string) $day, 2, '0', STR_PAD_LEFT)
+            . strtoupper(substr(MT_MONTHS[$month - 1], 0, 3))
+            . substr((string) $year, -2);
+    }
+    $prefix = 'MTP-' . ($stamp !== '' ? $stamp : mt_now()->format('Y')) . '-';
     $highest = 0;
     foreach ($db['registrations'] as $registration) {
         $serial = (string) ($registration['serial'] ?? '');
-        if (preg_match('/^MTP-' . $year . '-(\d+)$/', $serial, $match)) {
+        if (preg_match('/^' . preg_quote($prefix, '/') . '(\d+)$/', $serial, $match)) {
             $highest = max($highest, (int) $match[1]);
         }
     }
-    return 'MTP-' . $year . '-' . str_pad((string) ($highest + 1), 4, '0', STR_PAD_LEFT);
+    return $prefix . str_pad((string) ($highest + 1), 4, '0', STR_PAD_LEFT);
 }
 
 /**
@@ -468,6 +474,71 @@ function mt_event_by_id(array $database, string $id): ?array
     return null;
 }
 
+
+/** A person's name: letters (any language), spaces and the marks names carry. */
+function mt_valid_person_name(string $name): ?string
+{
+    $clean = trim((string) preg_replace('/\s+/u', ' ', $name) ?? '');
+    if ($clean === '' || mb_strlen($clean) < 2) {
+        return null;
+    }
+    /* letters, spaces, and . ' - only. Digits and anything else are refused. */
+    if (!preg_match("/^[\p{L}][\p{L} .'\-]*$/u", $clean)) {
+        return null;
+    }
+    /* a name that is only punctuation or a single letter is not a name */
+    if (preg_match_all('/\p{L}/u', $clean) < 2) {
+        return null;
+    }
+    return $clean;
+}
+
+/** A deliverable-looking email address. */
+function mt_valid_email(string $email): bool
+{
+    $email = trim($email);
+    if ($email === '' || strlen($email) > 160) {
+        return false;
+    }
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        return false;
+    }
+    /* filter_var allows a few things the club would not want on a list: a
+       trailing dot, doubled dots, a domain without a dot, or an address that
+       runs into the next field. All refused here. */
+    if (!preg_match('/^[A-Za-z0-9._%+\-]+@[A-Za-z0-9\-]+(\.[A-Za-z0-9\-]+)*\.[A-Za-z]{2,}$/', $email)) {
+        return false;
+    }
+    if (str_contains($email, '..') || str_starts_with($email, '.') || str_contains($email, '.@') || str_contains($email, '@.')) {
+        return false;
+    }
+    return true;
+}
+
+/** Ten digits, whichever way the student typed them: +91 98765 43210 -> 9876543210. */
+function mt_normalise_phone(string $phone): string
+{
+    $digits = preg_replace('/\D+/', '', $phone) ?? '';
+    /* a country code on the front is dropped: 91 9876543210, 0 9876543210, or
+       0091 ... are all the same number to the club */
+    if (strlen($digits) > 10) {
+        if (str_starts_with($digits, '0091')) {
+            $digits = substr($digits, 4);
+        } elseif (str_starts_with($digits, '91')) {
+            $digits = substr($digits, 2);
+        } elseif (str_starts_with($digits, '0')) {
+            $digits = ltrim($digits, '0');
+        }
+    }
+    return strlen($digits) > 10 ? substr($digits, -10) : $digits;
+}
+
+/** An Indian mobile number: exactly ten digits, starting 6, 7, 8 or 9. */
+function mt_valid_phone(string $phone): bool
+{
+    return (bool) preg_match('/^[6-9][0-9]{9}$/', mt_normalise_phone($phone));
+}
+
 /** "A••••  S••••" — enough to recognise yourself, not enough to abuse. */
 function mt_mask_name(string $name): string
 {
@@ -499,12 +570,26 @@ function mt_registration_new(array $db, array $event, array $input): array
     if ($name === '' || $email === '' || $phone === '') {
         return ['record' => [], 'error' => 'Please add your name, email address and phone number.'];
     }
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        return ['record' => [], 'error' => 'That email address does not look right.'];
+    /* The name is a name: letters, and the small marks names are written with.
+       No digits reach it. */
+    if (mt_valid_person_name($name) === null) {
+        return ['record' => [], 'error' => 'Please write your name in letters only — no numbers.'];
     }
-    if (preg_match_all('/\d/', $phone) < 8) {
-        return ['record' => [], 'error' => 'That phone number does not look right.'];
+    /* A real address we can write to: one @, a domain with a dot, and no spaces
+       or doubled dots. */
+    if (!mt_valid_email($email)) {
+        return ['record' => [], 'error' => 'That email address does not look right. Please check it.'];
     }
+    /* An Indian mobile number: ten digits, starting 6, 7, 8 or 9. A country
+       code, spaces, dashes and brackets are accepted on the way in and are
+       stored cleaned. */
+    $phone = mt_normalise_phone($phone);
+    if (!mt_valid_phone($phone)) {
+        return ['record' => [], 'error' => 'Please add a 10-digit Indian mobile number, starting with 6, 7, 8 or 9.'];
+    }
+
+    /* stored as the ten digits: the pass, the door list and the CSV all show
+       the number the club will actually dial */
 
     $fee = mt_event_fee($event);
     $now = mt_now()->format('Y-m-d\TH:i');
@@ -516,7 +601,7 @@ function mt_registration_new(array $db, array $event, array $input): array
 
     return ['error' => null, 'record' => [
         'id'              => mt_next_id('reg'),
-        'serial'          => $free ? mt_registration_serial($db) : '',
+        'serial'          => $free ? mt_registration_serial($db, $event) : '',
         'publicId'        => mt_registration_public_id($db),
         'passCodeHash'    => mt_registration_code_hash($code),
         'eventId'         => (string) ($event['id'] ?? ''),
@@ -623,7 +708,7 @@ function mt_payment_label(string $status): string
     return match ($status) {
         'not-required'    => 'Free event — nothing to pay',
         'pending'         => 'Payment pending — the seat is not held yet',
-        'submitted'       => 'Payment proof received — awaiting the club',
+        'submitted'       => 'Payment received',
         'verified'        => 'Payment verified by the club',
         'rejected'        => 'Payment proof was not accepted — please upload again',
         default           => 'Payment pending',

@@ -438,7 +438,8 @@ function mt_public_pass(): void
                            seat and the pass are all issued together, and not
                            a second before the payment proof is in. */
                         if ((string) ($existing['serial'] ?? '') === '') {
-                            $database['registrations'][$index]['serial'] = mt_registration_serial($database);
+                            $eventForSerial = mt_event_find($database, (string) ($existing['eventId'] ?? ''));
+                            $database['registrations'][$index]['serial'] = mt_registration_serial($database, $eventForSerial ?? []);
                         }
                         $database['registrations'][$index]['passIssuedAt'] = mt_now_iso();
                         $database['registrations'][$index]['status'] = 'confirmed';
