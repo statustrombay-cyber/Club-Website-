@@ -18,7 +18,7 @@ $slides = mt_gallery_slides($db['gallery'] ?? []);
 ?>
 <section class="gallery-hero">
   <div class="container">
-    <div class="eyebrow" style="color:var(--gold)">Mindful Tattva / event gallery</div>
+    <div class="eyebrow" style="color:#f0b287">Mindful Tattva / event gallery</div>
     <h1 class="display">A scrapbook of <em>small moments.</em></h1>
     <p>As the club grows, workshops, circles, campus conversations and shared pauses will find their way here.</p>
   </div>
