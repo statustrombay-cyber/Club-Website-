@@ -42,3 +42,58 @@ positions are reconstructed from visual frames: the recording has no raw
 wheel/touch-event log, so elapsed playback seconds are not a universal scroll
 speed. Club wording, public horse-backed hero and functional safeguards remain
 unchanged. No reference footage is embedded into the public site.
+
+## Locally derived assets (second motion review)
+
+The video cannot supply original vectors, fonts or 3D models. Nothing was
+uploaded to a vector-conversion service. All analysis was local:
+
+- `assets/motion/wire-{orbit,prism,sphere}.webp`: transparent, antialiased
+  silhouette loops cropped from the three capsules at 59–63 seconds. Capsules
+  are normalised to 164 × 110; their original border/background is excluded.
+  The observed poses replace the rejected invented 3D geometry. These are **2D
+  animation cutouts, not recovered 3D models**. Matching start/end poses choose
+  3.50s / 2.95s / 2.00s loops, sampled at 20fps. Corresponding `-still.webp`
+  files serve no-script, reduced-motion, hidden and offscreen states.
+- `reference-ribbons.webp`: a temporal 12th percentile across 37–39.5s removes
+  the moving white wordmark; local inpainting retouches the stationary caption.
+  Phone chrome is excluded; a premultiplied alpha matte removes the source
+  canvas so its edges blend without a rectangular patch. This preserves observed blue/violet colour and
+  ribbon curvature, not invented sinusoidal lines. It is a small background
+  image, **not a recording**; the caption occlusion cannot be recovered exactly.
+- `intro-word.svg`: Inter's actual filled glyph contours, clipped to each
+  letter and brush-painted with a violet lead and white pigment. Contours are
+  derived from the bundled OFL Inter font, not extracted from the recording.
+  The name is not assembled by sliding strips or revealed with noise.
+- White-glyph phase correlation at y720–870 gives −118.075 px/s (37→38s),
+  −118.035 px/s (38→39s). The marquee uses **118.05 / 720 viewport widths/s**;
+  its duration is computed from its measured half-track width after fonts load
+  and on resize. At 390px, this is approximately 63.94px/s. Global ribbon-field
+  displacement over the same interval is below 0.05px; extra CSS sway is removed.
+
+The butterfly is independent of this source: a single continuous RAF trajectory
+uses a 6.4s gentle ascent, a stable perch above the bar (4px minimum at the viewport edge), exponential reading-progress
+follow, a 320ms dark-section dwell and ≥2.8s leftward departure. Direction
+reversals start at the current position and tangent, without CSS opacity changes
+until the butterfly is fully offscreen. The mobile menu has reserved clearance.
+
+The derived assets together are under 0.7MB. Full reference footage remains
+outside the repository, deployment and source exports. Original horse media is
+unchanged. Visual comparisons remain necessary: passing workflow tests does not
+certify pixel-perfect reproduction of the original site's unavailable sources.
+
+### Verification — 15 October 2026
+
+- `npm test`: **495 passed, 0 failed**, including the executed butterfly,
+  silhouette lifecycle, marquee-speed and layout-change controllers.
+- `npm run lint` and `git diff --check`: passed.
+- Headless browser: **53 checks passed** across 320/390/768/1440px, plus
+  reduced-motion and no-JavaScript. Checks cover entry/perch, repeated rapid
+  dark-section crossings, gradual departures, offscreen-only hiding, actual
+  decoded animations, measured marquee speed, no horizontal overflow and no
+  frame-to-frame teleport or browser/asset error. Geometry measurements activate
+  content-visibility sections first so intrinsic placeholders are not mistaken
+  for the final page layout.
+- Visual review includes intermediate paint frames, header landing, all three
+  capsules and the closing band. These are fidelity checks, not a claim that
+  the original unavailable font/vector/3D source has been recovered.

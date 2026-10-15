@@ -168,76 +168,18 @@ function mt_portrait_badge(): string
 /** Broad blue/violet ribbon field measured against the new 66.5s recording. */
 function mt_blue_waves(): string
 {
-    static $wave = 0;
-    $ink = 'wave-ink-' . ++$wave;
-    ob_start(); ?>
-    <svg class="blue-waves" viewBox="0 0 1000 1400" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false">
-      <defs><linearGradient id="<?= e($ink) ?>" x1="0" y1="0" x2="1" y2="0">
-        <stop stop-color="#15133b" stop-opacity="0"/>
-        <stop offset=".22" stop-color="#3020a0" stop-opacity=".75"/>
-        <stop offset=".43" stop-color="#4730c0"/>
-        <stop offset=".65" stop-color="#7146b9"/>
-        <stop offset=".83" stop-color="#5936a1" stop-opacity=".8"/>
-        <stop offset="1" stop-color="#11132d" stop-opacity="0"/>
-      </linearGradient></defs>
-      <g fill="none" stroke="url(#<?= e($ink) ?>)" stroke-linecap="round">
-        <?php for ($strand = 0; $strand < 43; $strand++):
-            $points = [];
-            for ($step = 0; $step <= 120; $step++) {
-                $y = $step * 1400 / 120;
-                $spread = ($strand - 21) * 32 * (1 - .55 * exp(-(($y - 690) / 205) ** 2));
-                $x = 500 + $spread + sin(($y - 250) * .005 + $strand * .01) * 220 + sin($y * .008) * 55;
-                $points[] = ($step === 0 ? 'M' : 'L') . round($x, 2) . ' ' . round($y, 2);
-            } ?>
-        <path stroke-width="<?= round(2.5 + 8 * ($strand / 42) ** 1.7, 2) ?>" d="<?= e(implode(' ', $points)) ?>"/>
-        <?php endfor; ?>
-      </g>
-    </svg>
-    <?php return (string) ob_get_clean();
+    return '<img class="blue-waves reference-ribbons" src="/assets/motion/reference-ribbons.webp" alt="" width="720" height="1240" loading="lazy" decoding="async" aria-hidden="true">';
 }
 
-/** Projected wire sculptures. Each filament has real depth; no flattened
- *  SVG plane flips edge-on and disappears. The script rotates these coordinates. */
+/** Small antialiased cutouts preserve the actual observed wire silhouettes.
+ *  The full recording is never served or included in site downloads. */
 function mt_manifest_object(string $type): string
 {
-    $count = $type === 'orbit' ? 14 : ($type === 'prism' ? 24 : 21);
-    ob_start(); ?>
-    <i class="mind-object object-<?= e($type) ?>" data-wire-object="<?= e($type) ?>" aria-hidden="true"><svg viewBox="0 0 100 80" focusable="false"><g class="wire-form" fill="none" stroke="currentColor" stroke-width=".55">
-      <?php for ($line = 0; $line < $count; $line++):
-          $points = [];
-          for ($step = 0; $step <= 64; $step++) {
-              $t = $step * M_PI / 32;
-              if ($type === 'orbit') {
-                  $phase = $line * 2 * M_PI / 14;
-                  $r = 2 + .55 * cos(3 * $t) + .13 * cos($phase);
-                  $x = $r * cos(2 * $t); $y = $r * sin(2 * $t);
-                  $z = .7 * sin(3 * $t) + .13 * sin($phase); $scale = 11;
-              } elseif ($type === 'prism') {
-                  $side = $line < 12 ? -1 : 1;
-                  $phase = ($line % 12) * M_PI / 6;
-                  $r = .95 + .12 * cos($phase);
-                  $x = $side * .8 + $r * cos($t); $y = -$side * .78 + $r * sin($t) * .82;
-                  $z = .12 * sin($phase) + $side * .25; $scale = 13;
-              } else {
-                  if ($line < 12) {
-                      $phase = $line * M_PI / 6;
-                      $x = .9 * cos($t) * cos($phase); $y = 1.6 * sin($t); $z = .9 * cos($t) * sin($phase);
-                  } elseif ($line < 18) {
-                      $y = ($line - 14.5) * .43;
-                      $r = .9 * sqrt(max(0, 1 - ($y / 1.6) ** 2));
-                      $x = $r * cos($t); $z = $r * sin($t);
-                  } else {
-                      $phase = ($line - 18) * M_PI / 3;
-                      $x = 1.8 * cos($t); $y = .6 * sin($t) * cos($phase); $z = .6 * sin($t) * sin($phase);
-                  }
-                  $scale = 14;
-              }
-              $points[] = ($step === 0 ? 'M' : 'L') . round(50 + ($x * .85 + $z * .5) * $scale, 2) . ' ' . round(40 + ($y * .9 - $z * .35) * $scale, 2);
-          } ?>
-      <path data-wire-line="<?= $line ?>" d="<?= e(implode(' ', $points)) ?>"/>
-      <?php endfor; ?>
-    </g></svg></i>
-    <?php return (string) ob_get_clean();
+    if (!in_array($type, ['orbit', 'prism', 'sphere'], true)) {
+        return '';
+    }
+    $base = '/assets/motion/wire-' . $type;
+    return '<i class="mind-object object-' . $type . '" data-wire-object="' . $type . '" aria-hidden="true"><img src="' . $base . '-still.webp" data-still-src="' . $base . '-still.webp" data-motion-src="' . $base . '.webp" alt="" width="164" height="110" loading="lazy" decoding="async"></i>';
 }
 
 /** One continuous sticky scene: assemble the rings, then introduce the words. */

@@ -881,7 +881,7 @@ ok('the register, the pass and the check page fit a phone',
   && /\.register-submit \{[^}]*width: 100%/.test(appCss)
   && /\.pass-facts \{[^}]*grid-template-columns: 1fr/.test(appCss)
   && /\.register-grid \{[^}]*grid-template-columns: 1fr/.test(appCss));
-ok('the butterfly replaces the old gold thread', !home.body.includes('id="threadBead"') && !appJs.includes('setupGoldThread') && appJs.includes('const read = clamp('));
+ok('the butterfly replaces the old gold thread', !home.body.includes('id="threadBead"') && !appJs.includes('setupGoldThread') && appJs.includes('const progress = clamp('));
 ok('the calendar keeps its own page styles', appCss.includes('.calendar-months') && appCss.includes('.calendar-month'));
 
 /* ---- the phone layout, checked against the stylesheet itself -------------
@@ -1506,6 +1506,7 @@ ok('the Mind section renders whole on the live page',
   && !mindPage.body.includes('mind in motion'));
 
 console.log('\n— experimental name and seven-ring scroll chapter —');
+const paintSource = fs.readFileSync(path.join(ROOT, 'assets/motion/intro-word.svg'), 'utf8');
 const cardsSource = fs.readFileSync(path.join(ROOT, 'app/cards.php'), 'utf8');
 ok('one full-screen chapter, one closing band',
   (round37Home.match(/mt_brand_chapter\(/g) || []).length === 1
@@ -1540,7 +1541,7 @@ console.log('\n— the front door —');
 const navLayout = fs.readFileSync(path.join(ROOT, 'views/layout.php'), 'utf8');
 ok('the welcome screen is the first thing in the page',
   /<body class="<\?= e\(\$bodyClass\) \?>">\s*\n?\s*<\?php[\s\S]{0,600}?class="splash"/.test(navLayout));
-ok('the splash carries only the lowercase, unspaced club name', navLayout.includes('>mindfultattva</text>')
+ok('the splash carries only the lowercase, unspaced club name', paintSource.includes('data-word="mindfultattva"')
   && !navLayout.includes('Welcome to Club') && navLayout.includes('splash-letter-ring'));
 ok('it opens on the front page only — never a pass, a check page or the club area',
   /\(\$route, \['home', 'index.php'\], true\)/.test(navLayout) && navLayout.includes('if ($splash):'));
@@ -1554,7 +1555,7 @@ ok('it reveals the site on its own, with no JavaScript needed',
   round37Css.includes('animation: splashAway .7s ease 4s forwards')
   && /@keyframes splashAway \{ to \{ opacity: 0; visibility: hidden; \} \}/.test(round37Css));
 ok('the entrance settles and hands off to the page and butterfly',
-  round37Css.includes('@keyframes inkStrip') && navLayout.includes('mask="url(#introPaint)"') && !navLayout.includes('textLength=')
+  round37Css.includes('@keyframes pigmentDraw') && navLayout.includes("/motion/intro-word.svg") && !navLayout.includes('textLength=')
   && appJs.includes("window.dispatchEvent(new CustomEvent('mt:intro-ready'))")
   && appJs.includes('window.setTimeout(finish, 3700)'));
 ok('a tap, a key or a scroll sends it away at once',
@@ -1569,7 +1570,7 @@ const splashDash = await get('/dashboard');
 ok('and it really is absent from the other pages',
   !splashCal.body.includes('class="splash"') && !splashPass.body.includes('class="splash"')
   && !splashDash.body.includes('class="splash"'));
-ok('and present on the front page', mindPage.body.includes('class="splash"') && mindPage.body.includes('>mindfultattva</text>'));
+ok('and present on the front page', mindPage.body.includes('class="splash"') && mindPage.body.includes('data-word="mindfultattva"'));
 
 console.log('\n— flapping photographic butterfly —');
 ok('three clipped photographic layers share one local cutout',
@@ -1583,15 +1584,15 @@ ok('wing hinges fold in opposite directions, body remains still',
 ok('the butterfly lives outside the brand link and has a fixed viewport flight layer',
   navLayout.indexOf('class="nav-butterfly"') < navLayout.indexOf('<div class="site-shell">')
   && round37Css.includes('position: fixed; top: 0; left: 0; z-index: 80; width: 108px'));
-ok('butterfly bobs gently with a reduced-motion fallback',
-  round37Css.includes('@keyframes butterflyHover') && round37Css.includes('.nav-butterfly .butterfly-flight, .nav-butterfly .wing-left, .nav-butterfly .wing-right, .brand-chapter .wire-form { animation: none; }'));
+ok('butterfly has a stable body and independently resting wings with a reduced-motion fallback',
+  round37Css.includes('@keyframes restingWingLeft') && round37Css.includes('.nav-butterfly .butterfly-flight, .nav-butterfly .wing-left, .nav-butterfly .wing-right, .brand-chapter .wire-form { animation: none; }'));
 ok('the glass header has no opaque scrim or perimeter line',
   round37Css.includes('.nav-wrap:before, body.is-black-chapter .nav-wrap:before { display: none; }')
   && round37Css.includes('border: 0; box-shadow: none; background: rgba(255,255,255,.12)'));
-ok('wire objects rotate actual 3D filaments instead of flipping a flat SVG plane',
+ok('wire objects use antialiased recorded silhouettes instead of invented filaments',
   appJs.includes('function setupWireObjects()') && appJs.includes('setupWireObjects();')
-  && appJs.includes('1000 / 24') && appJs.includes('document.hidden')
-  && cardsSource.includes('data-wire-object=') && cardsSource.includes('data-wire-line='));
+  && appJs.includes('image.dataset.motionSrc') && appJs.includes('document.hidden')
+  && cardsSource.includes('data-wire-object=') && !cardsSource.includes('data-wire-line='));
 
 console.log('\n— black and blue chapter sequence —');
 const renderedRings = mindPage.body.slice(mindPage.body.indexOf('<section class="brand-chapter'), mindPage.body.indexOf('<div class="manifest-chapter'));
@@ -1688,9 +1689,9 @@ ok('splash keeps the seven-circle mark while the first-page emblem is unobstruct
   navLayout.includes("mt_reference_rings(false, 'splash-rings')")
   && !round37Home.includes('mt_reference_rings') && !mindPage.body.includes('hero-rings')
   && cardsSource.includes('$ring < 6'));
-ok('recorded inline icons have three independently projected wire sculptures',
+ok('recorded inline icons have three independently observed silhouette loops',
   (mindPage.body.match(/data-wire-object="/g) || []).length === 3
-  && (mindPage.body.match(/data-wire-line="/g) || []).length === 59
+  && (mindPage.body.match(/data-motion-src="/g) || []).length === 3
   && appJs.includes('function setupWireObjects()'));
 ok('joined rings shrink and rise before the following heading',
   appJs.includes('(progress - 0.45) / 0.35') && appJs.includes('1 - exit * 0.10')
@@ -1700,9 +1701,9 @@ ok('people alternate left and right on home and member directory',
   && round37Css.includes('.team-grid, .member-cards { display: flex; flex-direction: column; gap: 70px; }'));
 ok('gallery gradients and captions cannot intercept photo clicks',
   round37Css.includes('.archive-card:after, .archive-caption, .gallery-item:after, .gallery-caption { pointer-events: none; }'));
-ok('portrait reveal and zoom have reduced-motion fallbacks',
+ok('portrait reveals are calm rather than bouncing and breathing',
   appJs.includes('function setupPortraits()') && appJs.includes('setupPortraits();')
-  && round37Css.includes('@keyframes portraitPop') && round37Css.includes('@keyframes portraitBreathe'));
+  && round37Css.includes('html.js .scroll-reveal { opacity: 0; transform: translateY(26px)') && round37Css.includes('.photo-in-view .member-photo, .photo-in-view .gallery-visual:after'));
 ok('happiness chart expresses an aspiration without a visible disclaimer or invented scores',
   !mindPage.body.includes('Illustrative trend only')
   && mindPage.body.includes('our hope to grow happier through connection and community.')
@@ -1711,55 +1712,68 @@ ok('manifestation uses five staggered rows and three fine wire objects',
   round37Css.includes('.manifest-row:nth-child(4) { padding-left: 22%; }')
   && (cardsSource.match(/mt_manifest_object\('/g) || []).length === 3
   && cardsSource.includes('function mt_manifest_object('));
-ok('wave contours fade at both ends instead of meeting a hard canvas edge',
-  cardsSource.includes('linearGradient') && cardsSource.includes('stop-opacity="0"')
-  && (mindPage.body.match(/class="blue-waves"/g) || []).length === 1
-  && cardsSource.includes("$ink = 'wave-ink-' . ++$wave")
-  && round37Css.includes('inset: 0; width: 100%; height: 100%; left: 0; overflow: visible;'));
-/* Exercise the real 3D renderer: bounded frame work, finite projection,
-   different successive poses and suspension when off screen or hidden. */
+ok('wave artwork fades naturally rather than meeting a rectangular edge',
+  cardsSource.includes('reference-ribbons.webp')
+  && (mindPage.body.match(/class="blue-waves reference-ribbons"/g) || []).length === 1
+  && round37Css.includes('mask-image: linear-gradient(transparent, #000 8%, #000 88%, transparent)'));
+/* Real cutout visibility lifecycle: start as stills; animate on screen only. */
 {
   const { runInNewContext } = await import('node:vm');
   const begin = appJs.indexOf('function setupWireObjects()');
-  const end = appJs.indexOf('/* -------------------------------------------------------- the front door */', begin);
-  let intersection, nextFrame, writes = 0, cancelled = 0;
+  const end = appJs.indexOf('function setupMarqueeTiming()', begin);
+  let intersection;
   const handlers = {};
-  const nodes = ['orbit', 'prism', 'sphere'].map((type, index) => ({
-    dataset: {wireObject: type}, style: {opacity: '1'},
-    paths: Array.from({length: [14,24,21][index]}, () => ({ d: '', setAttribute(name, d) { this.d = d; writes++; } }))
-  }));
-  const doc = {hidden: false, addEventListener: (name, fn) => {handlers[name] = fn;}};
-  const Observer = class { constructor(fn) {intersection = fn;} observe() {} };
-  runInNewContext(appJs.slice(begin, end) + '\nsetupWireObjects();', {
-    $: () => ({}), $$: (selector, node) => selector === '[data-wire-object]' ? nodes : node.paths,
-    reduced: () => false, document: doc, IntersectionObserver: Observer,
-    window: {IntersectionObserver: Observer, requestAnimationFrame: fn => {nextFrame = fn; return 1;}, cancelAnimationFrame: () => {cancelled++;}}
+  const nodes = ['orbit', 'prism', 'sphere'].map(type => {
+    const still = '/assets/motion/wire-' + type + '-still.webp';
+    return { image: { src: still, dataset: { stillSrc: still, motionSrc: still.replace('-still', '') },
+      getAttribute() { return this.src; }, setAttribute(name, value) { this.src = value; } } };
   });
-  ok('wire rendering waits until the chapter is on screen', writes === 0 && !nextFrame);
-  intersection([{isIntersecting: true}]); nextFrame(1000);
-  const firstPose = nodes[0].paths[0].d;
-  nextFrame(1020);
-  ok('wire updates are bounded below 24fps even on fast displays', writes === 59);
-  nextFrame(1050);
-  ok('rotating real coordinates changes the knot pose', firstPose !== nodes[0].paths[0].d);
-  ok('all projected sculptures remain finite', nodes.every(node => node.paths.every(path => path.d.startsWith('M') && !/NaN|Infinity/.test(path.d))));
-  nodes[0].style.opacity = '0'; const hiddenPose = nodes[0].paths[0].d; nextFrame(1100);
-  ok('unrevealed wire objects do not waste projection work', hiddenPose === nodes[0].paths[0].d);
-  intersection([{isIntersecting: false}]); const pausedWrites = writes;
-  ok('leaving the chapter cancels its animation frame', cancelled === 1);
-  nextFrame(1150);
-  ok('offscreen chapters perform no wire updates', writes === pausedWrites);
-  intersection([{isIntersecting: true}]); doc.hidden = true; nextFrame(1200);
-  ok('hidden documents stop wire updates', writes === pausedWrites);
+  const doc = { hidden: false, addEventListener: (name, fn) => { handlers[name] = fn; } };
+  const Observer = class { constructor(fn) { intersection = fn; } observe() {} };
+  runInNewContext(appJs.slice(begin, end) + '\nsetupWireObjects();', {
+    $: (selector, node) => node.image, $$: () => nodes, reduced: () => false, document: doc, IntersectionObserver: Observer,
+    window: { IntersectionObserver: Observer, matchMedia: () => ({ addEventListener() {} }) }
+  });
+  ok('wire objects start as antialiased stills without unnecessary JS frame work', nodes.every(n => n.image.src.endsWith('-still.webp')));
+  intersection(nodes.map(target => ({ target, isIntersecting: true })));
+  ok('the three actual recorded silhouette loops activate on screen', nodes.every(n => !n.image.src.includes('-still')));
+  doc.hidden = true; handlers.visibilitychange();
+  ok('background tabs replace every loop with a still', nodes.every(n => n.image.src.endsWith('-still.webp')));
+  doc.hidden = false; handlers.visibilitychange();
+  ok('visible loops resume when the tab returns', nodes.every(n => !n.image.src.includes('-still')));
+  intersection(nodes.map(target => ({ target, isIntersecting: false })));
+  ok('offscreen objects return to stills', nodes.every(n => n.image.src.endsWith('-still.webp')));
 }
-ok('closing field uses broad blue/violet ribbons and reference-scale typography',
-  cardsSource.includes('2.5 + 8 * ($strand / 42) ** 1.7')
-  && round37Css.includes('25.5vw') && round37Css.includes('animation-duration: 24s')
+/* The marquee uses measured distance / speed, including a resize/font reflow. */
+{
+  const { runInNewContext } = await import('node:vm');
+  const begin = appJs.indexOf('function setupMarqueeTiming()');
+  const end = appJs.indexOf('/* -------------------------------------------------------- the front door */', begin);
+  const track = { scrollWidth: 4690, style: {} }, events = {};
+  const win = { innerWidth: 390, addEventListener: (name, fn) => { events[name] = fn; } };
+  runInNewContext(appJs.slice(begin, end) + '\nsetupMarqueeTiming();', { $: () => track, window: win, document: {} });
+  ok('marquee speed matches the measured source rather than an arbitrary 24s loop', Math.abs(2345 / parseFloat(track.style.animationDuration) - 390 * 118.05 / 720) < .01);
+  win.innerWidth = 720; track.scrollWidth = 8000; events.resize();
+  ok('marquee preserves reference viewport-relative speed after resize', Math.abs(4000 / parseFloat(track.style.animationDuration) - 118.05) < .01);
+}
+const motionFiles = fs.readdirSync(path.join(ROOT, 'assets/motion'));
+ok('derived motion assets remain below 0.7MB and contain no recording',
+  motionFiles.reduce((sum, name) => sum + fs.statSync(path.join(ROOT, 'assets/motion', name)).size, 0) < 700000
+  && motionFiles.every(name => !/\.(mp4|webm|mov)$/i.test(name)));
+for (const type of ['orbit', 'prism', 'sphere']) {
+  const bytes = fs.readFileSync(path.join(ROOT, 'assets/motion/wire-' + type + '.webp'));
+  ok(type + ' contains a genuine animation and has a separate static fallback',
+    bytes.subarray(0, 4).toString() === 'RIFF' && bytes.includes(Buffer.from('ANIM'))
+    && fs.existsSync(path.join(ROOT, 'assets/motion/wire-' + type + '-still.webp')));
+}
+ok('closing field uses recovered blue/violet artwork and reference-scale typography',
+  cardsSource.includes('reference-ribbons.webp') && round37Css.includes('25.5vw')
   && round37Css.includes('6.7vw') && fs.existsSync(path.join(ROOT, 'assets/fonts/Inter-OFL.txt')));
-ok('the splash paints solid strips over natural-width text instead of tracing outlines',
-  navLayout.includes('mask="url(#introPaint)"') && !navLayout.includes('textLength=')
-  && round37Css.includes('animation: splashAway .45s ease 3.05s forwards')
-  && fs.existsSync(path.join(ROOT, 'assets/img/intro-stars.svg')));
+ok('the splash brush paints filled contours, with a violet lead rather than strips or noise',
+  paintSource.includes('class="paint-lead"') && paintSource.includes('class="paint-pigment"')
+  && paintSource.includes('clipPath') && !paintSource.includes('feTurbulence')
+  && !navLayout.includes('paint-strip') && round37Css.includes('@keyframes pigmentDraw')
+  && round37Css.includes('animation: splashAway .45s ease 3.05s forwards'));
 /* Splash exits are idempotent: animation, deliberate skip, fallback and
    reduced-motion all notify the waiting butterfly exactly once. */
 {
@@ -1792,74 +1806,79 @@ ok('the splash paints solid strips over natural-width text instead of tracing ou
       && (mode === 'no-splash' || splash.hidden));
   }
 }
-/* Execute entry, reversible reading progress, dark-chapter departure,
-   return, interrupted flight and reduced motion against the actual controller. */
+/* Execute continuous ascent, damped progress, dwell, interrupted departures,
+   fully offscreen hiding, resize and reduced motion against the real code. */
 {
   const { runInNewContext } = await import('node:vm');
   const begin = appJs.indexOf('function setupButterfly()');
   const end = appJs.indexOf('/* Two fast-start encodes;', begin);
   for (const lowMotion of [false, true]) {
-    const events = {}, timers = {}, classes = new Set(), flights = [];
-    let dark = false;
+    const events = {}, timers = {}, classes = new Set();
+    let dark = false, now = 100, nextFrame, headerTop = 0;
     const classList = {
       add: (...names) => names.forEach(name => classes.add(name)),
       remove: (...names) => names.forEach(name => classes.delete(name)),
       toggle: (name, active) => active ? classes.add(name) : classes.delete(name)
     };
-    const butterfly = { offsetWidth: 82, style: {}, classList,
-      animate: (frames, options) => {
-        const flight = { frames, options, cancelled: false, cancel() { this.cancelled = true; } };
-        flights.push(flight); return flight;
-      }
-    };
-    const header = { getBoundingClientRect: () => ({ bottom: 68 }) };
+    const butterfly = { offsetWidth: 82, offsetHeight: 56, style: {}, classList };
+    const header = { getBoundingClientRect: () => ({ top: headerTop, bottom: headerTop + 68 }) };
     const section = { getBoundingClientRect: () => ({ top: dark ? 0 : 200, bottom: dark ? 400 : 600 }) };
+    const doc = { hidden: false, documentElement: { scrollHeight: 4844 }, body: { classList }, addEventListener: (name, fn) => { events[name] = fn; } };
     const win = {
-      innerWidth: 390, innerHeight: 844, scrollY: 0,
-      getComputedStyle: () => ({ transform: butterfly.style.transform || 'none' }),
+      innerWidth: 390, innerHeight: 844, scrollY: 0, performance: { now: () => now },
       addEventListener: (name, fn) => { events[name] = fn; },
-      requestAnimationFrame: fn => { timers.frame = fn; return 1; },
+      requestAnimationFrame: fn => { nextFrame = fn; return 1; },
       setTimeout: (fn, ms) => { timers[ms] = fn; return ms; }, clearTimeout() {}
     };
-    const scroll = y => { win.scrollY = y; events.scroll(); if (timers.frame) timers.frame(); };
+    const advance = ms => { for (let elapsed = 0; elapsed < ms; elapsed += 16) { now += 16; if (nextFrame) { const fn = nextFrame; nextFrame = null; fn(now); } } };
+    const scroll = y => { win.scrollY = y; events.scroll(); advance(16); };
+    const ResizeObserver = class { constructor(fn) { events.layout = fn; } observe() {} };
+    win.ResizeObserver = ResizeObserver;
+    const pose = () => (butterfly.style.transform || '').match(/translate3d\(([-\d.]+)px,([-\d.]+)px/).slice(1).map(Number);
     runInNewContext(appJs.slice(begin, end) + '\nsetupButterfly();', {
       $: selector => selector === '.nav-butterfly' ? butterfly : header,
-      $$: () => [section], reduced: () => lowMotion,
-      document: { documentElement: { scrollHeight: 4844 }, body: { classList } }, window: win
+      $$: () => [section], reduced: () => lowMotion, document: doc, window: win, ResizeObserver
     });
-    const label = lowMotion ? ' (reduced motion)' : '';
-    ok('butterfly waits for the intro' + label, !classes.has('butterfly-arrived'));
+    const label = lowMotion ? ' (reduced)' : '';
+    ok('butterfly waits for intro completion' + label, !classes.has('butterfly-arrived'));
     events['mt:intro-ready']();
-    ok('entry comes slowly from below the viewport' + label,
-      classes.has('butterfly-arrived') && (lowMotion ? flights.length === 0 : flights[0].frames[0].transform.includes('964.00px') && flights[0].options.duration === 5400));
-    if (!lowMotion) flights.at(-1).onfinish();
-    scroll(4000);
-    ok('butterfly reaches the right at the end of the page' + label, butterfly.style.transform.includes('298.00px'));
-    scroll(0);
-    ok('scrolling back restores its left destination' + label, butterfly.style.transform.includes('10.00px'));
+    ok('entry starts below the viewport without showing a fixed header pose' + label,
+      classes.has('butterfly-arrived') && (lowMotion ? pose()[1] === 4 : pose()[1] === 964));
     if (!lowMotion) {
-      ok('scroll direction tilts the whole butterfly left', butterfly.style.transform.includes('rotate(-12deg)'));
-      timers[260](); timers.frame();
-      ok('resting tilt relaxes after scrolling', butterfly.style.transform.includes('rotate(0deg)'));
+      let previous = pose()[1], monotonic = true;
+      for (let step = 0; step < 405; step++) { advance(16); const current = pose()[1]; if (current > previous + .02) monotonic = false; previous = current; }
+      ok('ascent is a single gentle rising curve, not alternating wobbles', monotonic && pose()[1] < 4.1);
     }
-    dark = true; scroll(1500);
-    ok('the butterfly leaves the header on a black chapter' + label, classes.has('butterfly-away')
-      && (lowMotion || flights.at(-1).frames.at(-1).transform.includes('-242.00px')));
-    if (!lowMotion) flights.at(-1).onfinish();
-    dark = false; scroll(2200);
-    ok('leaving black returns the butterfly from the left' + label, !classes.has('butterfly-away')
-      && (lowMotion || flights.at(-1).options.duration === 3600));
+    scroll(4000); advance(2400);
+    ok('progress reaches right with mobile menu clearance' + label, Math.abs(pose()[0] - 234) < .1 && pose()[1] === 4);
+    scroll(0); advance(2400);
+    ok('reverse scroll smoothly returns to the left perch' + label, Math.abs(pose()[0] - 10) < .1);
     if (!lowMotion) {
-      const returning = flights.at(-1);
-      dark = true; scroll(1500);
-      ok('reversing into black cancels an unfinished return flight', returning.cancelled);
-      const departing = flights.at(-1);
-      dark = false; scroll(2300);
-      ok('an interrupted departure returns from its current pose without teleporting', departing.cancelled && flights.at(-1).frames[0].opacity === 1);
+      timers[260](); advance(1500);
+      ok('the perched body stops bobbing and its tilt settles', /rotate\(-?0\.0\ddeg\)/.test(butterfly.style.transform));
+      dark = true; scroll(2000); advance(144); dark = false; scroll(0); advance(600);
+      ok('a fast crossing shorter than the dwell never hides or launches it away', !classes.has('butterfly-away') && pose()[0] >= 9);
     }
-    events['mt:intro-ready'](); timers[5500]();
-    ok('the fallback never starts a second bottom entry' + label,
-      flights.filter(f => f.options.duration === 5400).length === (lowMotion ? 0 : 1));
+    dark = true; scroll(1500); advance(450);
+    ok('departure is visible and gradual rather than immediate opacity removal' + label,
+      lowMotion ? classes.has('butterfly-away') : !classes.has('butterfly-away') && classes.has('butterfly-flying'));
+    if (!lowMotion) {
+      const before = pose(); dark = false; scroll(0); advance(350);
+      const after = pose();
+      ok('interrupted departure steers from its current pose without teleporting', !classes.has('butterfly-away') && Math.hypot(after[0] - before[0], after[1] - before[1]) < 100);
+      advance(4500); dark = true; scroll(1500); advance(4500);
+      ok('opacity changes only after the butterfly has fully flown left out of view', classes.has('butterfly-away') && pose()[0] <= -182);
+    }
+    dark = false; scroll(0); advance(4500);
+    ok('paper sections bring it back from the left and land on the bar' + label,
+      !classes.has('butterfly-away') && Math.abs(pose()[0] - 10) < .1 && pose()[1] === 4);
+    headerTop = 130; events.layout(); advance(2400);
+    ok('late banner/layout changes update the real header perch' + label, Math.abs(pose()[1] - 86) < .1);
+    headerTop = 0; events.layout(); advance(2400);
+    win.innerWidth = 320; events.resize(); advance(2000);
+    ok('resize preserves a finite stable perch instead of cancelling to a hidden pose' + label, !/NaN|Infinity/.test(butterfly.style.transform) && !classes.has('butterfly-away'));
+    const previous = butterfly.style.transform; events['mt:intro-ready'](); timers[5500]();
+    ok('intro/fallback cannot start a second ascent' + label, previous === butterfly.style.transform);
   }
 }
 {

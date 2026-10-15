@@ -1736,13 +1736,12 @@ html.no-js .nav-butterfly { display: none; }
 .splash { background: #09090b; }
 .splash-copy { width: min(84vw, 1100px); }
 .splash-word .splash-name { font-family: 'MT Reference', sans-serif; font-size: 148px; letter-spacing: -.04em; fill: #f6f5f7; stroke: none; animation: none; }
-.paint-strip { transform-box: fill-box; transform-origin: right center; animation: inkStrip .75s cubic-bezier(.2,.7,.3,1) var(--strip-delay) both; }
-@keyframes inkStrip { 0% { transform: scaleX(0); opacity: 0; } 18% { opacity: 1; transform: scaleX(.12); } 40% { transform: scaleX(.4); } 64% { transform: scaleX(.36); } 100% { transform: scaleX(1); opacity: 1; } }
+
 .splash-ring-intro { width: clamp(60px, 16vw, 130px); animation: introMarkLeave .45s ease 2.05s forwards; }
 .splash-ring-intro .splash-rings { animation-duration: 2.3s; }
 .splash-ring-intro .splash-rings circle { vector-effect: non-scaling-stroke; stroke-width: .6px; }
 .splash-letter-ring { left: 84%; top: 51%; width: 8%; animation-delay: 2.1s; }
-@media (prefers-reduced-motion: reduce) { .brand-finale-stage .blue-waves g, .paint-strip { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .brand-finale-stage .blue-waves g { animation: none; } }
 @media (max-height: 600px) { .brand-finale .brand-band-track span { font-size: min(25.5vw, 26svh); } .brand-finale-intro { font-size: min(6.7vw, 6svh); } }
 .brand-chapter .wire-form { animation: none; transform: none; }
 .splash { animation: splashAway .45s ease 3.05s forwards; }
@@ -1754,3 +1753,42 @@ html.no-js .nav-butterfly { display: none; }
 .splash-copy { z-index: 1; }
 @keyframes introStars { to { transform: translateY(-10px) scale(1.015); } }
 @media (prefers-reduced-motion: reduce) { .splash:before { animation: none; } }
+
+/* Observation-led motion revision: one stable perch, continuous trajectories,
+   whole-word pigment coverage and actual sampled wire silhouettes. */
+.nav-butterfly { transition: none; }
+.nav-butterfly .butterfly-flight { animation: none; transform: translate(-50%,-50%) rotate(-7deg); }
+.nav-butterfly:not(.butterfly-flying) .wing-left { animation: restingWingLeft 3.2s ease-in-out infinite; }
+.nav-butterfly:not(.butterfly-flying) .wing-right { animation: restingWingRight 3.2s ease-in-out infinite; }
+@keyframes restingWingLeft { 0%,100% { transform: perspective(500px) rotateY(-9deg); } 50% { transform: perspective(500px) rotateY(-19deg); } }
+@keyframes restingWingRight { 0%,100% { transform: perspective(500px) rotateY(9deg); } 50% { transform: perspective(500px) rotateY(19deg); } }
+.brand-chapter .mind-object > img { display: block; width: 100%; height: 100%; max-width: none; object-fit: contain; }
+.brand-finale-stage .reference-ribbons { inset: 0; left: 0; width: 100%; height: 100%; object-fit: fill; opacity: 1; filter: none; mask-image: linear-gradient(transparent, #000 8%, #000 88%, transparent); }
+.brand-finale .brand-band-track { animation-duration: 36s; }
+html.js .scroll-reveal { opacity: 0; transform: translateY(26px); transition: opacity .8s ease, transform 1s cubic-bezier(.22,1,.36,1); }
+html.js .scroll-reveal.is-visible { opacity: 1; transform: none; }
+.portrait-card.photo-in-view, .gallery-stage.photo-in-view,
+.portrait-card.photo-in-view .team-avatar, .portrait-card.photo-in-view .member-avatar,
+.portrait-card.photo-in-view .portrait-badge { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .nav-butterfly:not(.butterfly-flying) .wing-left, .nav-butterfly:not(.butterfly-flying) .wing-right { animation: none; }
+  html.js .scroll-reveal { opacity: 1; transform: none; transition: none; }
+}
+
+/* Match the reference's caption/wordmark baseline separation, independently
+   of line-box ascenders and the length of the club's substituted words. */
+.brand-finale-intro { position: absolute; inset-inline: 0; top: 40.3%; transform: translateY(-50%); }
+.brand-finale .brand-band { position: absolute; top: 44%; left: 0; }
+.photo-in-view .member-photo, .photo-in-view .gallery-visual:after,
+.photo-in-view .archive-image:after, .photo-in-view .gallery-stage-image:after { animation: none; }
+
+/* Each filled glyph is painted along its own real contours. A purple wet
+   leading edge precedes the opaque white brush; no horizontal strips, word
+   translation or television-noise dissolve. Inter outlines retain their OFL. */
+.splash-copy { width: min(90vw, 1100px); aspect-ratio: 1000 / 210; }
+.paint-lead, .paint-pigment { fill: none; stroke-width: 23; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 100; stroke-dashoffset: 100; animation: pigmentDraw .72s cubic-bezier(.35,0,.55,1) var(--ink-delay) both; }
+.paint-lead { stroke: #7655c4; }
+.paint-pigment { stroke: #f6f5f7; animation-delay: calc(var(--ink-delay) + .055s); }
+@keyframes pigmentDraw { to { stroke-dashoffset: 0; } }
+.splash-letter-ring { left: 88%; top: 53%; width: 8.2%; }
+@media (prefers-reduced-motion: reduce) { .paint-lead, .paint-pigment { animation: none; stroke-dashoffset: 0; } }

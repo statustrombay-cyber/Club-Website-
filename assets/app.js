@@ -27,25 +27,22 @@
   };
 
   function setupReveal() {
-    const targets = $$('.section, .detail-card, .event-card, .gallery-item, .team-card, .calendar-item, .member-card, .psyche-card');
+    // Reveal words and tiles, not their entire containing section twice.
+    const targets = $$('.section-head > *, .section > .container > h2, .section > .container > p, .detail-card, .event-card, .gallery-item, .team-card, .calendar-item, .member-card, .psyche-card, .gallery-stage');
     if (!('IntersectionObserver' in window) || reduced()) {
       targets.forEach(function (node) { node.classList.add('is-visible'); });
       return;
     }
     const observer = new IntersectionObserver(function (entries) {
-      entries.forEach(function (entry) {
-        if (!entry.isIntersecting) return;
-        entry.target.classList.add('is-visible');
-        observer.unobserve(entry.target);
+      const entering = entries.filter(function (entry) { return entry.isIntersecting; });
+      // Stagger only siblings arriving together. A late section never inherits
+      // a delay from its index in the whole document.
+      entering.forEach(function (entry, index) {
+        entry.target.style.transitionDelay = Math.min(index % 4 * 75, 225) + 'ms';
+        entry.target.classList.add('is-visible'); observer.unobserve(entry.target);
       });
-    }, { threshold: .12 });
-    targets.forEach(function (node, index) {
-      if (!node.classList.contains('scroll-reveal')) {
-        node.classList.add('scroll-reveal');
-        node.style.transitionDelay = Math.min(index * 35, 280) + 'ms';
-      }
-      observer.observe(node);
-    });
+    }, { threshold: .08, rootMargin: '0px 0px -4% 0px' });
+    targets.forEach(function (node) { node.classList.add('scroll-reveal'); observer.observe(node); });
   }
 
   /* ---------------------------------------------------------- photo frame */
@@ -456,80 +453,42 @@
     paint();
   }
 
-  /* Animate actual 3D filaments, not a flat drawing turned sideways. The
-     work is bounded to 24fps and pauses outside the chapter/hidden documents. */
+  /* Antialiased silhouette loops preserve the observed poses. Only visible
+     objects animate; no-script and reduced-motion visitors receive stills. */
   function setupWireObjects() {
-    const chapter = $('.brand-chapter');
-    if (!chapter || reduced() || !('IntersectionObserver' in window)) return;
-    const objects = $$('[data-wire-object]', chapter).map(function (node, index) {
-      const type = node.dataset.wireObject;
-      const paths = $$('[data-wire-line]', node);
-      const curves = paths.map(function (path, line) {
-        const points = [];
-        for (let step = 0; step <= 64; step++) {
-          const t = step * Math.PI / 32;
-          let x, y, z;
-          if (type === 'orbit') {
-            const phase = line * Math.PI * 2 / 14;
-            const r = 2 + .55 * Math.cos(3 * t) + .13 * Math.cos(phase);
-            x = r * Math.cos(2 * t); y = r * Math.sin(2 * t); z = .7 * Math.sin(3 * t) + .13 * Math.sin(phase);
-          } else if (type === 'prism') {
-            const side = line < 12 ? -1 : 1;
-            const phase = (line % 12) * Math.PI / 6;
-            const r = .95 + .12 * Math.cos(phase);
-            x = side * .8 + r * Math.cos(t); y = -side * .78 + r * Math.sin(t) * .82; z = .12 * Math.sin(phase) + side * .25;
-          } else if (line < 12) {
-            const phase = line * Math.PI / 6;
-            x = .9 * Math.cos(t) * Math.cos(phase); y = 1.6 * Math.sin(t); z = .9 * Math.cos(t) * Math.sin(phase);
-          } else if (line < 18) {
-            y = (line - 14.5) * .43;
-            const r = .9 * Math.sqrt(Math.max(0, 1 - Math.pow(y / 1.6, 2)));
-            x = r * Math.cos(t); z = r * Math.sin(t);
-          } else {
-            const phase = (line - 18) * Math.PI / 3;
-            x = 1.8 * Math.cos(t); y = .6 * Math.sin(t) * Math.cos(phase); z = .6 * Math.sin(t) * Math.sin(phase);
-          }
-          points.push([x, y, z]);
-        }
-        return points;
+    const objects = $$('[data-wire-object]');
+    if (!objects.length || reduced() || !('IntersectionObserver' in window)) return;
+    const visible = new Set();
+    function update() {
+      objects.forEach(function (node) {
+        const image = $('img', node);
+        const source = visible.has(node) && !document.hidden && !reduced() ? image.dataset.motionSrc : image.dataset.stillSrc;
+        if (image.getAttribute('src') !== source) image.setAttribute('src', source);
       });
-      return { node: node, paths: paths, curves: curves, scale: type === 'orbit' ? 11 : type === 'prism' ? 13 : 14, speed: index === 1 ? .8 : index === 2 ? .62 : 1 };
-    });
-    let visible = false, frame = 0, last = 0, clock = 0;
-    function draw(time) {
-      frame = 0;
-      if (!visible || document.hidden || reduced()) { last = 0; return; }
-      if (last && time - last < 1000 / 24) { frame = window.requestAnimationFrame(draw); return; }
-      clock += last ? Math.min(100, time - last) : 0;
-      last = time;
-      objects.forEach(function (object) {
-        if (object.node.style.opacity === '0') return;
-        const angle = clock / 1800 * object.speed;
-        const cy = Math.cos(angle), sy = Math.sin(angle), cx = Math.cos(angle * .63 + .35), sx = Math.sin(angle * .63 + .35);
-        object.curves.forEach(function (curve, index) {
-          const d = curve.map(function (p, step) {
-            const x = p[0] * cy + p[2] * sy;
-            const z = -p[0] * sy + p[2] * cy;
-            const y = p[1] * cx - z * sx;
-            const depth = p[1] * sx + z * cx;
-            const perspective = 8 / (8 - depth * .25);
-            return (step ? 'L' : 'M') + (50 + x * object.scale * perspective).toFixed(2) + ' ' + (40 + y * object.scale * perspective).toFixed(2);
-          }).join(' ');
-          object.paths[index].setAttribute('d', d);
-        });
-      });
-      frame = window.requestAnimationFrame(draw);
-    }
-    function resume() {
-      if (!frame && visible && !document.hidden && !reduced()) frame = window.requestAnimationFrame(draw);
     }
     const observer = new IntersectionObserver(function (entries) {
-      visible = entries.some(function (entry) { return entry.isIntersecting; });
-      if (!visible) { if (frame) window.cancelAnimationFrame(frame); frame = 0; last = 0; }
-      else resume();
-    }, { threshold: 0 });
-    observer.observe(chapter);
-    document.addEventListener('visibilitychange', resume);
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) visible.add(entry.target); else visible.delete(entry.target);
+      });
+      update();
+    }, { threshold: .01 });
+    objects.forEach(function (node) { observer.observe(node); });
+    document.addEventListener('visibilitychange', update);
+    const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (preference.addEventListener) preference.addEventListener('change', update);
+  }
+
+  /* Measured glyph displacement: 118.05 source pixels/sec at 720px wide.
+     Derive the loop duration from actual text metrics, never a guessed period. */
+  function setupMarqueeTiming() {
+    const track = $('.brand-band-track');
+    if (!track) return;
+    function measure() {
+      track.style.animationDuration = ((track.scrollWidth / 2) / (window.innerWidth * 118.05 / 720)).toFixed(3) + 's';
+    }
+    measure();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
+    window.addEventListener('resize', measure, { passive: true });
   }
 
   /* -------------------------------------------------------- the front door */
@@ -570,129 +529,125 @@
     const butterfly = $('.nav-butterfly');
     const header = $('.nav-wrap');
     if (!butterfly || !header) return;
-    let state = 'waiting';
-    let away = false;
-    let activeFlight = null;
-    let frame = 0;
-    let lastY = window.scrollY || 0;
-    let tilt = 0;
-    let scrollTimer = 0;
-    const clamp = function (n) { return Math.max(0, Math.min(1, n)); };
-    const transform = function (x, y, angle) {
-      return 'translate3d(' + x.toFixed(2) + 'px,' + y.toFixed(2) + 'px,0) rotate(' + angle + 'deg)';
-    };
-    const position = function () {
-      const width = butterfly.offsetWidth;
-      const read = clamp((window.scrollY || 0) / Math.max(1, document.documentElement.scrollHeight - window.innerHeight));
-      const left = 10;
-      const right = Math.max(left, window.innerWidth - width - 10);
+    const clamp = function (n, a, b) { return Math.max(a, Math.min(b, n)); };
+    let state = 'waiting', frame = 0, lastFrame = 0, flight = null;
+    let x = 0, y = 0, angle = 0, vx = 0, vy = 0, tilt = 0;
+    let target = null, needsMeasure = true, desiredDark = false, committedDark = false, darkSince = 0;
+    let lastScroll = window.scrollY || 0, scrollTimer = 0;
+    function measure(now) {
       const bounds = header.getBoundingClientRect();
-      return { x: left + read * (right - left), y: Math.max(8, bounds.bottom - 25), width: width,
-        dark: $$('.black-chapter').some(function (section) {
-          const box = section.getBoundingClientRect();
-          return box.top <= bounds.bottom + 1 && box.bottom > bounds.bottom;
-        }) };
-    };
-    function cancelFlight() {
-      if (activeFlight) { activeFlight.cancel(); activeFlight = null; }
-      butterfly.classList.remove('butterfly-flying');
-    }
-    function fly(kind, point) {
-      const current = window.getComputedStyle(butterfly).transform;
-      const interrupted = Boolean(activeFlight);
-      cancelFlight();
-      const leaving = kind === 'leave';
-      butterfly.classList.add('butterfly-arrived', 'butterfly-flying');
-      butterfly.classList.toggle('butterfly-away', leaving);
-      butterfly.style.transform = transform(point.x, point.y, tilt);
-      if (reduced() || !butterfly.animate) {
-        state = leaving ? 'away' : 'perched';
-        butterfly.classList.remove('butterfly-flying');
-        return;
-      }
-      state = leaving ? 'leaving' : 'entering';
-      const target = transform(point.x, point.y, tilt);
-      let frames;
-      if (leaving) {
-        frames = [
-          { transform: current === 'none' ? target : current, opacity: 1 },
-          { transform: transform(-point.width * .4, point.y + 65, -28), opacity: 1, offset: .65 },
-          { transform: transform(-point.width - 160, point.y + 20, -38), opacity: 0 }
-        ];
-      } else if (kind === 'return') {
-        frames = [
-          { transform: interrupted && current !== 'none' ? current : transform(-point.width - 120, point.y + 95, 25), opacity: interrupted ? 1 : 0 },
-          { transform: transform(point.x * .5, point.y + 35, -12), opacity: 1, offset: .65 },
-          { transform: target, opacity: 1 }
-        ];
-      } else {
-        frames = [
-          { transform: transform(window.innerWidth * .2, window.innerHeight + 120, -12), opacity: 0 },
-          { transform: transform(window.innerWidth * .08, window.innerHeight * .73, -18), opacity: 1, offset: .25 },
-          { transform: transform(window.innerWidth * .32, window.innerHeight * .44, 16), opacity: 1, offset: .52 },
-          { transform: transform(point.x + 18, point.y + 90, -12), opacity: 1, offset: .82 },
-          { transform: target, opacity: 1 }
-        ];
-      }
-      const flight = butterfly.animate(frames, {
-        duration: leaving ? 1900 : kind === 'return' ? 3600 : 5400,
-        easing: 'cubic-bezier(.35,.05,.25,1)', fill: 'backwards'
+      const width = butterfly.offsetWidth;
+      const progress = clamp((window.scrollY || 0) / Math.max(1, document.documentElement.scrollHeight - window.innerHeight), 0, 1);
+      target = { x: 10 + progress * Math.max(0, window.innerWidth - width - (window.innerWidth <= 1100 ? 84 : 32)), y: Math.max(4, (bounds.top || 0) + 12 - butterfly.offsetHeight), width: width };
+      const dark = $$('.black-chapter').some(function (section) {
+        const box = section.getBoundingClientRect();
+        return box.top <= bounds.bottom + 1 && box.bottom > bounds.bottom;
       });
-      activeFlight = flight;
-      flight.onfinish = function () {
-        if (activeFlight !== flight) return;
-        activeFlight = null;
-        butterfly.classList.remove('butterfly-flying');
-        state = leaving ? 'away' : 'perched';
-        paint();
-      };
+      if (dark !== desiredDark) { desiredDark = dark; darkSince = now; }
+      needsMeasure = false;
     }
-    function paint() {
-      frame = 0;
-      if (state === 'waiting') return;
-      const point = position();
-      if (point.dark !== away) {
-        away = point.dark;
-        fly(away ? 'leave' : 'return', point);
-      } else if (state === 'perched') {
-        butterfly.style.transform = transform(point.x, point.y, tilt);
-      }
+    function render() {
+      butterfly.style.transform = 'translate3d(' + x.toFixed(2) + 'px,' + y.toFixed(2) + 'px,0) rotate(' + angle.toFixed(2) + 'deg)';
     }
     function schedule() {
-      if (!frame) frame = window.requestAnimationFrame(paint);
+      if (!frame && state !== 'waiting' && !document.hidden) frame = window.requestAnimationFrame(tick);
+    }
+    function launch(kind) {
+      const end = kind === 'leave' ? { x: -target.width - 100, y: target.y + 5 } : { x: target.x, y: target.y };
+      const duration = kind === 'entry' ? 6400 : Math.max(kind === 'leave' ? 2800 : 3400, Math.abs(end.x - x) * 3.4);
+      // A continuous tangent survives reversals; no cancelled animation can
+      // restore an old CSS pose or switch the butterfly's opacity mid-flight.
+      const reach = Math.min(380, duration * .22);
+      flight = { kind: kind, elapsed: 0, duration: duration,
+        start: { x: x, y: y, angle: angle },
+        c1: kind === 'entry' ? { x: x - window.innerWidth * .06, y: window.innerHeight * .55 } : { x: x + vx * reach, y: y + vy * reach },
+        c2: { x: kind === 'leave' ? end.x + 70 : end.x + 20, y: kind === 'entry' ? end.y + window.innerHeight * .18 : end.y - 18 }, end: end };
+      state = kind === 'leave' ? 'leaving' : 'entering';
+      butterfly.classList.remove('butterfly-away');
+      butterfly.classList.add('butterfly-arrived', 'butterfly-flying');
+      schedule();
+    }
+    function tick(now) {
+      frame = 0;
+      if (document.hidden || state === 'waiting') { lastFrame = 0; return; }
+      const dt = lastFrame ? clamp(now - lastFrame, 0, 160) : 16;
+      lastFrame = now;
+      if (needsMeasure || !target) measure(now);
+      if (reduced()) {
+        flight = null; committedDark = desiredDark; state = desiredDark ? 'away' : 'perched';
+        x = target.x; y = target.y; angle = 0;
+        butterfly.classList.toggle('butterfly-away', desiredDark);
+        butterfly.classList.remove('butterfly-flying'); render(); lastFrame = 0; return;
+      }
+      // Brief crossings during a fast scroll never trigger a disappearance.
+      if (desiredDark !== committedDark && now - darkSince >= 320) {
+        committedDark = desiredDark;
+        launch(desiredDark ? 'leave' : 'return');
+      }
+      const oldX = x, oldY = y;
+      if (flight) {
+        flight.elapsed += dt;
+        const t = clamp(flight.elapsed / flight.duration, 0, 1);
+        const u = t * t * (3 - 2 * t), v = 1 - u;
+        if (flight.kind !== 'leave') {
+          const steer = 1 - Math.exp(-dt / 260);
+          flight.end.x += (target.x - flight.end.x) * steer;
+          flight.end.y += (target.y - flight.end.y) * steer;
+        }
+        x = v * v * v * flight.start.x + 3 * v * v * u * flight.c1.x + 3 * v * u * u * flight.c2.x + u * u * u * flight.end.x;
+        y = v * v * v * flight.start.y + 3 * v * v * u * flight.c1.y + 3 * v * u * u * flight.c2.y + u * u * u * flight.end.y;
+        const pitch = clamp((x - oldX) / Math.max(1, dt) * 20, -9, 9);
+        angle += (pitch - angle) * (1 - Math.exp(-dt / 180));
+        if (t === 1) {
+          state = flight.kind === 'leave' ? 'away' : 'perched'; flight = null;
+          butterfly.classList.toggle('butterfly-away', state === 'away');
+        }
+      } else if (state === 'perched') {
+        const follow = 1 - Math.exp(-dt / 260);
+        x += (target.x - x) * follow; y += (target.y - y) * follow;
+        angle += (tilt - angle) * (1 - Math.exp(-dt / 220));
+      }
+      vx = (x - oldX) / Math.max(1, dt); vy = (y - oldY) / Math.max(1, dt);
+      const moving = state === 'perched' && (Math.abs(x - target.x) > .1 || Math.abs(y - target.y) > .1 || Math.abs(angle - tilt) > .1);
+      butterfly.classList.toggle('butterfly-flying', Boolean(flight) || moving);
+      if (!flight && !moving && state === 'perched') { x = target.x; y = target.y; angle = tilt; }
+      render();
+      if (flight || moving || desiredDark !== committedDark) schedule(); else lastFrame = 0;
     }
     function enter() {
       if (state !== 'waiting') return;
-      const point = position();
-      away = point.dark;
-      if (away) {
-        state = 'away';
-        butterfly.classList.add('butterfly-arrived', 'butterfly-away');
-      } else fly('entry', point);
+      measure(window.performance.now());
+      butterfly.classList.add('butterfly-arrived');
+      if (desiredDark || reduced()) {
+        committedDark = desiredDark; state = desiredDark ? 'away' : 'perched';
+        x = desiredDark ? -target.width - 100 : target.x; y = target.y;
+        butterfly.classList.toggle('butterfly-away', desiredDark); render();
+      } else {
+        x = window.innerWidth * .27; y = window.innerHeight + 120;
+        render(); launch('entry');
+      }
     }
     window.addEventListener('mt:intro-ready', enter, { once: true });
     window.setTimeout(enter, 5500);
     window.addEventListener('scroll', function () {
-      const y = window.scrollY || 0;
-      if (!reduced()) {
-        if (y !== lastY) tilt = y > lastY ? 12 : -12;
-        document.body.classList.add('butterfly-scrolling');
-        window.clearTimeout(scrollTimer);
-        scrollTimer = window.setTimeout(function () {
-          tilt = 0;
-          document.body.classList.remove('butterfly-scrolling');
-          schedule();
-        }, 260);
-      }
-      lastY = y;
+      const next = window.scrollY || 0;
+      tilt = next === lastScroll ? tilt : next > lastScroll ? 7 : -7;
+      lastScroll = next; needsMeasure = true;
+      document.body.classList.add('butterfly-scrolling');
+      window.clearTimeout(scrollTimer);
+      scrollTimer = window.setTimeout(function () {
+        tilt = 0; document.body.classList.remove('butterfly-scrolling'); schedule();
+      }, 260);
       schedule();
     }, { passive: true });
-    window.addEventListener('resize', function () {
-      if (state === 'waiting') return;
-      cancelFlight();
-      state = away ? 'away' : 'perched';
-      schedule();
-    });
+    window.addEventListener('resize', function () { needsMeasure = true; schedule(); });
+    // Banners, font loading and content-visibility can move a chapter without
+    // another scroll event. Refresh its boundary, but never reset a flight.
+    if ('ResizeObserver' in window) {
+      const observer = new ResizeObserver(function () { needsMeasure = true; schedule(); });
+      observer.observe(document.body); observer.observe(header);
+    }
+    document.addEventListener('visibilitychange', function () { lastFrame = 0; schedule(); });
   }
 
   /* Two fast-start encodes; the untouched master is retained for the club.
@@ -784,6 +739,7 @@
     setupSplash();
     setupBrandBand();
     setupWireObjects();
+    setupMarqueeTiming();
     setupReveal();
     setupPortraits();
     setupMenu();
