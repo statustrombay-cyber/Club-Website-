@@ -1537,7 +1537,7 @@ html.no-js .brand-chapter-stage, html.no-js .brand-finale-stage { position: rela
 .manifest-chapter .manifest-row { display: flex; align-items: center; gap: .18em; margin: .08em 0; }
 .manifest-chapter h2 em { display: inline; font-family: 'MT Serif', Georgia, serif; color: #a29aa9; font-style: italic; font-weight: 400; margin: 0; }
 .manifest-chapter .mind-object { position: relative; inset: auto; display: inline-grid; place-items: center; width: 1.5em; height: .9em; border: 1px solid #716a7c; border-radius: .35em; background: none; box-shadow: none; transform: none; animation: none; aspect-ratio: auto; flex-shrink: 0; }
-.brand-finale { height: 240svh; background: #0b0b0d; }
+.brand-finale { height: 150svh; background: #0b0b0d; }
 .brand-finale-stage { isolation: isolate; height: calc(100svh - 84px); min-height: 0; gap: clamp(32px, 9svh, 100px); padding: 60px 0; }
 .brand-finale-stage .blue-waves { inset: 8% 0; height: 84%; width: 100%; color: #8463df; opacity: .72; }
 .brand-finale-intro { color: #eee9f5; text-shadow: none; font-size: clamp(1.05rem, 2vw, 1.8rem); }
@@ -1663,7 +1663,7 @@ html.js .nav-butterfly.butterfly-away { opacity: 0; }
 @media (max-width: 600px) { .nav-butterfly { width: 82px; height: 56px; } }
 /* One pinned scene, rather than a long ring section followed by a static
    heading. The rows and the three objects have separate scroll timelines. */
-.brand-chapter { height: 270svh; }
+.brand-chapter { height: 300svh; }
 .brand-chapter-stage { background: radial-gradient(ellipse at 50% 55%, #242129, #0b0b0d 78%); }
 .brand-chapter .manifest-chapter { position: absolute; inset: 0; min-height: 0; height: 100%; padding: 0 6vw; background: none; display: grid; place-items: center; pointer-events: none; }
 .brand-chapter .manifest-chapter h2 { width: min(760px, 100%); font-weight: 500; font-size: clamp(2rem, min(7vw, 8svh), 6rem); transform: translateY(8svh); }
@@ -1744,7 +1744,7 @@ html.no-js .nav-butterfly { display: none; }
 @media (prefers-reduced-motion: reduce) { .brand-finale-stage .blue-waves g { animation: none; } }
 @media (max-height: 600px) { .brand-finale .brand-band-track span { font-size: min(25.5vw, 26svh); } .brand-finale-intro { font-size: min(6.7vw, 6svh); } }
 .brand-chapter .wire-form { animation: none; transform: none; }
-.splash { animation: splashAway .45s ease 3.05s forwards; }
+.splash { animation: splashAway .65s ease 5.8s forwards; }
 .splash-word .splash-name { letter-spacing: -.02em; }
 .splash-ring-intro { animation-duration: .65s; }
 @keyframes introMarkLeave { to { opacity: 0; transform: translate(calc(-50% + min(28.56vw, 374px)),-50%) scale(.45); } }
@@ -1786,9 +1786,24 @@ html.js .scroll-reveal.is-visible { opacity: 1; transform: none; }
    leading edge precedes the opaque white brush; no horizontal strips, word
    translation or television-noise dissolve. Inter outlines retain their OFL. */
 .splash-copy { width: min(90vw, 1100px); aspect-ratio: 1000 / 210; }
-.paint-lead, .paint-pigment { fill: none; stroke-width: 23; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 100; stroke-dashoffset: 100; animation: pigmentDraw .72s cubic-bezier(.35,0,.55,1) var(--ink-delay) both; }
+.paint-lead, .paint-pigment { fill: none; stroke-width: 23; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 100; stroke-dashoffset: 100; animation: pigmentDraw 2.35s cubic-bezier(.35,0,.55,1) calc(var(--ink-delay) + .6s) both; }
 .paint-lead { stroke: #7655c4; }
-.paint-pigment { stroke: #f6f5f7; animation-delay: calc(var(--ink-delay) + .055s); }
+.paint-pigment { stroke: #f6f5f7; animation-delay: calc(var(--ink-delay) + .75s); }
 @keyframes pigmentDraw { to { stroke-dashoffset: 0; } }
 .splash-letter-ring { left: 88%; top: 53%; width: 8.2%; }
 @media (prefers-reduced-motion: reduce) { .paint-lead, .paint-pigment { animation: none; stroke-dashoffset: 0; } }
+
+/* Subtle crispness only; do not thicken the reference's fine ring artwork. */
+.brand-rings circle { stroke-width: 1.08px; stroke-opacity: 1; }
+.splash-ring-intro .splash-rings circle { stroke-width: .72px; }
+/* The centre mark gathers as one piece; no detached satellite enters from
+   off-canvas looking like a separate moon. The final-a motif is retained. */
+.splash-ring-intro .splash-rings circle:not(:first-child) { animation: none; transform: none; opacity: 1; }
+.splash-ring-intro { animation-delay: 2.55s; }
+.splash-letter-ring { animation-delay: 3.9s; animation-duration: 1.65s; }
+
+/* Reveal the i dot only after its stem exists; it must not read as a detached
+   white moon to the left of the gathering mark. */
+.paint-i-dot { fill: #f6f5f7; opacity: 0; animation: paintDot .3s ease 3.6s both; }
+@keyframes paintDot { to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .paint-i-dot { animation: none; opacity: 1; } }

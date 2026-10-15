@@ -222,7 +222,11 @@ function mt_sanitize_item(string $collection, array $input, array $existing = []
             $item['kicker']          = mt_clean_text($input['kicker'] ?? ($existing['kicker'] ?? ''), 80);
             $item['description']     = mt_clean_text($input['description'] ?? ($existing['description'] ?? ''), 1200);
             $item['image']           = mt_safe_image($input['image'] ?? ($existing['image'] ?? ''));
-            $item['attachment']      = mt_safe_url($input['attachment'] ?? ($existing['attachment'] ?? ''), true);
+            // The editor/public cards call this brochureUrl; keep the older
+            // attachment key in sync so both old and new backups round-trip.
+            $brochure = mt_safe_url($input['brochureUrl'] ?? $input['attachment'] ?? $existing['brochureUrl'] ?? $existing['attachment'] ?? '', true);
+            $item['attachment'] = $brochure;
+            $item['brochureUrl'] = $brochure;
             $item['registrationUrl'] = mt_safe_url($input['registrationUrl'] ?? ($existing['registrationUrl'] ?? ''));
             $item['published']       = mt_truthy($input['published'] ?? ($existing['published'] ?? false));
 
@@ -280,10 +284,14 @@ function mt_sanitize_item(string $collection, array $input, array $existing = []
             $item['date']    = mt_clean_text($input['date'] ?? ($existing['date'] ?? ''), 80);
             $item['image']   = mt_safe_image($input['image'] ?? ($existing['image'] ?? ''));
             $item['order']   = (int) ($input['order'] ?? ($existing['order'] ?? 0));
+            if (array_key_exists('visible', $input) || array_key_exists('visible', $existing)) {
+                $item['visible'] = mt_truthy($input['visible'] ?? $existing['visible'] ?? true);
+            }
             break;
 
     }
 
+    $item['order'] = (int) ($input['order'] ?? ($item['order'] ?? $existing['order'] ?? 0));
     if (empty($item['order'])) {
         $item['order'] = (int) ($existing['order'] ?? 0);
         if ($item['order'] <= 0) {

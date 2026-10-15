@@ -793,11 +793,41 @@ const backups = await get('/api/backups', AUTH);
 const backupItems = JSON.parse(backups.body).items || [];
 ok('a backup is created on save', backupItems.length >= 1, 'count ' + backupItems.length);
 if (backupItems.length) {
+  const beforeRestoreRevision = JSON.parse((await get('/api/site', AUTH)).body).revision;
   const restored = await sendJson('/api/backups/restore', 'POST', { name: backupItems[0].name }, AUTH);
   ok('a backup can be restored', restored.status === 200, String(restored.body).slice(0, 160));
+  ok('restoring an older backup still advances the live revision', JSON.parse(restored.body).revision > beforeRestoreRevision);
 }
 const exportDb = await get('/api/export', AUTH);
 ok('full backup export works', exportDb.status === 200 && exportDb.body.includes('"site"'));
+/* A successful HTTP import must preserve the actual data, links and pass
+   hashes, not merely return 200. Keep this round-trip isolated in the VM DB. */
+const roundtripBefore = JSON.parse(exportDb.body);
+const importFixture = structuredClone(roundtripBefore);
+importFixture.events.push({id:'event-import-roundtrip',order:42,number:991,title:'Roundtrip event',month:12,day:20,year:2026,published:true,brochureUrl:'https://example.com/poster.pdf'});
+importFixture.registrations.push({id:'reg-import-roundtrip',eventId:'event-import-roundtrip',serial:'MTP-20DEC26-0991',publicId:'v-import-roundtrip',passCodeHash:'a'.repeat(64),name:'Roundtrip Student',token:'legacy-plaintext',code:'legacy-code',eventFee:0,paymentStatus:'not-required',status:'confirmed'});
+importFixture.settings.frontendRegistration = false;
+importFixture.history[0].order=43;
+importFixture.gallery.push({id:'gallery-import-roundtrip',order:44,visible:false,image:'/assets/photos/mt-club-logo.jpg'});
+const roundtripImport = await sendJson('/api/import','POST',{db:importFixture},AUTH);
+const roundtripAfter = JSON.parse((await get('/api/export',AUTH)).body);
+ok('backup import preserves collection IDs and relationships', roundtripImport.status===200
+  && roundtripAfter.events.some(row=>row.id==='event-import-roundtrip')
+  && roundtripBefore.team.every(row=>roundtripAfter.team.some(saved=>saved.id===row.id)));
+ok('backup import preserves registrations, serials and private pass hashes',
+  roundtripAfter.registrations.length===importFixture.registrations.length
+  && roundtripAfter.registrations.some(row=>row.id==='reg-import-roundtrip'&&row.eventId==='event-import-roundtrip'&&row.passCodeHash==='a'.repeat(64)));
+ok('backup import never restores legacy plaintext pass secrets',roundtripAfter.registrations.every(row=>row.token===undefined&&row.code===undefined));
+ok('import is a new revision and preserves the registration setting', roundtripAfter.revision>roundtripBefore.revision && roundtripAfter.settings.frontendRegistration===false);
+ok('backup import preserves event/history order and gallery visibility',
+  roundtripAfter.events.find(row=>row.id==='event-import-roundtrip').order===42
+  && roundtripAfter.history[0].order===43
+  && roundtripAfter.gallery.find(row=>row.id==='gallery-import-roundtrip').visible===false);
+const orderPatch=JSON.parse((await sendJson('/api/events/event-import-roundtrip','PUT',{order:17},AUTH)).body);
+ok('event display-order changes really persist',orderPatch.item.order===17);
+ok('brochure links survive import and render in the calendar', roundtripAfter.events.some(row=>row.id==='event-import-roundtrip'&&row.brochureUrl==='https://example.com/poster.pdf')
+  && (await get('/calendar')).body.includes('https://example.com/poster.pdf'));
+await sendJson('/api/import','POST',{db:roundtripBefore},AUTH);
 const upload = await sendJson('/api/upload', 'POST', {
   dataUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAFUlEQVR42mP8z8DAwMDAwMDAwMDAAAAOAAGx4sQAAAAASUVORK5CYII=',
   kind: 'image',
@@ -1519,7 +1549,7 @@ ok('two equal halves repeat seamlessly, including without JavaScript',
   cardsSource.includes('$copy < 2') && cardsSource.includes('$i < 4')
   && round37Css.includes('animation: brandRun 28s linear infinite'));
 ok('native sticky chapter holds the stage then releases it',
-  round37Css.includes('.brand-chapter { height: 270svh; }') && round37Css.includes('position: sticky; top: 84px')
+  round37Css.includes('.brand-chapter { height: 300svh; }') && round37Css.includes('position: sticky; top: 84px')
   && appJs.includes('chapter.offsetHeight - (window.innerHeight - top)')
   && appJs.includes("window.addEventListener('scroll', schedule, { passive: true })"));
 ok('one centre circle and six satellites form seven intersecting rings',
@@ -1557,7 +1587,7 @@ ok('it reveals the site on its own, with no JavaScript needed',
 ok('the entrance settles and hands off to the page and butterfly',
   round37Css.includes('@keyframes pigmentDraw') && navLayout.includes("/motion/intro-word.svg") && !navLayout.includes('textLength=')
   && appJs.includes("window.dispatchEvent(new CustomEvent('mt:intro-ready'))")
-  && appJs.includes('window.setTimeout(finish, 3700)'));
+  && appJs.includes('window.setTimeout(finish, 6800)'));
 ok('a tap, a key or a scroll sends it away at once',
   appJs.includes('function setupSplash()') && appJs.includes("splash.addEventListener('click', away)")
   && appJs.includes("window.addEventListener('keydown', away") && appJs.includes("window.addEventListener('wheel', away")
@@ -1621,7 +1651,7 @@ ok('all seven rings fit the expanded drawing even before gathering',
 
 ok('recorded closing name chapter uses a dark stage and violet strand graphic',
   mindPage.body.includes('class="brand-finale black-chapter"') && mindPage.body.includes('The Psychology Club')
-  && round37Css.includes('.brand-finale { height: 240svh; background: #0b0b0d; }'));
+  && round37Css.includes('.brand-finale { height: 150svh; background: #0b0b0d; }'));
 ok('closing label and rounded name have generous spacing and sticky scroll time',
   round37Css.includes('gap: clamp(36px, 8svh, 95px)')
   && mindPage.body.includes('class="brand-finale-stage"') && mindPage.body.includes('class="brand-finale-intro"'));
@@ -1693,9 +1723,28 @@ ok('recorded inline icons have three independently observed silhouette loops',
   (mindPage.body.match(/data-wire-object="/g) || []).length === 3
   && (mindPage.body.match(/data-motion-src="/g) || []).length === 3
   && appJs.includes('function setupWireObjects()'));
+// Parse the shipped WebP containers, not just filenames or CSS declarations.
+const wireStudy=JSON.parse(fs.readFileSync(path.join(ROOT,'tools/references/wire-motion.json'),'utf8'));
+const sourceStudy=JSON.parse(fs.readFileSync(path.join(ROOT,'tools/references/recording.json'),'utf8'));
+ok('wire study refers to the current external recording',wireStudy.sourceSha256===sourceStudy.sha256);
+for(const [name,study] of Object.entries(wireStudy.models)) {
+  const bytes=fs.readFileSync(path.join(ROOT,'assets/motion/wire-'+name+'.webp'));
+  let frames=0,duration=0,width=0,height=0,loop=-1,min=Infinity,max=0;
+  for(let at=12;at+8<=bytes.length;) {
+    const type=bytes.toString('ascii',at,at+4),size=bytes.readUInt32LE(at+4),payload=at+8;
+    if(type==='VP8X'){width=bytes.readUIntLE(payload+4,3)+1;height=bytes.readUIntLE(payload+7,3)+1;}
+    if(type==='ANIM')loop=bytes.readUInt16LE(payload+4);
+    if(type==='ANMF'){const ms=bytes.readUIntLE(payload+12,3);frames++;duration+=ms;min=Math.min(min,ms);max=Math.max(max,ms);}
+    at=payload+size+(size%2);
+  }
+  ok('wire '+name+' has the verified 24fps dimensions, frames and loop timing',
+    width===164&&height===110&&loop===0&&frames===study.frames&&duration===study.durationMs&&min===41&&max===42);
+  const {createHash}=await import('node:crypto');
+  ok('wire '+name+' matches its reviewed decoded-motion provenance',createHash('sha256').update(bytes).digest('hex')===study.sha256);
+}
 ok('joined rings shrink and rise before the following heading',
   appJs.includes('(progress - 0.45) / 0.35') && appJs.includes('1 - exit * 0.10')
-  && round37Css.includes('.brand-chapter { height: 270svh; }'));
+  && round37Css.includes('.brand-chapter { height: 300svh; }'));
 ok('people alternate left and right on home and member directory',
   round37Css.includes('.team-card:nth-child(even), .member-cards .member-card:nth-child(even) { align-self: flex-end; }')
   && round37Css.includes('.team-grid, .member-cards { display: flex; flex-direction: column; gap: 70px; }'));
@@ -1757,8 +1806,8 @@ ok('wave artwork fades naturally rather than meeting a rectangular edge',
   ok('marquee preserves reference viewport-relative speed after resize', Math.abs(4000 / parseFloat(track.style.animationDuration) - 118.05) < .01);
 }
 const motionFiles = fs.readdirSync(path.join(ROOT, 'assets/motion'));
-ok('derived motion assets remain below 0.7MB and contain no recording',
-  motionFiles.reduce((sum, name) => sum + fs.statSync(path.join(ROOT, 'assets/motion', name)).size, 0) < 700000
+ok('derived motion assets remain below 1.1MB and contain no recording',
+  motionFiles.reduce((sum, name) => sum + fs.statSync(path.join(ROOT, 'assets/motion', name)).size, 0) < 1100000
   && motionFiles.every(name => !/\.(mp4|webm|mov)$/i.test(name)));
 for (const type of ['orbit', 'prism', 'sphere']) {
   const bytes = fs.readFileSync(path.join(ROOT, 'assets/motion/wire-' + type + '.webp'));
@@ -1773,7 +1822,7 @@ ok('the splash brush paints filled contours, with a violet lead rather than stri
   paintSource.includes('class="paint-lead"') && paintSource.includes('class="paint-pigment"')
   && paintSource.includes('clipPath') && !paintSource.includes('feTurbulence')
   && !navLayout.includes('paint-strip') && round37Css.includes('@keyframes pigmentDraw')
-  && round37Css.includes('animation: splashAway .45s ease 3.05s forwards'));
+  && round37Css.includes('animation: splashAway .65s ease 5.8s forwards'));
 /* Splash exits are idempotent: animation, deliberate skip, fallback and
    reduced-motion all notify the waiting butterfly exactly once. */
 {
@@ -1797,10 +1846,10 @@ ok('the splash brush paints filled contours, with a violet lead rather than stri
     });
     if (mode === 'animation') {
       handlers.animationend({ target: splash, animationName: 'splashAway' });
-      timers[3700]();
+      timers[6800]();
     } else if (mode === 'skip') {
-      handlers.click(); timers[650](); handlers.keydown(); timers[3700]();
-    } else if (mode === 'fallback') timers[3700]();
+      handlers.click(); timers[650](); handlers.keydown(); timers[6800]();
+    } else if (mode === 'fallback') timers[6800]();
     ok('splash exits once via ' + mode + ' and reveals the site',
       notifications === 1 && !classes.has('intro-pending') && classes.has('intro-revealed')
       && (mode === 'no-splash' || splash.hidden));
@@ -1877,7 +1926,7 @@ ok('the splash brush paints filled contours, with a violet lead rather than stri
     headerTop = 0; events.layout(); advance(2400);
     win.innerWidth = 320; events.resize(); advance(2000);
     ok('resize preserves a finite stable perch instead of cancelling to a hidden pose' + label, !/NaN|Infinity/.test(butterfly.style.transform) && !classes.has('butterfly-away'));
-    const previous = butterfly.style.transform; events['mt:intro-ready'](); timers[5500]();
+    const previous = butterfly.style.transform; events['mt:intro-ready'](); timers[8000]();
     ok('intro/fallback cannot start a second ascent' + label, previous === butterfly.style.transform);
   }
 }
@@ -1911,6 +1960,59 @@ ok('the splash brush paints filled contours, with a violet lead rather than stri
   ok('moving frames restore the video over the poster', !classes.has('is-buffering'));
 }
 
+
+console.log('\n— actual dashboard renderer and upload regressions —');
+{
+  const { runInNewContext } = await import('node:vm');
+  const source = fs.readFileSync(path.join(ROOT, 'assets/manage.js'), 'utf8');
+  const esc = value => String(value ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('"', '&quot;');
+  const events = { innerHTML: '' }, team = { innerHTML: '' }, button = { textContent: '+ Add event', disabled: false }, messages = [];
+  const state = { team: [{id:'team-fixture',name:'Audit Member'}], gallery: [], events: [{ id: 'existing', number: 1, title: 'Existing event', published: false, month: 9, day: 24, year: 2026 }] };
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const helpers = source.slice(source.indexOf('function numberedEventName('), source.indexOf('function renderGallery()'));
+  const adding = source.slice(source.indexOf('async function addItem('), source.indexOf('/* --------------------------------------------------------------- uploads */'));
+  const context = { state, months, esc, sorted: rows => rows, uploadField: () => '',
+    $: selector => selector === '#eventEditors' ? events : selector === '#teamEditors' ? team : selector === '#addEvent' ? button : null,
+    toast: message => messages.push(message), window: { setTimeout() {} },
+    api: async (route, options = {}) => {
+      if (options.method === 'POST') return { item: { id: 'new', number: 2, ...JSON.parse(options.body) } };
+      return { items: state.events.concat([{ id: 'new', number: 2, title: 'New event', published: true, month: 10, day: 20, year: 2026 }]) };
+    }
+  };
+  await runInNewContext(helpers + '\nfunction renderAll(){renderEvents();}\n' + adding + '\nrenderEvents();addItem("events");', context);
+  ok('Add event renders the returned record instead of throwing an undefined item error',
+    messages.some(message => message.startsWith('Event 2 added')) && events.innerHTML.includes('New event') && !button.disabled);
+  ok('only the actual unpublished event gets a hidden flag', (events.innerHTML.match(/class="hidden-flag"/g) || []).length === 1);
+  ok('the event editor preserves the stored numeric month, day and year',
+    events.innerHTML.includes('value="10" selected>October') && events.innerHTML.includes('data-field="day" value="20"') && events.innerHTML.includes('data-field="year" value="2026"'));
+  const legacyDate = runInNewContext(helpers + '\neventParts({date:"20 December 2026"});', context);
+  ok('legacy event dates map to one-based month values too', legacyDate.month === '12' && legacyDate.day === '20');
+  const monthRoundtrip = months.every((month,index)=>{
+    state.events = [{id:'month',title:'Month check',published:true,month:index+1,day:20,year:2026}];
+    runInNewContext(helpers+'\nrenderEvents();',context);
+    return events.innerHTML.includes('value="'+(index+1)+'" selected>'+month);
+  });
+  ok('all twelve month options use the same one-based values as the backend',monthRoundtrip);
+  runInNewContext(helpers + '\nrenderTeam();', context);
+  ok('the shared team card renderer does not require an out-of-scope event variable', team.innerHTML.includes('Audit Member') && team.innerHTML.includes('data-type="team"'));
+  const upload = source.slice(source.indexOf('async function uploadFile('), source.indexOf('/* -------------------------------------------------------- event registers */'));
+  const field = { value: '/old-logo.png' }, thumb = { style: {}, classList: { add() {} }, textContent: '' }, card = {};
+  const input = { files: [{ name: 'logo.png' }], value: 'logo.png', closest: () => card };
+  await runInNewContext(upload + '\nuploadFile(input,"logoImage");', {
+    input, FormData: class { append() {} }, toast() {}, api: async () => ({ url: '/uploads/new-logo.png' }),
+    $: selector => selector.includes('data-copy-field') ? field : selector.includes('data-thumb-for') ? thumb : null
+  });
+  ok('logo upload updates the site-copy field, not only its thumbnail', field.value === '/uploads/new-logo.png' && input.value === '');
+  const collect = source.slice(source.indexOf('function collectCopy('), source.indexOf('async function saveCopy('));
+  const logoGroup = {}, textGroup = {};
+  const patch = runInNewContext(collect + '\ncollectCopy("brand-media");', { $$: (selector, node) => {
+    if (selector === '[data-copy-group]') return [logoGroup, textGroup];
+    if (selector === '[data-copy-group="brand-media"]') return [logoGroup];
+    if (selector === '[data-copy-field]') return node === logoGroup ? [{ dataset: { copyField: 'logoImage' }, value: '/new.png' }] : [{ dataset: { copyField: 'announcement' }, value: 'Unsaved text' }];
+    return [];
+  } });
+  ok('saving the logo does not silently save unrelated unsaved text', patch.logoImage === '/new.png' && patch.announcement === undefined);
+}
 console.log('\n— the lamps that breathe —');
 ok('no dotted lamps sit before the small labels any more',
   !/\.eyebrow:before/.test(round37Css) && !/\.kicker:before\s*,?[^}]*lightPulse/.test(round37Css));

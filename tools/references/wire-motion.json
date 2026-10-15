@@ -1,0 +1,48 @@
+{
+  "sourceSha256": "052fcd421d32bbb35830e1f547bdb650257cd67f877df824ab27c3f9056e97f2",
+  "method": "fixed crops; shared page translation; 20 percent unsharp mask; subpixel high-frequency centroid stabilization; lossless RGBA at 24 fps",
+  "models": {
+    "orbit": {
+      "frames": 84,
+      "durationMs": 3500,
+      "fps": 24,
+      "sourceStart": 58.9,
+      "sourceEnd": 62.4,
+      "meanFrameChange": 3.313039779663086,
+      "maximumFrameChange": 7.851654529571533,
+      "bytes": 228838,
+      "decodedDurationMs": 3500,
+      "seamMeanAlphaChange": 0.6241685144124168,
+      "maximumDecodedFrameChange": 7.572727272727272,
+      "sha256": "dde7610fc30d821650fad020c2bc263d4b32aa3150c2888cc60ccab980ad5d77"
+    },
+    "prism": {
+      "frames": 49,
+      "durationMs": 2042,
+      "fps": 24,
+      "sourceStart": 60.608333333333334,
+      "sourceEnd": 62.65,
+      "meanFrameChange": 4.894770622253418,
+      "maximumFrameChange": 10.002045631408691,
+      "bytes": 172270,
+      "decodedDurationMs": 2042,
+      "seamMeanAlphaChange": 7.295842572062084,
+      "maximumDecodedFrameChange": 9.229933481152994,
+      "sha256": "cc89bfb2c73bdcb3a5ca045e39ef5e4f7d5b1e2316069a9993a6c1747b90b6d4"
+    },
+    "sphere": {
+      "frames": 49,
+      "durationMs": 2042,
+      "fps": 24,
+      "sourceStart": 60.608333333333334,
+      "sourceEnd": 62.65,
+      "meanFrameChange": 2.487769365310669,
+      "maximumFrameChange": 6.998979568481445,
+      "bytes": 144092,
+      "decodedDurationMs": 2042,
+      "seamMeanAlphaChange": 4.780044345898005,
+      "maximumDecodedFrameChange": 6.957871396895787,
+      "sha256": "ec1c861d0457909480da9cde1f00b4363830f38fa2ed044199764da7ba6ca441"
+    }
+  }
+}

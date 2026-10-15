@@ -827,7 +827,12 @@ function mt_api_backups(string $method, ?string $id): void
             mt_fail(422, 'That backup file is damaged.');
             return;
         }
-        mt_db_write($decoded);
+        mt_db_transaction(function (array &$db) use ($decoded): bool {
+            $revision = $db['revision'];
+            $db = $decoded;
+            $db['revision'] = $revision;
+            return true;
+        });
         mt_ok(['restored' => $name, 'revision' => mt_db(true)['revision']]);
         return;
     }
@@ -855,7 +860,12 @@ function mt_api_import(): void
     foreach (MT_COLLECTIONS as $collection) {
         foreach ((array) ($payload[$collection] ?? []) as $item) {
             if (is_array($item)) {
-                $clean[$collection][] = mt_sanitize_item($collection, $item);
+                $record = mt_sanitize_item($collection, $item);
+                $record['id'] = mt_clean_text($item['id'] ?? '', 128);
+                if ($record['id'] === '') {
+                    $record['id'] = mt_next_id(rtrim($collection, 's'));
+                }
+                $clean[$collection][] = $record;
             }
         }
     }
@@ -865,7 +875,24 @@ function mt_api_import(): void
         }
     }
 
-    mt_db_write($clean);
+    // Registrations contain pass hashes and event relationships: omitting
+    // them, or replacing collection IDs, invalidates already issued passes.
+    foreach ((array) ($payload['registrations'] ?? []) as $registration) {
+        if (is_array($registration)) {
+            unset($registration['token'], $registration['code'], $registration['passCode']);
+            $clean['registrations'][] = $registration;
+        }
+    }
+    if (isset($payload['settings']['frontendRegistration'])) {
+        $clean['settings']['frontendRegistration'] = mt_truthy($payload['settings']['frontendRegistration']);
+    }
+    // A restore is a new change, not a return to an old revision number.
+    mt_db_transaction(function (array &$db) use ($clean): bool {
+        $revision = $db['revision'];
+        $db = $clean;
+        $db['revision'] = $revision;
+        return true;
+    });
     mt_ok(['imported' => true, 'revision' => mt_db(true)['revision']]);
 }
 

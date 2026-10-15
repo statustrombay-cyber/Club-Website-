@@ -519,7 +519,7 @@
     window.addEventListener('keydown', away, { once: true });
     window.addEventListener('wheel', away, { once: true, passive: true });
     window.addEventListener('touchstart', away, { once: true, passive: true });
-    window.setTimeout(finish, 3700);
+    window.setTimeout(finish, 6800);
   }
 
   /* A single fixed photographic butterfly is independent of the menu layout.
@@ -628,7 +628,7 @@
       }
     }
     window.addEventListener('mt:intro-ready', enter, { once: true });
-    window.setTimeout(enter, 5500);
+    window.setTimeout(enter, 8000);
     window.addEventListener('scroll', function () {
       const next = window.scrollY || 0;
       tilt = next === lastScroll ? tilt : next > lastScroll ? 7 : -7;

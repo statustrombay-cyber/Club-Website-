@@ -447,7 +447,7 @@ function mt_month_card(int $index, string $month, array $events): string
                 <?php if (trim((string) ($event['description'] ?? '')) !== ''): ?>
                   <p><?= e((string) $event['description']) ?></p>
                 <?php endif; ?>
-                <?php $brochure = mt_safe_url($event['brochureUrl'] ?? ''); ?>
+                <?php $brochure = mt_safe_url($event['brochureUrl'] ?? $event['attachment'] ?? ''); ?>
                 <?php if ($brochure !== ''): ?>
                   <a class="calendar-event-brochure" href="<?= e($brochure) ?>" target="_blank" rel="noreferrer noopener">View brochure / poster ↗</a>
                 <?php endif; ?>

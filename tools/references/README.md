@@ -52,11 +52,20 @@ uploaded to a vector-conversion service. All analysis was local:
   silhouette loops cropped from the three capsules at 59–63 seconds. Capsules
   are normalised to 164 × 110; their original border/background is excluded.
   The observed poses replace the rejected invented 3D geometry. These are **2D
-  animation cutouts, not recovered 3D models**. Matching start/end poses choose
-  3.50s / 2.95s / 2.00s loops, sampled at 20fps. Corresponding `-still.webp`
+  animation cutouts, not recovered 3D models**. The latest review uses fixed crops and shared page-translation correction,
+  rather than independently resizing each frame. A 20% unsharp mask adds only
+  slight crispness; high-frequency subpixel translation is stabilised without
+  removing the observed rotation. Matching poses choose 3.500s / 2.042s /
+  2.042s loops at 24fps (84 / 49 / 49 frames). The third is the recorded full
+  graticule, not an invented wire model. Decoded timings, seam measurements and
+  asset hashes are in `wire-motion.json`. Corresponding `-still.webp`
   files serve no-script, reduced-motion, hidden and offscreen states.
 - `reference-ribbons.webp`: a temporal 12th percentile across 37–39.5s removes
-  the moving white wordmark; local inpainting retouches the stationary caption.
+  the moving white wordmark; local inpainting removes the stationary caption. The latest repair bridges
+  the interrupted strands using matched clean cross-sections and curved
+  tangents, with a small directional closing pass on the right. This removes
+  the dark slash under the club caption without replacing the black canvas.
+  Visible pixels and alpha outside source rows 420–580 remain unchanged.
   Phone chrome is excluded; a premultiplied alpha matte removes the source
   canvas so its edges blend without a rectangular patch. This preserves observed blue/violet colour and
   ribbon curvature, not invented sinusoidal lines. It is a small background
@@ -64,7 +73,11 @@ uploaded to a vector-conversion service. All analysis was local:
 - `intro-word.svg`: Inter's actual filled glyph contours, clipped to each
   letter and brush-painted with a violet lead and white pigment. Contours are
   derived from the bundled OFL Inter font, not extracted from the recording.
-  The name is not assembled by sliding strips or revealed with noise.
+  The name is not assembled by sliding strips or revealed with noise. Painting
+  now takes 2.35s per staggered glyph. The initial seven rings stay together,
+  and the i dot appears only after its stem, avoiding a detached white moon.
+  The full name holds before the 5.8s exit; click/key/scroll skip and
+  reduced-motion fallbacks remain.
 - White-glyph phase correlation at y720–870 gives −118.075 px/s (37→38s),
   −118.035 px/s (38→39s). The marquee uses **118.05 / 720 viewport widths/s**;
   its duration is computed from its measured half-track width after fonts load
@@ -77,23 +90,43 @@ follow, a 320ms dark-section dwell and ≥2.8s leftward departure. Direction
 reversals start at the current position and tangent, without CSS opacity changes
 until the butterfly is fully offscreen. The mobile menu has reserved clearance.
 
-The derived assets together are under 0.7MB. Full reference footage remains
+The derived motion assets together remain below the 1.1MB regression budget.
+The gathering/manifest chapter is 300svh (was 270svh); the separate closing
+band is 150svh (was 240svh). Reduced-motion and no-script layouts stay unpinned. Full reference footage remains
 outside the repository, deployment and source exports. Original horse media is
 unchanged. Visual comparisons remain necessary: passing workflow tests does not
 certify pixel-perfect reproduction of the original site's unavailable sources.
 
-### Verification — 15 October 2026
+### Verification — 15 October 2026, current revision
 
-- `npm test`: **495 passed, 0 failed**, including the executed butterfly,
-  silhouette lifecycle, marquee-speed and layout-change controllers.
-- `npm run lint` and `git diff --check`: passed.
-- Headless browser: **53 checks passed** across 320/390/768/1440px, plus
-  reduced-motion and no-JavaScript. Checks cover entry/perch, repeated rapid
-  dark-section crossings, gradual departures, offscreen-only hiding, actual
-  decoded animations, measured marquee speed, no horizontal overflow and no
-  frame-to-frame teleport or browser/asset error. Geometry measurements activate
-  content-visibility sections first so intrinsic placeholders are not mistaken
-  for the final page layout.
-- Visual review includes intermediate paint frames, header landing, all three
-  capsules and the closing band. These are fidelity checks, not a claim that
-  the original unavailable font/vector/3D source has been recovered.
+- `npm test`: **518 passed, 0 failed**. New executed regressions cover Add
+  event and shared card rendering; all twelve one-based month values; legacy
+  dates; logo upload and isolated logo saving; brochure persistence; display
+  order; full backup import preserving IDs, registrations, pass hashes,
+  visibility and settings; monotonic restore revisions; actual WebP frame
+  counts, 24fps timings, dimensions, infinite-loop flags and reviewed hashes.
+- `npm run lint`, browser JavaScript `no-undef`, and `git diff --check`: passed.
+- Real HTTP deployment workflow: **66 checks passed**, using a valid decodable
+  PNG and a genuinely anonymous forged-cookie request (signed-in cookies are
+  temporarily removed). Includes authenticated/public gates, free/paid
+  registration, screenshot upload, passes, CSV, gallery, forms and logout.
+- Actual browser dashboard workflow: **37 checks passed**. Clicked Add/Save/
+  Delete, changed published state, verified November remains November after
+  save/reload, uploaded and decoded event/logo images, registered a student,
+  downloaded PDF/CSV/JSON, and imported the exported JSON. Import assertions
+  check the retained event IDs and issued-pass records, not only HTTP status.
+  Created records are removed afterwards.
+- Browser layout/fallback audit: **33 checks passed** at 320/390/768/1440px,
+  plus reduced-motion and no-JavaScript: automatic/accessible splash exit,
+  delayed i dot, original horse hero, no horizontal overflow, independent
+  chapter lengths, all three decoded wires, dark-chapter state and wave asset.
+  Screenshots reviewed for the splash, all three wires and the closing band.
+- All three loops were independently decoded. Their wrap-seam alpha change is
+  within the normal frame-change envelope. Alpha-centroid second-difference
+  indicators for prism/sphere are substantially lower than the prior assets;
+  these are diagnostics, not proof of pixel-perfect motion or original 3D.
+
+Temporary workflow records, tiny fixture uploads and generated audit backups
+are cleaned separately, while the original club content and horse media are
+preserved. Passing tests does not establish pixel-perfect reproduction of
+unavailable original vectors, font files or 3D models.

@@ -273,7 +273,7 @@
 
   function collectCopy(groupId) {
     const patch = {};
-    const groups = groupId === 'all' || groupId === 'brand-media'
+    const groups = groupId === 'all'
       ? $$('[data-copy-group]')
       : $$(`[data-copy-group="${groupId}"]`);
 
@@ -368,7 +368,7 @@
     node.textContent = labelFor(card.dataset.type, item, index) + ' ' + String(index + 1).padStart(2, '0');
   }
 
-  function cardShell(type, id, label, index, body) {
+  function cardShell(type, id, label, index, body, item = null) {
     return `
       <article class="editor-card" data-type="${type}" data-id="${esc(id)}" data-index="${index}">
         <div class="editor-card-head">
@@ -415,9 +415,10 @@
     const match = raw.match(/^(\d{1,2})(?:st|nd|rd|th)?\s+([A-Za-z]+)(?:\s+(\d{4}))?/i);
     const parsedMonth = months.findIndex((month) => raw.toLowerCase().includes(month.toLowerCase()));
     return {
-      month: parsedMonth >= 0 ? String(parsedMonth) : '',
-      day: match ? match[1] : '',
-      year: match && match[3] ? match[3] : '',
+      month: item.month !== null && item.month !== '' && Number.isInteger(Number(item.month)) && Number(item.month) >= 1 && Number(item.month) <= 12
+        ? String(item.month) : parsedMonth >= 0 ? String(parsedMonth + 1) : '',
+      day: item.day != null && item.day !== '' ? String(item.day) : match ? match[1] : '',
+      year: item.year != null && item.year !== '' ? String(item.year) : match && match[3] ? match[3] : '',
     };
   }
 
@@ -431,7 +432,7 @@
           <label class="span-2">Title<input data-field="title" value="${esc(item.title)}" placeholder="Workshop title"></label>
           <label>Month
             <select data-field="month">
-              ${months.map((month, i) => `<option value="${i}" ${String(parts.month) === String(i) ? 'selected' : ''}>${month}</option>`).join('')}
+              ${months.map((month, i) => `<option value="${i + 1}" ${String(parts.month) === String(i + 1) ? 'selected' : ''}>${month}</option>`).join('')}
             </select>
           </label>
           <label>Day<input data-field="day" value="${esc(parts.day)}" placeholder="24" inputmode="numeric"></label>
@@ -441,7 +442,7 @@
           <label>Label<input data-field="kicker" value="${esc(item.kicker)}" placeholder="Workshop"></label>
           <label>Seats / capacity <span class="muted" style="font-weight:400">(0 = no limit)</span><input data-field="capacity" type="number" min="0" value="${esc(item.capacity ?? 0)}"></label>
           <label class="span-2">Description<textarea data-field="description" rows="3">${esc(item.description)}</textarea></label>
-          <label class="span-2">Brochure / poster link (optional)<input data-field="brochureUrl" value="${esc(item.brochureUrl || '')}" placeholder="https://… or /uploads/…"></label>
+          <label class="span-2">Brochure / poster link (optional)<input data-field="brochureUrl" value="${esc(item.brochureUrl || item.attachment || '')}" placeholder="https://… or /uploads/…"></label>
         </div>
 
         <div class="editor-card-head" style="margin-top:14px"><span>Registration &amp; pass</span></div>
@@ -461,7 +462,7 @@
           <label class="span-2"><span><input type="checkbox" data-field="published" ${item.published === true ? 'checked' : ''}> Show on the home page and the calendar
             <span class="muted" style="font-weight:400">— untick this to keep an event private while you prepare it. On the website it appears the moment you tick it and press Save.</span></span></label>
         </div>
-        ${uploadField('image', 'event photo', item.image)}`);
+        ${uploadField('image', 'event photo', item.image)}`, item);
     }).join('') || '<div class="editor-card"><h3>No events yet.</h3><p class="muted">Use “+ Add event” to plan the next activity.</p></div>';
   }
 
@@ -472,8 +473,6 @@
       <div class="form-grid one">
         <label>Caption <span class="muted" style="font-weight:400">(leave empty to show the photo with no caption)</span>
           <input data-field="caption" value="${esc(item.caption)}" placeholder="Optional — what is this photo about?">
-        </label>
-        <label>Which event is this photo from?
         </label>
         <div class="form-grid">
           <label>Date (optional)<input data-field="date" value="${esc(item.date || '')}" placeholder="24 October 2026"></label>
@@ -633,7 +632,7 @@
       form.append('file', file);
       form.append('kind', 'image');
       const result = await api('/api/upload', { method: 'POST', body: form });
-      const field = card ? $(`[data-field="${key}"]`, card) : null;
+      const field = card ? $(`[data-field="${key}"], [data-copy-field="${key}"]`, card) : null;
       if (field) field.value = result.url;
       const thumb = card ? $(`[data-thumb-for="${key}"]`, card) : null;
       if (thumb) {

@@ -54,7 +54,7 @@ async function req(path, { method = 'GET', json, form, headers = {}, csrf } = {}
 const step = (title) => console.log('\n— ' + title + ' —');
 
 /* a real (tiny) png, used for the gallery photo and the payment proof */
-const png = Buffer.from('89504e470d0a1a0a0000000d4948445200000008000000080806000000' + '774d0d'.repeat(6), 'hex');
+const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAGUlEQVR4nGMsCz3CQApgIkn1qIZRDUNKAwD20AGvhz9ebgAAAABJRU5ErkJggg==', 'base64');
 
 /* ---------------------------------------------------------------- 1. auth */
 step('sign in and the club\'s door');
@@ -70,8 +70,12 @@ check('the session is remembered', session.status === 200 && (session.body.authe
 const dashLink = await req('/dashboard');
 const dash = dashLink.status === 303 ? await req('/dashboard/overview') : dashLink;
 check('the dashboard opens for the club', dash.status === 200 && /Sign out/i.test(String(dash.body)), 'status ' + dash.status);
-const dashAnon = await req('/dashboard');
-check('a forged cookie does not open the dashboard', !/Sign out/i.test(String(dashAnon.body)));
+const signedInCookies = { ...cookies };
+cookies = { mt_admin: 'forged-session' };
+const dashAnon = await req('/dashboard/events');
+check('a forged cookie does not open the dashboard',
+  (dashAnon.status === 303 || dashAnon.status === 401 || (dashAnon.status === 200 && /id="loginForm"/.test(String(dashAnon.body)))) && !/id="eventEditors"/.test(String(dashAnon.body)));
+cookies = signedInCookies;
 
 /* ------------------------------------------------------- 2. record writing */
 step('writing, editing and deleting records');
