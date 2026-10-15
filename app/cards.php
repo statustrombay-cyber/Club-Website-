@@ -165,71 +165,77 @@ function mt_portrait_badge(): string
     return '<span class="portrait-badge" aria-hidden="true">' . mt_reference_rings() . '</span>';
 }
 
-/** Complete flowing field: the ink fades before its canvas boundary. */
+/** Broad blue/violet ribbon field measured against the new 66.5s recording. */
 function mt_blue_waves(): string
 {
     static $wave = 0;
     $ink = 'wave-ink-' . ++$wave;
     ob_start(); ?>
-    <svg class="blue-waves" viewBox="0 0 1000 1200" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false">
-      <defs><linearGradient id="<?= e($ink) ?>" x1="0" y1="0" x2="0" y2="1">
-        <stop stop-color="#7564a8" stop-opacity="0"/>
-        <stop offset=".22" stop-color="#7350d3" stop-opacity=".65"/>
-        <stop offset=".5" stop-color="#9875ff"/>
-        <stop offset=".78" stop-color="#7350d3" stop-opacity=".65"/>
-        <stop offset="1" stop-color="#7564a8" stop-opacity="0"/>
+    <svg class="blue-waves" viewBox="0 0 1000 1400" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false">
+      <defs><linearGradient id="<?= e($ink) ?>" x1="0" y1="0" x2="1" y2="0">
+        <stop stop-color="#15133b" stop-opacity="0"/>
+        <stop offset=".22" stop-color="#3020a0" stop-opacity=".75"/>
+        <stop offset=".43" stop-color="#4730c0"/>
+        <stop offset=".65" stop-color="#7146b9"/>
+        <stop offset=".83" stop-color="#5936a1" stop-opacity=".8"/>
+        <stop offset="1" stop-color="#11132d" stop-opacity="0"/>
       </linearGradient></defs>
-      <g fill="none" stroke="url(#<?= e($ink) ?>)" stroke-width="1.8">
-        <?php for ($strand = -20; $strand <= 20; $strand++):
+      <g fill="none" stroke="url(#<?= e($ink) ?>)" stroke-linecap="round">
+        <?php for ($strand = 0; $strand < 43; $strand++):
             $points = [];
-            for ($step = 0; $step <= 100; $step++) {
-                $y = $step * 12;
-                $spread = $strand * 12;
-                $x = 500 + $spread + sin($y * .006 + $strand * .10) * 135 + sin($y * .010) * 60;
-                $points[] = ($step === 0 ? 'M' : 'L') . round($x, 2) . ' ' . $y;
+            for ($step = 0; $step <= 120; $step++) {
+                $y = $step * 1400 / 120;
+                $spread = ($strand - 21) * 32 * (1 - .55 * exp(-(($y - 690) / 205) ** 2));
+                $x = 500 + $spread + sin(($y - 250) * .005 + $strand * .01) * 220 + sin($y * .008) * 55;
+                $points[] = ($step === 0 ? 'M' : 'L') . round($x, 2) . ' ' . round($y, 2);
             } ?>
-        <path d="<?= e(implode(' ', $points)) ?>"/>
+        <path stroke-width="<?= round(2.5 + 8 * ($strand / 42) ** 1.7, 2) ?>" d="<?= e(implode(' ', $points)) ?>"/>
         <?php endfor; ?>
       </g>
     </svg>
     <?php return (string) ob_get_clean();
 }
 
-/** Fine wire objects inside the three word-side capsules in the reference. */
+/** Projected wire sculptures. Each filament has real depth; no flattened
+ *  SVG plane flips edge-on and disappears. The script rotates these coordinates. */
 function mt_manifest_object(string $type): string
 {
+    $count = $type === 'orbit' ? 14 : ($type === 'prism' ? 24 : 21);
     ob_start(); ?>
-    <i class="mind-object object-<?= e($type) ?>" aria-hidden="true"><svg viewBox="0 0 100 80" focusable="false"><g class="wire-form" fill="none" stroke="currentColor" stroke-width=".6">
-      <?php if ($type === 'orbit'): ?>
-        <?php /* A projected trefoil, traced in fine neighbouring filaments. */
-        for ($line = 0; $line < 16; $line++):
-            $points = [];
-            $phase = $line * M_PI / 8;
-            for ($step = 0; $step <= 120; $step++) {
-                $t = $step * M_PI / 60;
-                $radius = 2 + .65 * cos(3 * $t) + .11 * cos($phase);
-                $x = $radius * cos(2 * $t);
-                $y = $radius * sin(2 * $t);
-                $z = sin(3 * $t) + .17 * sin($phase);
-                $points[] = ($step === 0 ? 'M' : 'L') . round(50 + ($x * .8 + $z * .6) * 10, 2) . ' ' . round(40 + ($y * .75 - $z * .5) * 10, 2);
-            } ?>
-          <path d="<?= e(implode(' ', $points)) ?>"/>
-        <?php endfor; ?>
-      <?php elseif ($type === 'prism'): ?>
-        <?php /* Two tilted wire tori, not a flat circular symbol. */
-        foreach ([[62, 27], [38, 53]] as [$cx, $cy]):
-            for ($line = 0; $line < 14; $line++):
-                $phase = $line * M_PI / 7; ?>
-          <ellipse cx="<?= $cx ?>" cy="<?= round($cy + 3 * sin($phase), 2) ?>" rx="<?= round(15 + 3 * cos($phase), 2) ?>" ry="<?= round(8 + 2 * cos($phase), 2) ?>" transform="rotate(32 <?= $cx ?> <?= $cy ?>)"/>
-        <?php endfor; endforeach; ?>
-      <?php else: ?>
-        <?php for ($line = 0; $line < 12; $line++): ?>
-          <ellipse cx="50" cy="40" rx="<?= 3 + $line * 1.5 ?>" ry="26" transform="rotate(18 50 40)"/>
-        <?php endfor; ?>
-        <?php for ($line = 0; $line < 3; $line++): ?>
-          <ellipse cx="50" cy="40" rx="29" ry="11" transform="rotate(<?= $line * 60 ?> 50 40)"/>
-        <?php endfor; ?>
-      <?php endif; ?>
+    <i class="mind-object object-<?= e($type) ?>" data-wire-object="<?= e($type) ?>" aria-hidden="true"><svg viewBox="0 0 100 80" focusable="false"><g class="wire-form" fill="none" stroke="currentColor" stroke-width=".55">
+      <?php for ($line = 0; $line < $count; $line++):
+          $points = [];
+          for ($step = 0; $step <= 64; $step++) {
+              $t = $step * M_PI / 32;
+              if ($type === 'orbit') {
+                  $phase = $line * 2 * M_PI / 14;
+                  $r = 2 + .55 * cos(3 * $t) + .13 * cos($phase);
+                  $x = $r * cos(2 * $t); $y = $r * sin(2 * $t);
+                  $z = .7 * sin(3 * $t) + .13 * sin($phase); $scale = 11;
+              } elseif ($type === 'prism') {
+                  $side = $line < 12 ? -1 : 1;
+                  $phase = ($line % 12) * M_PI / 6;
+                  $r = .95 + .12 * cos($phase);
+                  $x = $side * .8 + $r * cos($t); $y = -$side * .78 + $r * sin($t) * .82;
+                  $z = .12 * sin($phase) + $side * .25; $scale = 13;
+              } else {
+                  if ($line < 12) {
+                      $phase = $line * M_PI / 6;
+                      $x = .9 * cos($t) * cos($phase); $y = 1.6 * sin($t); $z = .9 * cos($t) * sin($phase);
+                  } elseif ($line < 18) {
+                      $y = ($line - 14.5) * .43;
+                      $r = .9 * sqrt(max(0, 1 - ($y / 1.6) ** 2));
+                      $x = $r * cos($t); $z = $r * sin($t);
+                  } else {
+                      $phase = ($line - 18) * M_PI / 3;
+                      $x = 1.8 * cos($t); $y = .6 * sin($t) * cos($phase); $z = .6 * sin($t) * sin($phase);
+                  }
+                  $scale = 14;
+              }
+              $points[] = ($step === 0 ? 'M' : 'L') . round(50 + ($x * .85 + $z * .5) * $scale, 2) . ' ' . round(40 + ($y * .9 - $z * .35) * $scale, 2);
+          } ?>
+      <path data-wire-line="<?= $line ?>" d="<?= e(implode(' ', $points)) ?>"/>
+      <?php endfor; ?>
     </g></svg></i>
     <?php return (string) ob_get_clean();
 }
@@ -243,7 +249,7 @@ function mt_brand_chapter(string $name): string
       <?= mt_reference_rings(true, 'brand-rings') ?>
       <div class="manifest-chapter" aria-labelledby="manifestHeading">
         <h2 id="manifestHeading">
-          <span class="manifest-row">Control Your</span>
+          <span class="manifest-row">ControlYour</span>
           <span class="manifest-row">Mind <?= mt_manifest_object('orbit') ?></span>
           <span class="manifest-row"><?= mt_manifest_object('prism') ?> <em>Manifest</em></span>
           <span class="manifest-row">Your</span>

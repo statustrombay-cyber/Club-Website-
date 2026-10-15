@@ -19,3 +19,7 @@ deploy-bundle*.zip
 .DS_Store
 Thumbs.db
 *.swp
+
+# Screen recordings are studied outside the website, never shipped.
+/screen-*.mp4
+/tools/references/*.mp4

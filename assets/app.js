@@ -426,10 +426,15 @@
       });
       const rotation = clamp((progress - 0.38) / 0.16) * 120;
       turn.setAttribute('transform', 'rotate(' + rotation.toFixed(2) + ' 300 300)');
-      const exit = clamp((progress - 0.46) / 0.17);
-      const scale = (1 - ease * 0.40) * (1 - exit * 0.20);
-      if (diagram) diagram.style.transform = 'translateY(' + (-exit * 32).toFixed(2) + 'vh) scale(' + scale.toFixed(3) + ')';
-      // One continuous stage: the flower rises while each line glides in.
+      const exit = clamp((progress - 0.45) / 0.35);
+      const scale = (1 - ease * 0.40) * (1 - exit * 0.10);
+      if (diagram) diagram.style.transform = 'translateY(' + (-exit * 46).toFixed(2) + 'vh) scale(' + scale.toFixed(3) + ')';
+      // The second pass at 54–58s shows a vertical entrance as well as the
+      // right-to-left ink reveal. Keep both tied to native scroll, in reverse too.
+      const heading = $('#manifestHeading', chapter);
+      const rise = clamp((progress - 0.50) / 0.50);
+      const riseEase = rise * rise * (3 - 2 * rise);
+      if (heading) heading.style.transform = 'translateY(' + (74 - 80 * riseEase).toFixed(2) + 'svh)';
       $$('.manifest-row', chapter).forEach(function (row, index) {
         const local = clamp((progress - 0.62 - index * 0.035) / 0.14);
         const reveal = 1 - Math.pow(1 - local, 3);
@@ -449,6 +454,82 @@
     window.addEventListener('scroll', schedule, { passive: true });
     window.addEventListener('resize', schedule);
     paint();
+  }
+
+  /* Animate actual 3D filaments, not a flat drawing turned sideways. The
+     work is bounded to 24fps and pauses outside the chapter/hidden documents. */
+  function setupWireObjects() {
+    const chapter = $('.brand-chapter');
+    if (!chapter || reduced() || !('IntersectionObserver' in window)) return;
+    const objects = $$('[data-wire-object]', chapter).map(function (node, index) {
+      const type = node.dataset.wireObject;
+      const paths = $$('[data-wire-line]', node);
+      const curves = paths.map(function (path, line) {
+        const points = [];
+        for (let step = 0; step <= 64; step++) {
+          const t = step * Math.PI / 32;
+          let x, y, z;
+          if (type === 'orbit') {
+            const phase = line * Math.PI * 2 / 14;
+            const r = 2 + .55 * Math.cos(3 * t) + .13 * Math.cos(phase);
+            x = r * Math.cos(2 * t); y = r * Math.sin(2 * t); z = .7 * Math.sin(3 * t) + .13 * Math.sin(phase);
+          } else if (type === 'prism') {
+            const side = line < 12 ? -1 : 1;
+            const phase = (line % 12) * Math.PI / 6;
+            const r = .95 + .12 * Math.cos(phase);
+            x = side * .8 + r * Math.cos(t); y = -side * .78 + r * Math.sin(t) * .82; z = .12 * Math.sin(phase) + side * .25;
+          } else if (line < 12) {
+            const phase = line * Math.PI / 6;
+            x = .9 * Math.cos(t) * Math.cos(phase); y = 1.6 * Math.sin(t); z = .9 * Math.cos(t) * Math.sin(phase);
+          } else if (line < 18) {
+            y = (line - 14.5) * .43;
+            const r = .9 * Math.sqrt(Math.max(0, 1 - Math.pow(y / 1.6, 2)));
+            x = r * Math.cos(t); z = r * Math.sin(t);
+          } else {
+            const phase = (line - 18) * Math.PI / 3;
+            x = 1.8 * Math.cos(t); y = .6 * Math.sin(t) * Math.cos(phase); z = .6 * Math.sin(t) * Math.sin(phase);
+          }
+          points.push([x, y, z]);
+        }
+        return points;
+      });
+      return { node: node, paths: paths, curves: curves, scale: type === 'orbit' ? 11 : type === 'prism' ? 13 : 14, speed: index === 1 ? .8 : index === 2 ? .62 : 1 };
+    });
+    let visible = false, frame = 0, last = 0, clock = 0;
+    function draw(time) {
+      frame = 0;
+      if (!visible || document.hidden || reduced()) { last = 0; return; }
+      if (last && time - last < 1000 / 24) { frame = window.requestAnimationFrame(draw); return; }
+      clock += last ? Math.min(100, time - last) : 0;
+      last = time;
+      objects.forEach(function (object) {
+        if (object.node.style.opacity === '0') return;
+        const angle = clock / 1800 * object.speed;
+        const cy = Math.cos(angle), sy = Math.sin(angle), cx = Math.cos(angle * .63 + .35), sx = Math.sin(angle * .63 + .35);
+        object.curves.forEach(function (curve, index) {
+          const d = curve.map(function (p, step) {
+            const x = p[0] * cy + p[2] * sy;
+            const z = -p[0] * sy + p[2] * cy;
+            const y = p[1] * cx - z * sx;
+            const depth = p[1] * sx + z * cx;
+            const perspective = 8 / (8 - depth * .25);
+            return (step ? 'L' : 'M') + (50 + x * object.scale * perspective).toFixed(2) + ' ' + (40 + y * object.scale * perspective).toFixed(2);
+          }).join(' ');
+          object.paths[index].setAttribute('d', d);
+        });
+      });
+      frame = window.requestAnimationFrame(draw);
+    }
+    function resume() {
+      if (!frame && visible && !document.hidden && !reduced()) frame = window.requestAnimationFrame(draw);
+    }
+    const observer = new IntersectionObserver(function (entries) {
+      visible = entries.some(function (entry) { return entry.isIntersecting; });
+      if (!visible) { if (frame) window.cancelAnimationFrame(frame); frame = 0; last = 0; }
+      else resume();
+    }, { threshold: 0 });
+    observer.observe(chapter);
+    document.addEventListener('visibilitychange', resume);
   }
 
   /* -------------------------------------------------------- the front door */
@@ -479,7 +560,7 @@
     window.addEventListener('keydown', away, { once: true });
     window.addEventListener('wheel', away, { once: true, passive: true });
     window.addEventListener('touchstart', away, { once: true, passive: true });
-    window.setTimeout(finish, 4900);
+    window.setTimeout(finish, 3700);
   }
 
   /* A single fixed photographic butterfly is independent of the menu layout.
@@ -702,6 +783,7 @@
     setupButterfly();
     setupSplash();
     setupBrandBand();
+    setupWireObjects();
     setupReveal();
     setupPortraits();
     setupMenu();

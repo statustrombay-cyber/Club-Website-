@@ -1554,9 +1554,9 @@ ok('it reveals the site on its own, with no JavaScript needed',
   round37Css.includes('animation: splashAway .7s ease 4s forwards')
   && /@keyframes splashAway \{ to \{ opacity: 0; visibility: hidden; \} \}/.test(round37Css));
 ok('the entrance settles and hands off to the page and butterfly',
-  round37Css.includes('@keyframes wordPaint') && round37Css.includes('@keyframes introMarkSpin')
+  round37Css.includes('@keyframes inkStrip') && navLayout.includes('mask="url(#introPaint)"') && !navLayout.includes('textLength=')
   && appJs.includes("window.dispatchEvent(new CustomEvent('mt:intro-ready'))")
-  && appJs.includes('window.setTimeout(finish, 4900)'));
+  && appJs.includes('window.setTimeout(finish, 3700)'));
 ok('a tap, a key or a scroll sends it away at once',
   appJs.includes('function setupSplash()') && appJs.includes("splash.addEventListener('click', away)")
   && appJs.includes("window.addEventListener('keydown', away") && appJs.includes("window.addEventListener('wheel', away")
@@ -1588,9 +1588,10 @@ ok('butterfly bobs gently with a reduced-motion fallback',
 ok('the glass header has no opaque scrim or perimeter line',
   round37Css.includes('.nav-wrap:before, body.is-black-chapter .nav-wrap:before { display: none; }')
   && round37Css.includes('border: 0; box-shadow: none; background: rgba(255,255,255,.12)'));
-ok('wire objects tumble without collapsing into edge-on broken lines',
-  round37Css.includes('rotateY(-22deg)') && round37Css.includes('rotateY(22deg)')
-  && !round37Css.includes('rotateY(360deg)'));
+ok('wire objects rotate actual 3D filaments instead of flipping a flat SVG plane',
+  appJs.includes('function setupWireObjects()') && appJs.includes('setupWireObjects();')
+  && appJs.includes('1000 / 24') && appJs.includes('document.hidden')
+  && cardsSource.includes('data-wire-object=') && cardsSource.includes('data-wire-line='));
 
 console.log('\n— black and blue chapter sequence —');
 const renderedRings = mindPage.body.slice(mindPage.body.indexOf('<section class="brand-chapter'), mindPage.body.indexOf('<div class="manifest-chapter'));
@@ -1601,7 +1602,7 @@ ok('rings then manifestation then the original horse-backed sections',
   mindPage.body.indexOf('class="brand-chapter') < mindPage.body.indexOf('id="manifestHeading"')
   && mindPage.body.indexOf('id="manifestHeading"') < mindPage.body.indexOf('id="details"'));
 ok('requested heading and three small moving objects render',
-  mindPage.body.includes('Control Your') && mindPage.body.includes('Manifest</em>') && mindPage.body.includes('Reality</span>')
+  mindPage.body.includes('ControlYour') && mindPage.body.includes('Manifest</em>') && mindPage.body.includes('Reality</span>')
   && (mindPage.body.match(/class="mind-object /g) || []).length === 3);
 ok('only one closing band follows registration and precedes Contact',
   mindPage.body.indexOf('id="join"') < mindPage.body.indexOf('class="brand-finale')
@@ -1670,7 +1671,7 @@ ok('header hairline is removed and butterfly sits above menu panel',
   ok('all five rows and three objects finish their entrance before the scene releases',
     simulatedRows.every(row => row.style.opacity === '1') && simulatedObjects.every(object => object.style.opacity === '1'));
   phase = 1; callbacks.scroll();
-  ok('the ring flower contracts and rises gently at the end', diagramStub.style.transform.includes('translateY(-32.00vh) scale(0.480)'));
+  ok('the ring flower contracts and rises gently at the end', diagramStub.style.transform.includes('translateY(-46.00vh) scale(0.540)'));
   phase = 0; callbacks.scroll();
   ok('scrolling back restores the original geometry exactly', captured.ring.join('|') === initial && captured.dark && simulatedRows.every(row => row.style.opacity === '0'));
   phase = 2; callbacks.scroll();
@@ -1678,19 +1679,21 @@ ok('header hairline is removed and butterfly sits above menu panel',
 }
 
 console.log('\n— saved recording, honest chart and portrait motion —');
-ok('recording is preserved in protected, non-deployed reference storage',
-  fs.existsSync(path.join(ROOT, 'tools/references/superconscious-mobile-2026-10-15.mp4'))
-  && fs.existsSync(path.join(ROOT, 'tools/references/README.md'))
-  && !fs.existsSync(path.join(ROOT, 'screen-20261015-075423.mp4')));
+ok('both reference videos are absent from the site and only lightweight study metadata remains',
+  !fs.existsSync(path.join(ROOT, 'tools/references/superconscious-mobile-2026-10-15.mp4'))
+  && !fs.existsSync(path.join(ROOT, 'screen-20261015-174326.mp4'))
+  && fs.existsSync(path.join(ROOT, 'tools/references/recording.json'))
+  && fs.readFileSync(path.join(ROOT, '.gitattributes'), 'utf8').includes('screen-*.mp4 export-ignore'));
 ok('splash keeps the seven-circle mark while the first-page emblem is unobstructed',
   navLayout.includes("mt_reference_rings(false, 'splash-rings')")
   && !round37Home.includes('mt_reference_rings') && !mindPage.body.includes('hero-rings')
   && cardsSource.includes('$ring < 6'));
-ok('recorded inline icons roll beside the manifestation words',
-  (mindPage.body.match(/<i class="mind-object /g) || []).length === 3
-  && round37Css.includes('@keyframes wireRoll') && cardsSource.includes('class="wire-form"') && round37Css.includes("font-family: 'MT Serif', Georgia, serif"));
+ok('recorded inline icons have three independently projected wire sculptures',
+  (mindPage.body.match(/data-wire-object="/g) || []).length === 3
+  && (mindPage.body.match(/data-wire-line="/g) || []).length === 59
+  && appJs.includes('function setupWireObjects()'));
 ok('joined rings shrink and rise before the following heading',
-  appJs.includes('(progress - 0.46) / 0.17') && appJs.includes('1 - exit * 0.20')
+  appJs.includes('(progress - 0.45) / 0.35') && appJs.includes('1 - exit * 0.10')
   && round37Css.includes('.brand-chapter { height: 270svh; }'));
 ok('people alternate left and right on home and member directory',
   round37Css.includes('.team-card:nth-child(even), .member-cards .member-card:nth-child(even) { align-self: flex-end; }')
@@ -1713,6 +1716,50 @@ ok('wave contours fade at both ends instead of meeting a hard canvas edge',
   && (mindPage.body.match(/class="blue-waves"/g) || []).length === 1
   && cardsSource.includes("$ink = 'wave-ink-' . ++$wave")
   && round37Css.includes('inset: 0; width: 100%; height: 100%; left: 0; overflow: visible;'));
+/* Exercise the real 3D renderer: bounded frame work, finite projection,
+   different successive poses and suspension when off screen or hidden. */
+{
+  const { runInNewContext } = await import('node:vm');
+  const begin = appJs.indexOf('function setupWireObjects()');
+  const end = appJs.indexOf('/* -------------------------------------------------------- the front door */', begin);
+  let intersection, nextFrame, writes = 0, cancelled = 0;
+  const handlers = {};
+  const nodes = ['orbit', 'prism', 'sphere'].map((type, index) => ({
+    dataset: {wireObject: type}, style: {opacity: '1'},
+    paths: Array.from({length: [14,24,21][index]}, () => ({ d: '', setAttribute(name, d) { this.d = d; writes++; } }))
+  }));
+  const doc = {hidden: false, addEventListener: (name, fn) => {handlers[name] = fn;}};
+  const Observer = class { constructor(fn) {intersection = fn;} observe() {} };
+  runInNewContext(appJs.slice(begin, end) + '\nsetupWireObjects();', {
+    $: () => ({}), $$: (selector, node) => selector === '[data-wire-object]' ? nodes : node.paths,
+    reduced: () => false, document: doc, IntersectionObserver: Observer,
+    window: {IntersectionObserver: Observer, requestAnimationFrame: fn => {nextFrame = fn; return 1;}, cancelAnimationFrame: () => {cancelled++;}}
+  });
+  ok('wire rendering waits until the chapter is on screen', writes === 0 && !nextFrame);
+  intersection([{isIntersecting: true}]); nextFrame(1000);
+  const firstPose = nodes[0].paths[0].d;
+  nextFrame(1020);
+  ok('wire updates are bounded below 24fps even on fast displays', writes === 59);
+  nextFrame(1050);
+  ok('rotating real coordinates changes the knot pose', firstPose !== nodes[0].paths[0].d);
+  ok('all projected sculptures remain finite', nodes.every(node => node.paths.every(path => path.d.startsWith('M') && !/NaN|Infinity/.test(path.d))));
+  nodes[0].style.opacity = '0'; const hiddenPose = nodes[0].paths[0].d; nextFrame(1100);
+  ok('unrevealed wire objects do not waste projection work', hiddenPose === nodes[0].paths[0].d);
+  intersection([{isIntersecting: false}]); const pausedWrites = writes;
+  ok('leaving the chapter cancels its animation frame', cancelled === 1);
+  nextFrame(1150);
+  ok('offscreen chapters perform no wire updates', writes === pausedWrites);
+  intersection([{isIntersecting: true}]); doc.hidden = true; nextFrame(1200);
+  ok('hidden documents stop wire updates', writes === pausedWrites);
+}
+ok('closing field uses broad blue/violet ribbons and reference-scale typography',
+  cardsSource.includes('2.5 + 8 * ($strand / 42) ** 1.7')
+  && round37Css.includes('25.5vw') && round37Css.includes('animation-duration: 24s')
+  && round37Css.includes('6.7vw') && fs.existsSync(path.join(ROOT, 'assets/fonts/Inter-OFL.txt')));
+ok('the splash paints solid strips over natural-width text instead of tracing outlines',
+  navLayout.includes('mask="url(#introPaint)"') && !navLayout.includes('textLength=')
+  && round37Css.includes('animation: splashAway .45s ease 3.05s forwards')
+  && fs.existsSync(path.join(ROOT, 'assets/img/intro-stars.svg')));
 /* Splash exits are idempotent: animation, deliberate skip, fallback and
    reduced-motion all notify the waiting butterfly exactly once. */
 {
@@ -1736,10 +1783,10 @@ ok('wave contours fade at both ends instead of meeting a hard canvas edge',
     });
     if (mode === 'animation') {
       handlers.animationend({ target: splash, animationName: 'splashAway' });
-      timers[4900]();
+      timers[3700]();
     } else if (mode === 'skip') {
-      handlers.click(); timers[650](); handlers.keydown(); timers[4900]();
-    } else if (mode === 'fallback') timers[4900]();
+      handlers.click(); timers[650](); handlers.keydown(); timers[3700]();
+    } else if (mode === 'fallback') timers[3700]();
     ok('splash exits once via ' + mode + ' and reveals the site',
       notifications === 1 && !classes.has('intro-pending') && classes.has('intro-revealed')
       && (mode === 'no-splash' || splash.hidden));

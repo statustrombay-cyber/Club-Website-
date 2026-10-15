@@ -76,7 +76,12 @@ $nav = [
       <div class="splash-copy">
         <div class="splash-ring-intro"><?= mt_reference_rings(false, 'splash-rings') ?></div>
         <svg class="splash-word" viewBox="0 0 1200 210" aria-hidden="true" focusable="false">
-          <text class="splash-name" x="40" y="146" textLength="1120" lengthAdjust="spacingAndGlyphs">mindfultattva</text>
+          <defs><mask id="introPaint" maskUnits="userSpaceOnUse" x="0" y="0" width="1200" height="210">
+            <?php for ($strip = 0; $strip < 14; $strip++): ?>
+            <rect class="paint-strip" x="0" y="<?= $strip * 15 ?>" width="1200" height="16" fill="white" style="--strip-delay:<?= round(2.04 + ($strip % 5) * .045, 3) ?>s"/>
+            <?php endfor; ?>
+          </mask></defs>
+          <text class="splash-name" x="160" y="152" mask="url(#introPaint)">mindfultattva</text>
         </svg>
         <div class="splash-letter-ring"><?= mt_reference_rings(false, 'letter-rings') ?></div>
       </div>

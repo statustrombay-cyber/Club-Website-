@@ -1710,3 +1710,47 @@ html.no-js .brand-chapter .manifest-chapter h2 { transform: none; }
 
 .brand-chapter .mind-object svg { width: 100%; height: 100%; }
 html.no-js .nav-butterfly { display: none; }
+
+/* 66.5-second reference, measured in its 720px content viewport. Inter's
+   unrounded letterforms replace the earlier rounded approximation. */
+@font-face { font-family: 'MT Reference'; src: url('/assets/fonts/inter-latin-regular.woff2') format('woff2'); font-style: normal; font-weight: 400; font-display: swap; }
+.brand-chapter .manifest-chapter { padding-inline: 7vw; }
+.brand-chapter .manifest-chapter h2 { font-family: 'MT Reference', sans-serif; font-weight: 400; letter-spacing: -.008em; gap: .28em; }
+.brand-chapter .manifest-chapter h2 em { font-family: 'MT Serif', Georgia, serif; font-size: .94em; letter-spacing: -.035em; color: #716c74; }
+.brand-chapter .manifest-row:nth-child(4) { padding-left: 21.5%; }
+.brand-chapter .mind-object { width: 1.72em; height: 1.16em; border-radius: .45em; border-color: #9b939f; color: #b2aab9; }
+.brand-chapter .object-sphere { border-color: #7861b1; }
+.brand-rings circle { vector-effect: non-scaling-stroke; stroke-width: 1px; }
+/* Broad luminous ribbons, not a thin purple hourglass or a flat blue panel. */
+.brand-finale { background: #09080c; }
+.brand-finale-stage { background: #09080c; gap: clamp(16px, 5vw, 48px); }
+.brand-finale-stage .blue-waves { width: 130%; height: 100%; left: -15%; inset-block: 0; opacity: 1; filter: none; mask-image: radial-gradient(ellipse at 50% 50%, #000 35%, transparent 74%); }
+.brand-finale-stage .blue-waves g { animation: ribbonBreathe 16s ease-in-out infinite alternate; transform-origin: 50% 50%; }
+@keyframes ribbonBreathe { from { transform: translate(-12px,0) rotate(-2deg) scale(1); } to { transform: translate(20px,16px) rotate(2deg) scale(1.035); } }
+.brand-finale-intro { font-family: 'MT Reference', sans-serif; font-weight: 400; font-size: clamp(1.1rem, 6.7vw, 2.75rem); letter-spacing: -.04em; }
+.brand-finale .brand-band { padding: 0; }
+.brand-finale .brand-band-track { animation-duration: 24s; }
+.brand-finale .brand-band-track span { font-family: 'MT Reference', sans-serif; font-weight: 400; font-size: clamp(6rem, 25.5vw, 20rem); line-height: 1.15; letter-spacing: -.065em; padding-right: 8vw; }
+/* The source paints solid fragments outward from the ring. It does not trace
+   a thin outline around every glyph. Keep text at its natural glyph widths. */
+.splash { background: #09090b; }
+.splash-copy { width: min(84vw, 1100px); }
+.splash-word .splash-name { font-family: 'MT Reference', sans-serif; font-size: 148px; letter-spacing: -.04em; fill: #f6f5f7; stroke: none; animation: none; }
+.paint-strip { transform-box: fill-box; transform-origin: right center; animation: inkStrip .75s cubic-bezier(.2,.7,.3,1) var(--strip-delay) both; }
+@keyframes inkStrip { 0% { transform: scaleX(0); opacity: 0; } 18% { opacity: 1; transform: scaleX(.12); } 40% { transform: scaleX(.4); } 64% { transform: scaleX(.36); } 100% { transform: scaleX(1); opacity: 1; } }
+.splash-ring-intro { width: clamp(60px, 16vw, 130px); animation: introMarkLeave .45s ease 2.05s forwards; }
+.splash-ring-intro .splash-rings { animation-duration: 2.3s; }
+.splash-ring-intro .splash-rings circle { vector-effect: non-scaling-stroke; stroke-width: .6px; }
+.splash-letter-ring { left: 84%; top: 51%; width: 8%; animation-delay: 2.1s; }
+@media (prefers-reduced-motion: reduce) { .brand-finale-stage .blue-waves g, .paint-strip { animation: none; } }
+@media (max-height: 600px) { .brand-finale .brand-band-track span { font-size: min(25.5vw, 26svh); } .brand-finale-intro { font-size: min(6.7vw, 6svh); } }
+.brand-chapter .wire-form { animation: none; transform: none; }
+.splash { animation: splashAway .45s ease 3.05s forwards; }
+.splash-word .splash-name { letter-spacing: -.02em; }
+.splash-ring-intro { animation-duration: .65s; }
+@keyframes introMarkLeave { to { opacity: 0; transform: translate(calc(-50% + min(28.56vw, 374px)),-50%) scale(.45); } }
+.splash-letter-ring { animation-delay: 2.35s; }
+.splash:before { content: ''; position: absolute; inset: -12px; background: url('/assets/img/intro-stars.svg') center / cover; opacity: .8; animation: introStars 6s linear both; pointer-events: none; }
+.splash-copy { z-index: 1; }
+@keyframes introStars { to { transform: translateY(-10px) scale(1.015); } }
+@media (prefers-reduced-motion: reduce) { .splash:before { animation: none; } }
