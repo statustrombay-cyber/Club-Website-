@@ -234,23 +234,23 @@ function mt_manifest_object(string $type): string
     <?php return (string) ob_get_clean();
 }
 
-/** Rings have their own full-screen chapter; no name or scroll instruction. */
+/** One continuous sticky scene: assemble the rings, then introduce the words. */
 function mt_brand_chapter(string $name): string
 {
     ob_start(); ?>
   <section class="brand-chapter black-chapter" aria-label="Seven connected rings">
     <div class="brand-chapter-stage">
       <?= mt_reference_rings(true, 'brand-rings') ?>
+      <div class="manifest-chapter" aria-labelledby="manifestHeading">
+        <h2 id="manifestHeading">
+          <span class="manifest-row">Control Your</span>
+          <span class="manifest-row">Mind <?= mt_manifest_object('orbit') ?></span>
+          <span class="manifest-row"><?= mt_manifest_object('prism') ?> <em>Manifest</em></span>
+          <span class="manifest-row">Your</span>
+          <span class="manifest-row"><?= mt_manifest_object('sphere') ?> Reality</span>
+        </h2>
+      </div>
     </div>
-  </section>
-  <section class="manifest-chapter black-chapter" aria-labelledby="manifestHeading">
-    <h2 id="manifestHeading">
-      <span class="manifest-row">Control Your</span>
-      <span class="manifest-row">Mind <?= mt_manifest_object('orbit') ?></span>
-      <span class="manifest-row"><?= mt_manifest_object('prism') ?> <em>Manifest</em></span>
-      <span class="manifest-row">Your</span>
-      <span class="manifest-row"><?= mt_manifest_object('sphere') ?> Reality</span>
-    </h2>
   </section>
     <?php return (string) ob_get_clean();
 }

@@ -31,8 +31,17 @@ and an accessible motion toggle. Do not publish invented metrics.
 
 Flow refinement: keep the first-page emblem completely free of ring overlays.
 The splash mark assembles on its own before revealing the page and admitting
-the photographic butterfly. The separate ring chapter is 500svh with gathering,
-rotation and a gentle upward exit. The manifestation rows are staggered, with
+the photographic butterfly. The ring/heading scene is now a shorter 270svh: gathering, rotation and an
+upward exit share one sticky stage with staggered right-to-left word entrances. The manifestation rows are staggered, with
 fine wire objects and a locally licensed italic serif; these are reconstructions
 from the recording, not a claim to the original site's proprietary font/assets.
 The closing wave uses complete curves fading at both ends, not clipped strands.
+
+Latest direction: restore the original light horse-backed quote hero; no large
+landing logo. The borderless glass header has no gold progress lines. A fixed
+photographic butterfly enters from below, follows reading position, tilts with
+scroll direction and flies left out of dark chapters, returning on light paper.
+The splash contains only lowercase mindfultattva, painted after the ring spin,
+with a small last-a ring accent. These timings are a reconstruction, not a
+verified frame-for-frame copy; a new uninterrupted reference was requested for
+the exact splash/section/album motion. Album effects are deliberately unchanged.

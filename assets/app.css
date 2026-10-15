@@ -1099,18 +1099,7 @@ html.js .scroll-reveal.is-visible { opacity: 1; transform: none; }
 .verify-form button { justify-self: start; }
 
 /* ---- the gold thread: a line that flows down the page as you scroll ---- */
-.gold-thread { position: fixed; z-index: 1; top: 0; left: 50%; width: 2px; height: 100vh; margin-left: -1px; pointer-events: none; transform: translateX(min(-50vw + 26px, -520px)); }
-.gold-thread .thread-rail { position: absolute; inset: 0; background: linear-gradient(180deg, transparent, rgba(215,162,70,.22) 12%, rgba(215,162,70,.22) 88%, transparent); }
-.gold-thread .thread-fill { position: absolute; top: 0; left: 0; width: 100%; height: 0; background: linear-gradient(180deg, rgba(244,193,127,.95), rgba(200,111,88,.9)); box-shadow: 0 0 14px rgba(244,193,127,.75); transition: height .12s linear; }
-.gold-thread .thread-bead {
-  position: absolute; left: 50%; top: 0; width: 11px; height: 11px; margin: -5px 0 0 -5px; border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #fff3d8, #e0a94e 55%, #b3705a); box-shadow: 0 0 0 5px rgba(215,162,70,.16), 0 0 22px rgba(224,169,78,.6);
-}
-.gold-thread .thread-bead:nth-child(3) { width: 7px; height: 7px; margin: -3px 0 0 -3px; }
-.gold-rule { position: relative; height: 1px; margin: 0 auto; width: min(1060px, calc(100% - 48px)); background: linear-gradient(90deg, transparent, rgba(215,162,70,.55), transparent); }
-.gold-rule:after { content: ''; position: absolute; left: 50%; top: -3px; width: 7px; height: 7px; margin-left: -3px; border-radius: 50%; background: #e0a94e; box-shadow: 0 0 14px rgba(224,169,78,.65); }
-@media (max-width: 1180px) { .gold-thread { display: none; } }
-@media (prefers-reduced-motion: reduce) { .gold-thread { display: none; } }
+
 
 
 /* ---------------------------------------------------------- club medallions */
@@ -1138,8 +1127,6 @@ html.js .scroll-reveal.is-visible { opacity: 1; transform: none; }
 @media (prefers-reduced-motion: reduce) { .values-track { animation: none; } }
 
 /* The bar at the very top of the window: how much of the page is read. */
-.read-progress { position: fixed; z-index: 12; top: 0; left: 0; right: 0; height: 3px; pointer-events: none; background: rgba(244,193,127,.16); }
-.read-progress i { display: block; width: 100%; height: 100%; transform: scaleX(0); transform-origin: 0 50%; background: linear-gradient(90deg, #d7a246, #e0a94e 55%, #c86f58); box-shadow: 0 0 12px rgba(224,169,78,.5); }
 
 /* The way back up, once the page has been read a little. */
 .to-top { position: fixed; z-index: 12; right: 20px; bottom: 22px; display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; color: #fffaf0; background: var(--plum); box-shadow: 0 12px 26px rgba(64,54,52,.3); font-size: 1.1rem; opacity: 0; transform: translateY(14px); pointer-events: none; transition: opacity .3s ease, transform .3s ease, background .2s ease; }
@@ -1427,7 +1414,7 @@ html.photo-frame-open { overflow: hidden; }
   color: #e9dfff; text-shadow: 0 2px 0 #b49cdd, 0 5px 0 #8065aa, 0 10px 26px rgba(46,24,74,.65);
 }
 @keyframes brandRun { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-.brand-chapter { position: relative; height: 300svh; }
+.brand-chapter { position: relative; }
 .brand-chapter-stage {
   position: sticky; top: 84px; height: calc(100svh - 84px);
   display: grid; place-items: center; overflow: hidden; isolation: isolate;
@@ -1538,21 +1525,6 @@ html.no-js .brand-chapter-stage, html.no-js .brand-finale-stage { position: rela
 
 /* Recording study, 15 October: near-black scenes, thin white rings, inline
    rotating line icons, fine geometric marquee and concentrated violet waves. */
-.reference-hero { position: relative; overflow: hidden; color: #f6f2ff; background: radial-gradient(ellipse at 50% 12%, #b8a5ed 0%, #6550a5 27%, #29204f 52%, #0b0b10 85%); padding: 66px 0 54px; min-height: 100svh; }
-.reference-hero .hero-grid { position: relative; display: block; text-align: center; }
-.reference-opening { max-width: 1100px; margin: auto; }
-.reference-name { margin: 0; font-family: 'MT Geometric', sans-serif; font-size: clamp(2.5rem, 8vw, 8rem); line-height: 1.1; font-weight: 400; letter-spacing: -.07em; text-transform: lowercase; }
-.reference-subtitle { margin: 16px auto 0; max-width: 660px; color: #f0e8ff; font-size: clamp(.8rem, 1.3vw, 1.1rem); }
-.reference-emblem { position: relative; width: min(66vw, 330px); aspect-ratio: 1; margin: 32px auto; display: grid; place-items: center; }
-.reference-emblem img { width: 100%; height: 100%; border-radius: 0; box-shadow: none; object-fit: contain; }
-.reference-stars { position: absolute; inset: 0; pointer-events: none; opacity: .4; background-image: radial-gradient(circle, #e7ddff 0 1px, transparent 1.5px), radial-gradient(circle, #a79bc8 0 1px, transparent 1.5px); background-size: 81px 97px, 143px 127px; background-position: 8px 21px, 48px 62px; }
-.reference-tagline { margin: 20px auto 12px; font-family: 'MT Geometric', sans-serif; font-size: clamp(1.3rem, 2.5vw, 2rem); font-weight: 400; }
-.reference-hero .hero-copy { color: #d7cdea; max-width: 650px; margin: 0 auto; }
-.reference-hero .hero-actions, .reference-hero .hero-meta { justify-content: center; }
-.reference-hero .hero-meta { color: #d9d1eb; margin-top: 26px; }
-.reference-hero .hero-meta span { color: #beb4ce; }
-.reference-hero .outline-button { color: #f7f2ff; border-color: #9b8fb5; }
-.reference-hero .solid-button { background: #f8f5ff; color: #211b32; }
 .reference-rings { display: block; overflow: visible; }
 .reference-rings circle { fill: none; stroke: #ece7f5; stroke-width: 1.4; }
 .black-chapter { background: #0b0b0d; color: #f5f3f7; }
@@ -1602,9 +1574,6 @@ body.is-black-chapter .nav-wrap, body.is-black-chapter .nav-wrap:before, body.is
 .happiness-line { fill: none; stroke: #c8acef; stroke-width: 2.5; stroke-linecap: round; }
 @media (max-width: 1100px) { .brand-finale-stage { height: calc(100svh - 68px); min-height: 0; } }
 @media (max-width: 600px) {
-  .reference-hero { padding-top: 45px; }
-  .reference-hero .hero-meta { font-size: .7rem; }
-  .reference-hero .hero-actions { gap: 10px; flex-wrap: wrap; }
   .team-card, .member-cards .member-card { width: 85%; padding: 18px; }
   .team-grid, .member-cards { gap: 55px; }
   .team-avatar, .member-photo { width: 100%; }
@@ -1617,14 +1586,9 @@ body.is-black-chapter .nav-wrap, body.is-black-chapter .nav-wrap:before, body.is
   .brand-chapter, .brand-finale { height: auto; }
   .brand-finale-stage { position: relative; top: auto; height: auto; min-height: 80svh; }
 }
-.reference-hero:before, .reference-hero:after { display: none; }
-.hero.reference-hero h1 { color: #faf7ff; margin: 0 auto; max-width: none; font-size: clamp(2.5rem, 8vw, 8rem); }
-.reference-hero .hero-meta strong { color: #ece3ff; }
-.reference-hero .hero-copy { font-size: .94rem; line-height: 1.55; }
-.reference-emblem { width: min(54vw, 300px); margin: 22px auto; }
 .gallery-stage > .portrait-badge { top: 14px; right: 14px; width: 44px; height: 44px; }
 .brand-finale-stage .blue-waves { width: 120%; left: -10%; filter: drop-shadow(0 0 7px #5f3aae); }
-@media (max-height: 600px) { .reference-hero { padding: 40px 0; } .brand-finale-stage { padding: 20px 0; gap: 22px; } .brand-band-track span { font-size: clamp(4rem, 16vw, 24svh); } }
+@media (max-height: 600px) { .brand-finale-stage { padding: 20px 0; gap: 22px; } .brand-band-track span { font-size: clamp(4rem, 16vw, 24svh); } }
 .portrait-badge { animation: none; }
 .photo-in-view .portrait-badge { animation: badgeRoll 15s linear infinite; }
 @media (prefers-reduced-motion: reduce) { .photo-in-view .portrait-badge { animation: none; } }
@@ -1633,8 +1597,6 @@ body.is-black-chapter .nav-wrap, body.is-black-chapter .nav-wrap:before, body.is
 
 /* Flow refinement from the saved recording: a compact white ring mark, a
    staggered word composition, and a wave which fades rather than ends in a box. */
-.reference-emblem img { width: 100%; height: 100%; border-radius: 0; box-shadow: none; object-fit: contain; }
-.brand-chapter { height: 500svh; }
 .brand-rings { width: min(90vw, 82svh, 900px); }
 .manifest-chapter { padding: 100px 6vw 120px; }
 .manifest-chapter h2 { width: min(860px, 100%); display: flex; flex-direction: column; gap: .3em; letter-spacing: -.015em; font-size: clamp(3.6rem, 7vw, 6.5rem); }
@@ -1660,9 +1622,6 @@ body.is-black-chapter .nav-wrap, body.is-black-chapter .nav-wrap:before, body.is
 .splash-welcome { font-size: clamp(.65rem, 1.2vw, .9rem); letter-spacing: .24em; animation: splashNameSettle .9s ease .3s both; }
 .splash.is-done { animation: none; opacity: 0; visibility: hidden; transition: opacity .6s ease, visibility 0s linear .6s; }
 @keyframes splashNameSettle { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-body.intro-pending .reference-opening { opacity: 0; transform: translateY(20px); }
-body.intro-revealed .reference-opening { animation: openingReveal 1s cubic-bezier(.2,.7,.3,1) both; }
-@keyframes openingReveal { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 html.js .nav-butterfly { opacity: 0; }
 html.js .nav-butterfly.butterfly-arrived { opacity: 1; }
 body.butterfly-scrolling .wing-left, body.butterfly-scrolling .wing-right { animation-duration: .26s; }
@@ -1673,10 +1632,81 @@ body.butterfly-scrolling .wing-left, body.butterfly-scrolling .wing-right { anim
 @media (prefers-reduced-motion: reduce) {
   .brand-chapter { height: auto; }
   .splash { display: none; }
-  .wire-form, body.intro-revealed .reference-opening { animation: none; }
-  body.intro-pending .reference-opening { opacity: 1; transform: none; }
   html.js .nav-butterfly { opacity: 1; }
 }
 
 .manifest-chapter h2 em { font-size: .9em; color: #89818e; }
 .manifest-chapter .object-sphere { border-color: #7162a2; }
+
+/* Return to the club's light, horse-backed opening. The dark reference
+   treatment belongs to its two interludes, never the public landing page. */
+/* Glass has no perimeter, solid scrim or progress hairline. */
+.nav-wrap, body.is-black-chapter .nav-wrap { background: transparent; border: 0; box-shadow: none; }
+.nav-wrap:before, body.is-black-chapter .nav-wrap:before { display: none; }
+.nav:before, body.is-scrolled .nav:before, body.is-black-chapter .nav:before {
+  border: 0; box-shadow: none; background: rgba(255,255,255,.12);
+  backdrop-filter: blur(18px) saturate(1.15); -webkit-backdrop-filter: blur(18px) saturate(1.15);
+}
+body.is-black-chapter .nav:before { background: rgba(255,255,255,.025); }
+.brand-mark { background: transparent; box-shadow: none; }
+.nav-links.open { border: 0; background: rgba(255,250,244,.66); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); }
+body.is-black-chapter .nav-links.open { border: 0; background: rgba(15,15,18,.62); }
+/* The butterfly is a viewport decoration, not a wide box inside the brand. */
+.nav-butterfly { position: fixed; top: 0; left: 0; z-index: 80; width: 108px; height: 74px; margin: 0; flex: none; transition: transform .75s cubic-bezier(.2,.6,.3,1); will-change: transform; }
+.nav-butterfly .butterfly-flight { top: 50%; width: 100%; height: 100%; animation: butterflyHover 4.6s ease-in-out infinite; }
+.nav-butterfly .wing-left, .nav-butterfly .wing-right { animation-duration: 1.1s; }
+.nav-butterfly.butterfly-flying { transition: none; }
+.nav-butterfly.butterfly-flying .wing-left, .nav-butterfly.butterfly-flying .wing-right,
+body.butterfly-scrolling .nav-butterfly .wing-left, body.butterfly-scrolling .nav-butterfly .wing-right { animation-duration: .48s; }
+html.js .nav-butterfly.butterfly-away { opacity: 0; }
+@keyframes butterflyHover { 0%,100% { transform: translate(-50%,-50%) rotate(-7deg); } 50% { transform: translate(-50%,calc(-50% - 7px)) rotate(2deg); } }
+@media (max-width: 600px) { .nav-butterfly { width: 82px; height: 56px; } }
+/* One pinned scene, rather than a long ring section followed by a static
+   heading. The rows and the three objects have separate scroll timelines. */
+.brand-chapter { height: 270svh; }
+.brand-chapter-stage { background: radial-gradient(ellipse at 50% 55%, #242129, #0b0b0d 78%); }
+.brand-chapter .manifest-chapter { position: absolute; inset: 0; min-height: 0; height: 100%; padding: 0 6vw; background: none; display: grid; place-items: center; pointer-events: none; }
+.brand-chapter .manifest-chapter h2 { width: min(760px, 100%); font-weight: 500; font-size: clamp(2rem, min(7vw, 8svh), 6rem); transform: translateY(8svh); }
+html.js .brand-chapter .manifest-row { opacity: 0; will-change: transform, opacity; }
+.brand-chapter .manifest-chapter .manifest-row { line-height: 1.18; }
+.brand-chapter .mind-object { will-change: transform, opacity; }
+.brand-chapter .wire-form { transform-box: fill-box; transform-origin: center; animation: wireTumble 7s linear infinite; }
+.brand-chapter .object-prism .wire-form { animation-duration: 9s; }
+.brand-chapter .object-sphere .wire-form { animation-duration: 11s; }
+@keyframes wireTumble { 0% { transform: perspective(260px) rotateY(-22deg) rotateX(15deg) rotateZ(0); } 50% { transform: perspective(260px) rotateY(22deg) rotateX(-15deg) rotateZ(180deg); } 100% { transform: perspective(260px) rotateY(-22deg) rotateX(15deg) rotateZ(360deg); } }
+@media (max-width: 600px) { .brand-chapter .manifest-chapter h2 { font-size: min(13.2vw, 7.5svh); } }
+/* Word-only black intro: gather, spin, disappear; paint the lowercase name.
+   The final a briefly holds a miniature version of the same ring motif. */
+.splash { background: #09090b; background-image: none; animation: splashAway .7s ease 4s forwards; }
+.splash-copy { display: block; width: min(92vw, 1100px); aspect-ratio: 1200 / 210; padding: 0; position: relative; animation: none; }
+.splash-word { display: block; width: 100%; height: auto; overflow: visible; }
+.splash-word .splash-name { font-family: 'MT Geometric', sans-serif; font-size: 132px; font-weight: 400; letter-spacing: -.06em; fill: transparent; stroke: #f4f2f5; stroke-width: 1.3; stroke-dasharray: 850; stroke-dashoffset: 850; text-shadow: none; animation: wordPaint 1.6s ease 2s both; }
+.splash-ring-intro { position: absolute; width: clamp(80px, 13vw, 135px); left: 50%; top: 50%; transform: translate(-50%,-50%); animation: introMarkLeave .6s ease 1.7s forwards; }
+.splash-ring-intro .splash-rings { width: 100%; margin: 0; animation: introMarkSpin 1.8s ease-in-out both; }
+.splash-ring-intro .splash-rings circle:not(:first-child) { animation: splashJoin .85s cubic-bezier(.2,.7,.3,1) both; }
+.splash-letter-ring { position: absolute; left: 92.3%; top: 49%; width: 7%; transform: translate(-50%,-50%); opacity: 0; animation: letterRing .95s ease 1.95s both; }
+.splash-letter-ring svg { width: 100%; animation: introMarkSpin 2s linear both; }
+@keyframes introMarkSpin { from { transform: rotate(-60deg); } to { transform: rotate(180deg); } }
+@keyframes introMarkLeave { to { opacity: 0; transform: translate(-50%,-50%) scale(.3); } }
+@keyframes wordPaint { 0% { stroke-dashoffset: 850; fill: transparent; clip-path: inset(0 0 0 100%); } 55% { fill: transparent; } 80% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: 0; fill: #f4f2f5; stroke-opacity: 0; clip-path: inset(0); } }
+@keyframes letterRing { 0% { opacity: 0; } 30%,60% { opacity: 1; } 100% { opacity: 0; } }
+body.intro-pending .hero .fade-in > * { animation-play-state: paused; }
+/* Functional, readable fallbacks: no long empty chapter, invisible heading,
+   moving butterfly or painted-name wait when motion is not wanted. */
+html.no-js .brand-chapter { height: auto; }
+html.no-js .brand-chapter-stage { height: auto; display: flex; flex-direction: column; padding: 55px 0; gap: 40px; }
+html.no-js .brand-chapter .manifest-chapter { position: relative; height: auto; padding: 30px 6vw; }
+html.no-js .brand-chapter .manifest-chapter h2 { transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .splash { display: none; }
+  .nav-butterfly { transition: none; }
+  .nav-butterfly .butterfly-flight, .nav-butterfly .wing-left, .nav-butterfly .wing-right, .brand-chapter .wire-form { animation: none; }
+  .brand-chapter { height: auto; }
+  .brand-chapter-stage { height: auto; display: flex; flex-direction: column; padding: 55px 0; gap: 40px; }
+  .brand-chapter .manifest-chapter { position: relative; height: auto; padding: 30px 6vw; }
+  .brand-chapter .manifest-chapter h2 { transform: none; }
+  html.js .brand-chapter .manifest-row { opacity: 1; will-change: auto; }
+}
+
+.brand-chapter .mind-object svg { width: 100%; height: 100%; }
+html.no-js .nav-butterfly { display: none; }

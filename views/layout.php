@@ -74,9 +74,11 @@ $nav = [
   <?php if ($splash): ?>
     <div class="splash" id="splash" aria-hidden="true">
       <div class="splash-copy">
-        <?= mt_reference_rings(false, 'splash-rings') ?>
-        <span class="splash-welcome">Welcome to Club</span>
-        <span class="splash-name"><?= e($clubName) ?></span>
+        <div class="splash-ring-intro"><?= mt_reference_rings(false, 'splash-rings') ?></div>
+        <svg class="splash-word" viewBox="0 0 1200 210" aria-hidden="true" focusable="false">
+          <text class="splash-name" x="40" y="146" textLength="1120" lengthAdjust="spacingAndGlyphs">mindfultattva</text>
+        </svg>
+        <div class="splash-letter-ring"><?= mt_reference_rings(false, 'letter-rings') ?></div>
       </div>
     </div>
   <?php endif; ?>
@@ -85,10 +87,6 @@ $nav = [
     <span class="bubble bubble-a"></span><span class="bubble bubble-b"></span><span class="bubble bubble-c"></span>
     <span class="bubble bubble-d"></span><span class="bubble bubble-e"></span><span class="bubble bubble-f"></span>
     <span class="bubble bubble-g"></span>
-  </div>
-  <div class="gold-thread" aria-hidden="true">
-    <span class="thread-rail"></span><span class="thread-fill" id="threadFill"></span>
-    <span class="thread-bead" id="threadBead"></span>
   </div>
   <?php /* Decoration that never stops: warm lights drifting behind every
            block, a scatter of sparkles and a few soft petals falling through
@@ -105,7 +103,6 @@ $nav = [
     <span class="drift-petal petal-c"></span><span class="drift-petal petal-d"></span>
     <span class="drift-petal petal-e"></span><span class="drift-petal petal-f"></span>
   </div>
-  <div class="read-progress" aria-hidden="true"><i id="readProgress"></i></div>
 
   <?php /* The club's horses, behind every public page. A still frame is always
            there and the compressed clip plays over it — muted, in a loop —
@@ -120,6 +117,15 @@ $nav = [
                fast-start rendition before making any media request. */ ?>
     </video>
   </div>
+
+  <?php /* Viewport flight layer: it never changes brand/menu layout or intercepts a click. */ ?>
+  <span class="nav-butterfly" aria-hidden="true">
+    <span class="butterfly-flight">
+      <img class="butterfly-wing wing-left" src="/assets/img/butterfly-flight.png" alt="" width="626" height="428" decoding="async">
+      <img class="butterfly-wing wing-right" src="/assets/img/butterfly-flight.png" alt="" width="626" height="428" decoding="async">
+      <img class="butterfly-body" src="/assets/img/butterfly-flight.png" alt="" width="626" height="428" decoding="async">
+    </span>
+  </span>
 
   <div class="site-shell">
     <?php if (trim((string) ($site['announcement'] ?? '')) !== ''): ?>
@@ -141,13 +147,6 @@ $nav = [
         <a class="brand" href="/" aria-label="<?= e($clubName) ?> home">
           <span class="brand-mark" id="brandMark"><img src="<?= e($logo) ?>" alt="<?= e($clubName) ?> logo" loading="lazy" decoding="async"></span>
           <span class="brand-name" id="brandName"><?= e($clubName) ?></span>
-          <span class="nav-butterfly" aria-hidden="true">
-            <span class="butterfly-flight">
-              <img class="butterfly-wing wing-left" src="/assets/img/butterfly-flight.png" alt="" width="626" height="428" decoding="async">
-              <img class="butterfly-wing wing-right" src="/assets/img/butterfly-flight.png" alt="" width="626" height="428" decoding="async">
-              <img class="butterfly-body" src="/assets/img/butterfly-flight.png" alt="" width="626" height="428" decoding="async">
-            </span>
-          </span>
         </a>
         <button class="menu-button" id="menuButton" aria-label="Open menu" aria-expanded="false" aria-controls="navLinks">☰</button>
         <nav class="nav-links" id="navLinks" aria-label="Main">

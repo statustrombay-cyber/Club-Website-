@@ -321,44 +321,17 @@
      A hairline of gold that fills as the page is read, with a bead that rides
      the end of it. It is decoration: it never carries meaning, and with
      reduced motion (or on a narrow screen) it steps aside. */
-  function setupGoldThread() {
-    const fill = $('#threadFill');
-    const bead = $('#threadBead');
-    if (!fill || !bead) return;
-
-    let frame = 0;
-    function paint() {
-      frame = 0;
-      const scrollable = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
-      const read = Math.min(1, Math.max(0, (window.scrollY || window.pageYOffset || 0) / scrollable));
-      fill.style.height = (read * 100) + 'vh';
-      bead.style.top = (read * 100) + 'vh';
-    }
-    function schedule() {
-      if (!frame) frame = window.requestAnimationFrame(paint);
-    }
-
-    paint();
-    window.addEventListener('scroll', schedule, { passive: true });
-    window.addEventListener('resize', schedule);
-  }
-
   /* ------------------------------------------------------ scroll dressing */
-  /* Three small things that answer the scroll: the gold bar across the top of
-     the window, the frosted top bar tightening a little, and the way back up
-     appearing once the page has been read a bit. One frame, one handler. */
+  /* A borderless glass menu and the way back up. The butterfly, not a gold
+     line, now carries the reading position across the header. */
   function setupScrollUi() {
-    const bar = $('#readProgress');
     const toTop = $('#toTop');
-    if (!bar && !toTop) return;
+    if (!toTop) return;
 
     let frame = 0;
     function paint() {
       frame = 0;
       const y = window.scrollY || window.pageYOffset || 0;
-      const scrollable = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
-      const read = Math.min(1, Math.max(0, y / scrollable));
-      if (bar) bar.style.transform = 'scaleX(' + read.toFixed(4) + ')';
       document.body.classList.toggle('is-scrolled', y > 40);
       if (toTop) toTop.classList.toggle('is-on', y > 700);
     }
@@ -440,7 +413,7 @@
       if (lowMotion) return;
       const travel = Math.max(1, chapter.offsetHeight - (window.innerHeight - top));
       const progress = clamp((top - box.top) / travel);
-      const gather = clamp(progress / 0.50);
+      const gather = clamp(progress / 0.38);
       const ease = gather * gather * (3 - 2 * gather);
       const diagram = $('.brand-rings', chapter);
       if (diagram) diagram.setAttribute('viewBox', '-90 -90 780 780');
@@ -451,11 +424,24 @@
         ring.setAttribute('transform', 'translate(' + (Math.cos(angle) * spread).toFixed(2) + ' ' + (Math.sin(angle) * spread).toFixed(2) + ')');
         ring.style.opacity = String(0.45 + ease * 0.45);
       });
-      const rotation = clamp((progress - 0.55) / 0.25) * 120;
+      const rotation = clamp((progress - 0.38) / 0.16) * 120;
       turn.setAttribute('transform', 'rotate(' + rotation.toFixed(2) + ' 300 300)');
-      const exit = clamp((progress - 0.80) / 0.20);
-      const scale = (1 - ease * 0.40) * (1 - exit * 0.55);
-      if (diagram) diagram.style.transform = 'translateY(' + (-exit * 26).toFixed(2) + 'vh) scale(' + scale.toFixed(3) + ')';
+      const exit = clamp((progress - 0.46) / 0.17);
+      const scale = (1 - ease * 0.40) * (1 - exit * 0.20);
+      if (diagram) diagram.style.transform = 'translateY(' + (-exit * 32).toFixed(2) + 'vh) scale(' + scale.toFixed(3) + ')';
+      // One continuous stage: the flower rises while each line glides in.
+      $$('.manifest-row', chapter).forEach(function (row, index) {
+        const local = clamp((progress - 0.62 - index * 0.035) / 0.14);
+        const reveal = 1 - Math.pow(1 - local, 3);
+        row.style.transform = 'translate3d(' + ((1 - reveal) * 105).toFixed(2) + 'vw,0,0)';
+        row.style.opacity = String(reveal);
+      });
+      $$('.mind-object', chapter).forEach(function (object, index) {
+        const local = clamp((progress - 0.66 - index * 0.055) / 0.13);
+        const reveal = local * local * (3 - 2 * local);
+        object.style.transform = 'translateY(' + ((1 - reveal) * 22).toFixed(2) + 'px) scale(' + (0.62 + reveal * 0.38).toFixed(3) + ')';
+        object.style.opacity = String(reveal);
+      });
     };
     const schedule = function () {
       if (!scheduled) { scheduled = true; window.requestAnimationFrame(paint); }
@@ -493,39 +479,139 @@
     window.addEventListener('keydown', away, { once: true });
     window.addEventListener('wheel', away, { once: true, passive: true });
     window.addEventListener('touchstart', away, { once: true, passive: true });
-    window.setTimeout(finish, 2800);
+    window.setTimeout(finish, 4900);
   }
 
+  /* A single fixed photographic butterfly is independent of the menu layout.
+     Slow entry from below; reading progress sets its horizontal destination.
+     A dark chapter sends it left, and returning to paper brings it back. */
   function setupButterfly() {
     const butterfly = $('.nav-butterfly');
-    if (!butterfly) return;
-    let arrived = false;
+    const header = $('.nav-wrap');
+    if (!butterfly || !header) return;
+    let state = 'waiting';
+    let away = false;
+    let activeFlight = null;
+    let frame = 0;
+    let lastY = window.scrollY || 0;
+    let tilt = 0;
     let scrollTimer = 0;
-    const land = function () {
-      if (arrived) return;
-      arrived = true;
-      butterfly.classList.add('butterfly-arrived');
-      if (reduced() || !butterfly.animate) return;
-      const rect = butterfly.getBoundingClientRect();
-      const x = window.innerWidth - rect.left + 100;
-      const y = Math.max(120, window.innerHeight * 0.65 - rect.top);
-      const flight = butterfly.animate([
-        { transform: 'translate(' + x + 'px,' + y + 'px) rotate(-28deg)', opacity: 0 },
-        { transform: 'translate(' + x * 0.35 + 'px,' + y * 0.48 + 'px) rotate(8deg)', opacity: 1, offset: 0.45 },
-        { transform: 'translate(-12px,12px) rotate(-8deg)', opacity: 1, offset: 0.85 },
-        { transform: 'translate(0,0) rotate(0)', opacity: 1 }
-      ], { duration: 1650, easing: 'cubic-bezier(.25,.6,.28,1)', fill: 'backwards' });
-      flight.onfinish = function () { flight.cancel(); };
+    const clamp = function (n) { return Math.max(0, Math.min(1, n)); };
+    const transform = function (x, y, angle) {
+      return 'translate3d(' + x.toFixed(2) + 'px,' + y.toFixed(2) + 'px,0) rotate(' + angle + 'deg)';
     };
-    window.addEventListener('mt:intro-ready', land, { once: true });
-    window.setTimeout(land, 5000); // fail open if an intro event cannot be delivered
-    if (reduced()) return;
+    const position = function () {
+      const width = butterfly.offsetWidth;
+      const read = clamp((window.scrollY || 0) / Math.max(1, document.documentElement.scrollHeight - window.innerHeight));
+      const left = 10;
+      const right = Math.max(left, window.innerWidth - width - 10);
+      const bounds = header.getBoundingClientRect();
+      return { x: left + read * (right - left), y: Math.max(8, bounds.bottom - 25), width: width,
+        dark: $$('.black-chapter').some(function (section) {
+          const box = section.getBoundingClientRect();
+          return box.top <= bounds.bottom + 1 && box.bottom > bounds.bottom;
+        }) };
+    };
+    function cancelFlight() {
+      if (activeFlight) { activeFlight.cancel(); activeFlight = null; }
+      butterfly.classList.remove('butterfly-flying');
+    }
+    function fly(kind, point) {
+      const current = window.getComputedStyle(butterfly).transform;
+      const interrupted = Boolean(activeFlight);
+      cancelFlight();
+      const leaving = kind === 'leave';
+      butterfly.classList.add('butterfly-arrived', 'butterfly-flying');
+      butterfly.classList.toggle('butterfly-away', leaving);
+      butterfly.style.transform = transform(point.x, point.y, tilt);
+      if (reduced() || !butterfly.animate) {
+        state = leaving ? 'away' : 'perched';
+        butterfly.classList.remove('butterfly-flying');
+        return;
+      }
+      state = leaving ? 'leaving' : 'entering';
+      const target = transform(point.x, point.y, tilt);
+      let frames;
+      if (leaving) {
+        frames = [
+          { transform: current === 'none' ? target : current, opacity: 1 },
+          { transform: transform(-point.width * .4, point.y + 65, -28), opacity: 1, offset: .65 },
+          { transform: transform(-point.width - 160, point.y + 20, -38), opacity: 0 }
+        ];
+      } else if (kind === 'return') {
+        frames = [
+          { transform: interrupted && current !== 'none' ? current : transform(-point.width - 120, point.y + 95, 25), opacity: interrupted ? 1 : 0 },
+          { transform: transform(point.x * .5, point.y + 35, -12), opacity: 1, offset: .65 },
+          { transform: target, opacity: 1 }
+        ];
+      } else {
+        frames = [
+          { transform: transform(window.innerWidth * .2, window.innerHeight + 120, -12), opacity: 0 },
+          { transform: transform(window.innerWidth * .08, window.innerHeight * .73, -18), opacity: 1, offset: .25 },
+          { transform: transform(window.innerWidth * .32, window.innerHeight * .44, 16), opacity: 1, offset: .52 },
+          { transform: transform(point.x + 18, point.y + 90, -12), opacity: 1, offset: .82 },
+          { transform: target, opacity: 1 }
+        ];
+      }
+      const flight = butterfly.animate(frames, {
+        duration: leaving ? 1900 : kind === 'return' ? 3600 : 5400,
+        easing: 'cubic-bezier(.35,.05,.25,1)', fill: 'backwards'
+      });
+      activeFlight = flight;
+      flight.onfinish = function () {
+        if (activeFlight !== flight) return;
+        activeFlight = null;
+        butterfly.classList.remove('butterfly-flying');
+        state = leaving ? 'away' : 'perched';
+        paint();
+      };
+    }
+    function paint() {
+      frame = 0;
+      if (state === 'waiting') return;
+      const point = position();
+      if (point.dark !== away) {
+        away = point.dark;
+        fly(away ? 'leave' : 'return', point);
+      } else if (state === 'perched') {
+        butterfly.style.transform = transform(point.x, point.y, tilt);
+      }
+    }
+    function schedule() {
+      if (!frame) frame = window.requestAnimationFrame(paint);
+    }
+    function enter() {
+      if (state !== 'waiting') return;
+      const point = position();
+      away = point.dark;
+      if (away) {
+        state = 'away';
+        butterfly.classList.add('butterfly-arrived', 'butterfly-away');
+      } else fly('entry', point);
+    }
+    window.addEventListener('mt:intro-ready', enter, { once: true });
+    window.setTimeout(enter, 5500);
     window.addEventListener('scroll', function () {
-      if (!arrived) return;
-      document.body.classList.add('butterfly-scrolling');
-      window.clearTimeout(scrollTimer);
-      scrollTimer = window.setTimeout(function () { document.body.classList.remove('butterfly-scrolling'); }, 200);
+      const y = window.scrollY || 0;
+      if (!reduced()) {
+        if (y !== lastY) tilt = y > lastY ? 12 : -12;
+        document.body.classList.add('butterfly-scrolling');
+        window.clearTimeout(scrollTimer);
+        scrollTimer = window.setTimeout(function () {
+          tilt = 0;
+          document.body.classList.remove('butterfly-scrolling');
+          schedule();
+        }, 260);
+      }
+      lastY = y;
+      schedule();
     }, { passive: true });
+    window.addEventListener('resize', function () {
+      if (state === 'waiting') return;
+      cancelFlight();
+      state = away ? 'away' : 'perched';
+      schedule();
+    });
   }
 
   /* Two fast-start encodes; the untouched master is retained for the club.
@@ -623,7 +709,6 @@
     setupPhotoFrame();
     setupGalleryStage();
     setupForms();
-    setupGoldThread();
     setupScrollUi();
     setupDriftField();
     setupLiveUpdates();

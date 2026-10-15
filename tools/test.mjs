@@ -220,7 +220,7 @@ ok('every original section is on the page', ['id="about"', 'id="psychology"', 'i
 ok('the awareness corner is gone (the club’s own wording stays)',
   !home.body.includes('id="awareness"') && !home.body.includes('awareness-stage') && !/\.awareness-[a-z]/.test(home.body) && !home.body.includes('href="/awareness"'));
 ok('no “Content Studio” wording anywhere on the page', !/content studio/i.test(home.body));
-ok('the reference-style opening keeps the club emblem and editable tagline', home.body.includes('id="heroTagline"') && home.body.includes('class="reference-emblem"'));
+ok('the original light hero keeps its large editable quote, not a giant logo', home.body.includes('id="heroTagline"') && home.body.includes('class="hero hero-with-video"') && !home.body.includes('class="reference-emblem"'));
 ok('the club statistics are printed', home.body.includes('id="statsRow"') && home.body.includes('student-led'));
 ok('the history timeline is written from the store', home.body.includes('timeline-item') && home.body.includes('A small idea with a big heart'));
 ok('the event card offers registration', home.body.includes('/register?event=event-welcome-circle'));
@@ -881,7 +881,7 @@ ok('the register, the pass and the check page fit a phone',
   && /\.register-submit \{[^}]*width: 100%/.test(appCss)
   && /\.pass-facts \{[^}]*grid-template-columns: 1fr/.test(appCss)
   && /\.register-grid \{[^}]*grid-template-columns: 1fr/.test(appCss));
-ok('the gold thread and its bead are styled and driven by the script', appCss.includes('.gold-thread') && appJs.includes('setupGoldThread') && appJs.includes('threadBead'));
+ok('the butterfly replaces the old gold thread', !home.body.includes('id="threadBead"') && !appJs.includes('setupGoldThread') && appJs.includes('const read = clamp('));
 ok('the calendar keeps its own page styles', appCss.includes('.calendar-months') && appCss.includes('.calendar-month'));
 
 /* ---- the phone layout, checked against the stylesheet itself -------------
@@ -1037,10 +1037,8 @@ ok('the club’s own words drift past in a band under the hero, seamless and qui
   /* one copy is about 1000px wide: four copies and a quarter-track slide keeps
      the seam off screen even where a two-copy band would run out of words */
   && /@keyframes marqueeRun \{ from \{ transform: translateX\(0\); \} to \{ transform: translateX\(-25%\); \} \}/.test(appCss));
-ok('a gold bar across the top shows how much of the page is read',
-  layoutSource.includes('id="readProgress"')
-  && /\.read-progress \{[^}]*position: fixed/.test(appCss)
-  && appJs.includes("bar.style.transform = 'scaleX('"));
+ok('there is no gold progress line across the header',
+  !layoutSource.includes('id="readProgress"') && !layoutSource.includes('class="gold-thread"'));
 ok('the way back up appears once the page has been read a little',
   layoutSource.includes('id="toTop"') && /\.to-top\.is-on \{[^}]*opacity: 1/.test(appCss)
   && appJs.includes("toTop.classList.toggle('is-on', y > 700)"));
@@ -1520,15 +1518,15 @@ ok('two equal halves repeat seamlessly, including without JavaScript',
   cardsSource.includes('$copy < 2') && cardsSource.includes('$i < 4')
   && round37Css.includes('animation: brandRun 28s linear infinite'));
 ok('native sticky chapter holds the stage then releases it',
-  round37Css.includes('height: 300svh') && round37Css.includes('position: sticky; top: 84px')
+  round37Css.includes('.brand-chapter { height: 270svh; }') && round37Css.includes('position: sticky; top: 84px')
   && appJs.includes('chapter.offsetHeight - (window.innerHeight - top)')
   && appJs.includes("window.addEventListener('scroll', schedule, { passive: true })"));
 ok('one centre circle and six satellites form seven intersecting rings',
   cardsSource.includes('$ring < 6') && cardsSource.includes('300 + 100 * cos($angle)')
   && cardsSource.includes('300 + 100 * sin($angle)') && cardsSource.includes('r="100"'));
 ok('rings gather first, rotate only after gathering, and reverse with scrolling',
-  appJs.includes('progress / 0.50') && appJs.includes('170 * (1 - ease)')
-  && appJs.includes('(progress - 0.55) / 0.25') && appJs.includes("turn.setAttribute('transform', 'rotate('"));
+  appJs.includes('progress / 0.38') && appJs.includes('170 * (1 - ease)')
+  && appJs.includes('(progress - 0.38) / 0.16') && appJs.includes("turn.setAttribute('transform', 'rotate('"));
 ok('reduced motion and no scripts leave the chapter short and fully formed',
   round37Css.includes('html.no-js .brand-chapter, html.no-js .brand-finale { height: auto; }')
   && round37Css.includes('.brand-chapter, .brand-finale { height: auto; }')
@@ -1542,23 +1540,23 @@ console.log('\n— the front door —');
 const navLayout = fs.readFileSync(path.join(ROOT, 'views/layout.php'), 'utf8');
 ok('the welcome screen is the first thing in the page',
   /<body class="<\?= e\(\$bodyClass\) \?>">\s*\n?\s*<\?php[\s\S]{0,600}?class="splash"/.test(navLayout));
-ok('it greets with the club\'s own name', navLayout.includes('Welcome to Club')
-  && /splash-name">\s*<\?= e\(\$clubName\) \?>/.test(navLayout));
+ok('the splash carries only the lowercase, unspaced club name', navLayout.includes('>mindfultattva</text>')
+  && !navLayout.includes('Welcome to Club') && navLayout.includes('splash-letter-ring'));
 ok('it opens on the front page only — never a pass, a check page or the club area',
   /\(\$route, \['home', 'index.php'\], true\)/.test(navLayout) && navLayout.includes('if ($splash):'));
 const splashCss = round37Css.slice(round37Css.indexOf('.splash {'));
 ok('it opens on a solid near-black screen',
   /\.splash \{[^}]*background: #0b0b0d/.test(round37Css));
 ok('the seven splash circles automatically enter and join',
-  round37Css.includes('animation: splashJoin 1.35s')
+  round37Css.includes('animation: splashJoin .85s')
   && round37Css.includes('transform: translate(var(--rx), var(--ry))'));
 ok('it reveals the site on its own, with no JavaScript needed',
-  /\.splash \{[^}]*animation: splashAway \.7s cubic-bezier\(\.2,\.6,\.3,1\) 1\.85s forwards/.test(round37Css)
+  round37Css.includes('animation: splashAway .7s ease 4s forwards')
   && /@keyframes splashAway \{ to \{ opacity: 0; visibility: hidden; \} \}/.test(round37Css));
 ok('the entrance settles and hands off to the page and butterfly',
-  round37Css.includes('@keyframes openingReveal') && round37Css.includes('animation: splashNameSettle')
+  round37Css.includes('@keyframes wordPaint') && round37Css.includes('@keyframes introMarkSpin')
   && appJs.includes("window.dispatchEvent(new CustomEvent('mt:intro-ready'))")
-  && appJs.includes('window.setTimeout(finish, 2800)'));
+  && appJs.includes('window.setTimeout(finish, 4900)'));
 ok('a tap, a key or a scroll sends it away at once',
   appJs.includes('function setupSplash()') && appJs.includes("splash.addEventListener('click', away)")
   && appJs.includes("window.addEventListener('keydown', away") && appJs.includes("window.addEventListener('wheel', away")
@@ -1571,7 +1569,7 @@ const splashDash = await get('/dashboard');
 ok('and it really is absent from the other pages',
   !splashCal.body.includes('class="splash"') && !splashPass.body.includes('class="splash"')
   && !splashDash.body.includes('class="splash"'));
-ok('and present on the front page', mindPage.body.includes('class="splash"') && mindPage.body.includes('Welcome to Club'));
+ok('and present on the front page', mindPage.body.includes('class="splash"') && mindPage.body.includes('>mindfultattva</text>'));
 
 console.log('\n— flapping photographic butterfly —');
 ok('three clipped photographic layers share one local cutout',
@@ -1582,16 +1580,20 @@ ok('wing hinges fold in opposite directions, body remains still',
   round37Css.includes('transform-origin: 49% 50%')
   && round37Css.includes('rotateY(-56deg)') && round37Css.includes('rotateY(56deg)')
   && round37Css.includes('.butterfly-body { clip-path:'));
-ok('large wings have reserved width and overflow vertically, not over links',
-  round37Css.includes('width: 144px; height: 99px')
-  && round37Css.includes('flex: 0 0 144px')
-  && round37Css.includes('width: 100px; height: 69px'));
-ok('butterfly bobs gently, tilted, with reduced-motion fallback',
-  round37Css.includes('@keyframes butterflyBob') && round37Css.includes('rotate(-17deg)')
-  && round37Css.includes('.butterfly-flight, .wing-left, .wing-right { animation: none; }'));
+ok('the butterfly lives outside the brand link and has a fixed viewport flight layer',
+  navLayout.indexOf('class="nav-butterfly"') < navLayout.indexOf('<div class="site-shell">')
+  && round37Css.includes('position: fixed; top: 0; left: 0; z-index: 80; width: 108px'));
+ok('butterfly bobs gently with a reduced-motion fallback',
+  round37Css.includes('@keyframes butterflyHover') && round37Css.includes('.nav-butterfly .butterfly-flight, .nav-butterfly .wing-left, .nav-butterfly .wing-right, .brand-chapter .wire-form { animation: none; }'));
+ok('the glass header has no opaque scrim or perimeter line',
+  round37Css.includes('.nav-wrap:before, body.is-black-chapter .nav-wrap:before { display: none; }')
+  && round37Css.includes('border: 0; box-shadow: none; background: rgba(255,255,255,.12)'));
+ok('wire objects tumble without collapsing into edge-on broken lines',
+  round37Css.includes('rotateY(-22deg)') && round37Css.includes('rotateY(22deg)')
+  && !round37Css.includes('rotateY(360deg)'));
 
 console.log('\n— black and blue chapter sequence —');
-const renderedRings = mindPage.body.slice(mindPage.body.indexOf('<section class="brand-chapter'), mindPage.body.indexOf('<section class="manifest-chapter'));
+const renderedRings = mindPage.body.slice(mindPage.body.indexOf('<section class="brand-chapter'), mindPage.body.indexOf('<div class="manifest-chapter'));
 ok('ring screen carries no brand name or scroll instructions',
   !renderedRings.includes('brand-band') && !renderedRings.includes('brand-scroll-hint')
   && !/<p(?:\s|>)/.test(renderedRings));
@@ -1640,27 +1642,37 @@ ok('header hairline is removed and butterfly sits above menu panel',
   const simulatedRings = Array.from({ length: 6 }, (_, i) => ({
     style: {}, setAttribute: (key, value) => { if (key === 'r') captured.radius[i] = value; else captured.ring[i] = value; }
   }));
+  const simulatedRows = Array.from({length: 5}, () => ({style: {}}));
+  const simulatedObjects = Array.from({length: 3}, () => ({style: {}}));
+  const diagramStub = {style: {}, setAttribute() {}};
   const callbacks = {};
   const chapterStub = { offsetHeight: 2400, getBoundingClientRect: () => ({ top: 84 - phase * 1684, bottom: 2484 - phase * 1684 }) };
   const turnStub = { style: {}, setAttribute: (key, value) => { captured.turn = value; } };
   runInNewContext(controller + '\nsetupBrandBand();', {
-    $: selector => selector === '.brand-chapter' ? chapterStub : turnStub,
-    $$: selector => selector === '.black-chapter' ? [chapterStub] : simulatedRings,
+    $: selector => selector === '.brand-chapter' ? chapterStub : selector === '.brand-rings' ? diagramStub : turnStub,
+    $$: selector => selector === '.black-chapter' ? [chapterStub] : selector === '.manifest-row' ? simulatedRows : selector === '.mind-object' ? simulatedObjects : simulatedRings,
     reduced: () => false,
     document: { body: { classList: { toggle: (name, active) => { captured.dark = active; } } } },
     window: { innerWidth: 1440, innerHeight: 800, requestAnimationFrame: fn => fn(), addEventListener: (name, fn) => { callbacks[name] = fn; } }
   });
   const initial = captured.ring.join('|');
   ok('scroll controller starts with separated rings', initial.includes('-170.00') && captured.turn.includes('0.00') && captured.radius.every(r => r === '35.00'));
-  phase = .50; callbacks.scroll();
+  phase = .38; callbacks.scroll();
   ok('all six satellites join before rotation starts',
     captured.ring.every(value => /translate\(-?0\.00 -?0\.00\)/.test(value)) && captured.turn === 'rotate(0.00 300 300)' && captured.radius.every(r => r === '100.00'));
   phase = .80; callbacks.scroll();
   ok('after joining, the geometry turns through 120 degrees', captured.turn === 'rotate(120.00 300 300)');
+  phase = .70; callbacks.scroll();
+  ok('heading rows enter from the right in a stagger, not as a static second section',
+    Number(simulatedRows[0].style.opacity) > Number(simulatedRows[4].style.opacity)
+    && simulatedRows[4].style.transform.includes('105.00vw'));
+  phase = .95; callbacks.scroll();
+  ok('all five rows and three objects finish their entrance before the scene releases',
+    simulatedRows.every(row => row.style.opacity === '1') && simulatedObjects.every(object => object.style.opacity === '1'));
   phase = 1; callbacks.scroll();
-  ok('the ring flower contracts and rises gently at the end', turnStub.style.transform.includes('translateY(-26.00vh) scale(0.270)'));
+  ok('the ring flower contracts and rises gently at the end', diagramStub.style.transform.includes('translateY(-32.00vh) scale(0.480)'));
   phase = 0; callbacks.scroll();
-  ok('scrolling back restores the original geometry exactly', captured.ring.join('|') === initial && captured.dark);
+  ok('scrolling back restores the original geometry exactly', captured.ring.join('|') === initial && captured.dark && simulatedRows.every(row => row.style.opacity === '0'));
   phase = 2; callbacks.scroll();
   ok('header returns from black when the black section is gone', !captured.dark);
 }
@@ -1678,8 +1690,8 @@ ok('recorded inline icons roll beside the manifestation words',
   (mindPage.body.match(/<i class="mind-object /g) || []).length === 3
   && round37Css.includes('@keyframes wireRoll') && cardsSource.includes('class="wire-form"') && round37Css.includes("font-family: 'MT Serif', Georgia, serif"));
 ok('joined rings shrink and rise before the following heading',
-  appJs.includes('(progress - 0.80) / 0.20') && appJs.includes('1 - exit * 0.55')
-  && round37Css.includes('.brand-chapter { height: 500svh; }'));
+  appJs.includes('(progress - 0.46) / 0.17') && appJs.includes('1 - exit * 0.20')
+  && round37Css.includes('.brand-chapter { height: 270svh; }'));
 ok('people alternate left and right on home and member directory',
   round37Css.includes('.team-card:nth-child(even), .member-cards .member-card:nth-child(even) { align-self: flex-end; }')
   && round37Css.includes('.team-grid, .member-cards { display: flex; flex-direction: column; gap: 70px; }'));
@@ -1724,50 +1736,83 @@ ok('wave contours fade at both ends instead of meeting a hard canvas edge',
     });
     if (mode === 'animation') {
       handlers.animationend({ target: splash, animationName: 'splashAway' });
-      timers[2800]();
+      timers[4900]();
     } else if (mode === 'skip') {
-      handlers.click(); timers[650](); handlers.keydown(); timers[2800]();
-    } else if (mode === 'fallback') timers[2800]();
+      handlers.click(); timers[650](); handlers.keydown(); timers[4900]();
+    } else if (mode === 'fallback') timers[4900]();
     ok('splash exits once via ' + mode + ' and reveals the site',
       notifications === 1 && !classes.has('intro-pending') && classes.has('intro-revealed')
       && (mode === 'no-splash' || splash.hidden));
   }
 }
-/* Execute the actual butterfly controller, including post-intro entry,
-   scroll-speed handoff and the reduced-motion branch. */
+/* Execute entry, reversible reading progress, dark-chapter departure,
+   return, interrupted flight and reduced motion against the actual controller. */
 {
   const { runInNewContext } = await import('node:vm');
   const begin = appJs.indexOf('function setupButterfly()');
   const end = appJs.indexOf('/* Two fast-start encodes;', begin);
-  const source = appJs.slice(begin, end);
   for (const lowMotion of [false, true]) {
-    const events = {}, timers = {}, classes = new Set();
-    let animations = 0, flightFrames;
-    const butterfly = {
-      classList: { add: name => classes.add(name) },
-      getBoundingClientRect: () => ({ left: 180, top: 20 }),
-      animate: frames => { animations++; flightFrames = frames; return { cancel() {} }; }
+    const events = {}, timers = {}, classes = new Set(), flights = [];
+    let dark = false;
+    const classList = {
+      add: (...names) => names.forEach(name => classes.add(name)),
+      remove: (...names) => names.forEach(name => classes.delete(name)),
+      toggle: (name, active) => active ? classes.add(name) : classes.delete(name)
     };
-    runInNewContext(source + '\nsetupButterfly();', {
-      $: () => butterfly, reduced: () => lowMotion,
-      document: { body: { classList: { add: name => classes.add(name), remove: name => classes.delete(name) } } },
-      window: { innerWidth: 390, innerHeight: 844,
-        addEventListener: (name, fn) => { events[name] = fn; },
-        setTimeout: (fn, ms) => { timers[ms] = fn; return ms; }, clearTimeout() {} }
+    const butterfly = { offsetWidth: 82, style: {}, classList,
+      animate: (frames, options) => {
+        const flight = { frames, options, cancelled: false, cancel() { this.cancelled = true; } };
+        flights.push(flight); return flight;
+      }
+    };
+    const header = { getBoundingClientRect: () => ({ bottom: 68 }) };
+    const section = { getBoundingClientRect: () => ({ top: dark ? 0 : 200, bottom: dark ? 400 : 600 }) };
+    const win = {
+      innerWidth: 390, innerHeight: 844, scrollY: 0,
+      getComputedStyle: () => ({ transform: butterfly.style.transform || 'none' }),
+      addEventListener: (name, fn) => { events[name] = fn; },
+      requestAnimationFrame: fn => { timers.frame = fn; return 1; },
+      setTimeout: (fn, ms) => { timers[ms] = fn; return ms; }, clearTimeout() {}
+    };
+    const scroll = y => { win.scrollY = y; events.scroll(); if (timers.frame) timers.frame(); };
+    runInNewContext(appJs.slice(begin, end) + '\nsetupButterfly();', {
+      $: selector => selector === '.nav-butterfly' ? butterfly : header,
+      $$: () => [section], reduced: () => lowMotion,
+      document: { documentElement: { scrollHeight: 4844 }, body: { classList } }, window: win
     });
-    ok('butterfly waits for the splash before landing' + (lowMotion ? ' (reduced motion)' : ''), !classes.has('butterfly-arrived'));
+    const label = lowMotion ? ' (reduced motion)' : '';
+    ok('butterfly waits for the intro' + label, !classes.has('butterfly-arrived'));
     events['mt:intro-ready']();
-    ok('butterfly lands' + (lowMotion ? ' without flight for reduced motion' : ' from outside the viewport'),
-      classes.has('butterfly-arrived') && animations === (lowMotion ? 0 : 1)
-      && (lowMotion || flightFrames[0].transform.includes('310px')));
+    ok('entry comes slowly from below the viewport' + label,
+      classes.has('butterfly-arrived') && (lowMotion ? flights.length === 0 : flights[0].frames[0].transform.includes('964.00px') && flights[0].options.duration === 5400));
+    if (!lowMotion) flights.at(-1).onfinish();
+    scroll(4000);
+    ok('butterfly reaches the right at the end of the page' + label, butterfly.style.transform.includes('298.00px'));
+    scroll(0);
+    ok('scrolling back restores its left destination' + label, butterfly.style.transform.includes('10.00px'));
     if (!lowMotion) {
-      events.scroll();
-      ok('scrolling increases flutter speed', classes.has('butterfly-scrolling') && round37Css.includes('animation-duration: .26s'));
-      timers[200]();
-      ok('flutter returns to its resting rhythm after scrolling stops', !classes.has('butterfly-scrolling'));
-      events['mt:intro-ready'](); timers[5000]();
-      ok('a repeated intro or fallback cannot replay the butterfly entry', animations === 1);
-    } else ok('reduced motion does not register a scroll-animation listener', !events.scroll);
+      ok('scroll direction tilts the whole butterfly left', butterfly.style.transform.includes('rotate(-12deg)'));
+      timers[260](); timers.frame();
+      ok('resting tilt relaxes after scrolling', butterfly.style.transform.includes('rotate(0deg)'));
+    }
+    dark = true; scroll(1500);
+    ok('the butterfly leaves the header on a black chapter' + label, classes.has('butterfly-away')
+      && (lowMotion || flights.at(-1).frames.at(-1).transform.includes('-242.00px')));
+    if (!lowMotion) flights.at(-1).onfinish();
+    dark = false; scroll(2200);
+    ok('leaving black returns the butterfly from the left' + label, !classes.has('butterfly-away')
+      && (lowMotion || flights.at(-1).options.duration === 3600));
+    if (!lowMotion) {
+      const returning = flights.at(-1);
+      dark = true; scroll(1500);
+      ok('reversing into black cancels an unfinished return flight', returning.cancelled);
+      const departing = flights.at(-1);
+      dark = false; scroll(2300);
+      ok('an interrupted departure returns from its current pose without teleporting', departing.cancelled && flights.at(-1).frames[0].opacity === 1);
+    }
+    events['mt:intro-ready'](); timers[5500]();
+    ok('the fallback never starts a second bottom entry' + label,
+      flights.filter(f => f.options.duration === 5400).length === (lowMotion ? 0 : 1));
   }
 }
 {

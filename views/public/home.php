@@ -27,19 +27,35 @@ $mapUrl     = 'https://www.google.com/maps/search/?api=1&query=' . urlencode($ad
 $email      = trim((string) ($site['email'] ?? ''));
 $phone      = trim((string) ($site['clubPhone'] ?? ''));
 ?>
-<section class="hero hero-with-video reference-hero" id="top-section">
-  <div class="reference-stars" aria-hidden="true"></div>
+<section class="hero hero-with-video" id="top-section">
+  <?php /* The hero's warm veil: it keeps the words on top of the herd
+           readable, and melts the bottom of the picture (drawn in the layout)
+           into the section that follows. */ ?>
+  <div class="hero-veil" aria-hidden="true"></div>
+  <i class="hero-comet" aria-hidden="true"></i>
   <div class="container hero-grid">
-    <div class="reference-opening">
-      <h1 class="reference-name" id="heroName"><?= e((string) ($site['clubName'] ?? 'Mindful Tattva')) ?></h1>
-      <p class="reference-subtitle" id="heroEyebrow"><?= e((string) ($site['eyebrow'] ?? 'The Psychology Club')) ?></p>
-      <div class="reference-emblem">
-        <img src="<?= e(mt_safe_image($site['logoImage'] ?? '') ?: '/assets/photos/mt-club-logo.jpg') ?>" alt="<?= e((string) ($site['clubName'] ?? 'Mindful Tattva')) ?> emblem" width="240" height="240" decoding="async">
-      </div>
-      <p class="reference-tagline" id="heroTagline"><?= mt_emphasise((string) ($site['tagline'] ?? '')) ?></p>
+    <div class="fade-in">
+      <div class="eyebrow" id="heroEyebrow"><?= e((string) ($site['eyebrow'] ?? '')) ?></div>
+      <h1 class="display" id="heroTagline"><?= mt_emphasise((string) ($site['tagline'] ?? '')) ?></h1>
       <p class="hero-copy" id="heroIntro"><?= e((string) ($site['intro'] ?? '')) ?></p>
-      <div class="hero-actions"><a class="solid-button" href="#events">Explore the club ↘</a><a class="outline-button" href="#join">Join Mindful Tattva</a></div>
-      <div class="hero-meta"><div><strong id="heroUniversity"><?= e((string) ($site['universityName'] ?? '')) ?></strong><span id="heroDepartment"><?= e((string) ($site['department'] ?? '')) ?></span></div></div>
+      <div class="hero-actions">
+        <a class="solid-button" href="#events">Explore the club <span>↘</span></a>
+        <a class="outline-button" href="#join">Join Mindful Tattva</a>
+      </div>
+      <div class="hero-meta">
+        <div><strong id="heroUniversity"><?= e((string) ($site['universityName'] ?? '')) ?></strong><span id="heroDepartment"><?= e((string) ($site['department'] ?? '')) ?></span></div>
+        <div><strong>Made with intention</strong><span>student-led, always evolving</span></div>
+      </div>
+    </div>
+    <div class="hero-art fade-in" aria-label="Abstract Mindful Tattva artwork">
+      <span class="breathe-ring" aria-hidden="true"><i></i></span>
+      <div class="art-card">
+        <div class="art-sun"></div>
+        <div class="art-orbit"></div>
+        <div class="art-copy"><small>mind, body, connection</small><strong>pause<br>and notice.</strong></div>
+      </div>
+      <div class="art-note">You are allowed to take up space.</div>
+      <div class="art-sticker">come as<br>you are</div>
     </div>
   </div>
 </section>
