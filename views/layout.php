@@ -147,41 +147,46 @@ $nav = [
                    A real butterfly from above: two pairs of scalloped wings with
                    cream spots, a slim body, antennae. Drawn here as paths, so she
                    costs the page nothing and stays crisp at any size. */ ?>
+          <?php /* The club's butterfly. She rides beside the club's name on the
+                   pinned bar and beats her wings the whole time the page is read.
+                   A real butterfly seen from above: a broad forewing and a lower
+                   wing with a small tail, a pale margin, cream spots, a slim body
+                   and two antennae. The right wing is drawn mirrored in its own
+                   coordinates, so she is whole even before a stylesheet loads.
+                   Four small paths: she costs the page nothing and stays crisp. */ ?>
           <span class="nav-butterfly" aria-hidden="true">
             <svg viewBox="0 0 40 36" focusable="false">
               <defs>
                 <linearGradient id="bfFore" x1="0.1" y1="0" x2="0.9" y2="1">
-                  <stop offset="0" stop-color="#f6cf87"/><stop offset="0.55" stop-color="#e39a6d"/><stop offset="1" stop-color="#c4705f"/>
+                  <stop offset="0" stop-color="#f6cf87"/><stop offset="0.5" stop-color="#e39a6d"/><stop offset="1" stop-color="#bf6a5c"/>
                 </linearGradient>
                 <linearGradient id="bfHind" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0" stop-color="#e8a56c"/><stop offset="1" stop-color="#b25f56"/>
+                  <stop offset="0" stop-color="#eaa96f"/><stop offset="1" stop-color="#ac5a54"/>
                 </linearGradient>
-                <radialGradient id="bfGlow" cx="0.5" cy="0.5" r="0.5">
-                  <stop offset="0" stop-color="rgba(255,244,222,.95)"/><stop offset="1" stop-color="rgba(255,244,222,0)"/>
-                </radialGradient>
               </defs>
-              <ellipse cx="20" cy="19" rx="17" ry="15" fill="url(#bfGlow)" opacity=".55"/>
               <g class="bf-wing bf-wing-left">
-                <path d="M18.6 13.4C15.4 6.6 10.4 2.4 5.8 2.9 1.6 3.4-.1 7.5 2.2 10.9 4.6 14.5 10.6 16.2 18.6 13.4Z" fill="url(#bfFore)"/>
-                <path d="M18.4 15.1C12.2 13.9 5.8 15.4 4 19.4 2 24 5.9 27.6 10.4 26.1 14.4 24.8 17.4 20.4 18.4 15.1Z" fill="url(#bfHind)"/>
-                <path d="M18.5 20.5C17 25.1 15.4 29.4 12.6 32.2 11.4 33.4 9.8 32.6 10.2 31.1 11 27.6 14.2 23.4 18.5 20.5Z" fill="url(#bfHind)" opacity=".85"/>
-                <circle cx="8.4" cy="7.2" r="1.5" fill="#fff6e6" opacity=".9"/>
-                <circle cx="12.4" cy="10.2" r="1" fill="#fff6e6" opacity=".75"/>
-                <circle cx="9" cy="21.4" r="1.3" fill="#fff6e6" opacity=".8"/>
+                <path d="M18.6 14.2C15.6 6.4 10.2 1.7 5.3 2.3 1.3 2.8-.2 7.1 2.6 10.7 5.4 14.3 11.5 16.5 18.6 14.2Z" fill="url(#bfFore)" stroke="#a8564f" stroke-width=".5" stroke-opacity=".55"/>
+                <path d="M18.4 15.4C12.6 14.4 6.5 16.3 4.7 20.5 2.9 24.8 6.7 28.4 11.1 26.6 15.1 25 17.6 20.4 18.4 15.4Z" fill="url(#bfHind)" stroke="#a8564f" stroke-width=".5" stroke-opacity=".55"/>
+                <path d="M18.3 19.4C16.6 23.8 14.9 27.6 13 30.6 12.2 31.8 10.6 31.2 10.8 29.8 11.3 25.8 14.2 21.4 18.3 19.4Z" fill="url(#bfHind)" opacity=".92"/>
+                <circle cx="7.6" cy="7.8" r="1.6" fill="#fff6e6" opacity=".92"/>
+                <circle cx="12" cy="10.6" r="1.1" fill="#fff6e6" opacity=".8"/>
+                <circle cx="9.4" cy="21.6" r="1.4" fill="#fff6e6" opacity=".85"/>
               </g>
               <g class="bf-wing bf-wing-right">
-                <path d="M18.6 13.4C15.4 6.6 10.4 2.4 5.8 2.9 1.6 3.4-.1 7.5 2.2 10.9 4.6 14.5 10.6 16.2 18.6 13.4Z" fill="url(#bfFore)"/>
-                <path d="M18.4 15.1C12.2 13.9 5.8 15.4 4 19.4 2 24 5.9 27.6 10.4 26.1 14.4 24.8 17.4 20.4 18.4 15.1Z" fill="url(#bfHind)"/>
-                <path d="M18.5 20.5C17 25.1 15.4 29.4 12.6 32.2 11.4 33.4 9.8 32.6 10.2 31.1 11 27.6 14.2 23.4 18.5 20.5Z" fill="url(#bfHind)" opacity=".85"/>
-                <circle cx="8.4" cy="7.2" r="1.5" fill="#fff6e6" opacity=".9"/>
-                <circle cx="12.4" cy="10.2" r="1" fill="#fff6e6" opacity=".75"/>
-                <circle cx="9" cy="21.4" r="1.3" fill="#fff6e6" opacity=".8"/>
+                <g transform="translate(41.2 0) scale(-1 1)">
+                <path d="M18.6 14.2C15.6 6.4 10.2 1.7 5.3 2.3 1.3 2.8-.2 7.1 2.6 10.7 5.4 14.3 11.5 16.5 18.6 14.2Z" fill="url(#bfFore)" stroke="#a8564f" stroke-width=".5" stroke-opacity=".55"/>
+                <path d="M18.4 15.4C12.6 14.4 6.5 16.3 4.7 20.5 2.9 24.8 6.7 28.4 11.1 26.6 15.1 25 17.6 20.4 18.4 15.4Z" fill="url(#bfHind)" stroke="#a8564f" stroke-width=".5" stroke-opacity=".55"/>
+                <path d="M18.3 19.4C16.6 23.8 14.9 27.6 13 30.6 12.2 31.8 10.6 31.2 10.8 29.8 11.3 25.8 14.2 21.4 18.3 19.4Z" fill="url(#bfHind)" opacity=".92"/>
+                <circle cx="7.6" cy="7.8" r="1.6" fill="#fff6e6" opacity=".92"/>
+                <circle cx="12" cy="10.6" r="1.1" fill="#fff6e6" opacity=".8"/>
+                <circle cx="9.4" cy="21.6" r="1.4" fill="#fff6e6" opacity=".85"/>
+                </g>
               </g>
-              <g class="bf-body" fill="#4a2f45">
-                <path d="M20.6 12.6c1.5 3 1.5 10.6 0 13.6-1.5-3-1.5-10.6 0-13.6Z"/>
-                <circle cx="20.6" cy="11.4" r="1.7"/>
-                <path d="M19.8 10.2C18.7 7.4 17.3 5.8 15.6 5" fill="none" stroke="#4a2f45" stroke-width="1" stroke-linecap="round"/>
-                <path d="M21.4 10.2c1.1-2.8 2.5-4.4 4.2-5.2" fill="none" stroke="#4a2f45" stroke-width="1" stroke-linecap="round"/>
+              <g class="bf-body" fill="#462c43">
+                <path d="M20.6 12.8c1.6 3.1 1.6 10.6 0 13.4-1.6-2.8-1.6-10.3 0-13.4Z"/>
+                <circle cx="20.6" cy="11.5" r="1.7"/>
+                <path d="M19.9 10.4C18.8 7.5 17.4 5.8 15.7 5" fill="none" stroke="#462c43" stroke-width="1" stroke-linecap="round"/>
+                <path d="M21.3 10.4c1.1-2.9 2.5-4.6 4.2-5.4" fill="none" stroke="#462c43" stroke-width="1" stroke-linecap="round"/>
               </g>
             </svg>
           </span>

@@ -1486,11 +1486,10 @@ html.photo-frame-open { overflow: hidden; }
    ========================================================================== */
 .nav-butterfly { display: inline-block; width: 46px; height: 36px; margin-left: 12px; animation: flutterBob 3.4s ease-in-out infinite; }
 .nav-butterfly svg { display: block; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 3px 8px rgba(90,50,60,.28)); }
-.bf-wing { transform-origin: 20.6px 18px; }
-.bf-wing-left { animation: wingLeft .34s ease-in-out infinite alternate; }
-.bf-wing-right { animation: wingRight .34s ease-in-out infinite alternate; }
-@keyframes wingLeft { from { transform: scaleX(1); } to { transform: scaleX(.26); } }
-@keyframes wingRight { from { transform: scaleX(-1); } to { transform: scaleX(-.26); } }
+/* The hinge is her body, measured in the drawing's own coordinates. */
+.bf-wing { transform-box: view-box; transform-origin: 20.6px 18px; transform: scaleX(1); }
+.bf-wing-left, .bf-wing-right { animation: wingBeat .34s ease-in-out infinite alternate; }
+@keyframes wingBeat { from { transform: scaleX(1); } to { transform: scaleX(.26); } }
 @keyframes flutterBob {
   0%, 100% { transform: translate(0, 0) rotate(-3deg); }
   50% { transform: translate(2px, -6px) rotate(4deg); }
@@ -1498,5 +1497,4 @@ html.photo-frame-open { overflow: hidden; }
 @media (max-width: 860px) { .nav-butterfly { width: 36px; height: 29px; margin-left: 8px; } }
 @media (prefers-reduced-motion: reduce) {
   .nav-butterfly, .bf-wing-left, .bf-wing-right { animation: none; }
-  .bf-wing-right { transform: scaleX(-1); }
 }

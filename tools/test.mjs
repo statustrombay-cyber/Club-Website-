@@ -1579,15 +1579,21 @@ ok('she rides on the pinned bar, beside the club\'s own name',
   && navLayout.indexOf('nav-butterfly') > navLayout.indexOf('brand-name')
   && navLayout.indexOf('nav-butterfly') < navLayout.indexOf('navLinks'));
 ok('she flutters her wings, all the time',
-  /@keyframes wingLeft \{ from \{ transform: scaleX\(1\); \} to \{ transform: scaleX\(\.26\); \} \}/.test(round37Css)
-  && /@keyframes wingRight \{ from \{ transform: scaleX\(-1\); \} to \{ transform: scaleX\(-\.26\); \} \}/.test(round37Css)
-  && /\.bf-wing-left \{ animation: wingLeft \.34s ease-in-out infinite alternate; \}/.test(round37Css)
-  && /\.bf-wing-right \{ animation: wingRight \.34s ease-in-out infinite alternate; \}/.test(round37Css));
+  /@keyframes wingBeat \{ from \{ transform: scaleX\(1\); \} to \{ transform: scaleX\(\.26\); \} \}/.test(round37Css)
+  && /\.bf-wing-left, \.bf-wing-right \{ animation: wingBeat \.34s ease-in-out infinite alternate; \}/.test(round37Css)
+  && /\.bf-wing \{ transform-box: view-box; transform-origin: 20\.6px 18px/.test(round37Css));
 ok('she is a butterfly and not a bee: four wings, spots, a slim body and antennae',
   navLayout.includes('class="bf-wing bf-wing-left"') && navLayout.includes('class="bf-wing bf-wing-right"')
-  && (navLayout.match(/<circle/g) || []).length >= 7   // six wing spots and her head
-  && navLayout.includes('stroke-linecap="round"')   // the antennae
+  && (navLayout.match(/<circle/g) || []).length >= 7            // six wing spots and her head
+  && (navLayout.match(/stroke-linecap="round"/g) || []).length === 2   // two antennae
   && navLayout.includes('class="bf-body"') && navLayout.includes('nav-butterfly'));
+ok('she is whole before a stylesheet loads: her right wing is drawn mirrored in place',
+  navLayout.includes('<g transform="translate(41.2 0) scale(-1 1)">')
+  && (navLayout.match(/stroke="url\(#bfFore\)"/g) || []).length === 0
+  && (navLayout.match(/fill="url\(#bfFore\)"/g) || []).length >= 2);
+ok('she is bigger than she was, with room to be seen',
+  /\.nav-butterfly \{[^}]*width: 46px; height: 36px/.test(round37Css)
+  && /\.nav-butterfly \{ width: 36px; height: 29px/.test(round37Css));
 ok('and she moves on the spot while the page is read',
   /@keyframes flutterBob \{[\s\S]{0,180}?translate\(2px, -6px\)/.test(round37Css)
   && /\.nav-butterfly \{[^}]*animation: flutterBob/.test(round37Css));
