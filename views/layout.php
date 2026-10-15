@@ -142,25 +142,47 @@ $nav = [
         <a class="brand" href="/" aria-label="<?= e($clubName) ?> home">
           <span class="brand-mark" id="brandMark"><img src="<?= e($logo) ?>" alt="<?= e($clubName) ?> logo" loading="lazy" decoding="async"></span>
           <span class="brand-name" id="brandName"><?= e($clubName) ?></span>
+          <?php /* The club's butterfly. She rides beside the club's name on the
+                   pinned bar and beats her wings the whole time the page is read.
+                   A real butterfly from above: two pairs of scalloped wings with
+                   cream spots, a slim body, antennae. Drawn here as paths, so she
+                   costs the page nothing and stays crisp at any size. */ ?>
           <span class="nav-butterfly" aria-hidden="true">
-            <svg viewBox="0 0 26 22" focusable="false">
+            <svg viewBox="0 0 40 36" focusable="false">
               <defs>
-                <linearGradient id="bfWingA" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0" stop-color="#f0c176"/><stop offset="1" stop-color="#d98d72"/>
+                <linearGradient id="bfFore" x1="0.1" y1="0" x2="0.9" y2="1">
+                  <stop offset="0" stop-color="#f6cf87"/><stop offset="0.55" stop-color="#e39a6d"/><stop offset="1" stop-color="#c4705f"/>
                 </linearGradient>
-                <linearGradient id="bfWingB" x1="0" y1="1" x2="1" y2="0">
-                  <stop offset="0" stop-color="#d98d72"/><stop offset="1" stop-color="#e8a86a"/>
+                <linearGradient id="bfHind" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#e8a56c"/><stop offset="1" stop-color="#b25f56"/>
                 </linearGradient>
+                <radialGradient id="bfGlow" cx="0.5" cy="0.5" r="0.5">
+                  <stop offset="0" stop-color="rgba(255,244,222,.95)"/><stop offset="1" stop-color="rgba(255,244,222,0)"/>
+                </radialGradient>
               </defs>
+              <ellipse cx="20" cy="19" rx="17" ry="15" fill="url(#bfGlow)" opacity=".55"/>
               <g class="bf-wing bf-wing-left">
-                <path d="M13 11C8.6 2.2 2.2 1.2 1.5 7.1.9 12 6.3 14 13 11Z" fill="url(#bfWingA)"/>
-                <path d="M13 12C8.6 13.8 4.4 16.6 6.6 19.8 8.5 22.4 12.3 18 13 12Z" fill="url(#bfWingB)"/>
+                <path d="M18.6 13.4C15.4 6.6 10.4 2.4 5.8 2.9 1.6 3.4-.1 7.5 2.2 10.9 4.6 14.5 10.6 16.2 18.6 13.4Z" fill="url(#bfFore)"/>
+                <path d="M18.4 15.1C12.2 13.9 5.8 15.4 4 19.4 2 24 5.9 27.6 10.4 26.1 14.4 24.8 17.4 20.4 18.4 15.1Z" fill="url(#bfHind)"/>
+                <path d="M18.5 20.5C17 25.1 15.4 29.4 12.6 32.2 11.4 33.4 9.8 32.6 10.2 31.1 11 27.6 14.2 23.4 18.5 20.5Z" fill="url(#bfHind)" opacity=".85"/>
+                <circle cx="8.4" cy="7.2" r="1.5" fill="#fff6e6" opacity=".9"/>
+                <circle cx="12.4" cy="10.2" r="1" fill="#fff6e6" opacity=".75"/>
+                <circle cx="9" cy="21.4" r="1.3" fill="#fff6e6" opacity=".8"/>
               </g>
               <g class="bf-wing bf-wing-right">
-                <path d="M13 11C8.6 2.2 2.2 1.2 1.5 7.1.9 12 6.3 14 13 11Z" fill="url(#bfWingA)"/>
-                <path d="M13 12C8.6 13.8 4.4 16.6 6.6 19.8 8.5 22.4 12.3 18 13 12Z" fill="url(#bfWingB)"/>
+                <path d="M18.6 13.4C15.4 6.6 10.4 2.4 5.8 2.9 1.6 3.4-.1 7.5 2.2 10.9 4.6 14.5 10.6 16.2 18.6 13.4Z" fill="url(#bfFore)"/>
+                <path d="M18.4 15.1C12.2 13.9 5.8 15.4 4 19.4 2 24 5.9 27.6 10.4 26.1 14.4 24.8 17.4 20.4 18.4 15.1Z" fill="url(#bfHind)"/>
+                <path d="M18.5 20.5C17 25.1 15.4 29.4 12.6 32.2 11.4 33.4 9.8 32.6 10.2 31.1 11 27.6 14.2 23.4 18.5 20.5Z" fill="url(#bfHind)" opacity=".85"/>
+                <circle cx="8.4" cy="7.2" r="1.5" fill="#fff6e6" opacity=".9"/>
+                <circle cx="12.4" cy="10.2" r="1" fill="#fff6e6" opacity=".75"/>
+                <circle cx="9" cy="21.4" r="1.3" fill="#fff6e6" opacity=".8"/>
               </g>
-              <path class="bf-body" d="M13 5.6c1.2 2 1.2 9 0 11-1.2-2-1.2-9 0-11Z" fill="#4c3247"/>
+              <g class="bf-body" fill="#4a2f45">
+                <path d="M20.6 12.6c1.5 3 1.5 10.6 0 13.6-1.5-3-1.5-10.6 0-13.6Z"/>
+                <circle cx="20.6" cy="11.4" r="1.7"/>
+                <path d="M19.8 10.2C18.7 7.4 17.3 5.8 15.6 5" fill="none" stroke="#4a2f45" stroke-width="1" stroke-linecap="round"/>
+                <path d="M21.4 10.2c1.1-2.8 2.5-4.4 4.2-5.2" fill="none" stroke="#4a2f45" stroke-width="1" stroke-linecap="round"/>
+              </g>
             </svg>
           </span>
         </a>

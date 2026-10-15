@@ -1505,25 +1505,34 @@ ok('the band is built once and used where it looks right',
   /function mt_brand_band\(string \$name\)/.test(cardsSource)
   && (round37Home.match(/mt_brand_band\(/g) || []).length === 2);
 ok('the band says the club\'s name, and nothing else', /brand-band-track[\s\S]{0,200}?e\(\$name\)/.test(cardsSource));
-ok('it runs for ever, slowly, left to right',
-  /\.brand-band-track \{[^}]*animation: brandRun 68s linear infinite/.test(round37Css)
-  && /@keyframes brandRun \{ from \{ transform: translateX\(-50%\); \} to \{ transform: translateX\(0\); \} \}/.test(round37Css));
-ok('it loops without a seam: a trailing space instead of a gap',
-  /\.brand-band-track \{[^}]*display: flex;[^}]*width: max-content;/.test(round37Css)
-  && /\.brand-band-track span \{[^}]*padding-right: 5vw/.test(round37Css)
-  && !/\.brand-band-track \{[^}]*gap:/.test(round37Css));
-ok('the words are big, bold, white and slightly transparent',
-  /\.brand-band-track span \{[^}]*font-family: var\(--font-display\); font-weight: 700/.test(round37Css)
-  && /\.brand-band-track span \{[^}]*color: rgba\(255,255,255,\.5\)/.test(round37Css));
-ok('a soft haze keeps the white readable over the herd and over paper',
-  /\.brand-band:before \{[^}]*rgba\(59,42,70,\.34\)/.test(round37Css));
-ok('the band carries a lamp at each end, and takes no clicks',
-  /\.brand-band i \{[^}]*background: #ffd98a/.test(round37Css)
-  && /\.brand-band i:first-child \{ left: 26px; \}/.test(round37Css)
-  && /\.brand-band i:last-child \{ right: 26px/.test(round37Css)
+ok('the band is words and nothing else — no card, no pane, no lamps',
+  !/\.brand-band:before/.test(round37Css) && !/\.brand-band:after/.test(round37Css)
+  && !/\.brand-band i \{/.test(round37Css) && !/<i><\/i>/.test(cardsSource)
   && /\.brand-band \{[^}]*pointer-events: none/.test(round37Css));
+ok('the words run left to right, for ever',
+  /function setupBrandBand\(\)/.test(appJs) && appJs.includes('band.offset += SPEED * elapsed;')
+  && appJs.includes('setupBrandBand();') && appJs.includes('115;'));
+ok('the loop only turns over while the screen is dark, so no seam is seen',
+  /if \(!document\.hidden\) \{[\s\S]{0,600}?band\.offset -= band\.half;/.test(appJs)
+  && /\.brand-band-track \{[^}]*transform: translateX\(0\)/.test(round37Css));
+ok('the repeats are separated by air, never pulled together by a gap',
+  /\.brand-band-track span \{[^}]*padding-right: max\(40px, 9vw\)/.test(round37Css)
+  && !/\.brand-band-track \{[^}]*gap:/.test(round37Css));
+ok('the words are big, bold and solid white, with a halo that keeps them readable',
+  /\.brand-band-track span \{[^}]*font-weight: 700/.test(round37Css)
+  && /\.brand-band-track span \{[^}]*color: #fff;/.test(round37Css)
+  && /\.brand-band-track span \{[^}]*text-shadow: 0 2px 18px rgba\(58,34,48,\.5\)/.test(round37Css)
+  && /font-size: clamp\(3rem, 10\.5vw, 8\.5rem\)/.test(round37Css));
+ok('a piece of the name is always travelling, so a name is never pulled away',
+  round37Css.includes('width: max-content') && round37Css.includes('will-change: transform')
+  && round37Css.includes('transform: translateX(0)')
+  && appJs.includes("track.style.transform = 'translateX('"));
+ok('with scripts off the stylesheet still runs it',
+  /html\.no-js \.brand-band-track \{ animation: brandRun 44s linear infinite; \}/.test(round37Css)
+  && /@keyframes brandRun \{ from \{ transform: translateX\(-50%\); \} to \{ transform: translateX\(0\); \} \}/.test(round37Css));
 ok('the band stands still for anyone who asks for less motion',
-  /prefers-reduced-motion: reduce\) \{\s*\.brand-band-track \{ animation: none; \}/.test(round37Css));
+  /prefers-reduced-motion: reduce\) \{\s*\.brand-band-track \{ animation: none; \}/.test(round37Css)
+  && /if \(!tracks\.length \|\| reduced\(\)\) return;/.test(appJs));
 const bandCount = (mindPage.body.match(/class="brand-band"/g) || []).length;
 ok('both bands stand on the front page', bandCount === 2, 'found ' + bandCount);
 
@@ -1542,8 +1551,12 @@ ok('the name sweeps in from the right and drifts on to the left',
   /@keyframes splashIn \{ from \{ transform: translateX\(112vw\)/.test(round37Css)
   && /@keyframes splashDrift \{ from \{ transform: translateX\(0\); \} to \{ transform: translateX\(-4vw\); \} \}/.test(round37Css));
 ok('it reveals the site on its own, with no JavaScript needed',
-  /\.splash \{[^}]*animation: splashAway \.7s ease 3\.1s forwards/.test(round37Css)
+  /\.splash \{[^}]*animation: splashAway \.45s ease 1\.75s forwards/.test(round37Css)
   && /@keyframes splashAway \{ to \{ opacity: 0; visibility: hidden; \} \}/.test(round37Css));
+ok('and it goes quickly: the name sweeps, settles, and the screen is gone',
+  /\.splash-name \{[^}]*animation: splashIn 1s cubic-bezier/.test(round37Css)
+  && /\.splash-copy \{[^}]*animation: splashDrift 2\.8s ease-in-out forwards/.test(round37Css)
+  && appJs.includes("splash.setAttribute('hidden', 'hidden'); }, 2600)"));
 ok('a tap, a key or a scroll sends it away at once',
   appJs.includes('function setupSplash()') && appJs.includes("splash.addEventListener('click', away)")
   && appJs.includes("window.addEventListener('keydown', away") && appJs.includes("window.addEventListener('wheel', away")
@@ -1560,14 +1573,21 @@ ok('and present on the front page', mindPage.body.includes('class="splash"') && 
 
 console.log('\n— the butterfly on the bar —');
 ok('she rides on the pinned bar, beside the club\'s own name',
-  /class="nav-butterfly"[\s\S]{0,900}?bf-wing-left[\s\S]{0,900}?bf-wing-right/.test(navLayout)
+  navLayout.includes('class="nav-butterfly"')
+  && navLayout.indexOf('bf-wing-left') > navLayout.indexOf('class="nav-butterfly"')
+  && navLayout.indexOf('bf-wing-right') > navLayout.indexOf('bf-wing-left')
   && navLayout.indexOf('nav-butterfly') > navLayout.indexOf('brand-name')
   && navLayout.indexOf('nav-butterfly') < navLayout.indexOf('navLinks'));
 ok('she flutters her wings, all the time',
-  /@keyframes wingLeft \{ from \{ transform: scaleX\(1\); \} to \{ transform: scaleX\(\.34\); \} \}/.test(round37Css)
-  && /@keyframes wingRight \{ from \{ transform: scaleX\(-1\); \} to \{ transform: scaleX\(-\.34\); \} \}/.test(round37Css)
-  && /\.bf-wing-left \{ animation: wingLeft \.42s ease-in-out infinite alternate; \}/.test(round37Css)
-  && /\.bf-wing-right \{ animation: wingRight \.42s ease-in-out infinite alternate; \}/.test(round37Css));
+  /@keyframes wingLeft \{ from \{ transform: scaleX\(1\); \} to \{ transform: scaleX\(\.26\); \} \}/.test(round37Css)
+  && /@keyframes wingRight \{ from \{ transform: scaleX\(-1\); \} to \{ transform: scaleX\(-\.26\); \} \}/.test(round37Css)
+  && /\.bf-wing-left \{ animation: wingLeft \.34s ease-in-out infinite alternate; \}/.test(round37Css)
+  && /\.bf-wing-right \{ animation: wingRight \.34s ease-in-out infinite alternate; \}/.test(round37Css));
+ok('she is a butterfly and not a bee: four wings, spots, a slim body and antennae',
+  navLayout.includes('class="bf-wing bf-wing-left"') && navLayout.includes('class="bf-wing bf-wing-right"')
+  && (navLayout.match(/<circle/g) || []).length >= 7   // six wing spots and her head
+  && navLayout.includes('stroke-linecap="round"')   // the antennae
+  && navLayout.includes('class="bf-body"') && navLayout.includes('nav-butterfly'));
 ok('and she moves on the spot while the page is read',
   /@keyframes flutterBob \{[\s\S]{0,180}?translate\(2px, -6px\)/.test(round37Css)
   && /\.nav-butterfly \{[^}]*animation: flutterBob/.test(round37Css));
@@ -1577,8 +1597,8 @@ ok('she is drawn, not a picture — no request to the network',
   !/nav-butterfly[\s\S]{0,400}?<img/.test(navLayout) && (mindPage.body.match(/nav-butterfly/g) || []).length >= 1);
 
 console.log('\n— the lamps that breathe —');
-ok('one lamp waits before every small label',
-  /\.eyebrow:before, \.kicker:before \{[\s\S]{0,320}?animation: lightPulse/.test(round37Css));
+ok('no dotted lamps sit before the small labels any more',
+  !/\.eyebrow:before/.test(round37Css) && !/\.kicker:before\s*,?[^}]*lightPulse/.test(round37Css));
 ok('the Mind doorway wears a lamp of its own',
   /\.nav-links a\.nav-lens:before \{[\s\S]{0,220}?animation: lightPulse/.test(round37Css));
 ok('the lamps breathe rather than blink',

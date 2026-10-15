@@ -418,6 +418,50 @@
     }, 45000);
   }
 
+  /* --------------------------------------------- the club's name, running */
+  /* Big white words sweeping from the left across the page, always moving.
+     The loop never jumps back to the start in view: the words travel until the
+     screen has gone dark, and only then is the track put back where it began —
+     and because the two halves are identical, that hand-over cannot be seen.
+     Nothing else writes a transform on these tracks, so they belong to this
+     loop alone. */
+  function setupBrandBand() {
+    const tracks = $$('.brand-band-track');
+    if (!tracks.length || reduced()) return;
+
+    const SPEED = 115;                 // pixels a second: quick, still readable
+    const bands = tracks.map(function (track) {
+      const half = Math.max(1, track.scrollWidth / 2);
+      track.style.transform = 'translateX(' + (-half) + 'px)';
+      return { track: track, half: half, offset: -half };
+    });
+    const measure = function () {
+      bands.forEach(function (band) { band.half = Math.max(1, band.track.scrollWidth / 2); });
+    };
+    window.addEventListener('resize', measure);
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(measure).catch(function () { /* the fallback face will do */ });
+    }
+
+    let previous = performance.now();
+    const step = function (now) {
+      const elapsed = Math.min(0.08, (now - previous) / 1000);
+      previous = now;
+      if (!document.hidden) {
+        bands.forEach(function (band) {
+          band.offset += SPEED * elapsed;          // left → right
+          while (band.offset >= 0) {               // out of sight? hand over
+            band.offset -= band.half;
+            measure();
+          }
+          band.track.style.transform = 'translateX(' + band.offset.toFixed(2) + 'px)';
+        });
+      }
+      window.requestAnimationFrame(step);
+    };
+    window.requestAnimationFrame(step);
+  }
+
   /* -------------------------------------------------------- the front door */
   /* The welcome screen leaves on its own — the stylesheet times it out. This
      only makes it quicker to leave: a tap, a key press, a wheel or a scroll
@@ -430,7 +474,7 @@
     window.addEventListener('keydown', away, { once: true });
     window.addEventListener('wheel', away, { once: true, passive: true });
     window.addEventListener('touchstart', away, { once: true, passive: true });
-    window.setTimeout(function () { splash.setAttribute('hidden', 'hidden'); }, 4200);
+    window.setTimeout(function () { splash.setAttribute('hidden', 'hidden'); }, 2600);
   }
 
   /* ------------------------------------------------------------ the herd */
@@ -520,6 +564,7 @@
 
   function start() {
     setupSplash();
+    setupBrandBand();
     setupReveal();
     setupMenu();
     setupHeroVideo();

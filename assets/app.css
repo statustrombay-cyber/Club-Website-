@@ -74,14 +74,6 @@ button { cursor: pointer; }
 .site-shell { position: relative; z-index: 1; overflow-x: clip; }
 .container { width: min(1160px, calc(100% - 48px)); margin: 0 auto; }
 .narrow { width: min(860px, calc(100% - 48px)); margin: 0 auto; }
-/* Every small label carries a lamp of the club's gold that breathes, so the
-   page has a quiet pulse running through it without a single word moving. */
-.eyebrow:before, .kicker:before {
-  content: ''; display: inline-block; width: 6px; height: 6px; margin-right: 9px;
-  border-radius: 50%; vertical-align: middle; background: #e8b25c;
-  box-shadow: 0 0 8px rgba(232,178,92,.6);
-  animation: lightPulse 3.2s ease-in-out infinite;
-}
 .eyebrow, .kicker {
   color: var(--terracotta-ink);
   font-size: .73rem;
@@ -1418,49 +1410,35 @@ html.photo-frame-open { overflow: hidden; }
 }
 
 /* ==========================================================================
-   The club's name running across the page — a band between sections
+   The club's name running across the page — a band of words, nothing else
    --------------------------------------------------------------------------
-   Big, bold, white and slightly transparent: the club's name slides slowly to
-   the right, for ever, wherever the page is between two blocks. The track holds
-   two identical halves and is drawn with a trailing space on each word rather
-   than a gap, so the moment one half leaves the screen the other is exactly in
-   its place — the run never stutters and never shows a seam. A soft haze of the
-   club's plum sits under the letters, so white stays readable over the herd,
-   over paper and over the dark blocks alike. It is decoration: it takes no
-   clicks, it says nothing to a screen reader, and it stops for anyone who asks
-   for less motion.
+   No card, no pane, no lamps: only the club's name, big and bold in solid
+   white, drifting across the page for ever. The letters carry a soft dark halo
+   so white reads over paper, over the herd and over the dark blocks alike.
+   The track holds two identical halves; the movement is a transform, not a
+   stylesheet animation, so the words are never pulled back to the left to
+   start again — they simply keep coming, and the band is quick about it. If
+   scripts are off, the stylesheet's own fallback moves it the same way.
    ========================================================================== */
-.brand-band { position: relative; overflow: hidden; padding: 30px 0; pointer-events: none; }
-.brand-band:before {
-  content: ''; position: absolute; inset: 0;
-  background: linear-gradient(90deg, rgba(59,42,70,0), rgba(59,42,70,.34) 22%, rgba(59,42,70,.34) 78%, rgba(59,42,70,0));
+.brand-band { position: relative; overflow: hidden; padding: 26px 0; pointer-events: none; }
+.brand-band-track {
+  display: flex; width: max-content; will-change: transform;
+  transform: translateX(0);
 }
-.brand-band:after {
-  content: ''; position: absolute; left: 8%; right: 8%; top: 50%; height: 1px; transform: translateY(-50%);
-  background: linear-gradient(90deg, transparent, rgba(255,248,238,.28), transparent);
-}
-.brand-band-track { position: relative; z-index: 1; display: flex; width: max-content; animation: brandRun 68s linear infinite; }
 .brand-band-track span {
-  display: block; padding-right: 5vw; white-space: nowrap;
-  font-family: var(--font-display); font-weight: 700; letter-spacing: .01em;
-  font-size: clamp(2.4rem, 7.4vw, 5.8rem); line-height: 1;
-  color: rgba(255,255,255,.5);
-  text-shadow: 0 2px 30px rgba(46,28,40,.45);
+  display: block; padding-right: max(40px, 9vw); white-space: nowrap;
+  font-family: var(--font-display); font-weight: 700; letter-spacing: -.01em;
+  font-size: clamp(3rem, 10.5vw, 8.5rem); line-height: 1;
+  color: #fff;
+  text-shadow: 0 2px 18px rgba(58,34,48,.5), 0 0 60px rgba(58,34,48,.32);
 }
-/* A lamp at each end of the band, breathing like the rest of the page. */
-.brand-band i {
-  position: absolute; z-index: 2; top: 50%; width: 9px; height: 9px; margin-top: -4px;
-  border-radius: 50%; background: #ffd98a;
-  box-shadow: 0 0 12px rgba(255,217,138,.9);
-  animation: lightPulse 3s ease-in-out infinite;
+@media (max-width: 560px) { .brand-band { padding: 18px 0; } }
+/* With scripts off there is no engine to run it, so the stylesheet does. */
+@media (prefers-reduced-motion: no-preference) {
+  html.no-js .brand-band-track { animation: brandRun 44s linear infinite; }
 }
-.brand-band i:first-child { left: 26px; }
-.brand-band i:last-child { right: 26px; animation-delay: 1.5s; }
 @keyframes brandRun { from { transform: translateX(-50%); } to { transform: translateX(0); } }
-@media (prefers-reduced-motion: reduce) {
-  .brand-band-track { animation: none; }
-  .brand-band i { animation: none; opacity: .6; }
-}
+@media (prefers-reduced-motion: reduce) { .brand-band-track { animation: none; } }
 
 /* ==========================================================================
    The front door — "Welcome to Club Mindful Tattva"
@@ -1476,9 +1454,9 @@ html.photo-frame-open { overflow: hidden; }
   display: grid; place-items: center; text-align: center;
   background: #3d2a49;
   background-image: radial-gradient(circle at 50% 42%, rgba(224,169,78,.22), rgba(61,42,73,0) 58%);
-  animation: splashAway .7s ease 3.1s forwards;
+  animation: splashAway .45s ease 1.75s forwards;
 }
-.splash-copy { display: grid; gap: 14px; padding: 0 6vw; animation: splashDrift 3.6s ease-in-out forwards; }
+.splash-copy { display: grid; gap: 12px; padding: 0 6vw; animation: splashDrift 2.8s ease-in-out forwards; }
 .splash-welcome {
   color: rgba(255,248,238,.72); font-size: clamp(.82rem, 1.6vw, 1.05rem);
   font-weight: 800; letter-spacing: .34em; text-transform: uppercase;
@@ -1487,9 +1465,9 @@ html.photo-frame-open { overflow: hidden; }
   font-family: var(--font-display); font-weight: 700; line-height: .98;
   font-size: clamp(2.6rem, 9vw, 7rem); white-space: nowrap;
   color: #fff8ee; text-shadow: 0 6px 40px rgba(0,0,0,.35);
-  animation: splashIn 1.5s cubic-bezier(.16,.84,.28,1) both;
+  animation: splashIn 1s cubic-bezier(.16,.84,.28,1) both;
 }
-.splash.is-done { opacity: 0; visibility: hidden; transition: opacity .6s ease, visibility 0s linear .6s; }
+.splash.is-done { opacity: 0; visibility: hidden; transition: opacity .4s ease, visibility 0s linear .4s; }
 @keyframes splashIn { from { transform: translateX(112vw); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 @keyframes splashDrift { from { transform: translateX(0); } to { transform: translateX(-4vw); } }
 @keyframes splashAway { to { opacity: 0; visibility: hidden; } }
@@ -1506,18 +1484,18 @@ html.photo-frame-open { overflow: hidden; }
    two animations. She is decoration, so she says nothing to a screen reader and
    holds still for anyone who asks for less motion.
    ========================================================================== */
-.nav-butterfly { display: inline-block; width: 26px; height: 22px; margin-left: 10px; animation: flutterBob 3.4s ease-in-out infinite; }
+.nav-butterfly { display: inline-block; width: 46px; height: 36px; margin-left: 12px; animation: flutterBob 3.4s ease-in-out infinite; }
 .nav-butterfly svg { display: block; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 3px 8px rgba(90,50,60,.28)); }
-.bf-wing { transform-origin: 13px 11px; }
-.bf-wing-left { animation: wingLeft .42s ease-in-out infinite alternate; }
-.bf-wing-right { animation: wingRight .42s ease-in-out infinite alternate; }
-.bf-body { transform-origin: 13px 11px; }
-@keyframes wingLeft { from { transform: scaleX(1); } to { transform: scaleX(.34); } }
-@keyframes wingRight { from { transform: scaleX(-1); } to { transform: scaleX(-.34); } }
+.bf-wing { transform-origin: 20.6px 18px; }
+.bf-wing-left { animation: wingLeft .34s ease-in-out infinite alternate; }
+.bf-wing-right { animation: wingRight .34s ease-in-out infinite alternate; }
+@keyframes wingLeft { from { transform: scaleX(1); } to { transform: scaleX(.26); } }
+@keyframes wingRight { from { transform: scaleX(-1); } to { transform: scaleX(-.26); } }
 @keyframes flutterBob {
   0%, 100% { transform: translate(0, 0) rotate(-3deg); }
   50% { transform: translate(2px, -6px) rotate(4deg); }
 }
+@media (max-width: 860px) { .nav-butterfly { width: 36px; height: 29px; margin-left: 8px; } }
 @media (prefers-reduced-motion: reduce) {
   .nav-butterfly, .bf-wing-left, .bf-wing-right { animation: none; }
   .bf-wing-right { transform: scaleX(-1); }

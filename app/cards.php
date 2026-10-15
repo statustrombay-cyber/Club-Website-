@@ -132,13 +132,11 @@ function mt_brand_band(string $name): string
     }
     ob_start(); ?>
   <div class="brand-band" aria-hidden="true">
-    <i></i>
     <div class="brand-band-track">
       <?php for ($copy = 0; $copy < 2; $copy++): ?>
         <?php for ($i = 0; $i < 4; $i++): ?><span><?= e($name) ?></span><?php endfor; ?>
       <?php endfor; ?>
     </div>
-    <i></i>
   </div>
     <?php
     return (string) ob_get_clean();
