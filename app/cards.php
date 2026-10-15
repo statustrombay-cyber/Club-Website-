@@ -142,14 +142,28 @@ function mt_brand_band(string $name): string
     return (string) ob_get_clean();
 }
 
-/** Experimental, reversible full-viewport chapter between Mind and Details. */
+/** Shared electric-blue contour field, confined to the black experiments. */
+function mt_blue_waves(): string
+{
+    ob_start(); ?>
+    <svg class="blue-waves" viewBox="0 0 1600 1000" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+      <g fill="none" stroke="currentColor" stroke-width="1">
+        <?php for ($wave = 0; $wave < 18; $wave++): $y = $wave * 32; ?>
+        <path d="M-100 <?= $y ?> C300 <?= $y - 260 ?> 430 <?= $y + 440 ?> 820 <?= $y + 170 ?> S1350 <?= $y - 90 ?> 1700 <?= $y + 350 ?>"/>
+        <?php endfor; ?>
+      </g>
+    </svg>
+    <?php return (string) ob_get_clean();
+}
+
+/** Rings have their own full-screen chapter; no name or scroll instruction. */
 function mt_brand_chapter(string $name): string
 {
     ob_start(); ?>
-  <section class="brand-chapter" aria-label="<?= e($name) ?> — connected minds">
+  <section class="brand-chapter black-chapter" aria-label="Seven connected rings">
     <div class="brand-chapter-stage">
-      <?= mt_brand_band($name) ?>
-      <svg class="brand-rings" viewBox="0 0 600 600" aria-hidden="true" focusable="false">
+      <?= mt_blue_waves() ?>
+      <svg class="brand-rings" viewBox="-90 -90 780 780" aria-hidden="true" focusable="false">
         <g class="brand-ring-turn">
           <circle cx="300" cy="300" r="100"/>
           <?php for ($ring = 0; $ring < 6; $ring++):
@@ -160,8 +174,25 @@ function mt_brand_chapter(string $name): string
           <?php endfor; ?>
         </g>
       </svg>
-      <p class="brand-scroll-hint">Scroll to connect · continue to discover</p>
     </div>
+  </section>
+  <section class="manifest-chapter black-chapter" aria-labelledby="manifestHeading">
+    <?= mt_blue_waves() ?>
+    <div class="mind-object object-orbit" aria-hidden="true"></div>
+    <div class="mind-object object-prism" aria-hidden="true"></div>
+    <div class="mind-object object-sphere" aria-hidden="true"></div>
+    <h2 id="manifestHeading"><span>Control your mind.</span><em>Manifest the reality.</em></h2>
+  </section>
+    <?php return (string) ob_get_clean();
+}
+
+/** One name-only closing interlude, directly before Contact. */
+function mt_brand_finale(string $name): string
+{
+    ob_start(); ?>
+  <section class="brand-finale black-chapter" aria-label="<?= e($name) ?>">
+    <?= mt_blue_waves() ?>
+    <?= mt_brand_band($name) ?>
   </section>
     <?php return (string) ob_get_clean();
 }

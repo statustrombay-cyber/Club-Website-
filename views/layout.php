@@ -143,7 +143,11 @@ $nav = [
           <span class="brand-mark" id="brandMark"><img src="<?= e($logo) ?>" alt="<?= e($clubName) ?> logo" loading="lazy" decoding="async"></span>
           <span class="brand-name" id="brandName"><?= e($clubName) ?></span>
           <span class="nav-butterfly" aria-hidden="true">
-            <img src="/assets/img/butterfly-real.png" alt="" width="88" height="88" decoding="async">
+            <span class="butterfly-flight">
+              <img class="butterfly-wing wing-left" src="/assets/img/butterfly-flight.png" alt="" width="626" height="428" decoding="async">
+              <img class="butterfly-wing wing-right" src="/assets/img/butterfly-flight.png" alt="" width="626" height="428" decoding="async">
+              <img class="butterfly-body" src="/assets/img/butterfly-flight.png" alt="" width="626" height="428" decoding="async">
+            </span>
           </span>
         </a>
         <button class="menu-button" id="menuButton" aria-label="Open menu" aria-expanded="false" aria-controls="navLinks">☰</button>

@@ -332,7 +332,7 @@ $clubWords = ['mind', 'body', 'connection', 'curiosity', 'growth', 'community', 
   </div>
 </section>
 
-<?= mt_brand_band((string) ($site['clubName'] ?? 'Mindful Tattva')) ?>
+<?= mt_brand_finale((string) ($site['clubName'] ?? 'Mindful Tattva')) ?>
 
 <section class="section section-plum" id="contact">
   <div class="container contact-grid">

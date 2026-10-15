@@ -1503,9 +1503,9 @@ console.log('\n— experimental name and seven-ring scroll chapter —');
 const cardsSource = fs.readFileSync(path.join(ROOT, 'app/cards.php'), 'utf8');
 ok('one full-screen chapter, one closing band',
   (round37Home.match(/mt_brand_chapter\(/g) || []).length === 1
-  && (round37Home.match(/mt_brand_band\(/g) || []).length === 1);
+  && (round37Home.match(/mt_brand_finale\(/g) || []).length === 1);
 ok('huge white words travel right to left, with no pane or lamps',
-  round37Css.includes('font-size: clamp(5rem, 18vw, 19rem)')
+  round37Css.includes('font-size: clamp(6rem, 21vw, 24rem)')
   && round37Css.includes('to { transform: translateX(-50%); }')
   && !round37Css.includes('.brand-band:before') && !round37Css.includes('.brand-band i {'));
 ok('two equal halves repeat seamlessly, including without JavaScript',
@@ -1524,10 +1524,10 @@ ok('rings gather first, rotate only after gathering, and reverse with scrolling'
 ok('reduced motion and no scripts leave the chapter short and fully formed',
   round37Css.includes('html.no-js .brand-chapter { height: auto; }')
   && round37Css.includes('.brand-chapter { height: auto; }')
-  && appJs.includes('if (!chapter || reduced()) return;'));
-ok('chapter and both name tracks render on home only',
-  (mindPage.body.match(/class="brand-chapter"/g) || []).length === 1
-  && (mindPage.body.match(/class="brand-band"/g) || []).length === 2
+  && appJs.includes('if (lowMotion) return;'));
+ok('rings stand alone and exactly one name band renders at the end',
+  (mindPage.body.match(/class="brand-chapter black-chapter"/g) || []).length === 1
+  && (mindPage.body.match(/class="brand-band"/g) || []).length === 1
   && (mindPage.body.match(/data-ring="/g) || []).length === 6);
 
 console.log('\n— the front door —');
@@ -1565,17 +1565,82 @@ ok('and it really is absent from the other pages',
   && !splashDash.body.includes('class="splash"'));
 ok('and present on the front page', mindPage.body.includes('class="splash"') && mindPage.body.includes('Welcome to Club'));
 
-console.log('\n— photographic butterfly on the bar —');
-ok('generated butterfly image replaces the cartoon drawing',
-  navLayout.includes('src="/assets/img/butterfly-real.png"') && !navLayout.includes('bf-wing')
-  && fs.existsSync(path.join(ROOT, 'assets/img/butterfly-real.png')));
-ok('butterfly is large, tilted and never distorted by wing animations',
-  round37Css.includes('width: 88px; height: 76px')
-  && round37Css.includes('transform: rotate(-12deg)') && !round37Css.includes('@keyframes wingBeat'));
-ok('butterfly remains on sticky header with phone sizing',
-  navLayout.indexOf('nav-butterfly') > navLayout.indexOf('brand-name')
-  && navLayout.indexOf('nav-butterfly') < navLayout.indexOf('navLinks')
-  && round37Css.includes('flex-basis: 52px'));
+console.log('\n— flapping photographic butterfly —');
+ok('three clipped photographic layers share one local cutout',
+  (navLayout.match(/src="\/assets\/img\/butterfly-flight.png"/g) || []).length === 3
+  && fs.existsSync(path.join(ROOT, 'assets/img/butterfly-flight.png'))
+  && !navLayout.includes('<svg viewBox="0 0 40 36"'));
+ok('wing hinges fold in opposite directions, body remains still',
+  round37Css.includes('transform-origin: 49% 50%')
+  && round37Css.includes('rotateY(-56deg)') && round37Css.includes('rotateY(56deg)')
+  && round37Css.includes('.butterfly-body { clip-path:'));
+ok('large wings have reserved width and overflow vertically, not over links',
+  round37Css.includes('width: 144px; height: 99px')
+  && round37Css.includes('flex: 0 0 144px')
+  && round37Css.includes('width: 100px; height: 69px'));
+ok('butterfly bobs gently, tilted, with reduced-motion fallback',
+  round37Css.includes('@keyframes butterflyBob') && round37Css.includes('rotate(-17deg)')
+  && round37Css.includes('.butterfly-flight, .wing-left, .wing-right { animation: none; }'));
+
+console.log('\n— black and blue chapter sequence —');
+const renderedRings = mindPage.body.slice(mindPage.body.indexOf('<section class="brand-chapter'), mindPage.body.indexOf('<section class="manifest-chapter'));
+ok('ring screen carries no brand name or scroll instructions',
+  !renderedRings.includes('brand-band') && !renderedRings.includes('brand-scroll-hint')
+  && !/<p(?:\s|>)/.test(renderedRings));
+ok('rings then manifestation then the original horse-backed sections',
+  mindPage.body.indexOf('class="brand-chapter') < mindPage.body.indexOf('id="manifestHeading"')
+  && mindPage.body.indexOf('id="manifestHeading"') < mindPage.body.indexOf('id="details"'));
+ok('requested heading and three small moving objects render',
+  mindPage.body.includes('Control your mind.') && mindPage.body.includes('Manifest the reality.')
+  && (mindPage.body.match(/class="mind-object /g) || []).length === 3);
+ok('only one closing band follows registration and precedes Contact',
+  mindPage.body.indexOf('id="join"') < mindPage.body.indexOf('class="brand-finale')
+  && mindPage.body.indexOf('class="brand-finale') < mindPage.body.indexOf('id="contact"'));
+ok('opaque black sections and blue contours are local, not a replacement horse',
+  round37Css.includes('background: #000') && round37Css.includes('color: #234dff')
+  && appJs.includes("document.body.classList.toggle('is-black-chapter', dark)")
+  && !appJs.includes("document.querySelector('video').pause()"));
+ok('classic horse film cannot override the opaque black chapters',
+  (round37Css.match(/:not\(\.black-chapter\)/g) || []).length >= 2
+  && round37Css.includes('body.is-black-chapter .nav:before { background: #000;'));
+ok('all seven rings fit the expanded drawing even before gathering',
+  cardsSource.includes('viewBox="-90 -90 780 780"')
+  && 300 - 100 - 170 - 100 >= -90 && 300 + 100 + 170 + 100 <= 690);
+
+/* Execute the actual scroll controller against a small DOM stand-in. This
+   checks the phases and reversing behaviour, not just names in the source. */
+{
+  const { runInNewContext } = await import('node:vm');
+  const controllerStart = appJs.indexOf('function setupBrandBand()');
+  const controllerEnd = appJs.indexOf('/* -------------------------------------------------------- the front door */', controllerStart);
+  const controller = appJs.slice(controllerStart, controllerEnd);
+  let phase = 0;
+  const captured = { ring: [], turn: '', dark: false };
+  const simulatedRings = Array.from({ length: 6 }, (_, i) => ({
+    style: {}, setAttribute: (key, value) => { captured.ring[i] = value; }
+  }));
+  const callbacks = {};
+  const chapterStub = { offsetHeight: 2400, getBoundingClientRect: () => ({ top: 84 - phase * 1684, bottom: 2484 - phase * 1684 }) };
+  const turnStub = { setAttribute: (key, value) => { captured.turn = value; } };
+  runInNewContext(controller + '\nsetupBrandBand();', {
+    $: selector => selector === '.brand-chapter' ? chapterStub : turnStub,
+    $$: selector => selector === '.black-chapter' ? [chapterStub] : simulatedRings,
+    reduced: () => false,
+    document: { body: { classList: { toggle: (name, active) => { captured.dark = active; } } } },
+    window: { innerWidth: 1440, innerHeight: 800, requestAnimationFrame: fn => fn(), addEventListener: (name, fn) => { callbacks[name] = fn; } }
+  });
+  const initial = captured.ring.join('|');
+  ok('scroll controller starts with separated rings', initial.includes('-170.00') && captured.turn.includes('0.00'));
+  phase = .58; callbacks.scroll();
+  ok('all six satellites join before rotation starts',
+    captured.ring.every(value => /translate\(-?0\.00 -?0\.00\)/.test(value)) && captured.turn === 'rotate(0.00 300 300)');
+  phase = .92; callbacks.scroll();
+  ok('after joining, the geometry turns through 120 degrees', captured.turn === 'rotate(120.00 300 300)');
+  phase = 0; callbacks.scroll();
+  ok('scrolling back restores the original geometry exactly', captured.ring.join('|') === initial && captured.dark);
+  phase = 2; callbacks.scroll();
+  ok('header returns from black when the black section is gone', !captured.dark);
+}
 
 console.log('\n— the lamps that breathe —');
 ok('no dotted lamps sit before the small labels any more',

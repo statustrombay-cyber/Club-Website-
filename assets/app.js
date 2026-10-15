@@ -422,7 +422,8 @@
      Native sticky layout releases the next section; no scroll hijacking. */
   function setupBrandBand() {
     const chapter = $('.brand-chapter');
-    if (!chapter || reduced()) return;
+    if (!chapter) return;
+    const lowMotion = reduced();
     const rings = $$('[data-ring]', chapter);
     const turn = $('.brand-ring-turn', chapter);
     let scheduled = false;
@@ -430,7 +431,13 @@
     const paint = function () {
       scheduled = false;
       const box = chapter.getBoundingClientRect();
-      const top = window.innerWidth <= 860 ? 68 : 84;
+      const top = window.innerWidth <= 1100 ? 68 : 84;
+      const dark = $$('.black-chapter').some(function (section) {
+        const bounds = section.getBoundingClientRect();
+        return bounds.top <= top + 1 && bounds.bottom > top;
+      });
+      document.body.classList.toggle('is-black-chapter', dark);
+      if (lowMotion) return;
       const travel = Math.max(1, chapter.offsetHeight - (window.innerHeight - top));
       const progress = clamp((top - box.top) / travel);
       const gather = clamp(progress / 0.58);
