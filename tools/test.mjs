@@ -1068,7 +1068,7 @@ ok('the top bar travels with the page, so the menu is always at hand',
   && /\.site-shell \{[^}]*overflow-x: clip/.test(appCss)
   && !/\.site-shell \{ position: relative; z-index: 1; overflow: hidden; \}/.test(appCss)
   && /body\.is-scrolled \.nav-wrap:before \{ opacity: 1; \}/.test(appCss)
-  && /body\.is-scrolled \.nav-wrap:after \{ opacity: 1; \}/.test(appCss)
+  && appCss.includes('.nav-wrap:after { display: none; }')
   && layoutSource.includes('id="menuButton"') && layoutSource.includes('class="nav-wrap"'));
 ok('warm lights drift behind every page and settle when less motion is asked for',
   layoutSource.includes('class="drift-field"') && layoutSource.includes('id="driftField"')
@@ -1505,7 +1505,7 @@ ok('one full-screen chapter, one closing band',
   (round37Home.match(/mt_brand_chapter\(/g) || []).length === 1
   && (round37Home.match(/mt_brand_finale\(/g) || []).length === 1);
 ok('huge white words travel right to left, with no pane or lamps',
-  round37Css.includes('font-size: clamp(6rem, 21vw, 24rem)')
+  round37Css.includes('font-size: clamp(6rem, 19.5vw, 22rem)')
   && round37Css.includes('to { transform: translateX(-50%); }')
   && !round37Css.includes('.brand-band:before') && !round37Css.includes('.brand-band i {'));
 ok('two equal halves repeat seamlessly, including without JavaScript',
@@ -1522,8 +1522,8 @@ ok('rings gather first, rotate only after gathering, and reverse with scrolling'
   appJs.includes('progress / 0.58') && appJs.includes('170 * (1 - ease)')
   && appJs.includes('(progress - 0.58) / 0.34') && appJs.includes("turn.setAttribute('transform', 'rotate('"));
 ok('reduced motion and no scripts leave the chapter short and fully formed',
-  round37Css.includes('html.no-js .brand-chapter { height: auto; }')
-  && round37Css.includes('.brand-chapter { height: auto; }')
+  round37Css.includes('html.no-js .brand-chapter, html.no-js .brand-finale { height: auto; }')
+  && round37Css.includes('.brand-chapter, .brand-finale { height: auto; }')
   && appJs.includes('if (lowMotion) return;'));
 ok('rings stand alone and exactly one name band renders at the end',
   (mindPage.body.match(/class="brand-chapter black-chapter"/g) || []).length === 1
@@ -1591,21 +1591,34 @@ ok('rings then manifestation then the original horse-backed sections',
   mindPage.body.indexOf('class="brand-chapter') < mindPage.body.indexOf('id="manifestHeading"')
   && mindPage.body.indexOf('id="manifestHeading"') < mindPage.body.indexOf('id="details"'));
 ok('requested heading and three small moving objects render',
-  mindPage.body.includes('Control your mind.') && mindPage.body.includes('Manifest the reality.')
+  mindPage.body.includes('Control Your Mind') && mindPage.body.includes('Manifest Your Reality')
   && (mindPage.body.match(/class="mind-object /g) || []).length === 3);
 ok('only one closing band follows registration and precedes Contact',
   mindPage.body.indexOf('id="join"') < mindPage.body.indexOf('class="brand-finale')
   && mindPage.body.indexOf('class="brand-finale') < mindPage.body.indexOf('id="contact"'));
-ok('opaque black sections and blue contours are local, not a replacement horse',
-  round37Css.includes('background: #000') && round37Css.includes('color: #234dff')
+ok('violet chapter palette and lavender contours are local, not a replacement horse',
+  round37Css.includes('background: #100e1c') && round37Css.includes('color: #b1a2f2')
   && appJs.includes("document.body.classList.toggle('is-black-chapter', dark)")
   && !appJs.includes("document.querySelector('video').pause()"));
 ok('classic horse film cannot override the opaque black chapters',
   (round37Css.match(/:not\(\.black-chapter\)/g) || []).length >= 2
-  && round37Css.includes('body.is-black-chapter .nav:before { background: #000;'));
+  && round37Css.includes('body.is-black-chapter .nav:before { background: #100e1c;'));
 ok('all seven rings fit the expanded drawing even before gathering',
   cardsSource.includes('viewBox="-90 -90 780 780"')
   && 300 - 100 - 170 - 100 >= -90 && 300 + 100 + 170 + 100 <= 690);
+
+ok('closing name chapter has no black panel or wave background',
+  mindPage.body.includes('class="brand-finale"') && !mindPage.body.includes('class="brand-finale black-chapter"')
+  && round37Css.includes('.brand-finale { position: relative; height: 220svh; background: transparent; }'));
+ok('closing label and rounded name have generous spacing and sticky scroll time',
+  round37Css.includes('gap: clamp(90px, 18svh, 190px)')
+  && mindPage.body.includes('class="brand-finale-stage"') && mindPage.body.includes('class="brand-finale-intro"'));
+ok('rounded fonts are local and carry their open-font licenses',
+  ['fredoka-latin.woff2', 'quicksand-latin.woff2', 'Fredoka-OFL.txt', 'Quicksand-OFL.txt'].every(file => fs.existsSync(path.join(ROOT, 'assets/fonts', file)))
+  && round37Css.includes("font-family: 'MT Rounded', sans-serif; font-weight: 450"));
+ok('header hairline is removed and butterfly sits above menu panel',
+  round37Css.includes('.nav-wrap:after { display: none; }')
+  && /\.nav-butterfly \{[^}]*z-index: 5/.test(round37Css));
 
 /* Execute the actual scroll controller against a small DOM stand-in. This
    checks the phases and reversing behaviour, not just names in the source. */

@@ -181,7 +181,7 @@ function mt_brand_chapter(string $name): string
     <div class="mind-object object-orbit" aria-hidden="true"></div>
     <div class="mind-object object-prism" aria-hidden="true"></div>
     <div class="mind-object object-sphere" aria-hidden="true"></div>
-    <h2 id="manifestHeading"><span>Control your mind.</span><em>Manifest the reality.</em></h2>
+    <h2 id="manifestHeading"><span>Control Your Mind</span><em>Manifest Your Reality</em></h2>
   </section>
     <?php return (string) ob_get_clean();
 }
@@ -190,9 +190,11 @@ function mt_brand_chapter(string $name): string
 function mt_brand_finale(string $name): string
 {
     ob_start(); ?>
-  <section class="brand-finale black-chapter" aria-label="<?= e($name) ?>">
-    <?= mt_blue_waves() ?>
-    <?= mt_brand_band($name) ?>
+  <section class="brand-finale" aria-label="<?= e($name) ?>">
+    <div class="brand-finale-stage">
+      <p class="brand-finale-intro">A space for mindful minds</p>
+      <?= mt_brand_band($name) ?>
+    </div>
   </section>
     <?php return (string) ob_get_clean();
 }

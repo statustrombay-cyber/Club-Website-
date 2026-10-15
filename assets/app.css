@@ -110,14 +110,8 @@ button { cursor: pointer; }
   backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
 }
 body.is-scrolled .nav-wrap:before { opacity: 1; }
-/* A hairline of the club's gold sits under the bar while it travels, the way
-   the thread and the rules below it do. */
-.nav-wrap:after {
-  content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 1px;
-  opacity: 0; pointer-events: none; transition: opacity .35s ease;
-  background: linear-gradient(90deg, transparent, rgba(215,162,70,.55), transparent);
-}
-body.is-scrolled .nav-wrap:after { opacity: 1; }
+/* No header hairline: it used to cross the butterfly's extended wings. */
+.nav-wrap:after { display: none; }
 /* An anchor jump lands below the pinned bar, never under it. */
 main [id] { scroll-margin-top: 104px; }
 .nav { position: relative; }
@@ -273,7 +267,7 @@ body.is-scrolled .nav:before { background: rgba(255,250,241,.62); box-shadow: 0 
    what the site had on solid cream — while the herd is plainly in view. */
 :root { --film-rgb: 252,248,243; --film-deep-rgb: 64,54,52; }
 
-.site-shell main > section:not(.hero-with-video):not(.section-plum):not(.psyche-section):not(.calendar-hero):not(.black-chapter),
+.site-shell main > section:not(.hero-with-video):not(.section-plum):not(.psyche-section):not(.calendar-hero):not(.black-chapter):not(.brand-finale),
 .site-shell main > div:not(.photo-frame) {
   background-color: rgba(var(--film-rgb), .69);
 }
@@ -281,7 +275,7 @@ body.is-scrolled .nav:before { background: rgba(255,250,241,.62); box-shadow: 0 
 /* On a wide screen the page opens at both flanks: the words keep their dense
    film, and the herd runs clear on either side of them. */
 @media (min-width: 1150px) {
-  .site-shell main > section:not(.hero-with-video):not(.section-plum):not(.psyche-section):not(.calendar-hero):not(.black-chapter),
+  .site-shell main > section:not(.hero-with-video):not(.section-plum):not(.psyche-section):not(.calendar-hero):not(.black-chapter):not(.brand-finale),
   .site-shell main > div:not(.photo-frame) {
     background-color: transparent;
     background-image: linear-gradient(90deg,
@@ -1413,56 +1407,64 @@ html.photo-frame-open { overflow: hidden; }
   .pass-qr, .pass-rules { break-inside: avoid; }
 }
 
-/* Black / electric-blue interludes; the horse remains playing underneath.
-   Opaque local backgrounds reveal it again naturally when these sections end. */
-.black-chapter { position: relative; isolation: isolate; color: #f5f6ff; background: #000; }
-.blue-waves { position: absolute; inset: 0; width: 100%; height: 100%; color: #234dff; opacity: .44; pointer-events: none; z-index: -1; }
+/* Rounded local fonts and violet interludes, confined to the experiment. */
+@font-face { font-family: 'MT Rounded'; src: url('/assets/fonts/fredoka-latin.woff2') format('woff2'); font-weight: 300 700; font-display: swap; }
+@font-face { font-family: 'MT Geometric'; src: url('/assets/fonts/quicksand-latin.woff2') format('woff2'); font-weight: 300 700; font-display: swap; }
+.black-chapter { position: relative; isolation: isolate; color: #f5f2ff; background: #100e1c; }
+.brand-chapter-stage, .manifest-chapter {
+  background: radial-gradient(ellipse at 50% 15%, #7970bc 0%, #403373 33%, #211c3f 60%, #100e1c 90%);
+}
+.blue-waves { position: absolute; inset: 0; width: 100%; height: 100%; color: #b1a2f2; opacity: .24; pointer-events: none; z-index: -1; }
 .blue-waves g { transform-origin: center; animation: waveSway 15s ease-in-out infinite alternate; }
 @keyframes waveSway { to { transform: translate(-35px, 28px) rotate(-3deg); } }
-.brand-band { position: relative; overflow: hidden; width: 100%; padding: 32px 0; pointer-events: none; }
+.brand-band { position: relative; overflow: hidden; width: 100%; padding: 30px 0 46px; pointer-events: none; }
 .brand-band-track { display: flex; width: max-content; will-change: transform; animation: brandRun 28s linear infinite; }
 .brand-band-track span {
   display: block; padding-right: max(40px, 9vw); white-space: nowrap;
-  font-family: Arial, Helvetica, sans-serif; font-weight: 900; letter-spacing: -.075em;
-  font-size: clamp(6rem, 21vw, 24rem); line-height: 1.12;
-  color: #f5f6ff; text-shadow: none;
+  font-family: 'MT Rounded', sans-serif; font-weight: 450; letter-spacing: -.035em;
+  font-size: clamp(6rem, 19.5vw, 22rem); line-height: 1.25; text-transform: lowercase;
+  color: #e9dfff; text-shadow: 0 2px 0 #b49cdd, 0 5px 0 #8065aa, 0 10px 26px rgba(46,24,74,.65);
 }
 @keyframes brandRun { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 .brand-chapter { position: relative; height: 300svh; }
 .brand-chapter-stage {
   position: sticky; top: 84px; height: calc(100svh - 84px);
-  display: grid; place-items: center; overflow: hidden; isolation: isolate; background: #000;
+  display: grid; place-items: center; overflow: hidden; isolation: isolate;
 }
-.brand-rings { display: block; width: min(86vw, 80svh, 900px); height: auto; max-height: 100%; overflow: visible; }
-.brand-rings circle { fill: none; stroke: #597aff; stroke-width: 2; opacity: .9; }
-.brand-rings circle:nth-child(even) { stroke: #9dafff; }
-.brand-rings circle:first-child { stroke: #d3dcff; }
-.manifest-chapter { min-height: calc(100svh - 84px); display: grid; place-items: center; padding: 100px 24px; overflow: hidden; }
-.manifest-chapter h2 { position: relative; z-index: 1; width: min(1100px, 100%); margin: 0; text-align: center; font-family: Arial, Helvetica, sans-serif; font-weight: 800; font-size: clamp(2.6rem, 6.8vw, 7rem); line-height: 1.08; letter-spacing: -.065em; }
+.brand-rings { display: block; width: min(96vw, 90svh, 1000px); height: auto; max-height: 100%; overflow: visible; }
+.brand-rings circle { fill: none; stroke: #e2d9ff; stroke-width: 1.25; opacity: .9; }
+.brand-rings circle:nth-child(even) { stroke: #c3b0f2; }
+.brand-rings circle:first-child { stroke: #f5f0ff; }
+.manifest-chapter { min-height: calc(100svh - 84px); display: grid; place-items: center; padding: 120px 24px; overflow: hidden; }
+.manifest-chapter h2 { position: relative; z-index: 1; width: min(1100px, 100%); margin: 0; text-align: center; font-family: 'MT Geometric', sans-serif; font-weight: 500; font-size: clamp(2.8rem, 7.5vw, 7.5rem); line-height: 1.15; letter-spacing: -.06em; }
 .manifest-chapter h2 span, .manifest-chapter h2 em { display: block; }
-.manifest-chapter h2 em { color: #809aff; font-style: normal; margin-top: .15em; }
+.manifest-chapter h2 em { color: #d6c4ff; font-style: normal; margin-top: .2em; }
 .mind-object { position: absolute; pointer-events: none; animation: objectDrift 7s ease-in-out infinite alternate; }
-.object-orbit { width: clamp(45px, 7vw, 90px); aspect-ratio: 1; top: 10%; left: 12%; border: 2px solid #6381ff; border-radius: 50%; box-shadow: inset 0 0 20px #1d36a0; }
-.object-prism { width: clamp(35px, 5vw, 66px); aspect-ratio: 1; bottom: 12%; right: 12%; border: 1px solid #a8b8ff; transform: rotate(35deg); animation-delay: -3s; }
-.object-sphere { width: 26px; aspect-ratio: 1; top: 18%; right: 16%; border-radius: 50%; background: radial-gradient(circle at 30% 25%, #c0d0ff, #365eff 45%, #050923 80%); animation-delay: -5s; }
+.object-orbit { width: clamp(54px, 9vw, 120px); aspect-ratio: 1; top: 10%; left: 12%; border: clamp(8px, 1.6vw, 20px) solid #b7a3f3; border-radius: 50%; box-shadow: inset 4px 4px 10px #54427d, 5px 9px 22px #080713, -2px -3px 9px #ded0ff; transform: rotateX(35deg) rotateZ(-25deg); }
+.object-prism { width: clamp(40px, 7vw, 90px); aspect-ratio: 1; bottom: 12%; right: 12%; border-radius: 34% 66% 46% 54% / 54% 32% 68% 46%; background: radial-gradient(circle at 28% 25%, #d6ccff, #7660ba 38%, #29203f 70%); box-shadow: inset -4px -6px 16px #140c29, 2px 6px 20px #0c071d; animation-delay: -3s; }
+.object-sphere { width: clamp(26px, 4vw, 50px); aspect-ratio: 1; top: 18%; right: 16%; border-radius: 50%; background: radial-gradient(circle at 30% 25%, #e4daff, #8d72cc 35%, #2d1e4f 75%); box-shadow: 3px 4px 15px #0c071d; animation-delay: -5s; }
 @keyframes objectDrift { to { translate: 12px -24px; rotate: 35deg; } }
-.brand-finale { min-height: calc(100svh - 84px); display: grid; align-items: center; overflow: hidden; }
-body.is-black-chapter .nav-wrap { background: #000; color: #f5f6ff; border-color: #1d2c60; }
-body.is-black-chapter .nav-wrap:before { background: #000; }
-body.is-black-chapter .nav:before { background: #000; border-color: #1c2c5c; box-shadow: none; }
-body.is-black-chapter .nav-links { color: #dce4ff; }
-body.is-black-chapter .menu-button { color: #f5f6ff; }
-body.is-black-chapter .nav-links.open { background: #000; }
-html.no-js .brand-chapter { height: auto; }
-html.no-js .brand-chapter-stage { position: relative; top: auto; min-height: 80svh; }
+/* One horse-backed, unboxed closing name. Enough scrolling room on all screens. */
+.brand-finale { position: relative; height: 220svh; background: transparent; }
+.brand-finale-stage { position: sticky; top: 84px; min-height: calc(100svh - 84px); display: flex; flex-direction: column; justify-content: center; gap: clamp(90px, 18svh, 190px); padding: 40px 0; overflow: hidden; }
+.brand-finale-intro { margin: 0; padding: 0 24px; text-align: center; font-family: 'MT Geometric', sans-serif; color: #fff7ff; text-shadow: 0 2px 8px #281c36, 0 0 24px #281c36; font-size: clamp(1rem, 2vw, 1.65rem); letter-spacing: -.025em; }
+body.is-black-chapter .nav-wrap { background: #100e1c; color: #f5f2ff; border-color: #4f426e; }
+body.is-black-chapter .nav-wrap:before { background: #100e1c; }
+body.is-black-chapter .nav:before { background: #100e1c; border-color: #4f426e; box-shadow: none; }
+body.is-black-chapter .nav-links { color: #e5dcfa; }
+body.is-black-chapter .menu-button { color: #f5f2ff; }
+body.is-black-chapter .nav-links.open { background: #100e1c; }
+html.no-js .brand-chapter, html.no-js .brand-finale { height: auto; }
+html.no-js .brand-chapter-stage, html.no-js .brand-finale-stage { position: relative; top: auto; min-height: 80svh; }
 @media (max-width: 1100px) {
   .brand-chapter-stage { top: 68px; height: calc(100svh - 68px); }
-  .manifest-chapter, .brand-finale { min-height: calc(100svh - 68px); }
+  .manifest-chapter { min-height: calc(100svh - 68px); }
+  .brand-finale-stage { top: 68px; min-height: calc(100svh - 68px); }
 }
 @media (prefers-reduced-motion: reduce) {
   .brand-band-track, .blue-waves g, .mind-object { animation: none; }
-  .brand-chapter { height: auto; }
-  .brand-chapter-stage { position: relative; top: auto; min-height: 80svh; height: auto; padding: 48px 0; }
+  .brand-chapter, .brand-finale { height: auto; }
+  .brand-chapter-stage, .brand-finale-stage { position: relative; top: auto; min-height: 80svh; height: auto; padding: 48px 0; }
 }
 
 /* ==========================================================================
@@ -1502,11 +1504,11 @@ html.no-js .brand-chapter-stage { position: relative; top: auto; min-height: 80s
 
 /* Photograph split into two wings about its real body. The header reserves a
    small footprint; the large cutout is deliberately allowed above/below it. */
-.nav-butterfly { position: relative; display: inline-block; flex: 0 0 144px; width: 144px; height: 52px; margin-left: 4px; pointer-events: none; }
-.butterfly-flight { position: absolute; left: 50%; top: calc(50% + 22px); width: 144px; height: 99px; transform: translate(-50%, -50%) rotate(-17deg); animation: butterflyBob 3.8s ease-in-out infinite; }
+.nav-butterfly { position: relative; display: inline-block; flex: 0 0 144px; width: 144px; height: 52px; margin-left: 4px; pointer-events: none; z-index: 5; }
+.butterfly-flight { position: absolute; left: 50%; top: calc(50% + 34px); width: 144px; height: 99px; transform: translate(-50%, -50%) rotate(-17deg); animation: butterflyBob 3.8s ease-in-out infinite; }
 .butterfly-flight img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; max-width: none; object-fit: contain; filter: drop-shadow(0 2px 3px rgba(0,0,0,.25)); }
-.wing-left { clip-path: polygon(0 0, 49% 0, 49% 100%, 0 100%); transform-origin: 49% 50%; animation: photoWingLeft .9s ease-in-out infinite; }
-.wing-right { clip-path: polygon(49% 0, 100% 0, 100% 100%, 49% 100%); transform-origin: 49% 50%; animation: photoWingBeat .9s ease-in-out infinite; }
+.wing-left { clip-path: polygon(0 0, 50% 0, 50% 100%, 0 100%); transform-origin: 49% 50%; animation: photoWingLeft .9s ease-in-out infinite; }
+.wing-right { clip-path: polygon(48% 0, 100% 0, 100% 100%, 48% 100%); transform-origin: 49% 50%; animation: photoWingBeat .9s ease-in-out infinite; }
 .butterfly-body { clip-path: polygon(46% 18%, 52% 18%, 52% 70%, 46% 70%); }
 @keyframes photoWingLeft { 0%, 100% { transform: perspective(500px) rotateY(0deg); } 50% { transform: perspective(500px) rotateY(-56deg); } }
 @keyframes photoWingBeat { 0%, 100% { transform: perspective(500px) rotateY(0deg); } 50% { transform: perspective(500px) rotateY(56deg); } }
@@ -1534,4 +1536,10 @@ html.no-js .brand-chapter-stage { position: relative; top: auto; min-height: 80s
   .brand-mark { width: 30px; height: 30px; }
   .nav-butterfly { flex-basis: 80px; width: 80px; }
   .butterfly-flight { width: 80px; height: 55px; }
+}
+/* Short landscape screens retain the same sequence without cropping the name. */
+@media (max-height: 600px) {
+  .brand-finale-stage { gap: 8svh; padding: 20px 0; }
+  .brand-band { padding: 16px 0 24px; }
+  .brand-band-track span { font-size: clamp(5rem, min(19.5vw, 24svh), 22rem); }
 }

@@ -442,6 +442,10 @@
       const progress = clamp((top - box.top) / travel);
       const gather = clamp(progress / 0.58);
       const ease = gather * gather * (3 - 2 * gather);
+      const diagram = $('.brand-rings', chapter);
+      const inset = -90 + 120 * ease;
+      const size = 780 - 240 * ease;
+      if (diagram) diagram.setAttribute('viewBox', [inset, inset, size, size].join(' '));
       rings.forEach(function (ring, i) {
         const angle = (i * 60 - 90) * Math.PI / 180;
         const spread = 170 * (1 - ease);
