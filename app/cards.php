@@ -165,10 +165,18 @@ function mt_portrait_badge(): string
     return '<span class="portrait-badge" aria-hidden="true">' . mt_reference_rings() . '</span>';
 }
 
+/** Changed motion artwork gets a new URL despite the host's long image cache. */
+function mt_motion_url(string $filename): string
+{
+    $url = '/assets/motion/' . $filename;
+    $file = MT_ROOT . $url;
+    return is_file($file) ? $url . '?v=' . substr((string) hash_file('sha256', $file), 0, 12) : $url;
+}
+
 /** Broad blue/violet ribbon field measured against the new 66.5s recording. */
 function mt_blue_waves(): string
 {
-    return '<img class="blue-waves reference-ribbons" src="/assets/motion/reference-ribbons.webp" alt="" width="720" height="1240" loading="lazy" decoding="async" aria-hidden="true">';
+    return '<img class="blue-waves reference-ribbons" src="' . mt_motion_url('reference-ribbons.webp') . '" alt="" width="720" height="1240" loading="lazy" decoding="async" aria-hidden="true">';
 }
 
 /** Small antialiased cutouts preserve the actual observed wire silhouettes.
@@ -178,8 +186,9 @@ function mt_manifest_object(string $type): string
     if (!in_array($type, ['orbit', 'prism', 'sphere'], true)) {
         return '';
     }
-    $base = '/assets/motion/wire-' . $type;
-    return '<i class="mind-object object-' . $type . '" data-wire-object="' . $type . '" aria-hidden="true"><img src="' . $base . '-still.webp" data-still-src="' . $base . '-still.webp" data-motion-src="' . $base . '.webp" alt="" width="164" height="110" loading="lazy" decoding="async"></i>';
+    $still = mt_motion_url('wire-' . $type . '-still.webp');
+    $motion = mt_motion_url('wire-' . $type . '.webp');
+    return '<i class="mind-object object-' . $type . '" data-wire-object="' . $type . '" aria-hidden="true"><img src="' . $still . '" data-still-src="' . $still . '" data-motion-src="' . $motion . '" alt="" width="164" height="110" loading="lazy" decoding="async"></i>';
 }
 
 /** One continuous sticky scene: assemble the rings, then introduce the words. */

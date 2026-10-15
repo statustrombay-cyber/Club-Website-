@@ -1742,6 +1742,12 @@ for(const [name,study] of Object.entries(wireStudy.models)) {
   const {createHash}=await import('node:crypto');
   ok('wire '+name+' matches its reviewed decoded-motion provenance',createHash('sha256').update(bytes).digest('hex')===study.sha256);
 }
+const {createHash:motionDigest}=await import('node:crypto');
+const motionUrls=[...mindPage.body.matchAll(/(?:src|data-still-src|data-motion-src)="(\/assets\/motion\/[^\"]+)"/g)].map(match=>match[1]);
+ok('all ten motion image references use content hashes so replacement artwork gets a fresh URL',motionUrls.length===10&&motionUrls.every(value=>{
+  const url=new URL(value,'https://club.example');
+  return url.searchParams.get('v')===motionDigest('sha256').update(fs.readFileSync(path.join(ROOT,url.pathname))).digest('hex').slice(0,12);
+}));
 ok('joined rings shrink and rise before the following heading',
   appJs.includes('(progress - 0.45) / 0.35') && appJs.includes('1 - exit * 0.10')
   && round37Css.includes('.brand-chapter { height: 300svh; }'));

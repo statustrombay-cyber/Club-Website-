@@ -99,12 +99,14 @@ certify pixel-perfect reproduction of the original site's unavailable sources.
 
 ### Verification — 15 October 2026, current revision
 
-- `npm test`: **518 passed, 0 failed**. New executed regressions cover Add
+- `npm test`: **519 passed, 0 failed**. New executed regressions cover Add
   event and shared card rendering; all twelve one-based month values; legacy
   dates; logo upload and isolated logo saving; brochure persistence; display
   order; full backup import preserving IDs, registrations, pass hashes,
   visibility and settings; monotonic restore revisions; actual WebP frame
   counts, 24fps timings, dimensions, infinite-loop flags and reviewed hashes.
+  All motion image URLs are content-versioned, so revised artwork is fetched
+  correctly on hosts with long-lived image caching.
 - `npm run lint`, browser JavaScript `no-undef`, and `git diff --check`: passed.
 - Real HTTP deployment workflow: **66 checks passed**, using a valid decodable
   PNG and a genuinely anonymous forged-cookie request (signed-in cookies are
