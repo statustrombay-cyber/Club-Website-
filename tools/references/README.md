@@ -16,8 +16,8 @@ animation timer):
   pill graphics roll beside the words. Manifest is an italic serif accent.
 - 20–25s: alternating portraits with little rotating ring badges and pop/zoom
   reveals. Preserve the club's identities and actual photos, not demo people.
-- 25s: small rising line chart; club version must use real survey data or be
-  explicitly illustrative, never present a fabricated happiness percentage.
+- 25s: small rising line chart; the club version is an aspirational, unnumbered
+  upward curve about happier community life, not a fabricated survey result.
 - 35–46s: narrow violet flowing-strand motif, fine white geometric marquee,
   a small centred label above it and spacious black surrounding area.
 
@@ -28,3 +28,11 @@ Use proportional viewport-height chapters on desktop and phones.
 Possible club additions for a later decision: anonymous opt-in pulse surveys
 (aggregate only), member spotlights with consent, an annual impact timeline,
 and an accessible motion toggle. Do not publish invented metrics.
+
+Flow refinement: keep the first-page emblem completely free of ring overlays.
+The splash mark assembles on its own before revealing the page and admitting
+the photographic butterfly. The separate ring chapter is 500svh with gathering,
+rotation and a gentle upward exit. The manifestation rows are staggered, with
+fine wire objects and a locally licensed italic serif; these are reconstructions
+from the recording, not a claim to the original site's proprietary font/assets.
+The closing wave uses complete curves fading at both ends, not clipped strands.

@@ -440,22 +440,22 @@
       if (lowMotion) return;
       const travel = Math.max(1, chapter.offsetHeight - (window.innerHeight - top));
       const progress = clamp((top - box.top) / travel);
-      const gather = clamp(progress / 0.58);
+      const gather = clamp(progress / 0.50);
       const ease = gather * gather * (3 - 2 * gather);
       const diagram = $('.brand-rings', chapter);
-      const inset = -90 + 120 * ease;
-      const size = 780 - 240 * ease;
-      if (diagram) diagram.setAttribute('viewBox', [inset, inset, size, size].join(' '));
+      if (diagram) diagram.setAttribute('viewBox', '-90 -90 780 780');
+      $$('circle', chapter).forEach(function (circle) { circle.setAttribute('r', (35 + 65 * ease).toFixed(2)); });
       rings.forEach(function (ring, i) {
         const angle = (i * 60 - 90) * Math.PI / 180;
         const spread = 170 * (1 - ease);
         ring.setAttribute('transform', 'translate(' + (Math.cos(angle) * spread).toFixed(2) + ' ' + (Math.sin(angle) * spread).toFixed(2) + ')');
-        ring.style.opacity = String(0.12 + ease * 0.73);
+        ring.style.opacity = String(0.45 + ease * 0.45);
       });
-      const rotation = clamp((progress - 0.58) / 0.34) * 120;
+      const rotation = clamp((progress - 0.55) / 0.25) * 120;
       turn.setAttribute('transform', 'rotate(' + rotation.toFixed(2) + ' 300 300)');
-      const exit = clamp((progress - 0.72) / 0.28);
-      if (diagram) diagram.style.transform = 'translateY(' + (-exit * 24).toFixed(2) + 'vh) scale(' + (1 - exit * 0.66).toFixed(3) + ')';
+      const exit = clamp((progress - 0.80) / 0.20);
+      const scale = (1 - ease * 0.40) * (1 - exit * 0.55);
+      if (diagram) diagram.style.transform = 'translateY(' + (-exit * 26).toFixed(2) + 'vh) scale(' + scale.toFixed(3) + ')';
     };
     const schedule = function () {
       if (!scheduled) { scheduled = true; window.requestAnimationFrame(paint); }
@@ -466,18 +466,66 @@
   }
 
   /* -------------------------------------------------------- the front door */
-  /* The welcome screen leaves on its own — the stylesheet times it out. This
-     only makes it quicker to leave: a tap, a key press, a wheel or a scroll
-     sends it away at once, so nobody has to wait for decoration. */
+  /* The rings settle, the dark veil dissolves, then the butterfly lands.
+     CSS has its own exit for no-script visitors; all exits converge here. */
   function setupSplash() {
     const splash = $('#splash');
-    if (!splash) return;
-    const away = function () { splash.classList.add('is-done'); };
+    let done = false;
+    const finish = function () {
+      if (done) return;
+      done = true;
+      if (splash) splash.hidden = true;
+      document.body.classList.remove('intro-pending');
+      document.body.classList.add('intro-revealed');
+      window.dispatchEvent(new CustomEvent('mt:intro-ready'));
+    };
+    if (!splash || reduced()) { finish(); return; }
+    document.body.classList.add('intro-pending');
+    const away = function () {
+      if (done || splash.classList.contains('is-done')) return;
+      splash.classList.add('is-done');
+      window.setTimeout(finish, 650);
+    };
+    splash.addEventListener('animationend', function (event) {
+      if (event.target === splash && event.animationName === 'splashAway') finish();
+    });
     splash.addEventListener('click', away);
     window.addEventListener('keydown', away, { once: true });
     window.addEventListener('wheel', away, { once: true, passive: true });
     window.addEventListener('touchstart', away, { once: true, passive: true });
-    window.setTimeout(function () { splash.setAttribute('hidden', 'hidden'); }, 2600);
+    window.setTimeout(finish, 2800);
+  }
+
+  function setupButterfly() {
+    const butterfly = $('.nav-butterfly');
+    if (!butterfly) return;
+    let arrived = false;
+    let scrollTimer = 0;
+    const land = function () {
+      if (arrived) return;
+      arrived = true;
+      butterfly.classList.add('butterfly-arrived');
+      if (reduced() || !butterfly.animate) return;
+      const rect = butterfly.getBoundingClientRect();
+      const x = window.innerWidth - rect.left + 100;
+      const y = Math.max(120, window.innerHeight * 0.65 - rect.top);
+      const flight = butterfly.animate([
+        { transform: 'translate(' + x + 'px,' + y + 'px) rotate(-28deg)', opacity: 0 },
+        { transform: 'translate(' + x * 0.35 + 'px,' + y * 0.48 + 'px) rotate(8deg)', opacity: 1, offset: 0.45 },
+        { transform: 'translate(-12px,12px) rotate(-8deg)', opacity: 1, offset: 0.85 },
+        { transform: 'translate(0,0) rotate(0)', opacity: 1 }
+      ], { duration: 1650, easing: 'cubic-bezier(.25,.6,.28,1)', fill: 'backwards' });
+      flight.onfinish = function () { flight.cancel(); };
+    };
+    window.addEventListener('mt:intro-ready', land, { once: true });
+    window.setTimeout(land, 5000); // fail open if an intro event cannot be delivered
+    if (reduced()) return;
+    window.addEventListener('scroll', function () {
+      if (!arrived) return;
+      document.body.classList.add('butterfly-scrolling');
+      window.clearTimeout(scrollTimer);
+      scrollTimer = window.setTimeout(function () { document.body.classList.remove('butterfly-scrolling'); }, 200);
+    }, { passive: true });
   }
 
   /* Two fast-start encodes; the untouched master is retained for the club.
@@ -565,6 +613,7 @@
   }
 
   function start() {
+    setupButterfly();
     setupSplash();
     setupBrandBand();
     setupReveal();

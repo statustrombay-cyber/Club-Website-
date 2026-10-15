@@ -1527,8 +1527,8 @@ ok('one centre circle and six satellites form seven intersecting rings',
   cardsSource.includes('$ring < 6') && cardsSource.includes('300 + 100 * cos($angle)')
   && cardsSource.includes('300 + 100 * sin($angle)') && cardsSource.includes('r="100"'));
 ok('rings gather first, rotate only after gathering, and reverse with scrolling',
-  appJs.includes('progress / 0.58') && appJs.includes('170 * (1 - ease)')
-  && appJs.includes('(progress - 0.58) / 0.34') && appJs.includes("turn.setAttribute('transform', 'rotate('"));
+  appJs.includes('progress / 0.50') && appJs.includes('170 * (1 - ease)')
+  && appJs.includes('(progress - 0.55) / 0.25') && appJs.includes("turn.setAttribute('transform', 'rotate('"));
 ok('reduced motion and no scripts leave the chapter short and fully formed',
   round37Css.includes('html.no-js .brand-chapter, html.no-js .brand-finale { height: auto; }')
   && round37Css.includes('.brand-chapter, .brand-finale { height: auto; }')
@@ -1547,18 +1547,18 @@ ok('it greets with the club\'s own name', navLayout.includes('Welcome to Club')
 ok('it opens on the front page only — never a pass, a check page or the club area',
   /\(\$route, \['home', 'index.php'\], true\)/.test(navLayout) && navLayout.includes('if ($splash):'));
 const splashCss = round37Css.slice(round37Css.indexOf('.splash {'));
-ok('it is a solid screen, not a see-through one',
-  /\.splash \{[^}]*background: #3d2a49/.test(round37Css));
-ok('the name sweeps in from the right and drifts on to the left',
-  /@keyframes splashIn \{ from \{ transform: translateX\(112vw\)/.test(round37Css)
-  && /@keyframes splashDrift \{ from \{ transform: translateX\(0\); \} to \{ transform: translateX\(-4vw\); \} \}/.test(round37Css));
+ok('it opens on a solid near-black screen',
+  /\.splash \{[^}]*background: #0b0b0d/.test(round37Css));
+ok('the seven splash circles automatically enter and join',
+  round37Css.includes('animation: splashJoin 1.35s')
+  && round37Css.includes('transform: translate(var(--rx), var(--ry))'));
 ok('it reveals the site on its own, with no JavaScript needed',
-  /\.splash \{[^}]*animation: splashAway \.45s ease 1\.75s forwards/.test(round37Css)
+  /\.splash \{[^}]*animation: splashAway \.7s cubic-bezier\(\.2,\.6,\.3,1\) 1\.85s forwards/.test(round37Css)
   && /@keyframes splashAway \{ to \{ opacity: 0; visibility: hidden; \} \}/.test(round37Css));
-ok('and it goes quickly: the name sweeps, settles, and the screen is gone',
-  /\.splash-name \{[^}]*animation: splashIn 1s cubic-bezier/.test(round37Css)
-  && /\.splash-copy \{[^}]*animation: splashDrift 2\.8s ease-in-out forwards/.test(round37Css)
-  && appJs.includes("splash.setAttribute('hidden', 'hidden'); }, 2600)"));
+ok('the entrance settles and hands off to the page and butterfly',
+  round37Css.includes('@keyframes openingReveal') && round37Css.includes('animation: splashNameSettle')
+  && appJs.includes("window.dispatchEvent(new CustomEvent('mt:intro-ready'))")
+  && appJs.includes('window.setTimeout(finish, 2800)'));
 ok('a tap, a key or a scroll sends it away at once',
   appJs.includes('function setupSplash()') && appJs.includes("splash.addEventListener('click', away)")
   && appJs.includes("window.addEventListener('keydown', away") && appJs.includes("window.addEventListener('wheel', away")
@@ -1617,13 +1617,13 @@ ok('all seven rings fit the expanded drawing even before gathering',
 
 ok('recorded closing name chapter uses a dark stage and violet strand graphic',
   mindPage.body.includes('class="brand-finale black-chapter"') && mindPage.body.includes('The Psychology Club')
-  && round37Css.includes('.brand-finale { position: relative; height: 220svh; background: transparent; }'));
+  && round37Css.includes('.brand-finale { height: 240svh; background: #0b0b0d; }'));
 ok('closing label and rounded name have generous spacing and sticky scroll time',
-  round37Css.includes('gap: clamp(90px, 18svh, 190px)')
+  round37Css.includes('gap: clamp(36px, 8svh, 95px)')
   && mindPage.body.includes('class="brand-finale-stage"') && mindPage.body.includes('class="brand-finale-intro"'));
 ok('rounded fonts are local and carry their open-font licenses',
-  ['fredoka-latin.woff2', 'quicksand-latin.woff2', 'Fredoka-OFL.txt', 'Quicksand-OFL.txt'].every(file => fs.existsSync(path.join(ROOT, 'assets/fonts', file)))
-  && round37Css.includes("font-family: 'MT Rounded', sans-serif; font-weight: 450"));
+  ['fredoka-latin.woff2', 'quicksand-latin.woff2', 'libre-baskerville-latin-italic.woff2', 'Fredoka-OFL.txt', 'Quicksand-OFL.txt', 'Libre-Baskerville-OFL.txt'].every(file => fs.existsSync(path.join(ROOT, 'assets/fonts', file)))
+  && round37Css.includes(".brand-band-track span { font-family: 'MT Geometric', sans-serif; font-weight: 300"));
 ok('header hairline is removed and butterfly sits above menu panel',
   round37Css.includes('.nav-wrap:after { display: none; }')
   && /\.nav-butterfly \{[^}]*z-index: 5/.test(round37Css));
@@ -1636,9 +1636,9 @@ ok('header hairline is removed and butterfly sits above menu panel',
   const controllerEnd = appJs.indexOf('/* -------------------------------------------------------- the front door */', controllerStart);
   const controller = appJs.slice(controllerStart, controllerEnd);
   let phase = 0;
-  const captured = { ring: [], turn: '', dark: false };
+  const captured = { ring: [], radius: [], turn: '', dark: false };
   const simulatedRings = Array.from({ length: 6 }, (_, i) => ({
-    style: {}, setAttribute: (key, value) => { captured.ring[i] = value; }
+    style: {}, setAttribute: (key, value) => { if (key === 'r') captured.radius[i] = value; else captured.ring[i] = value; }
   }));
   const callbacks = {};
   const chapterStub = { offsetHeight: 2400, getBoundingClientRect: () => ({ top: 84 - phase * 1684, bottom: 2484 - phase * 1684 }) };
@@ -1651,12 +1651,14 @@ ok('header hairline is removed and butterfly sits above menu panel',
     window: { innerWidth: 1440, innerHeight: 800, requestAnimationFrame: fn => fn(), addEventListener: (name, fn) => { callbacks[name] = fn; } }
   });
   const initial = captured.ring.join('|');
-  ok('scroll controller starts with separated rings', initial.includes('-170.00') && captured.turn.includes('0.00'));
-  phase = .58; callbacks.scroll();
+  ok('scroll controller starts with separated rings', initial.includes('-170.00') && captured.turn.includes('0.00') && captured.radius.every(r => r === '35.00'));
+  phase = .50; callbacks.scroll();
   ok('all six satellites join before rotation starts',
-    captured.ring.every(value => /translate\(-?0\.00 -?0\.00\)/.test(value)) && captured.turn === 'rotate(0.00 300 300)');
-  phase = .92; callbacks.scroll();
+    captured.ring.every(value => /translate\(-?0\.00 -?0\.00\)/.test(value)) && captured.turn === 'rotate(0.00 300 300)' && captured.radius.every(r => r === '100.00'));
+  phase = .80; callbacks.scroll();
   ok('after joining, the geometry turns through 120 degrees', captured.turn === 'rotate(120.00 300 300)');
+  phase = 1; callbacks.scroll();
+  ok('the ring flower contracts and rises gently at the end', turnStub.style.transform.includes('translateY(-26.00vh) scale(0.270)'));
   phase = 0; callbacks.scroll();
   ok('scrolling back restores the original geometry exactly', captured.ring.join('|') === initial && captured.dark);
   phase = 2; callbacks.scroll();
@@ -1668,15 +1670,16 @@ ok('recording is preserved in protected, non-deployed reference storage',
   fs.existsSync(path.join(ROOT, 'tools/references/superconscious-mobile-2026-10-15.mp4'))
   && fs.existsSync(path.join(ROOT, 'tools/references/README.md'))
   && !fs.existsSync(path.join(ROOT, 'screen-20261015-075423.mp4')));
-ok('splash and opening share the seven-circle mark',
+ok('splash keeps the seven-circle mark while the first-page emblem is unobstructed',
   navLayout.includes("mt_reference_rings(false, 'splash-rings')")
-  && round37Home.includes("mt_reference_rings(false, 'hero-rings')")
+  && !round37Home.includes('mt_reference_rings') && !mindPage.body.includes('hero-rings')
   && cardsSource.includes('$ring < 6'));
 ok('recorded inline icons roll beside the manifestation words',
   (mindPage.body.match(/<i class="mind-object /g) || []).length === 3
-  && round37Css.includes('@keyframes pillRoll') && round37Css.includes('font-family: Georgia, serif'));
+  && round37Css.includes('@keyframes wireRoll') && cardsSource.includes('class="wire-form"') && round37Css.includes("font-family: 'MT Serif', Georgia, serif"));
 ok('joined rings shrink and rise before the following heading',
-  appJs.includes('(progress - 0.72) / 0.28') && appJs.includes('1 - exit * 0.66'));
+  appJs.includes('(progress - 0.80) / 0.20') && appJs.includes('1 - exit * 0.55')
+  && round37Css.includes('.brand-chapter { height: 500svh; }'));
 ok('people alternate left and right on home and member directory',
   round37Css.includes('.team-card:nth-child(even), .member-cards .member-card:nth-child(even) { align-self: flex-end; }')
   && round37Css.includes('.team-grid, .member-cards { display: flex; flex-direction: column; gap: 70px; }'));
@@ -1685,10 +1688,88 @@ ok('gallery gradients and captions cannot intercept photo clicks',
 ok('portrait reveal and zoom have reduced-motion fallbacks',
   appJs.includes('function setupPortraits()') && appJs.includes('setupPortraits();')
   && round37Css.includes('@keyframes portraitPop') && round37Css.includes('@keyframes portraitBreathe'));
-ok('happiness chart explicitly says it is illustrative, not a club survey score',
-  mindPage.body.includes('Illustrative trend only — not measured club data.')
-  && mindPage.body.includes('No survey results or numerical score are represented.')
+ok('happiness chart expresses an aspiration without a visible disclaimer or invented scores',
+  !mindPage.body.includes('Illustrative trend only')
+  && mindPage.body.includes('our hope to grow happier through connection and community.')
   && mindPage.body.includes('id="happinessCurve"') && mindPage.body.includes('<animateMotion'));
+ok('manifestation uses five staggered rows and three fine wire objects',
+  round37Css.includes('.manifest-row:nth-child(4) { padding-left: 22%; }')
+  && (cardsSource.match(/mt_manifest_object\('/g) || []).length === 3
+  && cardsSource.includes('function mt_manifest_object('));
+ok('wave contours fade at both ends instead of meeting a hard canvas edge',
+  cardsSource.includes('linearGradient') && cardsSource.includes('stop-opacity="0"')
+  && (mindPage.body.match(/class="blue-waves"/g) || []).length === 1
+  && cardsSource.includes("$ink = 'wave-ink-' . ++$wave")
+  && round37Css.includes('inset: 0; width: 100%; height: 100%; left: 0; overflow: visible;'));
+/* Splash exits are idempotent: animation, deliberate skip, fallback and
+   reduced-motion all notify the waiting butterfly exactly once. */
+{
+  const { runInNewContext } = await import('node:vm');
+  const begin = appJs.indexOf('function setupSplash()');
+  const end = appJs.indexOf('function setupButterfly()', begin);
+  for (const mode of ['animation', 'skip', 'fallback', 'reduced', 'no-splash']) {
+    const classes = new Set(), handlers = {}, timers = {};
+    let notifications = 0;
+    const classList = { add: name => classes.add(name), remove: name => classes.delete(name), contains: name => classes.has(name) };
+    const splash = { hidden: false, classList, addEventListener: (name, fn) => { handlers[name] = fn; } };
+    runInNewContext(appJs.slice(begin, end) + '\nsetupSplash();', {
+      $: () => mode === 'no-splash' ? null : splash,
+      reduced: () => mode === 'reduced', CustomEvent: class { constructor(type) { this.type = type; } },
+      document: { body: { classList } },
+      window: {
+        dispatchEvent: event => { if (event.type === 'mt:intro-ready') notifications++; },
+        addEventListener: (name, fn) => { handlers[name] = fn; },
+        setTimeout: (fn, ms) => { timers[ms] = fn; }
+      }
+    });
+    if (mode === 'animation') {
+      handlers.animationend({ target: splash, animationName: 'splashAway' });
+      timers[2800]();
+    } else if (mode === 'skip') {
+      handlers.click(); timers[650](); handlers.keydown(); timers[2800]();
+    } else if (mode === 'fallback') timers[2800]();
+    ok('splash exits once via ' + mode + ' and reveals the site',
+      notifications === 1 && !classes.has('intro-pending') && classes.has('intro-revealed')
+      && (mode === 'no-splash' || splash.hidden));
+  }
+}
+/* Execute the actual butterfly controller, including post-intro entry,
+   scroll-speed handoff and the reduced-motion branch. */
+{
+  const { runInNewContext } = await import('node:vm');
+  const begin = appJs.indexOf('function setupButterfly()');
+  const end = appJs.indexOf('/* Two fast-start encodes;', begin);
+  const source = appJs.slice(begin, end);
+  for (const lowMotion of [false, true]) {
+    const events = {}, timers = {}, classes = new Set();
+    let animations = 0, flightFrames;
+    const butterfly = {
+      classList: { add: name => classes.add(name) },
+      getBoundingClientRect: () => ({ left: 180, top: 20 }),
+      animate: frames => { animations++; flightFrames = frames; return { cancel() {} }; }
+    };
+    runInNewContext(source + '\nsetupButterfly();', {
+      $: () => butterfly, reduced: () => lowMotion,
+      document: { body: { classList: { add: name => classes.add(name), remove: name => classes.delete(name) } } },
+      window: { innerWidth: 390, innerHeight: 844,
+        addEventListener: (name, fn) => { events[name] = fn; },
+        setTimeout: (fn, ms) => { timers[ms] = fn; return ms; }, clearTimeout() {} }
+    });
+    ok('butterfly waits for the splash before landing' + (lowMotion ? ' (reduced motion)' : ''), !classes.has('butterfly-arrived'));
+    events['mt:intro-ready']();
+    ok('butterfly lands' + (lowMotion ? ' without flight for reduced motion' : ' from outside the viewport'),
+      classes.has('butterfly-arrived') && animations === (lowMotion ? 0 : 1)
+      && (lowMotion || flightFrames[0].transform.includes('310px')));
+    if (!lowMotion) {
+      events.scroll();
+      ok('scrolling increases flutter speed', classes.has('butterfly-scrolling') && round37Css.includes('animation-duration: .26s'));
+      timers[200]();
+      ok('flutter returns to its resting rhythm after scrolling stops', !classes.has('butterfly-scrolling'));
+      events['mt:intro-ready'](); timers[5000]();
+      ok('a repeated intro or fallback cannot replay the butterfly entry', animations === 1);
+    } else ok('reduced motion does not register a scroll-animation listener', !events.scroll);
+  }
+}
 {
   const { runInNewContext } = await import('node:vm');
   const startVideo = appJs.indexOf('function setupHeroVideo()');

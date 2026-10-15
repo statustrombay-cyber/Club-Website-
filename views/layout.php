@@ -68,12 +68,9 @@ $nav = [
 </head>
 <body class="<?= e($bodyClass) ?>">
 
-  <?php /* The club's own front door. The name sweeps in from the right, settles,
-           drifts slowly to the left, and the solid screen lifts away to reveal
-           the site. It is pure decoration: it is skipped entirely for anyone who
-           asks for less motion, it goes away on its own without JavaScript, and
-           any tap or key press skips it straight away. It belongs to the front
-           page only — never to the club area, a pass or a check page. */ ?>
+  <?php /* The seven circles assemble automatically, then the veil dissolves.
+           CSS also dismisses it without JavaScript. Motion preferences and
+           deliberate skips are respected; only the front page has a splash. */ ?>
   <?php if ($splash): ?>
     <div class="splash" id="splash" aria-hidden="true">
       <div class="splash-copy">

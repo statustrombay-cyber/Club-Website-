@@ -1408,6 +1408,7 @@ html.photo-frame-open { overflow: hidden; }
 }
 
 /* Rounded local fonts and violet interludes, confined to the experiment. */
+@font-face { font-family: 'MT Serif'; src: url('/assets/fonts/libre-baskerville-latin-italic.woff2') format('woff2'); font-weight: 400; font-style: italic; font-display: swap; }
 @font-face { font-family: 'MT Rounded'; src: url('/assets/fonts/fredoka-latin.woff2') format('woff2'); font-weight: 300 700; font-display: swap; }
 @font-face { font-family: 'MT Geometric'; src: url('/assets/fonts/quicksand-latin.woff2') format('woff2'); font-weight: 300 700; font-display: swap; }
 .black-chapter { position: relative; isolation: isolate; color: #f5f2ff; background: #100e1c; }
@@ -1444,7 +1445,7 @@ html.photo-frame-open { overflow: hidden; }
 .object-prism { width: clamp(40px, 7vw, 90px); aspect-ratio: 1; bottom: 12%; right: 12%; border-radius: 34% 66% 46% 54% / 54% 32% 68% 46%; background: radial-gradient(circle at 28% 25%, #d6ccff, #7660ba 38%, #29203f 70%); box-shadow: inset -4px -6px 16px #140c29, 2px 6px 20px #0c071d; animation-delay: -3s; }
 .object-sphere { width: clamp(26px, 4vw, 50px); aspect-ratio: 1; top: 18%; right: 16%; border-radius: 50%; background: radial-gradient(circle at 30% 25%, #e4daff, #8d72cc 35%, #2d1e4f 75%); box-shadow: 3px 4px 15px #0c071d; animation-delay: -5s; }
 @keyframes objectDrift { to { translate: 12px -24px; rotate: 35deg; } }
-/* One horse-backed, unboxed closing name. Enough scrolling room on all screens. */
+/* One unboxed closing name with its own quiet, scroll-held stage. */
 .brand-finale { position: relative; height: 220svh; background: transparent; }
 .brand-finale-stage { position: sticky; top: 84px; min-height: calc(100svh - 84px); display: flex; flex-direction: column; justify-content: center; gap: clamp(90px, 18svh, 190px); padding: 40px 0; overflow: hidden; }
 .brand-finale-intro { margin: 0; padding: 0 24px; text-align: center; font-family: 'MT Geometric', sans-serif; color: #fff7ff; text-shadow: 0 2px 8px #281c36, 0 0 24px #281c36; font-size: clamp(1rem, 2vw, 1.65rem); letter-spacing: -.025em; }
@@ -1467,23 +1468,16 @@ html.no-js .brand-chapter-stage, html.no-js .brand-finale-stage { position: rela
   .brand-chapter-stage, .brand-finale-stage { position: relative; top: auto; min-height: 80svh; height: auto; padding: 48px 0; }
 }
 
-/* ==========================================================================
-   The front door — "Welcome to Club Mindful Tattva"
-   --------------------------------------------------------------------------
-   A solid plum screen. The club's name sweeps in from the right, settles, and
-   drifts slowly on to the left, then the solid screen lifts away and the site
-   is there. Nothing here waits on JavaScript: the screen takes itself away on a
-   timer, and any tap or key press sends it away at once. Anyone who asks for
-   less motion never sees it at all.
-   ========================================================================== */
+/* Front door: assemble the circles, settle, then dissolve into the page.
+   There is an independent CSS exit and a reduced-motion bypass. */
 .splash {
   position: fixed; inset: 0; z-index: 300;
   display: grid; place-items: center; text-align: center;
-  background: #3d2a49;
-  background-image: radial-gradient(circle at 50% 42%, rgba(224,169,78,.22), rgba(61,42,73,0) 58%);
-  animation: splashAway .45s ease 1.75s forwards;
+  background: #0b0b0d;
+  background-image: radial-gradient(ellipse at center, #1b1722 0%, transparent 65%);
+  animation: splashAway .7s cubic-bezier(.2,.6,.3,1) 1.85s forwards;
 }
-.splash-copy { display: grid; gap: 12px; padding: 0 6vw; animation: splashDrift 2.8s ease-in-out forwards; }
+.splash-copy { display: grid; gap: 10px; padding: 0 6vw; animation: none; }
 .splash-welcome {
   color: rgba(255,248,238,.72); font-size: clamp(.82rem, 1.6vw, 1.05rem);
   font-weight: 800; letter-spacing: .34em; text-transform: uppercase;
@@ -1492,11 +1486,9 @@ html.no-js .brand-chapter-stage, html.no-js .brand-finale-stage { position: rela
   font-family: var(--font-display); font-weight: 700; line-height: .98;
   font-size: clamp(2.6rem, 9vw, 7rem); white-space: nowrap;
   color: #fff8ee; text-shadow: 0 6px 40px rgba(0,0,0,.35);
-  animation: splashIn 1s cubic-bezier(.16,.84,.28,1) both;
+  animation: splashNameSettle 1s ease .5s both;
 }
 .splash.is-done { opacity: 0; visibility: hidden; transition: opacity .4s ease, visibility 0s linear .4s; }
-@keyframes splashIn { from { transform: translateX(112vw); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-@keyframes splashDrift { from { transform: translateX(0); } to { transform: translateX(-4vw); } }
 @keyframes splashAway { to { opacity: 0; visibility: hidden; } }
 @media (prefers-reduced-motion: reduce) { .splash { display: none; } }
 /* Once the screen has done its work it is gone for good, not merely unseen. */
@@ -1552,8 +1544,7 @@ html.no-js .brand-chapter-stage, html.no-js .brand-finale-stage { position: rela
 .reference-name { margin: 0; font-family: 'MT Geometric', sans-serif; font-size: clamp(2.5rem, 8vw, 8rem); line-height: 1.1; font-weight: 400; letter-spacing: -.07em; text-transform: lowercase; }
 .reference-subtitle { margin: 16px auto 0; max-width: 660px; color: #f0e8ff; font-size: clamp(.8rem, 1.3vw, 1.1rem); }
 .reference-emblem { position: relative; width: min(66vw, 330px); aspect-ratio: 1; margin: 32px auto; display: grid; place-items: center; }
-.reference-emblem img { width: 63%; height: 63%; object-fit: contain; border-radius: 50%; box-shadow: 0 0 60px #9173db66; }
-.reference-emblem .reference-rings { position: absolute; width: 130%; height: 130%; animation: openingOrbit 38s linear infinite; }
+.reference-emblem img { width: 100%; height: 100%; border-radius: 0; box-shadow: none; object-fit: contain; }
 .reference-stars { position: absolute; inset: 0; pointer-events: none; opacity: .4; background-image: radial-gradient(circle, #e7ddff 0 1px, transparent 1.5px), radial-gradient(circle, #a79bc8 0 1px, transparent 1.5px); background-size: 81px 97px, 143px 127px; background-position: 8px 21px, 48px 62px; }
 .reference-tagline { margin: 20px auto 12px; font-family: 'MT Geometric', sans-serif; font-size: clamp(1.3rem, 2.5vw, 2rem); font-weight: 400; }
 .reference-hero .hero-copy { color: #d7cdea; max-width: 650px; margin: 0 auto; }
@@ -1562,30 +1553,23 @@ html.no-js .brand-chapter-stage, html.no-js .brand-finale-stage { position: rela
 .reference-hero .hero-meta span { color: #beb4ce; }
 .reference-hero .outline-button { color: #f7f2ff; border-color: #9b8fb5; }
 .reference-hero .solid-button { background: #f8f5ff; color: #211b32; }
-@keyframes openingOrbit { to { transform: rotate(360deg); } }
 .reference-rings { display: block; overflow: visible; }
 .reference-rings circle { fill: none; stroke: #ece7f5; stroke-width: 1.4; }
 .black-chapter { background: #0b0b0d; color: #f5f3f7; }
 .brand-chapter-stage, .manifest-chapter { background: radial-gradient(ellipse at 50% 50%, #211f27 0%, #0b0b0d 66%); }
 .brand-chapter-stage .blue-waves, .manifest-chapter > .blue-waves { display: none; }
-.brand-chapter { height: 330svh; }
 .brand-rings circle, .brand-rings circle:nth-child(even), .brand-rings circle:first-child { stroke: #ebe7f0; stroke-width: 1.2; }
 .brand-rings { will-change: transform; }
 .manifest-chapter { min-height: 110svh; padding: 100px 24px 130px; }
 .manifest-chapter h2 { width: min(760px, 100%); font-weight: 400; font-size: clamp(2.7rem, 6.5vw, 6.5rem); text-align: left; line-height: 1.18; letter-spacing: -.055em; }
 .manifest-chapter .manifest-row { display: flex; align-items: center; gap: .18em; margin: .08em 0; }
-.manifest-chapter h2 em { display: inline; font-family: Georgia, serif; color: #a29aa9; font-style: italic; font-weight: 400; margin: 0; }
+.manifest-chapter h2 em { display: inline; font-family: 'MT Serif', Georgia, serif; color: #a29aa9; font-style: italic; font-weight: 400; margin: 0; }
 .manifest-chapter .mind-object { position: relative; inset: auto; display: inline-grid; place-items: center; width: 1.5em; height: .9em; border: 1px solid #716a7c; border-radius: .35em; background: none; box-shadow: none; transform: none; animation: none; aspect-ratio: auto; flex-shrink: 0; }
-.mind-object b { display: block; width: .55em; height: .55em; border: 1px solid #c5bdd2; border-radius: 50%; animation: pillRoll 5s linear infinite; }
-.object-orbit b:after, .object-sphere b:after { content: ''; position: absolute; inset: -.12em .08em; border: 1px solid #a79cb7; border-radius: 50%; transform: rotate(55deg); }
-.object-prism b { border-radius: 20%; transform: rotate(25deg); animation-duration: 6s; }
-.object-sphere b { border-radius: 30%; animation-duration: 7s; }
-@keyframes pillRoll { to { transform: rotate(360deg); } }
 .brand-finale { height: 240svh; background: #0b0b0d; }
 .brand-finale-stage { isolation: isolate; height: calc(100svh - 84px); min-height: 0; gap: clamp(32px, 9svh, 100px); padding: 60px 0; }
 .brand-finale-stage .blue-waves { inset: 8% 0; height: 84%; width: 100%; color: #8463df; opacity: .72; }
 .brand-finale-intro { color: #eee9f5; text-shadow: none; font-size: clamp(1.05rem, 2vw, 1.8rem); }
-.brand-band-track span { font-family: 'MT Geometric', sans-serif; font-weight: 400; font-size: clamp(6rem, 16vw, 19rem); letter-spacing: -.065em; color: #fbf8ff; text-shadow: none; text-transform: lowercase; }
+.brand-band-track span { font-family: 'MT Geometric', sans-serif; font-weight: 300; font-size: clamp(6rem, 16vw, 19rem); letter-spacing: -.065em; color: #fbf8ff; text-shadow: none; text-transform: lowercase; }
 .brand-band { padding: 10px 0 30px; }
 body.is-black-chapter .nav-wrap, body.is-black-chapter .nav-wrap:before, body.is-black-chapter .nav:before, body.is-black-chapter .nav-links.open { background: #0b0b0d; }
 .splash { background: #0b0b0d; background-image: radial-gradient(ellipse at center, #20182f, transparent 65%); }
@@ -1612,7 +1596,6 @@ body.is-black-chapter .nav-wrap, body.is-black-chapter .nav-wrap:before, body.is
 .gallery-item .portrait-badge, .archive-card .portrait-badge { top: 14px; right: 14px; width: 42px; height: 42px; }
 .happiness-section { display: grid; grid-template-columns: 1fr 1fr; gap: 50px; padding: 90px max(24px, calc((100vw - 1160px)/2)); align-items: center; }
 .happiness-copy h2 { margin: 10px 0 20px; font-size: clamp(2rem,4vw,3.5rem); font-family: 'MT Geometric',sans-serif; letter-spacing: -.05em; }
-.happiness-copy small { display: block; color: var(--ink-soft); font-size: .78rem; }
 .happiness-chart { background: #19171e; padding: 24px; border: 1px solid #62566f; border-radius: 24px; }
 .happiness-chart svg { display: block; width: 100%; height: auto; }
 .chart-grid { fill: none; stroke: #41394a; stroke-width: 1; }
@@ -1628,7 +1611,7 @@ body.is-black-chapter .nav-wrap, body.is-black-chapter .nav-wrap:before, body.is
   .happiness-section { grid-template-columns: 1fr; gap: 25px; padding: 65px 24px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .reference-emblem .reference-rings, .splash-rings circle, .mind-object b, .portrait-badge, .photo-in-view .team-avatar, .photo-in-view .member-photo,
+  .splash-rings circle, .wire-form, .portrait-badge, .photo-in-view .team-avatar, .photo-in-view .member-photo,
   .photo-in-view .gallery-visual:after, .photo-in-view .archive-image:after, .photo-in-view .gallery-stage-image:after { animation: none; }
   .happiness-dot { display: none; }
   .brand-chapter, .brand-finale { height: auto; }
@@ -1647,3 +1630,53 @@ body.is-black-chapter .nav-wrap, body.is-black-chapter .nav-wrap:before, body.is
 @media (prefers-reduced-motion: reduce) { .photo-in-view .portrait-badge { animation: none; } }
 /* Decorative caption gradients must never swallow photo/lightbox clicks. */
 .archive-card:after, .archive-caption, .gallery-item:after, .gallery-caption { pointer-events: none; }
+
+/* Flow refinement from the saved recording: a compact white ring mark, a
+   staggered word composition, and a wave which fades rather than ends in a box. */
+.reference-emblem img { width: 100%; height: 100%; border-radius: 0; box-shadow: none; object-fit: contain; }
+.brand-chapter { height: 500svh; }
+.brand-rings { width: min(90vw, 82svh, 900px); }
+.manifest-chapter { padding: 100px 6vw 120px; }
+.manifest-chapter h2 { width: min(860px, 100%); display: flex; flex-direction: column; gap: .3em; letter-spacing: -.015em; font-size: clamp(3.6rem, 7vw, 6.5rem); }
+.manifest-chapter .manifest-row { margin: 0; gap: .3em; line-height: 1.18; }
+.manifest-row:nth-child(1) { justify-content: center; }
+.manifest-row:nth-child(2) { justify-content: flex-start; }
+.manifest-row:nth-child(3), .manifest-row:nth-child(5) { justify-content: flex-end; padding-right: 3%; }
+.manifest-row:nth-child(4) { padding-left: 22%; }
+.manifest-chapter .mind-object { width: 1.7em; height: 1.16em; border-radius: .42em; color: #b5aabd; overflow: hidden; }
+.mind-object svg { width: 90%; height: 90%; overflow: visible; }
+.wire-form { transform-origin: 50px 40px; animation: wireRoll 7s linear infinite; }
+.object-prism .wire-form { animation-duration: 9s; }
+.object-sphere .wire-form { animation-duration: 11s; }
+@keyframes wireRoll { to { transform: rotate(360deg); } }
+.brand-finale-stage .blue-waves { inset: 0; width: 100%; height: 100%; left: 0; overflow: visible; filter: drop-shadow(0 0 4px rgba(115,80,211,.3)); }
+.brand-finale-stage .blue-waves g { animation: waveSway 18s ease-in-out infinite alternate; }
+.brand-finale-stage { gap: clamp(36px, 8svh, 95px); }
+.splash { background: #0b0b0d; background-image: radial-gradient(ellipse at center, #1b1722 0%, transparent 65%); animation: splashAway .7s cubic-bezier(.2,.6,.3,1) 1.85s forwards; }
+.splash-copy { animation: none; gap: 10px; }
+.splash-rings { width: clamp(105px, 20vw, 175px); margin-bottom: 12px; }
+.splash-rings circle:not(:first-child) { animation: splashJoin 1.35s cubic-bezier(.2,.7,.3,1) both; }
+.splash-name { animation: splashNameSettle 1s ease .5s both; white-space: normal; font-size: clamp(2rem, 8vw, 6rem); }
+.splash-welcome { font-size: clamp(.65rem, 1.2vw, .9rem); letter-spacing: .24em; animation: splashNameSettle .9s ease .3s both; }
+.splash.is-done { animation: none; opacity: 0; visibility: hidden; transition: opacity .6s ease, visibility 0s linear .6s; }
+@keyframes splashNameSettle { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+body.intro-pending .reference-opening { opacity: 0; transform: translateY(20px); }
+body.intro-revealed .reference-opening { animation: openingReveal 1s cubic-bezier(.2,.7,.3,1) both; }
+@keyframes openingReveal { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+html.js .nav-butterfly { opacity: 0; }
+html.js .nav-butterfly.butterfly-arrived { opacity: 1; }
+body.butterfly-scrolling .wing-left, body.butterfly-scrolling .wing-right { animation-duration: .26s; }
+@media (max-width: 600px) {
+  .manifest-chapter h2 { font-size: clamp(2.3rem, 13.2vw, 4.7rem); }
+  .manifest-chapter { padding: 100px 6vw 120px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .brand-chapter { height: auto; }
+  .splash { display: none; }
+  .wire-form, body.intro-revealed .reference-opening { animation: none; }
+  body.intro-pending .reference-opening { opacity: 1; transform: none; }
+  html.js .nav-butterfly { opacity: 1; }
+}
+
+.manifest-chapter h2 em { font-size: .9em; color: #89818e; }
+.manifest-chapter .object-sphere { border-color: #7162a2; }

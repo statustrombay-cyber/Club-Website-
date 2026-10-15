@@ -165,18 +165,27 @@ function mt_portrait_badge(): string
     return '<span class="portrait-badge" aria-hidden="true">' . mt_reference_rings() . '</span>';
 }
 
-/** Concentrated violet flowing strands from the recording's closing scene. */
+/** Complete flowing field: the ink fades before its canvas boundary. */
 function mt_blue_waves(): string
 {
+    static $wave = 0;
+    $ink = 'wave-ink-' . ++$wave;
     ob_start(); ?>
-    <svg class="blue-waves" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false">
-      <g fill="none" stroke="currentColor" stroke-width="1.7">
-        <?php for ($strand = -18; $strand <= 18; $strand++):
+    <svg class="blue-waves" viewBox="0 0 1000 1200" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false">
+      <defs><linearGradient id="<?= e($ink) ?>" x1="0" y1="0" x2="0" y2="1">
+        <stop stop-color="#7564a8" stop-opacity="0"/>
+        <stop offset=".22" stop-color="#7350d3" stop-opacity=".65"/>
+        <stop offset=".5" stop-color="#9875ff"/>
+        <stop offset=".78" stop-color="#7350d3" stop-opacity=".65"/>
+        <stop offset="1" stop-color="#7564a8" stop-opacity="0"/>
+      </linearGradient></defs>
+      <g fill="none" stroke="url(#<?= e($ink) ?>)" stroke-width="1.8">
+        <?php for ($strand = -20; $strand <= 20; $strand++):
             $points = [];
-            for ($step = 0; $step <= 80; $step++) {
-                $y = $step * 15 - 100;
-                $spread = $strand * 18;
-                $x = 800 + $spread + sin($y * .008 + $strand * .12) * 155 + sin($y * .013) * 90;
+            for ($step = 0; $step <= 100; $step++) {
+                $y = $step * 12;
+                $spread = $strand * 12;
+                $x = 500 + $spread + sin($y * .006 + $strand * .10) * 135 + sin($y * .010) * 60;
                 $points[] = ($step === 0 ? 'M' : 'L') . round($x, 2) . ' ' . $y;
             } ?>
         <path d="<?= e(implode(' ', $points)) ?>"/>
@@ -186,24 +195,61 @@ function mt_blue_waves(): string
     <?php return (string) ob_get_clean();
 }
 
+/** Fine wire objects inside the three word-side capsules in the reference. */
+function mt_manifest_object(string $type): string
+{
+    ob_start(); ?>
+    <i class="mind-object object-<?= e($type) ?>" aria-hidden="true"><svg viewBox="0 0 100 80" focusable="false"><g class="wire-form" fill="none" stroke="currentColor" stroke-width=".6">
+      <?php if ($type === 'orbit'): ?>
+        <?php /* A projected trefoil, traced in fine neighbouring filaments. */
+        for ($line = 0; $line < 16; $line++):
+            $points = [];
+            $phase = $line * M_PI / 8;
+            for ($step = 0; $step <= 120; $step++) {
+                $t = $step * M_PI / 60;
+                $radius = 2 + .65 * cos(3 * $t) + .11 * cos($phase);
+                $x = $radius * cos(2 * $t);
+                $y = $radius * sin(2 * $t);
+                $z = sin(3 * $t) + .17 * sin($phase);
+                $points[] = ($step === 0 ? 'M' : 'L') . round(50 + ($x * .8 + $z * .6) * 10, 2) . ' ' . round(40 + ($y * .75 - $z * .5) * 10, 2);
+            } ?>
+          <path d="<?= e(implode(' ', $points)) ?>"/>
+        <?php endfor; ?>
+      <?php elseif ($type === 'prism'): ?>
+        <?php /* Two tilted wire tori, not a flat circular symbol. */
+        foreach ([[62, 27], [38, 53]] as [$cx, $cy]):
+            for ($line = 0; $line < 14; $line++):
+                $phase = $line * M_PI / 7; ?>
+          <ellipse cx="<?= $cx ?>" cy="<?= round($cy + 3 * sin($phase), 2) ?>" rx="<?= round(15 + 3 * cos($phase), 2) ?>" ry="<?= round(8 + 2 * cos($phase), 2) ?>" transform="rotate(32 <?= $cx ?> <?= $cy ?>)"/>
+        <?php endfor; endforeach; ?>
+      <?php else: ?>
+        <?php for ($line = 0; $line < 12; $line++): ?>
+          <ellipse cx="50" cy="40" rx="<?= 3 + $line * 1.5 ?>" ry="26" transform="rotate(18 50 40)"/>
+        <?php endfor; ?>
+        <?php for ($line = 0; $line < 3; $line++): ?>
+          <ellipse cx="50" cy="40" rx="29" ry="11" transform="rotate(<?= $line * 60 ?> 50 40)"/>
+        <?php endfor; ?>
+      <?php endif; ?>
+    </g></svg></i>
+    <?php return (string) ob_get_clean();
+}
+
 /** Rings have their own full-screen chapter; no name or scroll instruction. */
 function mt_brand_chapter(string $name): string
 {
     ob_start(); ?>
   <section class="brand-chapter black-chapter" aria-label="Seven connected rings">
     <div class="brand-chapter-stage">
-      <?= mt_blue_waves() ?>
       <?= mt_reference_rings(true, 'brand-rings') ?>
     </div>
   </section>
   <section class="manifest-chapter black-chapter" aria-labelledby="manifestHeading">
-    <?= mt_blue_waves() ?>
     <h2 id="manifestHeading">
       <span class="manifest-row">Control Your</span>
-      <span class="manifest-row">Mind <i class="mind-object object-orbit" aria-hidden="true"><b></b></i></span>
-      <span class="manifest-row"><i class="mind-object object-prism" aria-hidden="true"><b></b></i> <em>Manifest</em></span>
+      <span class="manifest-row">Mind <?= mt_manifest_object('orbit') ?></span>
+      <span class="manifest-row"><?= mt_manifest_object('prism') ?> <em>Manifest</em></span>
       <span class="manifest-row">Your</span>
-      <span class="manifest-row"><i class="mind-object object-sphere" aria-hidden="true"><b></b></i> Reality</span>
+      <span class="manifest-row"><?= mt_manifest_object('sphere') ?> Reality</span>
     </h2>
   </section>
     <?php return (string) ob_get_clean();
