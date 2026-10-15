@@ -142,6 +142,30 @@ function mt_brand_band(string $name): string
     return (string) ob_get_clean();
 }
 
+/** Experimental, reversible full-viewport chapter between Mind and Details. */
+function mt_brand_chapter(string $name): string
+{
+    ob_start(); ?>
+  <section class="brand-chapter" aria-label="<?= e($name) ?> — connected minds">
+    <div class="brand-chapter-stage">
+      <?= mt_brand_band($name) ?>
+      <svg class="brand-rings" viewBox="0 0 600 600" aria-hidden="true" focusable="false">
+        <g class="brand-ring-turn">
+          <circle cx="300" cy="300" r="100"/>
+          <?php for ($ring = 0; $ring < 6; $ring++):
+              $angle = deg2rad($ring * 60 - 90);
+              $x = 300 + 100 * cos($angle);
+              $y = 300 + 100 * sin($angle); ?>
+          <circle data-ring="<?= $ring ?>" cx="<?= round($x, 3) ?>" cy="<?= round($y, 3) ?>" r="100"/>
+          <?php endfor; ?>
+        </g>
+      </svg>
+      <p class="brand-scroll-hint">Scroll to connect · continue to discover</p>
+    </div>
+  </section>
+    <?php return (string) ob_get_clean();
+}
+
 /** A core team card on the home page. */
 function mt_team_card(array $member): string
 {

@@ -142,7 +142,7 @@ $clubWords = ['mind', 'body', 'connection', 'curiosity', 'growth', 'community', 
   </div>
 </section>
 
-<?= mt_brand_band((string) ($site['clubName'] ?? 'Mindful Tattva')) ?>
+<?= mt_brand_chapter((string) ($site['clubName'] ?? 'Mindful Tattva')) ?>
 
 <section class="section details-section" id="details">
   <div class="container">

@@ -418,48 +418,38 @@
     }, 45000);
   }
 
-  /* --------------------------------------------- the club's name, running */
-  /* Big white words sweeping from the left across the page, always moving.
-     The loop never jumps back to the start in view: the words travel until the
-     screen has gone dark, and only then is the track put back where it began —
-     and because the two halves are identical, that hand-over cannot be seen.
-     Nothing else writes a transform on these tracks, so they belong to this
-     loop alone. */
+  /* Scroll chapter: gather six satellites around one centre, then turn.
+     Native sticky layout releases the next section; no scroll hijacking. */
   function setupBrandBand() {
-    const tracks = $$('.brand-band-track');
-    if (!tracks.length || reduced()) return;
-
-    const SPEED = 115;                 // pixels a second: quick, still readable
-    const bands = tracks.map(function (track) {
-      const half = Math.max(1, track.scrollWidth / 2);
-      track.style.transform = 'translateX(' + (-half) + 'px)';
-      return { track: track, half: half, offset: -half };
-    });
-    const measure = function () {
-      bands.forEach(function (band) { band.half = Math.max(1, band.track.scrollWidth / 2); });
+    const chapter = $('.brand-chapter');
+    if (!chapter || reduced()) return;
+    const rings = $$('[data-ring]', chapter);
+    const turn = $('.brand-ring-turn', chapter);
+    let scheduled = false;
+    const clamp = function (n) { return Math.max(0, Math.min(1, n)); };
+    const paint = function () {
+      scheduled = false;
+      const box = chapter.getBoundingClientRect();
+      const top = window.innerWidth <= 860 ? 68 : 84;
+      const travel = Math.max(1, chapter.offsetHeight - (window.innerHeight - top));
+      const progress = clamp((top - box.top) / travel);
+      const gather = clamp(progress / 0.58);
+      const ease = gather * gather * (3 - 2 * gather);
+      rings.forEach(function (ring, i) {
+        const angle = (i * 60 - 90) * Math.PI / 180;
+        const spread = 170 * (1 - ease);
+        ring.setAttribute('transform', 'translate(' + (Math.cos(angle) * spread).toFixed(2) + ' ' + (Math.sin(angle) * spread).toFixed(2) + ')');
+        ring.style.opacity = String(0.12 + ease * 0.73);
+      });
+      const rotation = clamp((progress - 0.58) / 0.34) * 120;
+      turn.setAttribute('transform', 'rotate(' + rotation.toFixed(2) + ' 300 300)');
     };
-    window.addEventListener('resize', measure);
-    if (document.fonts && document.fonts.ready) {
-      document.fonts.ready.then(measure).catch(function () { /* the fallback face will do */ });
-    }
-
-    let previous = performance.now();
-    const step = function (now) {
-      const elapsed = Math.min(0.08, (now - previous) / 1000);
-      previous = now;
-      if (!document.hidden) {
-        bands.forEach(function (band) {
-          band.offset += SPEED * elapsed;          // left → right
-          while (band.offset >= 0) {               // out of sight? hand over
-            band.offset -= band.half;
-            measure();
-          }
-          band.track.style.transform = 'translateX(' + band.offset.toFixed(2) + 'px)';
-        });
-      }
-      window.requestAnimationFrame(step);
+    const schedule = function () {
+      if (!scheduled) { scheduled = true; window.requestAnimationFrame(paint); }
     };
-    window.requestAnimationFrame(step);
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule);
+    paint();
   }
 
   /* -------------------------------------------------------- the front door */

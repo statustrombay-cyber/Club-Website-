@@ -1325,11 +1325,15 @@ html.photo-frame-open { overflow: hidden; }
   .nav-links { max-height: calc(100vh - 150px); overflow-y: auto; }
   .nav-links a { display: block; padding: 12px 6px; font-size: .95rem; border-bottom: 1px solid rgba(78,49,85,.09); }
   .nav-links a:last-child { border-bottom: 0; }
-  /* In the stacked menu every row is a row: the Mind doorway keeps its own
-     colour and its gold mark, sits the same width as its neighbours, and holds
-     still — a row that hopped would read as a fault, not a welcome. */
-  .nav-links a.nav-lens { display: block; animation: none; }
-  .nav-links a.nav-lens:before { display: inline-block; vertical-align: middle; margin-right: 9px; }
+  /* Match the other hamburger links exactly; desktop keeps its visible chip. */
+  .nav-links a.nav-lens {
+    display: block; padding: 12px 6px; border-radius: 0;
+    border: 0; border-bottom: 1px solid rgba(78,49,85,.09);
+    color: inherit; font-weight: inherit; background: none;
+    box-shadow: none; text-shadow: none; animation: none; transform: none;
+  }
+  .nav-links a.nav-lens:before { display: none; }
+  .nav-links a.nav-lens:hover { color: var(--terracotta-ink); background: none; }
   .nav-links .nav-action { margin-top: 10px; border-bottom: 0; }
   .menu-button { font-size: 1.6rem; line-height: 1; padding: 8px 6px; }
 }
@@ -1415,30 +1419,40 @@ html.photo-frame-open { overflow: hidden; }
    No card, no pane, no lamps: only the club's name, big and bold in solid
    white, drifting across the page for ever. The letters carry a soft dark halo
    so white reads over paper, over the herd and over the dark blocks alike.
-   The track holds two identical halves; the movement is a transform, not a
-   stylesheet animation, so the words are never pulled back to the left to
-   start again — they simply keep coming, and the band is quick about it. If
-   scripts are off, the stylesheet's own fallback moves it the same way.
+   Two equal halves slide right to left with a native CSS transform animation.
+   The sticky chapter uses ordinary document scroll and is easy to revert.
    ========================================================================== */
 .brand-band { position: relative; overflow: hidden; padding: 26px 0; pointer-events: none; }
-.brand-band-track {
-  display: flex; width: max-content; will-change: transform;
-  transform: translateX(0);
-}
+.brand-band-track { display: flex; width: max-content; will-change: transform; animation: brandRun 28s linear infinite; }
 .brand-band-track span {
   display: block; padding-right: max(40px, 9vw); white-space: nowrap;
-  font-family: var(--font-display); font-weight: 700; letter-spacing: -.01em;
-  font-size: clamp(3rem, 10.5vw, 8.5rem); line-height: 1;
-  color: #fff;
-  text-shadow: 0 2px 18px rgba(58,34,48,.5), 0 0 60px rgba(58,34,48,.32);
+  font-family: var(--font-display); font-weight: 700; letter-spacing: -.045em;
+  font-size: clamp(5rem, 18vw, 19rem); line-height: 1.08;
+  color: #fff; text-shadow: 0 3px 24px rgba(58,34,48,.45);
 }
-@media (max-width: 560px) { .brand-band { padding: 18px 0; } }
-/* With scripts off there is no engine to run it, so the stylesheet does. */
-@media (prefers-reduced-motion: no-preference) {
-  html.no-js .brand-band-track { animation: brandRun 44s linear infinite; }
+@keyframes brandRun { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+/* Experimental scroll chapter: normal document scrolling, never wheel trapping. */
+.brand-chapter { position: relative; height: 300svh; }
+.brand-chapter-stage {
+  position: sticky; top: 84px; height: calc(100svh - 84px);
+  display: flex; flex-direction: column; justify-content: center;
+  overflow: hidden; isolation: isolate;
 }
-@keyframes brandRun { from { transform: translateX(-50%); } to { transform: translateX(0); } }
-@media (prefers-reduced-motion: reduce) { .brand-band-track { animation: none; } }
+.brand-chapter .brand-band { flex: 0 0 auto; padding: 0; z-index: 2; }
+.brand-rings { display: block; width: min(54vh, 75vw, 540px); height: auto; margin: 20px auto 0; overflow: visible; filter: drop-shadow(0 2px 5px rgba(61,33,52,.5)); }
+.brand-rings circle { fill: none; stroke: #fff8e9; stroke-width: 1.8; opacity: .85; }
+.brand-rings circle:nth-child(even) { stroke: #edc58f; }
+.brand-scroll-hint { text-align: center; color: var(--plum); font-size: .68rem; letter-spacing: .22em; text-transform: uppercase; margin: 20px 0 0; }
+html.no-js .brand-chapter { height: auto; }
+html.no-js .brand-chapter-stage { position: relative; top: auto; min-height: 80svh; }
+@media (max-width: 860px) {
+  .brand-chapter-stage { top: 68px; height: calc(100svh - 68px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .brand-band-track { animation: none; }
+  .brand-chapter { height: auto; }
+  .brand-chapter-stage { position: relative; top: auto; min-height: 80svh; height: auto; padding: 48px 0; }
+}
 
 /* ==========================================================================
    The front door — "Welcome to Club Mindful Tattva"
@@ -1475,26 +1489,15 @@ html.photo-frame-open { overflow: hidden; }
 /* Once the screen has done its work it is gone for good, not merely unseen. */
 .splash[hidden] { display: none; }
 
-/* ==========================================================================
-   The butterfly on the bar
-   --------------------------------------------------------------------------
-   She rides beside the club's name on the pinned bar, so she is there while the
-   whole page is read. Her wings beat all the time, and she breathes up and down
-   on the spot: no scrolling needed, no video, no picture — four small paths and
-   two animations. She is decoration, so she says nothing to a screen reader and
-   holds still for anyone who asks for less motion.
-   ========================================================================== */
-.nav-butterfly { display: inline-block; width: 46px; height: 36px; margin-left: 12px; animation: flutterBob 3.4s ease-in-out infinite; }
-.nav-butterfly svg { display: block; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 3px 8px rgba(90,50,60,.28)); }
-/* The hinge is her body, measured in the drawing's own coordinates. */
-.bf-wing { transform-box: view-box; transform-origin: 20.6px 18px; transform: scaleX(1); }
-.bf-wing-left, .bf-wing-right { animation: wingBeat .34s ease-in-out infinite alternate; }
-@keyframes wingBeat { from { transform: scaleX(1); } to { transform: scaleX(.26); } }
-@keyframes flutterBob {
-  0%, 100% { transform: translate(0, 0) rotate(-3deg); }
-  50% { transform: translate(2px, -6px) rotate(4deg); }
-}
-@media (max-width: 860px) { .nav-butterfly { width: 36px; height: 29px; margin-left: 8px; } }
-@media (prefers-reduced-motion: reduce) {
-  .nav-butterfly, .bf-wing-left, .bf-wing-right { animation: none; }
+/* Photorealistic generated butterfly cutout: deliberately still, tilted,
+   and attached to the sticky header rather than distorted by vector wing beats. */
+.nav-butterfly { display: inline-block; flex: 0 0 88px; width: 88px; height: 76px; margin-left: 2px; transform: rotate(-12deg); }
+.nav-butterfly img { display: block; width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 3px 5px rgba(45,30,40,.18)); }
+@media (max-width: 1100px) { .nav-butterfly { flex-basis: 62px; width: 62px; height: 60px; margin-left: 0; } }
+@media (max-width: 380px) { .brand { gap: 7px; } .nav-butterfly { flex-basis: 52px; width: 52px; height: 52px; } }
+@media (max-width: 560px) {
+  .brand { gap: 7px; }
+  .brand-name { font-size: .9rem; }
+  .brand-mark { width: 34px; height: 34px; }
+  .nav-butterfly { flex-basis: 52px; width: 52px; height: 52px; }
 }

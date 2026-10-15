@@ -891,7 +891,7 @@ ok('the calendar keeps its own page styles', appCss.includes('.calendar-months')
 const cssBlocks = (source) => [...source.matchAll(/@media\s*\(([^)]+)\)\s*\{([\s\S]*?)\n\}/g)];
 const phoneBlocks = cssBlocks(appCss).filter(([, q]) => /max-width:\s*(3|4|5|6|7|8)\d\dpx|max-width:\s*860px/.test(q));
 ok('nothing hides the menu links on a phone',
-  !/\.nav-links a[^{]*\{[^}]*display\s*:\s*none/.test(appCss) && !/\.nav-links\s+a:not\(\.nav-action\)\s*\{[^}]*display\s*:\s*none/.test(appCss));
+  !/\.nav-links a(?:\.[\w-]+)?\s*\{[^}]*display\s*:\s*none/.test(appCss) && !/\.nav-links\s+a:not\(\.nav-action\)\s*\{[^}]*display\s*:\s*none/.test(appCss));
 ok('the hamburger panel lists every link as a tappable row',
   /\.nav-links a \{[^}]*display: block/.test(appCss) && /\.nav-links a \{[^}]*padding: 12px/.test(appCss));
 ok('every wide block stacks on a phone',
@@ -1499,42 +1499,36 @@ ok('the Mind section renders whole on the live page',
   mindPage.body.includes('psi-stage') && mindPage.body.includes('subconscious') && mindPage.body.includes('quoteHold')
   && !mindPage.body.includes('mind in motion'));
 
-console.log('\n— the club\'s name running across the page —');
+console.log('\n— experimental name and seven-ring scroll chapter —');
 const cardsSource = fs.readFileSync(path.join(ROOT, 'app/cards.php'), 'utf8');
-ok('the band is built once and used where it looks right',
-  /function mt_brand_band\(string \$name\)/.test(cardsSource)
-  && (round37Home.match(/mt_brand_band\(/g) || []).length === 2);
-ok('the band says the club\'s name, and nothing else', /brand-band-track[\s\S]{0,200}?e\(\$name\)/.test(cardsSource));
-ok('the band is words and nothing else — no card, no pane, no lamps',
-  !/\.brand-band:before/.test(round37Css) && !/\.brand-band:after/.test(round37Css)
-  && !/\.brand-band i \{/.test(round37Css) && !/<i><\/i>/.test(cardsSource)
-  && /\.brand-band \{[^}]*pointer-events: none/.test(round37Css));
-ok('the words run left to right, for ever',
-  /function setupBrandBand\(\)/.test(appJs) && appJs.includes('band.offset += SPEED * elapsed;')
-  && appJs.includes('setupBrandBand();') && appJs.includes('115;'));
-ok('the loop only turns over while the screen is dark, so no seam is seen',
-  /if \(!document\.hidden\) \{[\s\S]{0,600}?band\.offset -= band\.half;/.test(appJs)
-  && /\.brand-band-track \{[^}]*transform: translateX\(0\)/.test(round37Css));
-ok('the repeats are separated by air, never pulled together by a gap',
-  /\.brand-band-track span \{[^}]*padding-right: max\(40px, 9vw\)/.test(round37Css)
-  && !/\.brand-band-track \{[^}]*gap:/.test(round37Css));
-ok('the words are big, bold and solid white, with a halo that keeps them readable',
-  /\.brand-band-track span \{[^}]*font-weight: 700/.test(round37Css)
-  && /\.brand-band-track span \{[^}]*color: #fff;/.test(round37Css)
-  && /\.brand-band-track span \{[^}]*text-shadow: 0 2px 18px rgba\(58,34,48,\.5\)/.test(round37Css)
-  && /font-size: clamp\(3rem, 10\.5vw, 8\.5rem\)/.test(round37Css));
-ok('a piece of the name is always travelling, so a name is never pulled away',
-  round37Css.includes('width: max-content') && round37Css.includes('will-change: transform')
-  && round37Css.includes('transform: translateX(0)')
-  && appJs.includes("track.style.transform = 'translateX('"));
-ok('with scripts off the stylesheet still runs it',
-  /html\.no-js \.brand-band-track \{ animation: brandRun 44s linear infinite; \}/.test(round37Css)
-  && /@keyframes brandRun \{ from \{ transform: translateX\(-50%\); \} to \{ transform: translateX\(0\); \} \}/.test(round37Css));
-ok('the band stands still for anyone who asks for less motion',
-  /prefers-reduced-motion: reduce\) \{\s*\.brand-band-track \{ animation: none; \}/.test(round37Css)
-  && /if \(!tracks\.length \|\| reduced\(\)\) return;/.test(appJs));
-const bandCount = (mindPage.body.match(/class="brand-band"/g) || []).length;
-ok('both bands stand on the front page', bandCount === 2, 'found ' + bandCount);
+ok('one full-screen chapter, one closing band',
+  (round37Home.match(/mt_brand_chapter\(/g) || []).length === 1
+  && (round37Home.match(/mt_brand_band\(/g) || []).length === 1);
+ok('huge white words travel right to left, with no pane or lamps',
+  round37Css.includes('font-size: clamp(5rem, 18vw, 19rem)')
+  && round37Css.includes('to { transform: translateX(-50%); }')
+  && !round37Css.includes('.brand-band:before') && !round37Css.includes('.brand-band i {'));
+ok('two equal halves repeat seamlessly, including without JavaScript',
+  cardsSource.includes('$copy < 2') && cardsSource.includes('$i < 4')
+  && round37Css.includes('animation: brandRun 28s linear infinite'));
+ok('native sticky chapter holds the stage then releases it',
+  round37Css.includes('height: 300svh') && round37Css.includes('position: sticky; top: 84px')
+  && appJs.includes('chapter.offsetHeight - (window.innerHeight - top)')
+  && appJs.includes("window.addEventListener('scroll', schedule, { passive: true })"));
+ok('one centre circle and six satellites form seven intersecting rings',
+  cardsSource.includes('$ring < 6') && cardsSource.includes('300 + 100 * cos($angle)')
+  && cardsSource.includes('300 + 100 * sin($angle)') && cardsSource.includes('r="100"'));
+ok('rings gather first, rotate only after gathering, and reverse with scrolling',
+  appJs.includes('progress / 0.58') && appJs.includes('170 * (1 - ease)')
+  && appJs.includes('(progress - 0.58) / 0.34') && appJs.includes("turn.setAttribute('transform', 'rotate('"));
+ok('reduced motion and no scripts leave the chapter short and fully formed',
+  round37Css.includes('html.no-js .brand-chapter { height: auto; }')
+  && round37Css.includes('.brand-chapter { height: auto; }')
+  && appJs.includes('if (!chapter || reduced()) return;'));
+ok('chapter and both name tracks render on home only',
+  (mindPage.body.match(/class="brand-chapter"/g) || []).length === 1
+  && (mindPage.body.match(/class="brand-band"/g) || []).length === 2
+  && (mindPage.body.match(/data-ring="/g) || []).length === 6);
 
 console.log('\n— the front door —');
 const navLayout = fs.readFileSync(path.join(ROOT, 'views/layout.php'), 'utf8');
@@ -1571,36 +1565,17 @@ ok('and it really is absent from the other pages',
   && !splashDash.body.includes('class="splash"'));
 ok('and present on the front page', mindPage.body.includes('class="splash"') && mindPage.body.includes('Welcome to Club'));
 
-console.log('\n— the butterfly on the bar —');
-ok('she rides on the pinned bar, beside the club\'s own name',
-  navLayout.includes('class="nav-butterfly"')
-  && navLayout.indexOf('bf-wing-left') > navLayout.indexOf('class="nav-butterfly"')
-  && navLayout.indexOf('bf-wing-right') > navLayout.indexOf('bf-wing-left')
-  && navLayout.indexOf('nav-butterfly') > navLayout.indexOf('brand-name')
-  && navLayout.indexOf('nav-butterfly') < navLayout.indexOf('navLinks'));
-ok('she flutters her wings, all the time',
-  /@keyframes wingBeat \{ from \{ transform: scaleX\(1\); \} to \{ transform: scaleX\(\.26\); \} \}/.test(round37Css)
-  && /\.bf-wing-left, \.bf-wing-right \{ animation: wingBeat \.34s ease-in-out infinite alternate; \}/.test(round37Css)
-  && /\.bf-wing \{ transform-box: view-box; transform-origin: 20\.6px 18px/.test(round37Css));
-ok('she is a butterfly and not a bee: four wings, spots, a slim body and antennae',
-  navLayout.includes('class="bf-wing bf-wing-left"') && navLayout.includes('class="bf-wing bf-wing-right"')
-  && (navLayout.match(/<circle/g) || []).length >= 7            // six wing spots and her head
-  && (navLayout.match(/stroke-linecap="round"/g) || []).length === 2   // two antennae
-  && navLayout.includes('class="bf-body"') && navLayout.includes('nav-butterfly'));
-ok('she is whole before a stylesheet loads: her right wing is drawn mirrored in place',
-  navLayout.includes('<g transform="translate(41.2 0) scale(-1 1)">')
-  && (navLayout.match(/stroke="url\(#bfFore\)"/g) || []).length === 0
-  && (navLayout.match(/fill="url\(#bfFore\)"/g) || []).length >= 2);
-ok('she is bigger than she was, with room to be seen',
-  /\.nav-butterfly \{[^}]*width: 46px; height: 36px/.test(round37Css)
-  && /\.nav-butterfly \{ width: 36px; height: 29px/.test(round37Css));
-ok('and she moves on the spot while the page is read',
-  /@keyframes flutterBob \{[\s\S]{0,180}?translate\(2px, -6px\)/.test(round37Css)
-  && /\.nav-butterfly \{[^}]*animation: flutterBob/.test(round37Css));
-ok('she holds still for anyone who asks for less motion',
-  /prefers-reduced-motion: reduce\) \{[\s\S]{0,120}?\.nav-butterfly, \.bf-wing-left, \.bf-wing-right \{ animation: none; \}/.test(round37Css));
-ok('she is drawn, not a picture — no request to the network',
-  !/nav-butterfly[\s\S]{0,400}?<img/.test(navLayout) && (mindPage.body.match(/nav-butterfly/g) || []).length >= 1);
+console.log('\n— photographic butterfly on the bar —');
+ok('generated butterfly image replaces the cartoon drawing',
+  navLayout.includes('src="/assets/img/butterfly-real.png"') && !navLayout.includes('bf-wing')
+  && fs.existsSync(path.join(ROOT, 'assets/img/butterfly-real.png')));
+ok('butterfly is large, tilted and never distorted by wing animations',
+  round37Css.includes('width: 88px; height: 76px')
+  && round37Css.includes('transform: rotate(-12deg)') && !round37Css.includes('@keyframes wingBeat'));
+ok('butterfly remains on sticky header with phone sizing',
+  navLayout.indexOf('nav-butterfly') > navLayout.indexOf('brand-name')
+  && navLayout.indexOf('nav-butterfly') < navLayout.indexOf('navLinks')
+  && round37Css.includes('flex-basis: 52px'));
 
 console.log('\n— the lamps that breathe —');
 ok('no dotted lamps sit before the small labels any more',
@@ -1618,9 +1593,10 @@ ok('it is a filled chip in the club\'s terracotta, not a bare word',
 ok('it glows and hops, so the eye finds it',
   /\.nav-links a\.nav-lens \{[^}]*animation: lensHop 2\.8s ease-in-out infinite, lensGlow 3\.6s ease-in-out infinite/.test(round37Css)
   && /@keyframes lensGlow \{/.test(round37Css));
-ok('in the stacked menu it is one tidy row that holds still',
-  /\.nav-links a\.nav-lens \{ display: block; animation: none; \}/.test(round37Css)
-  && /\.nav-links a\.nav-lens:before \{ display: inline-block; vertical-align: middle/.test(round37Css));
+ok('hamburger lens row matches other links with no chip, glow or dot',
+  round37Css.includes('color: inherit; font-weight: inherit; background: none;')
+  && round37Css.includes('box-shadow: none; text-shadow: none; animation: none; transform: none;')
+  && round37Css.includes('.nav-links a.nav-lens:before { display: none; }'));
 ok('the menu renders with its chip, on the live page',
   mindPage.body.includes('class="nav-lens"') && mindPage.body.includes('>The lens</a>')
   && (mindPage.body.match(/class="nav-lens"/g) || []).length === 1);
