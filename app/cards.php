@@ -142,14 +142,44 @@ function mt_brand_band(string $name): string
     return (string) ob_get_clean();
 }
 
-/** Shared electric-blue contour field, confined to the black experiments. */
+/** Seven-circle mark, shared by the opening, splash and scroll sequence. */
+function mt_reference_rings(bool $interactive = false, string $class = ''): string
+{
+    ob_start(); ?>
+    <svg class="reference-rings <?= e($class) ?>" viewBox="-90 -90 780 780" aria-hidden="true" focusable="false">
+      <g class="brand-ring-turn">
+        <circle cx="300" cy="300" r="100"/>
+        <?php for ($ring = 0; $ring < 6; $ring++):
+            $angle = deg2rad($ring * 60 - 90);
+            $x = 300 + 100 * cos($angle); $y = 300 + 100 * sin($angle); ?>
+        <circle <?= $interactive ? 'data-ring="' . $ring . '"' : '' ?> cx="<?= round($x, 3) ?>" cy="<?= round($y, 3) ?>" r="100" style="--rx:<?= round(cos($angle) * 170, 3) ?>px;--ry:<?= round(sin($angle) * 170, 3) ?>px"/>
+        <?php endfor; ?>
+      </g>
+    </svg>
+    <?php return (string) ob_get_clean();
+}
+
+/** Club portrait badge: decorative, never covers a name or a face. */
+function mt_portrait_badge(): string
+{
+    return '<span class="portrait-badge" aria-hidden="true">' . mt_reference_rings() . '</span>';
+}
+
+/** Concentrated violet flowing strands from the recording's closing scene. */
 function mt_blue_waves(): string
 {
     ob_start(); ?>
-    <svg class="blue-waves" viewBox="0 0 1600 1000" preserveAspectRatio="none" aria-hidden="true" focusable="false">
-      <g fill="none" stroke="currentColor" stroke-width="1">
-        <?php for ($wave = 0; $wave < 18; $wave++): $y = $wave * 32; ?>
-        <path d="M-100 <?= $y ?> C300 <?= $y - 260 ?> 430 <?= $y + 440 ?> 820 <?= $y + 170 ?> S1350 <?= $y - 90 ?> 1700 <?= $y + 350 ?>"/>
+    <svg class="blue-waves" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false">
+      <g fill="none" stroke="currentColor" stroke-width="1.7">
+        <?php for ($strand = -18; $strand <= 18; $strand++):
+            $points = [];
+            for ($step = 0; $step <= 80; $step++) {
+                $y = $step * 15 - 100;
+                $spread = $strand * 18;
+                $x = 800 + $spread + sin($y * .008 + $strand * .12) * 155 + sin($y * .013) * 90;
+                $points[] = ($step === 0 ? 'M' : 'L') . round($x, 2) . ' ' . $y;
+            } ?>
+        <path d="<?= e(implode(' ', $points)) ?>"/>
         <?php endfor; ?>
       </g>
     </svg>
@@ -163,25 +193,18 @@ function mt_brand_chapter(string $name): string
   <section class="brand-chapter black-chapter" aria-label="Seven connected rings">
     <div class="brand-chapter-stage">
       <?= mt_blue_waves() ?>
-      <svg class="brand-rings" viewBox="-90 -90 780 780" aria-hidden="true" focusable="false">
-        <g class="brand-ring-turn">
-          <circle cx="300" cy="300" r="100"/>
-          <?php for ($ring = 0; $ring < 6; $ring++):
-              $angle = deg2rad($ring * 60 - 90);
-              $x = 300 + 100 * cos($angle);
-              $y = 300 + 100 * sin($angle); ?>
-          <circle data-ring="<?= $ring ?>" cx="<?= round($x, 3) ?>" cy="<?= round($y, 3) ?>" r="100"/>
-          <?php endfor; ?>
-        </g>
-      </svg>
+      <?= mt_reference_rings(true, 'brand-rings') ?>
     </div>
   </section>
   <section class="manifest-chapter black-chapter" aria-labelledby="manifestHeading">
     <?= mt_blue_waves() ?>
-    <div class="mind-object object-orbit" aria-hidden="true"></div>
-    <div class="mind-object object-prism" aria-hidden="true"></div>
-    <div class="mind-object object-sphere" aria-hidden="true"></div>
-    <h2 id="manifestHeading"><span>Control Your Mind</span><em>Manifest Your Reality</em></h2>
+    <h2 id="manifestHeading">
+      <span class="manifest-row">Control Your</span>
+      <span class="manifest-row">Mind <i class="mind-object object-orbit" aria-hidden="true"><b></b></i></span>
+      <span class="manifest-row"><i class="mind-object object-prism" aria-hidden="true"><b></b></i> <em>Manifest</em></span>
+      <span class="manifest-row">Your</span>
+      <span class="manifest-row"><i class="mind-object object-sphere" aria-hidden="true"><b></b></i> Reality</span>
+    </h2>
   </section>
     <?php return (string) ob_get_clean();
 }
@@ -190,9 +213,10 @@ function mt_brand_chapter(string $name): string
 function mt_brand_finale(string $name): string
 {
     ob_start(); ?>
-  <section class="brand-finale" aria-label="<?= e($name) ?>">
+  <section class="brand-finale black-chapter" aria-label="<?= e($name) ?>">
     <div class="brand-finale-stage">
-      <p class="brand-finale-intro">A space for mindful minds</p>
+      <?= mt_blue_waves() ?>
+      <p class="brand-finale-intro">The Psychology Club</p>
       <?= mt_brand_band($name) ?>
     </div>
   </section>
@@ -207,7 +231,8 @@ function mt_team_card(array $member): string
     $role = trim((string) ($member['role'] ?? ''));
     $phone = trim((string) ($member['phone'] ?? ''));
     ob_start(); ?>
-      <article class="team-card">
+      <article class="team-card portrait-card">
+        <?= mt_portrait_badge() ?>
         <div class="team-avatar<?= $image !== '' ? ' has-image' : '' ?>" role="img"
              aria-label="<?= e($name) ?> <?= $image !== '' ? 'photo' : 'placeholder' ?>"<?= mt_background_style($image) ?>><span><?= e(mt_initials($name)) ?></span></div>
         <h3><?= e($name) ?></h3>
@@ -230,7 +255,8 @@ function mt_gallery_item(array $item): string
     $caption = trim((string) ($item['caption'] ?? 'Mindful Tattva memory'));
     $alt = trim((string) ($item['alt'] ?? '')) !== '' ? (string) $item['alt'] : $caption;
     ob_start(); ?>
-      <figure class="gallery-item">
+      <figure class="gallery-item portrait-card">
+        <?= mt_portrait_badge() ?>
         <?php if ($image !== ''): ?>
           <button type="button" class="gallery-visual has-image" aria-label="Open <?= e($alt) ?> full size"<?= mt_background_style($image, $alt) ?>>
             <span class="gallery-zoom" aria-hidden="true">⤢</span>
@@ -292,6 +318,7 @@ function mt_gallery_stage(array $slides, string $kicker = 'Mindful Tattva galler
     $alt   = $stage ? (string) $first['alt'] : 'Gallery photo';
     ob_start(); ?>
       <div class="gallery-stage<?= $class !== '' ? ' ' . e($class) : '' ?>" id="galleryStage">
+        <?= mt_portrait_badge() ?>
         <div class="gallery-stage-image<?= $stage ? ' has-image' : '' ?>" id="galleryStageImage" role="img"
              aria-label="<?= e($alt) ?>"<?= mt_background_style($stage ? (string) $first['image'] : '') ?>></div>
         <div class="gallery-stage-copy">
@@ -363,7 +390,8 @@ function mt_archive_card(array $item): string
     $caption = trim((string) ($item['caption'] ?? 'Mindful Tattva memory'));
     $alt = trim((string) ($item['alt'] ?? '')) !== '' ? (string) $item['alt'] : $caption;
     ob_start(); ?>
-      <article class="archive-card">
+      <article class="archive-card portrait-card">
+        <?= mt_portrait_badge() ?>
         <button type="button" class="archive-image" aria-label="Open <?= e($alt) ?> full size"<?= mt_background_style($image, $alt) ?>>
           <span class="gallery-zoom" aria-hidden="true">⤢</span>
         </button>
@@ -449,9 +477,10 @@ function mt_member_card(array $person, int $number, bool $volunteersOnly = false
     $phone = trim((string) ($person['phone'] ?? ''));
     $showPhoto = !$volunteersOnly;
     ob_start(); ?>
-      <article class="member-card<?= $showPhoto && $image !== '' ? ' has-photo' : '' ?>">
+      <article class="member-card portrait-card<?= $showPhoto && $image !== '' ? ' has-photo' : '' ?>">
         <span class="member-number"><?= str_pad((string) $number, 2, '0', STR_PAD_LEFT) ?></span>
         <?php if ($showPhoto): ?>
+          <?= mt_portrait_badge() ?>
           <?php if ($image !== ''): ?>
             <div class="member-photo" role="img" aria-label="<?= e($name) ?> photo"<?= mt_background_style($image) ?>></div>
           <?php else: ?>

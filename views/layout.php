@@ -77,6 +77,7 @@ $nav = [
   <?php if ($splash): ?>
     <div class="splash" id="splash" aria-hidden="true">
       <div class="splash-copy">
+        <?= mt_reference_rings(false, 'splash-rings') ?>
         <span class="splash-welcome">Welcome to Club</span>
         <span class="splash-name"><?= e($clubName) ?></span>
       </div>
@@ -116,9 +117,10 @@ $nav = [
            It is never dark and never in front of a word. */ ?>
   <div class="hero-media" aria-hidden="true">
     <img class="hero-still" id="heroStill" src="/assets/media/horses-running-poster.jpg" alt="" decoding="async">
-    <video class="hero-video" id="heroVideo" muted loop playsinline autoplay preload="auto"
+    <video class="hero-video" id="heroVideo" muted loop playsinline autoplay preload="none" data-desktop-src="/assets/media/horses-desktop.mp4" data-mobile-src="/assets/media/horses-mobile.mp4"
            poster="/assets/media/horses-running-poster.jpg" tabindex="-1">
-      <source src="/assets/media/horses-running.mp4" type="video/mp4">
+      <?php /* The 1440px master stays in assets; the player selects one lighter
+               fast-start rendition before making any media request. */ ?>
     </video>
   </div>
 

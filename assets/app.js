@@ -454,6 +454,8 @@
       });
       const rotation = clamp((progress - 0.58) / 0.34) * 120;
       turn.setAttribute('transform', 'rotate(' + rotation.toFixed(2) + ' 300 300)');
+      const exit = clamp((progress - 0.72) / 0.28);
+      if (diagram) diagram.style.transform = 'translateY(' + (-exit * 24).toFixed(2) + 'vh) scale(' + (1 - exit * 0.66).toFixed(3) + ')';
     };
     const schedule = function () {
       if (!scheduled) { scheduled = true; window.requestAnimationFrame(paint); }
@@ -478,95 +480,95 @@
     window.setTimeout(function () { splash.setAttribute('hidden', 'hidden'); }, 2600);
   }
 
-  /* ------------------------------------------------------------ the herd */
-  /* The front page's horses. The still frame is already in the HTML, so this
-     only plays the clip — and keeps it running: the herd is never paused while
-     the page is open, so it can never be caught frozen on screen. A clip can
-     still stall on a slow connection or at the wrap of the loop, so the herd
-     is watched: if the clock stops moving while the clip is meant to be
-     playing, it is nudged on; if that does not take, it reloads and carries on
-     from there. The still frame stays behind it the whole time, so even that
-     moment is never blank. A clip that cannot play at all is hidden, leaving
-     the still frame in its place. */
+  /* Two fast-start encodes; the untouched master is retained for the club.
+     Buffering is not repaired by repeatedly seeking or reloading the file. */
   function setupHeroVideo() {
     const video = $('#heroVideo');
     if (!video) return;
     const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
     const allowed = !reduced() && !(connection && connection.saveData);
-    let retried = false;
-    /* where the herd was, so a restart never begins the loop over */
     let resumeAt = 0;
-
+    let recoveryUsed = false;
+    let lastClock = -1;
+    let lastAdvance = Date.now();
+    let waitingTimer = 0;
     function drop() { video.hidden = true; }
-    function pause() { try { video.pause(); } catch (error) { /* nothing to pause */ } }
+    function pause() { try { video.pause(); } catch (error) { /* already stopped */ } }
     function play() {
       if (!allowed || document.hidden || video.hidden) return;
       const attempt = video.play();
-      if (attempt && typeof attempt.catch === 'function') attempt.catch(function () { /* retried below */ });
+      if (attempt && attempt.catch) attempt.catch(function () { /* retry on a gesture */ });
     }
-
     if (!allowed) { drop(); return; }
-
+    const mobile = window.matchMedia('(max-width: 900px)').matches || (connection && /(^|-)2g|3g/.test(connection.effectiveType || ''));
+    video.src = mobile ? video.dataset.mobileSrc : video.dataset.desktopSrc;
+    video.preload = 'auto';
+    video.muted = true;
+    video.playsInline = true;
     video.addEventListener('error', drop);
-    /* a reloaded clip carries on where it stopped instead of snapping back */
     video.addEventListener('loadedmetadata', function () {
-      if (resumeAt > 0 && Math.abs(video.currentTime - resumeAt) > 0.4) {
-        try { video.currentTime = resumeAt; } catch (error) { /* it plays from the top instead */ }
+      if (resumeAt > 0 && Number.isFinite(video.duration)) {
+        video.currentTime = Math.min(resumeAt, Math.max(0, video.duration - 0.2));
       }
       play();
     });
-    play();
-
-    /* The whole reason a background clip "gets stuck midway": the browser
-       stops feeding it — on a slow connection, when the file is large, or when
-       another tab takes the network. So the herd is watched about once a
-       second: a nudge first, a quiet reload if that was not enough, and the
-       reload resumes from the same second instead of starting the loop again.
-       A stall that reports itself gets the same treatment straight away. */
-    let lastClock = -1;
-    let recovery = 0;
-    function recover(clock) {
-      if (recovery === 0) {
-        try { video.currentTime = clock + 0.1; } catch (error) { /* the reload below will do */ }
-        play();
-      } else {
-        resumeAt = Math.max(0, clock - 0.2);
-        video.load();
-        play();
-      }
-      recovery = 0;
-    }
-    video.addEventListener('stalled', function () { recover(video.currentTime); });
+    video.addEventListener('waiting', function () {
+      window.clearTimeout(waitingTimer);
+      waitingTimer = window.setTimeout(function () { video.classList.add('is-buffering'); }, 800);
+    });
+    video.addEventListener('playing', function () {
+      window.clearTimeout(waitingTimer);
+      video.classList.remove('is-buffering');
+      lastAdvance = Date.now();
+    });
+    /* A stalled network event alone is not a reason to throw away the buffer. */
+    video.addEventListener('stalled', function () { /* let the browser buffer */ });
     window.setInterval(function () {
       if (document.hidden || video.hidden || video.error) return;
-      if (video.paused) { play(); return; }
       const clock = video.currentTime;
-      if (Math.abs(clock - lastClock) > 0.02) { lastClock = clock; recovery = 0; return; }
-      recovery += 1;
-      if (recovery >= 2) recover(clock);
-    }, 1100);
-
-    /* Some phones block even a muted autoplay until the visitor touches the
-       page: the first touch, tap, key or scroll asks again. */
-    function retry() {
-      if (retried || video.error) return;
-      retried = true;
-      play();
-    }
-    ['pointerdown', 'touchstart', 'keydown', 'scroll'].forEach(function (name) {
-      window.addEventListener(name, retry, { once: true, passive: true });
+      if (Math.abs(clock - lastClock) > 0.02) {
+        lastClock = clock; lastAdvance = Date.now();
+        video.classList.remove('is-buffering');
+        return;
+      }
+      const quietFor = Date.now() - lastAdvance;
+      if (quietFor > 4500) video.classList.add('is-buffering');
+      /* At most one recovery per page, after 15 seconds without a frame.
+         Prefer the small encode on a struggling desktop connection. */
+      if (quietFor > 15000 && !recoveryUsed && video.readyState < 2) {
+        recoveryUsed = true;
+        resumeAt = Math.max(0, clock);
+        if (!mobile) video.src = video.dataset.mobileSrc;
+        video.load();
+        play();
+        lastAdvance = Date.now();
+      } else if (video.paused) play();
+    }, 1500);
+    ['pointerdown', 'touchstart', 'keydown'].forEach(function (name) {
+      window.addEventListener(name, play, { once: true, passive: true });
     });
-
-    /* The one time the herd is paused: when the tab is not on screen. */
     document.addEventListener('visibilitychange', function () {
-      if (document.hidden) pause(); else play();
+      if (document.hidden) pause(); else { lastAdvance = Date.now(); play(); }
     });
+    play();
+  }
+
+  function setupPortraits() {
+    const targets = $$('.portrait-card, .gallery-stage');
+    if (reduced() || !('IntersectionObserver' in window)) return;
+    const observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        entry.target.classList.toggle('photo-in-view', entry.isIntersecting);
+      });
+    }, { threshold: 0.18 });
+    targets.forEach(function (node) { observer.observe(node); });
   }
 
   function start() {
     setupSplash();
     setupBrandBand();
     setupReveal();
+    setupPortraits();
     setupMenu();
     setupHeroVideo();
     setupPhotoFrame();

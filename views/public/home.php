@@ -27,35 +27,20 @@ $mapUrl     = 'https://www.google.com/maps/search/?api=1&query=' . urlencode($ad
 $email      = trim((string) ($site['email'] ?? ''));
 $phone      = trim((string) ($site['clubPhone'] ?? ''));
 ?>
-<section class="hero hero-with-video" id="top-section">
-  <?php /* The hero's warm veil: it keeps the words on top of the herd
-           readable, and melts the bottom of the picture (drawn in the layout)
-           into the section that follows. */ ?>
-  <div class="hero-veil" aria-hidden="true"></div>
-  <i class="hero-comet" aria-hidden="true"></i>
+<section class="hero hero-with-video reference-hero" id="top-section">
+  <div class="reference-stars" aria-hidden="true"></div>
   <div class="container hero-grid">
-    <div class="fade-in">
-      <div class="eyebrow" id="heroEyebrow"><?= e((string) ($site['eyebrow'] ?? '')) ?></div>
-      <h1 class="display" id="heroTagline"><?= mt_emphasise((string) ($site['tagline'] ?? '')) ?></h1>
+    <div class="reference-opening">
+      <h1 class="reference-name" id="heroName"><?= e((string) ($site['clubName'] ?? 'Mindful Tattva')) ?></h1>
+      <p class="reference-subtitle" id="heroEyebrow"><?= e((string) ($site['eyebrow'] ?? 'The Psychology Club')) ?></p>
+      <div class="reference-emblem">
+        <?= mt_reference_rings(false, 'hero-rings') ?>
+        <img src="<?= e(mt_safe_image($site['logoImage'] ?? '') ?: '/assets/photos/mt-club-logo.jpg') ?>" alt="<?= e((string) ($site['clubName'] ?? 'Mindful Tattva')) ?> emblem" width="240" height="240" decoding="async">
+      </div>
+      <p class="reference-tagline" id="heroTagline"><?= mt_emphasise((string) ($site['tagline'] ?? '')) ?></p>
       <p class="hero-copy" id="heroIntro"><?= e((string) ($site['intro'] ?? '')) ?></p>
-      <div class="hero-actions">
-        <a class="solid-button" href="#events">Explore the club <span>↘</span></a>
-        <a class="outline-button" href="#join">Join Mindful Tattva</a>
-      </div>
-      <div class="hero-meta">
-        <div><strong id="heroUniversity"><?= e((string) ($site['universityName'] ?? '')) ?></strong><span id="heroDepartment"><?= e((string) ($site['department'] ?? '')) ?></span></div>
-        <div><strong>Made with intention</strong><span>student-led, always evolving</span></div>
-      </div>
-    </div>
-    <div class="hero-art fade-in" aria-label="Abstract Mindful Tattva artwork">
-      <span class="breathe-ring" aria-hidden="true"><i></i></span>
-      <div class="art-card">
-        <div class="art-sun"></div>
-        <div class="art-orbit"></div>
-        <div class="art-copy"><small>mind, body, connection</small><strong>pause<br>and notice.</strong></div>
-      </div>
-      <div class="art-note">You are allowed to take up space.</div>
-      <div class="art-sticker">come as<br>you are</div>
+      <div class="hero-actions"><a class="solid-button" href="#events">Explore the club ↘</a><a class="outline-button" href="#join">Join Mindful Tattva</a></div>
+      <div class="hero-meta"><div><strong id="heroUniversity"><?= e((string) ($site['universityName'] ?? '')) ?></strong><span id="heroDepartment"><?= e((string) ($site['department'] ?? '')) ?></span></div></div>
     </div>
   </div>
 </section>
@@ -143,6 +128,13 @@ $clubWords = ['mind', 'body', 'connection', 'curiosity', 'growth', 'community', 
 </section>
 
 <?= mt_brand_chapter((string) ($site['clubName'] ?? 'Mindful Tattva')) ?>
+
+<section class="happiness-section" aria-labelledby="happinessHeading">
+  <div class="happiness-copy"><div class="eyebrow">Connection · belonging · growth</div><h2 id="happinessHeading">Club happiness index</h2><p>Making space for a happier campus, one conversation at a time.</p><small>Illustrative trend only — not measured club data.</small></div>
+  <div class="happiness-chart" role="img" aria-label="Illustrative rising wellbeing trend. No survey results or numerical score are represented.">
+    <svg viewBox="0 0 600 280" aria-hidden="true"><defs><linearGradient id="happyFill" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#c8acef" stop-opacity=".3"/><stop offset="1" stop-color="#c8acef" stop-opacity="0"/></linearGradient></defs><path d="M25 235H575M25 175H575M25 115H575M25 55H575" class="chart-grid"/><path d="M25 230 C90 235 90 130 160 165 S240 190 285 110 S365 135 415 75 S495 105 575 30 L575 265H25Z" fill="url(#happyFill)"/><path id="happinessCurve" d="M25 230 C90 235 90 130 160 165 S240 190 285 110 S365 135 415 75 S495 105 575 30" class="happiness-line"/><circle r="5" fill="#ebd3ff" class="happiness-dot"><animateMotion dur="7s" repeatCount="indefinite" path="M25 230 C90 235 90 130 160 165 S240 190 285 110 S365 135 415 75 S495 105 575 30"/></circle></svg>
+  </div>
+</section>
 
 <section class="section details-section" id="details">
   <div class="container">

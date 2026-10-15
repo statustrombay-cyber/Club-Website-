@@ -34,7 +34,7 @@ try {
 }
 
 /* ------------------------------------------------------------- virtual FS */
-const SKIP_DIRS = new Set(['.git', 'node_modules', '.arena', 'backup-original', 'data/logs', 'data/sessions', 'data/tmp-uploads']);
+const SKIP_DIRS = new Set(['.git', 'node_modules', '.arena', 'backup-original', 'tools/references', 'data/logs', 'data/sessions', 'data/tmp-uploads']);
 
 function collectSourceFiles(dir, base = '') {
   const out = [];

@@ -1543,3 +1543,107 @@ html.no-js .brand-chapter-stage, html.no-js .brand-finale-stage { position: rela
   .brand-band { padding: 16px 0 24px; }
   .brand-band-track span { font-size: clamp(5rem, min(19.5vw, 24svh), 22rem); }
 }
+
+/* Recording study, 15 October: near-black scenes, thin white rings, inline
+   rotating line icons, fine geometric marquee and concentrated violet waves. */
+.reference-hero { position: relative; overflow: hidden; color: #f6f2ff; background: radial-gradient(ellipse at 50% 12%, #b8a5ed 0%, #6550a5 27%, #29204f 52%, #0b0b10 85%); padding: 66px 0 54px; min-height: 100svh; }
+.reference-hero .hero-grid { position: relative; display: block; text-align: center; }
+.reference-opening { max-width: 1100px; margin: auto; }
+.reference-name { margin: 0; font-family: 'MT Geometric', sans-serif; font-size: clamp(2.5rem, 8vw, 8rem); line-height: 1.1; font-weight: 400; letter-spacing: -.07em; text-transform: lowercase; }
+.reference-subtitle { margin: 16px auto 0; max-width: 660px; color: #f0e8ff; font-size: clamp(.8rem, 1.3vw, 1.1rem); }
+.reference-emblem { position: relative; width: min(66vw, 330px); aspect-ratio: 1; margin: 32px auto; display: grid; place-items: center; }
+.reference-emblem img { width: 63%; height: 63%; object-fit: contain; border-radius: 50%; box-shadow: 0 0 60px #9173db66; }
+.reference-emblem .reference-rings { position: absolute; width: 130%; height: 130%; animation: openingOrbit 38s linear infinite; }
+.reference-stars { position: absolute; inset: 0; pointer-events: none; opacity: .4; background-image: radial-gradient(circle, #e7ddff 0 1px, transparent 1.5px), radial-gradient(circle, #a79bc8 0 1px, transparent 1.5px); background-size: 81px 97px, 143px 127px; background-position: 8px 21px, 48px 62px; }
+.reference-tagline { margin: 20px auto 12px; font-family: 'MT Geometric', sans-serif; font-size: clamp(1.3rem, 2.5vw, 2rem); font-weight: 400; }
+.reference-hero .hero-copy { color: #d7cdea; max-width: 650px; margin: 0 auto; }
+.reference-hero .hero-actions, .reference-hero .hero-meta { justify-content: center; }
+.reference-hero .hero-meta { color: #d9d1eb; margin-top: 26px; }
+.reference-hero .hero-meta span { color: #beb4ce; }
+.reference-hero .outline-button { color: #f7f2ff; border-color: #9b8fb5; }
+.reference-hero .solid-button { background: #f8f5ff; color: #211b32; }
+@keyframes openingOrbit { to { transform: rotate(360deg); } }
+.reference-rings { display: block; overflow: visible; }
+.reference-rings circle { fill: none; stroke: #ece7f5; stroke-width: 1.4; }
+.black-chapter { background: #0b0b0d; color: #f5f3f7; }
+.brand-chapter-stage, .manifest-chapter { background: radial-gradient(ellipse at 50% 50%, #211f27 0%, #0b0b0d 66%); }
+.brand-chapter-stage .blue-waves, .manifest-chapter > .blue-waves { display: none; }
+.brand-chapter { height: 330svh; }
+.brand-rings circle, .brand-rings circle:nth-child(even), .brand-rings circle:first-child { stroke: #ebe7f0; stroke-width: 1.2; }
+.brand-rings { will-change: transform; }
+.manifest-chapter { min-height: 110svh; padding: 100px 24px 130px; }
+.manifest-chapter h2 { width: min(760px, 100%); font-weight: 400; font-size: clamp(2.7rem, 6.5vw, 6.5rem); text-align: left; line-height: 1.18; letter-spacing: -.055em; }
+.manifest-chapter .manifest-row { display: flex; align-items: center; gap: .18em; margin: .08em 0; }
+.manifest-chapter h2 em { display: inline; font-family: Georgia, serif; color: #a29aa9; font-style: italic; font-weight: 400; margin: 0; }
+.manifest-chapter .mind-object { position: relative; inset: auto; display: inline-grid; place-items: center; width: 1.5em; height: .9em; border: 1px solid #716a7c; border-radius: .35em; background: none; box-shadow: none; transform: none; animation: none; aspect-ratio: auto; flex-shrink: 0; }
+.mind-object b { display: block; width: .55em; height: .55em; border: 1px solid #c5bdd2; border-radius: 50%; animation: pillRoll 5s linear infinite; }
+.object-orbit b:after, .object-sphere b:after { content: ''; position: absolute; inset: -.12em .08em; border: 1px solid #a79cb7; border-radius: 50%; transform: rotate(55deg); }
+.object-prism b { border-radius: 20%; transform: rotate(25deg); animation-duration: 6s; }
+.object-sphere b { border-radius: 30%; animation-duration: 7s; }
+@keyframes pillRoll { to { transform: rotate(360deg); } }
+.brand-finale { height: 240svh; background: #0b0b0d; }
+.brand-finale-stage { isolation: isolate; height: calc(100svh - 84px); min-height: 0; gap: clamp(32px, 9svh, 100px); padding: 60px 0; }
+.brand-finale-stage .blue-waves { inset: 8% 0; height: 84%; width: 100%; color: #8463df; opacity: .72; }
+.brand-finale-intro { color: #eee9f5; text-shadow: none; font-size: clamp(1.05rem, 2vw, 1.8rem); }
+.brand-band-track span { font-family: 'MT Geometric', sans-serif; font-weight: 400; font-size: clamp(6rem, 16vw, 19rem); letter-spacing: -.065em; color: #fbf8ff; text-shadow: none; text-transform: lowercase; }
+.brand-band { padding: 10px 0 30px; }
+body.is-black-chapter .nav-wrap, body.is-black-chapter .nav-wrap:before, body.is-black-chapter .nav:before, body.is-black-chapter .nav-links.open { background: #0b0b0d; }
+.splash { background: #0b0b0d; background-image: radial-gradient(ellipse at center, #20182f, transparent 65%); }
+.splash-copy { position: relative; }
+.splash-rings { width: clamp(120px, 28vw, 210px); margin: 0 auto 12px; }
+.splash-rings circle:not(:first-child) { animation: splashJoin 1.1s cubic-bezier(.2,.7,.3,1) both; }
+.splash-name { font-family: 'MT Geometric', sans-serif; font-weight: 400; letter-spacing: -.06em; }
+@keyframes splashJoin { from { transform: translate(var(--rx), var(--ry)); opacity: 0; } to { transform: translate(0,0); opacity: 1; } }
+.hero-video { transition: opacity .35s ease; }
+.hero-video.is-buffering { opacity: 0; }
+/* Alternating people: left, right, left on both home and directory pages. */
+.team-grid, .member-cards { display: flex; flex-direction: column; gap: 70px; }
+.team-card, .member-cards .member-card { position: relative; width: min(470px, 72%); align-self: flex-start; overflow: visible; }
+.team-card:nth-child(even), .member-cards .member-card:nth-child(even) { align-self: flex-end; }
+.team-avatar, .member-photo { width: min(100%, 270px); height: auto; aspect-ratio: 1; border-radius: 22px; margin: 0 0 16px; transform: none; background-size: cover; background-position: center; }
+.portrait-card { position: relative; }
+.portrait-badge { position: absolute; z-index: 4; top: -18px; right: 20px; width: 52px; height: 52px; padding: 5px; display: grid; place-items: center; border-radius: 50%; background: #28232e; border: 1px solid #a79ab6; pointer-events: none; animation: badgeRoll 15s linear infinite; }
+.portrait-badge svg { width: 100%; height: 100%; }
+@keyframes badgeRoll { to { transform: rotate(360deg); } }
+.photo-in-view .team-avatar, .photo-in-view .member-photo { animation: portraitPop 1.2s cubic-bezier(.2,.8,.3,1) both, portraitBreathe 6s ease-in-out 1.2s infinite; }
+@keyframes portraitPop { from { transform: translateY(20px) scale(.83) rotate(-4deg); opacity: .2; } to { transform: translateY(0) scale(1) rotate(0); opacity: 1; } }
+@keyframes portraitBreathe { 0%,100% { transform: scale(1); } 50% { transform: scale(1.025); } }
+.photo-in-view .gallery-visual:after, .photo-in-view .archive-image:after, .photo-in-view .gallery-stage-image:after { animation: portraitBreathe 7s ease-in-out infinite; }
+.gallery-item .portrait-badge, .archive-card .portrait-badge { top: 14px; right: 14px; width: 42px; height: 42px; }
+.happiness-section { display: grid; grid-template-columns: 1fr 1fr; gap: 50px; padding: 90px max(24px, calc((100vw - 1160px)/2)); align-items: center; }
+.happiness-copy h2 { margin: 10px 0 20px; font-size: clamp(2rem,4vw,3.5rem); font-family: 'MT Geometric',sans-serif; letter-spacing: -.05em; }
+.happiness-copy small { display: block; color: var(--ink-soft); font-size: .78rem; }
+.happiness-chart { background: #19171e; padding: 24px; border: 1px solid #62566f; border-radius: 24px; }
+.happiness-chart svg { display: block; width: 100%; height: auto; }
+.chart-grid { fill: none; stroke: #41394a; stroke-width: 1; }
+.happiness-line { fill: none; stroke: #c8acef; stroke-width: 2.5; stroke-linecap: round; }
+@media (max-width: 1100px) { .brand-finale-stage { height: calc(100svh - 68px); min-height: 0; } }
+@media (max-width: 600px) {
+  .reference-hero { padding-top: 45px; }
+  .reference-hero .hero-meta { font-size: .7rem; }
+  .reference-hero .hero-actions { gap: 10px; flex-wrap: wrap; }
+  .team-card, .member-cards .member-card { width: 85%; padding: 18px; }
+  .team-grid, .member-cards { gap: 55px; }
+  .team-avatar, .member-photo { width: 100%; }
+  .happiness-section { grid-template-columns: 1fr; gap: 25px; padding: 65px 24px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .reference-emblem .reference-rings, .splash-rings circle, .mind-object b, .portrait-badge, .photo-in-view .team-avatar, .photo-in-view .member-photo,
+  .photo-in-view .gallery-visual:after, .photo-in-view .archive-image:after, .photo-in-view .gallery-stage-image:after { animation: none; }
+  .happiness-dot { display: none; }
+  .brand-chapter, .brand-finale { height: auto; }
+  .brand-finale-stage { position: relative; top: auto; height: auto; min-height: 80svh; }
+}
+.reference-hero:before, .reference-hero:after { display: none; }
+.hero.reference-hero h1 { color: #faf7ff; margin: 0 auto; max-width: none; font-size: clamp(2.5rem, 8vw, 8rem); }
+.reference-hero .hero-meta strong { color: #ece3ff; }
+.reference-hero .hero-copy { font-size: .94rem; line-height: 1.55; }
+.reference-emblem { width: min(54vw, 300px); margin: 22px auto; }
+.gallery-stage > .portrait-badge { top: 14px; right: 14px; width: 44px; height: 44px; }
+.brand-finale-stage .blue-waves { width: 120%; left: -10%; filter: drop-shadow(0 0 7px #5f3aae); }
+@media (max-height: 600px) { .reference-hero { padding: 40px 0; } .brand-finale-stage { padding: 20px 0; gap: 22px; } .brand-band-track span { font-size: clamp(4rem, 16vw, 24svh); } }
+.portrait-badge { animation: none; }
+.photo-in-view .portrait-badge { animation: badgeRoll 15s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .photo-in-view .portrait-badge { animation: none; } }
+/* Decorative caption gradients must never swallow photo/lightbox clicks. */
+.archive-card:after, .archive-caption, .gallery-item:after, .gallery-caption { pointer-events: none; }

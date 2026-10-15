@@ -220,7 +220,7 @@ ok('every original section is on the page', ['id="about"', 'id="psychology"', 'i
 ok('the awareness corner is gone (the club’s own wording stays)',
   !home.body.includes('id="awareness"') && !home.body.includes('awareness-stage') && !/\.awareness-[a-z]/.test(home.body) && !home.body.includes('href="/awareness"'));
 ok('no “Content Studio” wording anywhere on the page', !/content studio/i.test(home.body));
-ok('the hero and the artwork are drawn', home.body.includes('id="heroTagline"') && home.body.includes('class="art-card"'));
+ok('the reference-style opening keeps the club emblem and editable tagline', home.body.includes('id="heroTagline"') && home.body.includes('class="reference-emblem"'));
 ok('the club statistics are printed', home.body.includes('id="statsRow"') && home.body.includes('student-led'));
 ok('the history timeline is written from the store', home.body.includes('timeline-item') && home.body.includes('A small idea with a big heart'));
 ok('the event card offers registration', home.body.includes('/register?event=event-welcome-circle'));
@@ -1169,11 +1169,19 @@ ok('the clip is a real mp4 that browsers can start straight away',
 ok('the clip is enhanced to 1440x960 and runs through several locations',
   clipSeconds > 17 && clipSeconds < 22 && clipW === 1440 && clipH === 960,
   clipW + 'x' + clipH + ', ' + clipSeconds.toFixed(1) + 's');
-ok('a clip that stalls is nudged, reloaded, and carries on where it stopped',
-  appJs.includes('addEventListener(\'loadedmetadata\'')
-  && appJs.includes("addEventListener('stalled'")
-  && appJs.includes('resumeAt = Math.max(0, clock - 0.2)')
-  && appJs.includes('video.load()'));
+ok('a stalled clip buffers without seek storms and has one bounded recovery',
+  appJs.includes("video.addEventListener('stalled', function () { /* let the browser buffer */ })")
+  && appJs.includes('quietFor > 15000 && !recoveryUsed')
+  && !appJs.includes('video.currentTime = clock + 0.1')
+  && appJs.includes("video.classList.add('is-buffering')"));
+for (const variant of ['desktop', 'mobile']) {
+  const file = fs.readFileSync(path.join(ROOT, 'assets/media/horses-' + variant + '.mp4'));
+  const boxes = mp4Boxes(file, 0, file.length);
+  ok(variant + ' horse rendition is smaller and begins with fast-start metadata',
+    file.length < clip.length * (variant === 'mobile' ? .25 : .45)
+    && boxes.findIndex(box => box.type === 'moov') < boxes.findIndex(box => box.type === 'mdat'),
+    Math.round(file.length / 1024) + ' KB');
+}
 /* The gallery is one strip in the club's own order, with no categories. */
 const galleryBody = (await get('/gallery')).body;
 ok('the gallery has no event albums or category chips any more',
@@ -1185,7 +1193,7 @@ ok('the photo editor no longer asks which event a photo came from',
 ok('the gallery is one strip in the club\'s order',
   /<div class="archive-grid" id="archiveGrid">/.test(galleryBody)
   && galleryBody.indexOf('archiveGrid') > 0
-  && (galleryBody.match(/class="archive-card"/g) || []).length === (galleryBody.match(/class="archive-image"/g) || []).length);
+  && (galleryBody.match(/class="archive-card(?: [^"]*)?"/g) || []).length === (galleryBody.match(/class="archive-image"/g) || []).length);
 ok('the slideshow frame is a photo, not a colour block',
   /class="gallery-stage-image[^"]*"[^>]*background-image:url\(/.test(galleryBody)
   && /\.gallery-stage-image \{[^}]*background-size: contain/.test(appCss)
@@ -1205,7 +1213,7 @@ ok('the slideshow piles every photo in order and turns by itself',
 
 ok('the front page plays the herd, muted and looping, behind everything',
   /<video[^>]*id="heroVideo"[^>]*muted[^>]*loop[^>]*playsinline[^>]*autoplay/.test(homeAlbums.body)
-  && homeAlbums.body.includes('/assets/media/horses-running.mp4')
+  && homeAlbums.body.includes('data-desktop-src="/assets/media/horses-desktop.mp4"')
   && homeAlbums.body.includes('id="heroStill"'));
 ok('the herd runs behind every public page',
   (await Promise.all(['/', '/gallery', '/calendar', '/members', '/register', '/pass', '/verify']
@@ -1227,8 +1235,8 @@ ok('a clip that cannot play leaves the still frame, never a blank box',
   && appJs.includes('video.hidden = true') && layoutSource.includes('id="heroStill"'));
 ok('the herd never stops on its own — nothing pauses it while the page is open',
   !/observe\(hero\)/.test(appJs) && appJs.includes('window.setInterval(function () {')
-  && appJs.includes('video.currentTime = clock + 0.1') && appJs.includes('video.load()')
-  && /document\.hidden\) pause\(\); else play\(\)/.test(appJs));
+  && appJs.includes('quietFor > 15000 && !recoveryUsed') && appJs.includes('video.load()')
+  && /document\.hidden\) pause\(\); else \{ lastAdvance = Date\.now\(\); play\(\); \}/.test(appJs));
 ok('no block of the page is a solid wall: the herd shows through all of them',
   /\.site-shell main > section:not\(\.hero-with-video\)[^{]*,\s*\n\.site-shell main > div:not\(\.photo-frame\) \{\s*background-color: rgba\(var\(--film-rgb\), \.69\);/.test(appCss)
   && !/main > section:not\(\.hero-with-video\)[^{]*\{[^}]*background(-color)?: var\(--cream\)/.test(appCss));
@@ -1591,7 +1599,7 @@ ok('rings then manifestation then the original horse-backed sections',
   mindPage.body.indexOf('class="brand-chapter') < mindPage.body.indexOf('id="manifestHeading"')
   && mindPage.body.indexOf('id="manifestHeading"') < mindPage.body.indexOf('id="details"'));
 ok('requested heading and three small moving objects render',
-  mindPage.body.includes('Control Your Mind') && mindPage.body.includes('Manifest Your Reality')
+  mindPage.body.includes('Control Your') && mindPage.body.includes('Manifest</em>') && mindPage.body.includes('Reality</span>')
   && (mindPage.body.match(/class="mind-object /g) || []).length === 3);
 ok('only one closing band follows registration and precedes Contact',
   mindPage.body.indexOf('id="join"') < mindPage.body.indexOf('class="brand-finale')
@@ -1607,8 +1615,8 @@ ok('all seven rings fit the expanded drawing even before gathering',
   cardsSource.includes('viewBox="-90 -90 780 780"')
   && 300 - 100 - 170 - 100 >= -90 && 300 + 100 + 170 + 100 <= 690);
 
-ok('closing name chapter has no black panel or wave background',
-  mindPage.body.includes('class="brand-finale"') && !mindPage.body.includes('class="brand-finale black-chapter"')
+ok('recorded closing name chapter uses a dark stage and violet strand graphic',
+  mindPage.body.includes('class="brand-finale black-chapter"') && mindPage.body.includes('The Psychology Club')
   && round37Css.includes('.brand-finale { position: relative; height: 220svh; background: transparent; }'));
 ok('closing label and rounded name have generous spacing and sticky scroll time',
   round37Css.includes('gap: clamp(90px, 18svh, 190px)')
@@ -1634,7 +1642,7 @@ ok('header hairline is removed and butterfly sits above menu panel',
   }));
   const callbacks = {};
   const chapterStub = { offsetHeight: 2400, getBoundingClientRect: () => ({ top: 84 - phase * 1684, bottom: 2484 - phase * 1684 }) };
-  const turnStub = { setAttribute: (key, value) => { captured.turn = value; } };
+  const turnStub = { style: {}, setAttribute: (key, value) => { captured.turn = value; } };
   runInNewContext(controller + '\nsetupBrandBand();', {
     $: selector => selector === '.brand-chapter' ? chapterStub : turnStub,
     $$: selector => selector === '.black-chapter' ? [chapterStub] : simulatedRings,
@@ -1653,6 +1661,62 @@ ok('header hairline is removed and butterfly sits above menu panel',
   ok('scrolling back restores the original geometry exactly', captured.ring.join('|') === initial && captured.dark);
   phase = 2; callbacks.scroll();
   ok('header returns from black when the black section is gone', !captured.dark);
+}
+
+console.log('\n— saved recording, honest chart and portrait motion —');
+ok('recording is preserved in protected, non-deployed reference storage',
+  fs.existsSync(path.join(ROOT, 'tools/references/superconscious-mobile-2026-10-15.mp4'))
+  && fs.existsSync(path.join(ROOT, 'tools/references/README.md'))
+  && !fs.existsSync(path.join(ROOT, 'screen-20261015-075423.mp4')));
+ok('splash and opening share the seven-circle mark',
+  navLayout.includes("mt_reference_rings(false, 'splash-rings')")
+  && round37Home.includes("mt_reference_rings(false, 'hero-rings')")
+  && cardsSource.includes('$ring < 6'));
+ok('recorded inline icons roll beside the manifestation words',
+  (mindPage.body.match(/<i class="mind-object /g) || []).length === 3
+  && round37Css.includes('@keyframes pillRoll') && round37Css.includes('font-family: Georgia, serif'));
+ok('joined rings shrink and rise before the following heading',
+  appJs.includes('(progress - 0.72) / 0.28') && appJs.includes('1 - exit * 0.66'));
+ok('people alternate left and right on home and member directory',
+  round37Css.includes('.team-card:nth-child(even), .member-cards .member-card:nth-child(even) { align-self: flex-end; }')
+  && round37Css.includes('.team-grid, .member-cards { display: flex; flex-direction: column; gap: 70px; }'));
+ok('gallery gradients and captions cannot intercept photo clicks',
+  round37Css.includes('.archive-card:after, .archive-caption, .gallery-item:after, .gallery-caption { pointer-events: none; }'));
+ok('portrait reveal and zoom have reduced-motion fallbacks',
+  appJs.includes('function setupPortraits()') && appJs.includes('setupPortraits();')
+  && round37Css.includes('@keyframes portraitPop') && round37Css.includes('@keyframes portraitBreathe'));
+ok('happiness chart explicitly says it is illustrative, not a club survey score',
+  mindPage.body.includes('Illustrative trend only — not measured club data.')
+  && mindPage.body.includes('No survey results or numerical score are represented.')
+  && mindPage.body.includes('id="happinessCurve"') && mindPage.body.includes('<animateMotion'));
+{
+  const { runInNewContext } = await import('node:vm');
+  const startVideo = appJs.indexOf('function setupHeroVideo()');
+  const endVideo = appJs.indexOf('function setupPortraits()', startVideo);
+  let now = 0, loads = 0, interval;
+  const events = {}, classes = new Set();
+  const videoStub = {
+    dataset: { mobileSrc: '/mobile.mp4', desktopSrc: '/desktop.mp4' },
+    currentTime: 0, readyState: 1, paused: false, hidden: false,
+    addEventListener: (name, fn) => { events[name] = fn; },
+    play: () => ({ catch: () => {} }), pause: () => {}, load: () => { loads++; },
+    classList: { add: name => classes.add(name), remove: name => classes.delete(name) }
+  };
+  runInNewContext(appJs.slice(startVideo, endVideo) + '\nsetupHeroVideo();', {
+    $: () => videoStub, reduced: () => false, navigator: { connection: { effectiveType: '4g' } },
+    Date: { now: () => now }, document: { hidden: false, addEventListener: () => {} },
+    window: { matchMedia: () => ({ matches: true }), clearTimeout: () => {}, setTimeout: () => 1,
+      setInterval: fn => { interval = fn; }, addEventListener: () => {} }
+  });
+  ok('player chooses only the mobile rendition on a phone', videoStub.src === '/mobile.mp4');
+  events.stalled(); events.stalled();
+  ok('network stalls do not seek or discard the buffer', videoStub.currentTime === 0 && loads === 0);
+  now = 1000; interval(); now = 8000; interval();
+  ok('a prolonged freeze shows the poster rather than a stuck horse', classes.has('is-buffering') && loads === 0);
+  now = 20000; interval(); now = 45000; interval();
+  ok('recovery cannot reload repeatedly', loads === 1);
+  videoStub.currentTime = 1; interval();
+  ok('moving frames restore the video over the poster', !classes.has('is-buffering'));
 }
 
 console.log('\n— the lamps that breathe —');
