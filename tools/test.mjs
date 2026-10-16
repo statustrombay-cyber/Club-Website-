@@ -1630,7 +1630,7 @@ ok('the glass header has no opaque scrim or perimeter line',
   && round37Css.includes('border: 0; box-shadow: none; background: rgba(255,255,255,.12)'));
 ok('wire objects use antialiased recorded silhouettes instead of invented filaments',
   appJs.includes('function setupWireObjects()') && appJs.includes('setupWireObjects();')
-  && appJs.includes('image.dataset.motionSrc') && appJs.includes('document.hidden')
+  && appJs.includes('player.context.drawImage') && appJs.includes('document.hidden')
   && cardsSource.includes('data-wire-object=') && !cardsSource.includes('data-wire-line='));
 
 console.log('\n— black and blue chapter sequence —');
@@ -1730,14 +1730,14 @@ ok('splash keeps the seven-circle mark while the first-page emblem is unobstruct
   && cardsSource.includes('$ring < 6'));
 ok('recorded inline icons have three independently observed silhouette loops',
   (mindPage.body.match(/data-wire-object="/g) || []).length === 3
-  && (mindPage.body.match(/data-motion-src="/g) || []).length === 3
+  && (mindPage.body.match(/data-atlas-src="/g) || []).length === 3
   && appJs.includes('function setupWireObjects()'));
 // Parse the shipped WebP containers, not just filenames or CSS declarations.
 const wireStudy=JSON.parse(fs.readFileSync(path.join(ROOT,'tools/references/wire-motion.json'),'utf8'));
 const sourceStudy=JSON.parse(fs.readFileSync(path.join(ROOT,'tools/references/recording.json'),'utf8'));
 ok('wire study refers to the current external recording',wireStudy.sourceSha256===sourceStudy.sha256);
 for(const [name,study] of Object.entries(wireStudy.models)) {
-  const bytes=fs.readFileSync(path.join(ROOT,'assets/motion/wire-'+name+'.webp'));
+  const bytes=fs.readFileSync(path.join(ROOT,'tools/references/wires/wire-'+name+'.webp'));
   let frames=0,duration=0,width=0,height=0,loop=-1,min=Infinity,max=0;
   for(let at=12;at+8<=bytes.length;) {
     const type=bytes.toString('ascii',at,at+4),size=bytes.readUInt32LE(at+4),payload=at+8;
@@ -1752,20 +1752,15 @@ for(const [name,study] of Object.entries(wireStudy.models)) {
   ok('wire '+name+' matches its reviewed decoded-motion provenance',createHash('sha256').update(bytes).digest('hex')===study.sha256);
 }
 for (const [name, study] of Object.entries(wireStudy.models)) {
-  const bytes=fs.readFileSync(path.join(ROOT,'assets/motion/wire-'+name+'-inline.png'));
-  let frames=0,duration=0,loop=-1;
-  for(let at=8;at+12<=bytes.length;) {
-    const size=bytes.readUInt32BE(at),type=bytes.toString('ascii',at+4,at+8),payload=at+8;
-    if(type==='acTL') loop=bytes.readUInt32BE(payload+4);
-    if(type==='fcTL'){frames++;duration+=1000*bytes.readUInt16BE(payload+20)/(bytes.readUInt16BE(payload+22)||100);}
-    at+=size+12;
-  }
+  const bytes=fs.readFileSync(path.join(ROOT,'assets/motion/wire-'+name+'-atlas.webp'));
+  const inline=fs.readFileSync(path.join(ROOT,'assets/motion/wire-'+name+'-atlas-inline.png'));
   const {createHash}=await import('node:crypto');
-  ok(name+' fallback is a genuine endless APNG with all original frames and times',frames===study.frames&&Math.abs(duration-study.durationMs)<.01&&loop===0);
-  ok(name+' embedded motion matches the reviewed frame-by-frame provenance',createHash('sha256').update(bytes).digest('hex')===study.inlineMotion.sha256);
+  ok(name+' primary is a static atlas, not a natively animated image', !bytes.includes(Buffer.from('ANIM'))&&createHash('sha256').update(bytes).digest('hex')===study.atlas.sha256);
+  ok(name+' embedded atlas matches the decoded-pose provenance',createHash('sha256').update(inline).digest('hex')===study.atlas.inlineSha256);
+  ok(name+' frame clock preserves every original 24fps delay',study.atlas.durations.every((ms,i)=>ms===Math.round((i+1)*1000/24)-Math.round(i*1000/24)));
 }
 const {createHash:motionDigest}=await import('node:crypto');
-const motionUrls=[...mindPage.body.matchAll(/(?:src|data-still-src|data-motion-src)="(\/assets\/motion\/[^\"]+)"/g)].map(match=>match[1]);
+const motionUrls=[...mindPage.body.matchAll(/(?:src|data-atlas-src)="(\/assets\/motion\/[^\"]+)"/g)].map(match=>match[1]);
 ok('all fetched motion images use content hashes; stills are embedded PNG fallbacks',motionUrls.length===4&&motionUrls.every(value=>{
   const url=new URL(value,'https://club.example');
   return url.searchParams.get('v')===motionDigest('sha256').update(fs.readFileSync(path.join(ROOT,url.pathname))).digest('hex').slice(0,12);
@@ -1820,74 +1815,54 @@ ok('whole sections keep stable geometry and dark stages cannot paint outside the
   round37Css.includes('.site-shell main > section { content-visibility: visible; contain-intrinsic-size: none; }')
   && round37Css.includes('.black-chapter { overflow: clip; }')
   && round37Css.includes('.page-home .site-shell main * { content-visibility: visible; contain-intrinsic-size: none; }'));
-/* Real cutout visibility lifecycle: start as stills; animate on screen only. */
+/* Execute the real canvas player with controlled frame time and requests. */
 {
-  const { runInNewContext } = await import('node:vm');
-  const begin = appJs.indexOf('function setupWireObjects()');
-  const end = appJs.indexOf('function setupMarqueeTiming()', begin);
-  let intersection;
-  const handlers = {};
-  const nodes = ['orbit', 'prism', 'sphere'].map(type => {
-    const still = '/assets/motion/wire-' + type + '-still.webp';
-    return { dataset: {}, image: { handlers: {}, addEventListener(name, fn) { this.handlers[name] = fn; }, src: still, dataset: { stillSrc: still, motionSrc: still.replace('-still', ''), inlineMotionSrc: '/inline-' + type + '.png' },
-      getAttribute() { return this.src; }, setAttribute(name, value) { this.src = value; } } };
-  });
-  const doc = { hidden: false, addEventListener: (name, fn) => { handlers[name] = fn; } };
-  const Observer = class { constructor(fn) { intersection = fn; } observe() {} };
-  runInNewContext(appJs.slice(begin, end) + '\nsetupWireObjects();', {
-    $: (selector, node) => node.image, $$: () => nodes, reduced: () => false, document: doc, IntersectionObserver: Observer,
-    Image: class { set src(value) { this.onload(); } },
-    window: { IntersectionObserver: Observer, matchMedia: () => ({ addEventListener() {} }) }
-  });
-  ok('wire objects start as antialiased stills without unnecessary JS frame work', nodes.every(n => n.image.src.endsWith('-still.webp')));
-  intersection(nodes.map(target => ({ target, isIntersecting: true })));
-  ok('the three actual recorded silhouette loops activate on screen', nodes.every(n => !n.image.src.includes('-still')));
-  doc.hidden = true; handlers.visibilitychange();
-  ok('background tabs replace every loop with a still', nodes.every(n => n.image.src.endsWith('-still.webp')));
-  doc.hidden = false; handlers.visibilitychange();
-  ok('visible loops resume when the tab returns', nodes.every(n => !n.image.src.includes('-still')));
-  intersection(nodes.map(target => ({ target, isIntersecting: false })));
-  ok('offscreen objects return to stills', nodes.every(n => n.image.src.endsWith('-still.webp')));
-  intersection(nodes.map(target => ({ target, isIntersecting: true })));
-  nodes.forEach(node => node.image.handlers.error());
-  ok('failed motion requests keep all three recorded shapes moving in embedded APNGs', nodes.every(n=>n.image.src.includes('/inline-') && n.dataset.wireState === 'fallback-motion'));
-  intersection(nodes.map(target => ({ target, isIntersecting: true })));
-  ok('visibility changes preserve animated fallback without retrying a broken WebP',nodes.every(n=>n.image.src.includes('/inline-')));
-  doc.hidden=true;handlers.visibilitychange();
-  ok('animated fallbacks also pause in background tabs',nodes.every(n=>n.image.src.endsWith('-still.webp')));
-  doc.hidden=false;handlers.visibilitychange();
-  ok('animated fallbacks resume on returning to the tab',nodes.every(n=>n.dataset.wireState==='fallback-motion'));
-  const waiting=[];
-  const delayed=nodes.map(n=>({dataset:{},image:{...n.image,handlers:{}}}));
-  runInNewContext(appJs.slice(begin,end)+'\nsetupWireObjects();',{
-    $:(selector,node)=>node.image,$$:()=>delayed,reduced:()=>false,document:doc,IntersectionObserver:Observer,
-    Image:class{set src(value){waiting.push(this)}},
-    window:{IntersectionObserver:Observer,matchMedia:()=>({addEventListener(){}})}
-  });
-  intersection(delayed.map(target=>({target,isIntersecting:true})));
-  ok('slow animation requests immediately show moving embedded frames',waiting.length===3&&delayed.every(n=>n.image.src.includes('/inline-')&&n.dataset.wireState==='loading-motion'));
-  waiting.forEach(loader=>loader.onerror());
-  ok('preloader failures retain animation without promoting a broken URL',delayed.every(n=>n.image.src.includes('/inline-')&&n.dataset.wireState==='fallback-motion'));
-  delayed.forEach(n=>n.image.handlers.error());
-  ok('a damaged embedded image still has a final valid static silhouette',delayed.every(n=>n.image.src.endsWith('-still.webp')&&n.dataset.wireState==='still'));
-
-  // Older browsers without IntersectionObserver still receive motion. A native
-  // decode rejection must keep that same moving fallback, not just a still.
-  const decodeNodes=nodes.map(n=>({dataset:{},image:{...n.image,dataset:{...n.image.dataset},src:n.image.dataset.stillSrc,handlers:{}}}));
-  let preferStill=false,preferenceChanged;
-  runInNewContext(appJs.slice(begin,end)+'\nsetupWireObjects();',{
-    $:(selector,node)=>node.image,$$:()=>decodeNodes,reduced:()=>preferStill,document:doc,
-    Image:class{set src(value){this.onload();}decode(){return Promise.reject(new Error('corrupt animation'));}},
-    window:{matchMedia:()=>({addEventListener:(name,fn)=>{preferenceChanged=fn;}})}
-  });
-  ok('without IntersectionObserver all three wires still start moving',decodeNodes.every(n=>n.image.src.includes('/inline-')));
-  await new Promise(resolve=>setImmediate(resolve));
-  ok('native image decode rejection retains the moving fallback',decodeNodes.every(n=>n.dataset.wireState==='fallback-motion'));
-  preferStill=true;preferenceChanged();
-  ok('changing reduced-motion preference pauses the embedded loops',decodeNodes.every(n=>n.dataset.wireState==='still'));
-  preferStill=false;preferenceChanged();
-  ok('changing the preference back resumes fallback motion without a network retry',decodeNodes.every(n=>n.dataset.wireState==='fallback-motion'));
-
+  const {runInNewContext}=await import('node:vm');
+  const a=appJs.indexOf('function setupWireObjects()'),b=appJs.indexOf('function setupCardDeck()',a);
+  let queued,clock=0,preferStill=false,inside=true;
+  const events={},requests=[];
+  const nodes=[84,49,49].map((count,i)=>({dataset:{frames:String(count),atlasInline:'inline-'+i,atlasSrc:'full-'+i},classList:{add(){},toggle(){}},draws:[],canvas:{getContext(){return this.ctx;}}}));
+  nodes.forEach(n=>n.canvas.ctx={clearRect(){},drawImage(...args){n.draws.push(args);}});
+  const doc={hidden:false,addEventListener:(n,f)=>events[n]=f};
+  const win={innerHeight:950,requestAnimationFrame:f=>{queued=f;return 1;},cancelAnimationFrame:()=>{queued=null;},addEventListener:(n,f)=>events[n]=f,matchMedia:()=>({addEventListener:(n,f)=>events[n]=f})};
+  const chapter={getBoundingClientRect:()=>inside?{top:0,bottom:2000}:{top:1200,bottom:3200}};
+  runInNewContext(appJs.slice(a,b)+'\nsetupWireObjects();',{$: (s,n)=>s==='.brand-chapter'?chapter:n.canvas,$$:()=>nodes,window:win,document:doc,reduced:()=>preferStill,Image:class{set src(v){this.url=v;this.naturalWidth=v.startsWith('full')?2624:896;this.naturalHeight=Math.ceil((v.endsWith('0')?84:49)/8)*(v.startsWith('full')?220:76);requests.push(this);}}});
+  requests.filter(r=>r.url.startsWith('inline')).forEach(r=>r.onload());
+  const advance=()=>{const next=queued;queued=null;if(next)next(clock+=80);};
+  advance();advance();advance();
+  ok('all three explicit frame clocks draw changing recorded poses',nodes.every(n=>new Set(n.draws.map(d=>d[1]+','+d[2])).size>=2));
+  requests.filter(r=>r.url.startsWith('full')).forEach(r=>r.onerror());advance();
+  ok('failed primary atlases retain moving embedded sheets',nodes.every(n=>n.dataset.wireState==='fallback-motion'));
+  const before=nodes.map(n=>n.draws.length);doc.hidden=true;events.visibilitychange();advance();
+  ok('background tab stops the frame scheduler',nodes.every((n,i)=>n.draws.length===before[i]));
+  doc.hidden=false;events.visibilitychange();advance();advance();
+  ok('returning to the tab resumes all three frame clocks',nodes.every((n,i)=>n.draws.length>before[i]));
+  preferStill=true;events.change();ok('reduced motion restores the server-rendered silhouettes',nodes.every(n=>n.dataset.wireState==='still'));
+  preferStill=false;events.change();advance();advance();ok('motion preference changes resume playback',nodes.every(n=>n.dataset.wireState==='fallback-motion'));
+  inside=false;events.scroll();ok('chapter leaving the viewport stops all clocks',nodes.every(n=>n.dataset.wireState==='still'));
+  inside=true;events.scroll();requests.filter(r=>r.url.startsWith('full')).forEach(r=>{r.naturalWidth=48;r.onload();r.naturalWidth=2624;});
+  ok('a wrong-sized valid image cannot replace the embedded atlas',nodes.every(n=>n.dataset.atlasFailed==='true'&&n.dataset.wireState==='fallback-motion'));
+  requests.filter(r=>r.url.startsWith('full')).forEach(r=>r.onload());advance();advance();
+  ok('decoded full-resolution atlases promote without restarting the pose clock',nodes.every(n=>n.dataset.wireState==='motion'&&!n.dataset.atlasFailed));
+}
+/* Card deck phase order, reverse scrolling, static accessibility and sizing. */
+{
+  const {runInNewContext}=await import('node:vm');
+  const a=appJs.indexOf('function setupCardDeck()'),b=appJs.indexOf('function setupHappinessGraph()',a);
+  let progress=0,queued,reduceDeck=false;
+  const events={},cards=Array.from({length:3},()=>({style:{},dataset:{},offsetHeight:330,scrollHeight:9999}));
+  const deck={offsetHeight:2350,classList:{toggle(){},remove(){}},getBoundingClientRect:()=>({top:84-progress*1484})};
+  const stack={style:{}};
+  runInNewContext(appJs.slice(a,b)+'\nsetupCardDeck();',{$:s=>s==='.psyche-deck'?deck:stack,$$:()=>cards,reduced:()=>reduceDeck,document:{},window:{innerHeight:950,innerWidth:1440,requestAnimationFrame:f=>{queued=f;return 1;},cancelAnimationFrame:()=>{queued=null;},addEventListener:(n,f)=>events[n]=f,matchMedia:()=>({addEventListener:(n,f)=>events[n]=f})}});
+  const flush=()=>{const q=queued;queued=null;if(q)q();};flush();
+  ok('deck measures content without counting the oversized decorative sheen',stack.style.height==='330px');
+  events.resize();flush();ok('repeated deck measurement cannot grow the cards',stack.style.height==='330px');
+  ok('all three cards pop into a complete stack',cards.every(c=>c.dataset.deckState==='stacked'));
+  progress=.36;events.scroll();flush();ok('Notice is thrown before Connect',cards[0].dataset.deckState==='thrown'&&cards[1].dataset.deckState==='stacked');
+  progress=.64;events.scroll();flush();ok('Connect leaves before Grow',cards[1].dataset.deckState==='thrown'&&cards[2].dataset.deckState==='stacked');
+  progress=.93;events.scroll();flush();ok('the deck finishes with all three cards thrown',cards.every(c=>c.dataset.deckState==='thrown'));
+  progress=.05;events.scroll();flush();ok('reverse scrolling rebuilds the stack',cards.every(c=>c.dataset.deckState==='stacked'));
+  reduceDeck=true;events.change();ok('static mode clears every transform, opacity and inert flag',cards.every(c=>c.style.transform===''&&c.style.opacity===''&&!c.inert));
 }
 /* The marquee uses measured distance / speed, including a resize/font reflow. */
 {
@@ -1906,10 +1881,7 @@ ok('derived motion assets remain below 2.2MB and contain no recording',
   motionFiles.reduce((sum, name) => sum + fs.statSync(path.join(ROOT, 'assets/motion', name)).size, 0) < 2200000
   && motionFiles.every(name => !/\.(mp4|webm|mov)$/i.test(name)));
 for (const type of ['orbit', 'prism', 'sphere']) {
-  const bytes = fs.readFileSync(path.join(ROOT, 'assets/motion/wire-' + type + '.webp'));
-  ok(type + ' contains a genuine animation and has a separate static fallback',
-    bytes.subarray(0, 4).toString() === 'RIFF' && bytes.includes(Buffer.from('ANIM'))
-    && fs.existsSync(path.join(ROOT, 'assets/motion/wire-' + type + '-still.webp')));
+  ok(type+' ships a canvas atlas and an independent still silhouette',fs.existsSync(path.join(ROOT,'assets/motion/wire-'+type+'-atlas.webp'))&&fs.existsSync(path.join(ROOT,'assets/motion/wire-'+type+'-fallback.png')));
 }
 ok('closing field uses recovered blue/violet artwork and reference-scale typography',
   cardsSource.includes('reference-ribbons.webp') && round37Css.includes('25.5vw')

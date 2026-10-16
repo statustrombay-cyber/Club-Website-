@@ -316,3 +316,30 @@ and backups — the same paths a browser would take.
   in the uploads folder).
 - To take a snapshot at any time: *Dashboard → Data → Download backup*, or copy
   `data/site.json` and the `uploads/` folder.
+
+### Complete install versus small update
+
+- `node tools/make-deploy-bundle.mjs Club-Website-deploy.zip` makes the complete
+  runtime package, including all three public horse MP4s. These videos alone
+  are 15,664,029 bytes (about 15.7 MB); ZIP compression cannot substantially
+  shrink already-compressed MP4s. They are intentional media, not test files.
+- `node tools/make-deploy-bundle.mjs Club-Website-update.zip --update` makes a
+  smaller **update for an existing installation**. It reuses precisely those
+  three unchanged MP4s, includes every other current runtime asset and all code,
+  and leaves existing `data/`, `uploads/` and media intact. Do not delete the
+  installed folders before extracting. This is **not a fresh-install package**.
+- Original recorded wire loops are development inputs under
+  `tools/references/wires/`, not deployed assets. The live site plays static
+  frame atlases with an explicit canvas clock, rather than native animated-image
+  playback. Run `python tools/build-wire-atlases.py` to rebuild them (Pillow).
+- The unused older butterfly image and obsolete wire APNG/still-WebP derivatives
+  were removed. Both packages exclude tools, references, dependencies, backups,
+  test files and the external design recording.
+
+The optional real-browser motion regression is `node tools/test-motion-browser.mjs`
+(with `playwright-core` and `@sparticuz/chromium` installed for development).
+Start the preview first. It checks changing canvas pixels for all three wires,
+primary-sheet failure/hold/wrong-size paths, no-IntersectionObserver playback,
+card order/reverse scrolling, resize stability, overflow and reduced-motion.
+`MT_BASE_URL`, `CHROME_EXECUTABLE_PATH` and `MT_SCREENSHOT_DIR` are optional.
+These browser dependencies and tools are not included in deployment packages.

@@ -1922,3 +1922,22 @@ html.no-js .chart-traveller animateMotion { display: none; }
 /* Home's pinned scenes also depend on the sizes of the timeline/event cards.
    Do not let their estimated heights move a dark scene under the reader. */
 .page-home .site-shell main * { content-visibility: visible; contain-intrinsic-size: none; }
+
+/* A canvas clock draws source frames; the image is an independent no-JS still. */
+[data-wire-object] { position: relative; }
+[data-wire-object] canvas { position: absolute; inset: 0; display: none; width: 100%; height: 100%; pointer-events: none; }
+[data-wire-object].wire-painted:not(.wire-paused) canvas { display: block; }
+[data-wire-object].wire-painted:not(.wire-paused) img { visibility: hidden; }
+/* Clip flying cards to their chapter, without an overflow-hidden scrollport. */
+.psyche-section { overflow: clip; }
+.psyche-deck.deck-ready { height: 235svh; max-width: none; width: 100%; padding: 0; }
+.deck-ready .psyche-deck-stage { position: sticky; top: 84px; height: calc(100svh - 84px); display: grid; place-items: center; }
+.deck-ready .psyche-cards { position: relative; display: block; width: min(520px, calc(100% - 64px)); margin: 0; height: 360px; }
+.deck-ready .psyche-card { position: absolute; inset: 0; min-height: 330px; height: 100%; margin: 0; padding: clamp(24px, 4vw, 38px); animation: none !important; transition: none !important; will-change: transform, opacity; transform-origin: 50% 80%; }
+.deck-ready .psyche-card-one { z-index: 3; }
+.deck-ready .psyche-card-two { z-index: 2; }
+.deck-ready .psyche-card-three { z-index: 1; }
+.deck-ready .psyche-card h3 { font-size: clamp(2.4rem, 5vw, 3.5rem); }
+.deck-ready .psyche-card p { max-width: 38ch; font-size: .98rem; line-height: 1.65; }
+@media (max-width: 1100px) { .deck-ready .psyche-deck-stage { top: 68px; height: calc(100svh - 68px); } }
+@media (prefers-reduced-motion: reduce) { [data-wire-object] canvas { display: none !important; } [data-wire-object] img { visibility: visible !important; } }

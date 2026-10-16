@@ -133,11 +133,13 @@ $clubWords = ['mind', 'body', 'connection', 'curiosity', 'growth', 'community', 
     </div>
   </div>
 
-  <div class="container">
+  <div class="container psyche-deck">
+    <div class="psyche-deck-stage">
     <div class="psyche-cards">
       <article class="psyche-card psyche-card-one"><span class="psyche-index">01</span><div class="psyche-icon">◌</div><h3>Notice</h3><p>Pause long enough to meet your inner world with a little more honesty and kindness.</p></article>
       <article class="psyche-card psyche-card-two"><span class="psyche-index">02</span><div class="psyche-icon">◒</div><h3>Connect</h3><p>Turn conversations into bridges—between ideas, people and the many parts of ourselves.</p></article>
       <article class="psyche-card psyche-card-three"><span class="psyche-index">03</span><div class="psyche-icon">✦</div><h3>Grow</h3><p>Carry what you learn into everyday choices, relationships and the campus community.</p></article>
+    </div>
     </div>
   </div>
 </section>

@@ -22,7 +22,9 @@ import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..');
-const OUT = path.resolve(ROOT, process.argv[2] || 'deploy-bundle.zip');
+const UPDATE = process.argv.includes('--update');
+const OUT = path.resolve(ROOT, process.argv.slice(2).find(a => !a.startsWith('--')) || (UPDATE ? 'deploy-bundle-update.zip' : 'deploy-bundle.zip'));
+const UNCHANGED_MEDIA = new Set(['assets/media/horses-running.mp4', 'assets/media/horses-desktop.mp4', 'assets/media/horses-mobile.mp4']);
 
 const DIRS = ['app', 'views', 'assets'];
 const FILES = ['index.php', '.htaccess', 'uploads/.htaccess'];
@@ -34,7 +36,7 @@ function walk(dir, base = '') {
   const out = [];
   for (const entry of fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
     const rel = base ? base + '/' + entry.name : entry.name;
-    if (SKIP_DIRS.has(entry.name) || SKIP_FILES.test(entry.name)) continue;
+    if (SKIP_DIRS.has(entry.name) || SKIP_FILES.test(entry.name) || (UPDATE && UNCHANGED_MEDIA.has(rel))) continue;
     if (entry.isDirectory()) {
       out.push({ rel, abs: path.join(dir, entry.name), dir: true });
       out.push(...walk(path.join(dir, entry.name), rel));
@@ -58,6 +60,16 @@ for (const file of FILES) {
   if (parent !== '.' && !entries.some((e) => e.rel === parent)) {
     entries.push({ rel: parent, abs: path.join(ROOT, parent), dir: true });
   }
+}
+
+if (UPDATE) {
+  entries.push({rel: 'UPDATE-INSTRUCTIONS.txt', dir: false, data: Buffer.from(
+    'UPDATE PACKAGE — EXISTING CLUB WEBSITE ONLY\n\n' +
+    'Extract over the existing site; do not delete its folders first.\n' +
+    'This package reuses the three unchanged horse MP4s already installed in assets/media/.\n' +
+    'It does not remove or replace your data/, uploads/ or existing media.\n' +
+    'For a fresh install use Club-Website-deploy.zip, which includes all required media.\n'
+  )});
 }
 
 /* --------------------------------------------------------------------- crc */
@@ -87,7 +99,7 @@ function buildZip(items) {
 
   for (const item of items) {
     const name = Buffer.from(item.dir ? item.rel + '/' : item.rel, 'utf8');
-    const raw = item.dir ? Buffer.alloc(0) : fs.readFileSync(item.abs);
+    const raw = item.dir ? Buffer.alloc(0) : (item.data || fs.readFileSync(item.abs));
     const deflated = item.dir ? Buffer.alloc(0) : zlib.deflateRawSync(raw, { level: 9 });
     const useDeflate = !item.dir && deflated.length < raw.length;
     const body = useDeflate ? deflated : raw;
@@ -154,7 +166,7 @@ const zip = buildZip(entries);
 fs.mkdirSync(path.dirname(OUT), { recursive: true });
 fs.writeFileSync(OUT, zip);
 
-const bytes = entries.reduce((total, item) => total + (item.dir ? 0 : fs.statSync(item.abs).size), 0);
+const bytes = entries.reduce((total, item) => total + (item.dir ? 0 : (item.data ? item.data.length : fs.statSync(item.abs).size)), 0);
 console.log('packed    ' + entries.filter((e) => !e.dir).length + ' files (' + (bytes / 1024 / 1024).toFixed(2) + ' MB raw)');
 console.log('bundle    ' + path.relative(ROOT, OUT) + ' (' + (zip.length / 1024 / 1024).toFixed(2) + ' MB)');
-console.log('upload it into the site folder (htdocs/), extract, then open /health.');
+console.log(UPDATE ? 'UPDATE ONLY: extract over the installed site without deleting folders. Existing horse MP4s are required.' : 'Full install: upload into the site folder (htdocs/), extract, then open /health.');

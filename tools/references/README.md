@@ -235,3 +235,30 @@ drift**. No visible full-viewport fixed dark overlay was present at those
 positions. The 91 visual/lifecycle checks additionally sampled changing rendered
 pixels for every wire at both widths under normal, 404, corrupt and held-up
 external requests; photos/menu/overflow were checked at 320/390/768/1440px.
+
+## Current implementation: explicit frame playback (supersedes APNG delivery)
+
+Compared `8efe53e`, `a9175ab`, `c9886a4` and `890c220`. The early versions
+switched animated WebP/still sources through a per-capsule IntersectionObserver;
+the later versions added decode gates and APNG fallbacks. Local normal-browser
+movement was observed, but the user's repeated freeze report was not reproduced
+as a proven native-decoder bug. The playback architecture has therefore been
+replaced, rather than presenting another source-swap fallback as a diagnosis.
+
+Current playback uses static full-resolution WebP atlases plus embedded compact
+PNG atlases. One requestAnimationFrame clock draws the exact recorded poses on
+three canvases, with the original rounded 24fps boundaries. No native animated
+image, per-wire intersection observer or source swapping controls playback.
+Whole-chapter visibility and document visibility govern the shared clock.
+Reduced-motion/no-script/unsupported-canvas cases retain embedded silhouettes.
+Full-atlas failures keep the embedded static atlases playing. Promotion does not
+reset elapsed time. `verify-motion-assets.py` compares every atlas tile with the
+original full-resolution/quantised-alpha source pose; those developer-only
+sources now live under `tools/references/wires/` and are excluded from deployment.
+
+Notice/Connect/Grow now form a progressive-enhancement sticky deck: three pop-in
+entrances, then Notice, Connect and Grow fly away individually as scrolling
+advances. Reverse scrolling reconstructs the stack. Reduced-motion, no-script,
+short viewports and text too large to fit retain readable ordinary cards.
+Intrinsic card measurement excludes decorative pseudo-element overflow, avoiding
+resize-driven card-height growth.

@@ -28,7 +28,7 @@
 
   function setupReveal() {
     // Reveal words and tiles, not their entire containing section twice.
-    const targets = $$('.section-head > *, .section > .container > h2, .section > .container > p, .detail-card, .event-card, .gallery-item, .team-card, .calendar-item, .member-card, .psyche-card, .gallery-stage, .calendar-month, .calendar-card, .timeline-item, .gallery-side-note, .club-form');
+    const targets = $$('.section-head > *, .section > .container > h2, .section > .container > p, .detail-card, .event-card, .gallery-item, .team-card, .calendar-item, .member-card, .gallery-stage, .calendar-month, .calendar-card, .timeline-item, .gallery-side-note, .club-form');
     if (!('IntersectionObserver' in window) || reduced()) {
       targets.forEach(function (node) { node.classList.add('is-visible'); });
       return;
@@ -494,67 +494,138 @@
     paint();
   }
 
-  /* Antialiased silhouette loops preserve the observed poses. Only visible
-     objects animate; no-script and reduced-motion visitors receive stills. */
+  /* Explicit 24fps playback of the recorded poses. Static sprite sheets avoid
+     native animated-image suspension and source-swap restarts. One shared clock
+     is gated by the CHAPTER, not each transformed/clipped capsule's observer. */
   function setupWireObjects() {
     const objects = $$('[data-wire-object]');
     if (!objects.length) return;
-    const visible = new Set(), failed = new Set(), inlineFailed = new Set();
-    const loaded = new Set(), pending = new Map();
-    function failMotion(node) {
-      failed.add(node);
-      pending.delete(node);
-      update();
+    const chapter = $('.brand-chapter');
+    const players = [];
+    let frame = 0, running = false, elapsed = 0, previous = 0;
+    const draw = function (player) {
+      if (!player.sheet) return;
+      const total = player.count === 84 ? 3500 : 2042;
+      const time = elapsed % total;
+      // Original extraction rounded successive 24fps boundaries to milliseconds.
+      let index = 0;
+      while (index + 1 < player.count && Math.round((index + 1) * 1000 / 24) <= time) index++;
+      if (player.last === index) return;
+      const w = player.small ? 112 : 328, h = player.small ? 76 : 220;
+      player.context.clearRect(0, 0, 328, 220);
+      player.context.drawImage(player.sheet, index % 8 * w, Math.floor(index / 8) * h, w, h, 0, 0, 328, 220);
+      player.last = index;
+      player.node.dataset.wireFrame = String(index);
+      player.node.classList.add('wire-painted');
+    };
+    const tick = function (now) {
+      frame = 0;
+      if (!running) return;
+      if (previous) elapsed += Math.max(0, now - previous);
+      previous = now;
+      players.forEach(draw);
+      frame = window.requestAnimationFrame(tick);
+    };
+    function sync() {
+      const box = chapter ? chapter.getBoundingClientRect() : {top: 0, bottom: window.innerHeight};
+      running = !document.hidden && !reduced() && box.bottom > 0 && box.top < window.innerHeight;
+      players.forEach(function (player) {
+        player.node.dataset.wireState = running && player.sheet ? player.small ? 'fallback-motion' : 'motion' : 'still';
+        player.node.classList.toggle('wire-paused', !running);
+      });
+      if (running && !frame) { previous = 0; frame = window.requestAnimationFrame(tick); }
+      else if (!running && frame) { window.cancelAnimationFrame(frame); frame = 0; previous = 0; }
     }
     objects.forEach(function (node) {
-      const image = $('img', node);
-      image.dataset.stillSrc = image.dataset.stillSrc || image.getAttribute('src');
-      image.addEventListener('error', function () {
-        const source = image.getAttribute('src');
-        if (source === image.dataset.motionSrc) failMotion(node);
-        else if (source === image.dataset.inlineMotionSrc) { inlineFailed.add(node); update(); }
-      });
-    });
-    function update() {
-      objects.forEach(function (node) {
-        const image = $('img', node);
-        const animate = visible.has(node) && !document.hidden && !reduced();
-        if (animate && !failed.has(node) && !loaded.has(node) && !pending.has(node)) {
-          const loader = new Image();
-          pending.set(node, loader);
-          const ready = function () {
-            if (pending.get(node) !== loader || failed.has(node)) return;
-            pending.delete(node); loaded.add(node); update();
-          };
-          loader.onload = function () {
-            if (typeof loader.decode === 'function') loader.decode().then(ready, function () { failMotion(node); });
-            else ready();
-          };
-          loader.onerror = function () { failMotion(node); };
-          loader.src = image.dataset.motionSrc;
+      const canvas = $('canvas', node);
+      let context;
+      try { context = canvas && canvas.getContext && canvas.getContext('2d'); } catch (error) { return; }
+      if (!context) return; // the server-rendered silhouette remains readable
+      const player = {node: node, context: context, count: Number(node.dataset.frames), sheet: null, small: true, last: -1};
+      players.push(player);
+      const inline = new Image(), full = new Image();
+      inline.onload = function () {
+        if (!player.sheet && inline.naturalWidth === 8 * 112 && inline.naturalHeight === Math.ceil(player.count / 8) * 76) { player.sheet = inline; player.small = true; player.last = -1; draw(player); sync(); }
+      };
+      // A failed primary sheet never changes or erases a valid embedded sheet.
+      full.onload = function () {
+        if (full.naturalWidth !== 8 * 328 || full.naturalHeight !== Math.ceil(player.count / 8) * 220) {
+          node.dataset.atlasFailed = 'true'; sync(); return;
         }
-        // These embedded APNGs contain the very same poses and frame times.
-        // A slow/missing/corrupt WebP must not freeze any of the three wires.
-        const fullMotion = animate && loaded.has(node) && !failed.has(node);
-        const inlineMotion = animate && !fullMotion && !inlineFailed.has(node) && image.dataset.inlineMotionSrc;
-        const source = fullMotion ? image.dataset.motionSrc : inlineMotion ? image.dataset.inlineMotionSrc : image.dataset.stillSrc;
-        if (image.getAttribute('src') !== source) image.setAttribute('src', source);
-        node.dataset.wireState = fullMotion ? 'motion' : inlineMotion ? failed.has(node) ? 'fallback-motion' : 'loading-motion' : 'still';
-      });
-    }
-    if ('IntersectionObserver' in window) {
-      const observer = new IntersectionObserver(function (entries) {
-        entries.forEach(function (entry) {
-          if (entry.isIntersecting) visible.add(entry.target); else visible.delete(entry.target);
-        });
-        update();
-      }, { threshold: .01 });
-      objects.forEach(function (node) { observer.observe(node); });
-    } else { objects.forEach(function (node) { visible.add(node); }); update(); }
-    document.addEventListener('visibilitychange', update);
+        delete node.dataset.atlasFailed;
+        player.sheet = full; player.small = false; player.last = -1; draw(player); sync();
+      };
+      full.onerror = function () { node.dataset.atlasFailed = 'true'; sync(); };
+      inline.src = node.dataset.atlasInline;
+      full.src = node.dataset.atlasSrc;
+    });
+    if (!players.length) return;
+    window.addEventListener('scroll', sync, {passive: true});
+    window.addEventListener('resize', sync, {passive: true});
+    document.addEventListener('visibilitychange', sync);
     const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
-    if (preference.addEventListener) preference.addEventListener('change', update);
-    else if (preference.addListener) preference.addListener(update);
+    if (preference.addEventListener) preference.addEventListener('change', sync);
+    else if (preference.addListener) preference.addListener(sync);
+    sync();
+  }
+
+  /* Notice → Connect → Grow: pop into a stack, then throw one card at a time.
+     Scroll controls the entire pose, so reversing scroll restores the deck. */
+  function setupCardDeck() {
+    const deck = $('.psyche-deck');
+    if (!deck) return;
+    const cards = $$('.psyche-card', deck), stack = $('.psyche-cards', deck);
+    let frame = 0, enabled = false;
+    const clamp = function (n) { return Math.max(0, Math.min(1, n)); };
+    const paint = function () {
+      frame = 0;
+      if (!enabled) return;
+      const box = deck.getBoundingClientRect();
+      const top = window.innerWidth <= 1100 ? 68 : 84;
+      const travel = Math.max(1, deck.offsetHeight - (window.innerHeight - top));
+      const progress = clamp((top - box.top) / travel);
+      cards.forEach(function (card, i) {
+        const pop = clamp((window.innerHeight - box.top - window.innerHeight * .35 - i * 90) / 260);
+        const enter = 1 - Math.pow(1 - pop, 3);
+        const flight = clamp((progress - .12 - i * .27) / .23);
+        const throwEase = flight * flight;
+        const side = i % 2 ? -1 : 1;
+        const distance = Math.min(920, window.innerWidth * .9 + 240);
+        const x = side * distance * throwEase;
+        const y = (1 - enter) * 100 + i * 12 - throwEase * 200;
+        const scale = (.86 + .14 * enter - i * .025) * (1 - .12 * flight);
+        card.style.transform = 'translate3d(' + x.toFixed(2) + 'px,' + y.toFixed(2) + 'px,0) rotate(' + ([-2, 3, -3][i] + side * 32 * throwEase).toFixed(2) + 'deg) scale(' + scale.toFixed(3) + ')';
+        card.style.opacity = String(enter * (1 - clamp((flight - .75) / .25)));
+        card.dataset.deckState = flight >= 1 ? 'thrown' : flight > 0 ? 'throwing' : pop < 1 ? 'entering' : 'stacked';
+        card.inert = flight >= 1 || pop === 0;
+      });
+    };
+    const schedule = function () { if (enabled && !frame) frame = window.requestAnimationFrame(paint); };
+    const measure = function () {
+      enabled = !reduced() && window.innerHeight >= 560;
+      deck.classList.toggle('deck-ready', enabled);
+      if (enabled) {
+        // Measure intrinsic content, not scrollHeight: the decorative sheen
+        // extends past the card and would otherwise grow the deck on resize.
+        cards.forEach(function (card) { card.style.height = 'auto'; card.style.bottom = 'auto'; });
+        const height = Math.max(330, ...cards.map(function (card) { return card.offsetHeight; }));
+        cards.forEach(function (card) { card.style.height = ''; card.style.bottom = ''; });
+        if (height > window.innerHeight - (window.innerWidth <= 1100 ? 68 : 84) - 40) {
+          enabled = false; deck.classList.remove('deck-ready');
+        } else { stack.style.height = height + 'px'; schedule(); }
+      }
+      if (!enabled) {
+        if (frame) window.cancelAnimationFrame(frame);
+        frame = 0; stack.style.height = '';
+        cards.forEach(function (card) { card.style.transform = ''; card.style.opacity = ''; card.inert = false; delete card.dataset.deckState; });
+      }
+    };
+    window.addEventListener('scroll', schedule, {passive: true});
+    window.addEventListener('resize', measure, {passive: true});
+    const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (preference.addEventListener) preference.addEventListener('change', measure);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
+    measure();
   }
 
   function setupHappinessGraph() {
@@ -844,6 +915,7 @@
     setupWireObjects();
     setupHappinessGraph();
     setupMarqueeTiming();
+    setupCardDeck();
     setupReveal();
     setupPortraits();
     setupMenu();

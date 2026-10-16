@@ -191,9 +191,11 @@ function mt_manifest_object(string $type): string
         return '';
     }
     $still = 'data:image/png;base64,' . base64_encode((string) file_get_contents(MT_ASSETS . '/motion/wire-' . $type . '-fallback.png'));
-    $inlineMotion = 'data:image/png;base64,' . base64_encode((string) file_get_contents(MT_ASSETS . '/motion/wire-' . $type . '-inline.png'));
-    $motion = mt_motion_url('wire-' . $type . '.webp');
-    return '<i class="mind-object object-' . $type . '" data-wire-object="' . $type . '" aria-hidden="true"><img src="' . $still . '" data-motion-src="' . $motion . '" data-inline-motion-src="' . $inlineMotion . '" alt="" width="164" height="110" decoding="async"></i>';
+    $atlas = mt_motion_url('wire-' . $type . '-atlas.webp');
+    $inline = 'data:image/png;base64,' . base64_encode((string) file_get_contents(MT_ASSETS . '/motion/wire-' . $type . '-atlas-inline.png'));
+    $count = $type === 'orbit' ? 84 : 49;
+    return '<i class="mind-object object-' . $type . '" data-wire-object="' . $type . '" data-frames="' . $count . '" data-atlas-src="' . $atlas . '" data-atlas-inline="' . $inline . '" aria-hidden="true"><img src="' . $still . '" alt="" width="164" height="110" decoding="async"><canvas width="328" height="220"></canvas></i>';
+
 }
 
 /** Two aspirational paths; the role holders come from the same live team store. */

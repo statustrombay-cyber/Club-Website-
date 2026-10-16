@@ -1,12 +1,7 @@
 #!/usr/bin/env python3
-"""Optional decoded-asset audit (Python 3 + Pillow); never needs the recording.
-
-    python tools/verify-motion-assets.py
-    python tools/verify-motion-assets.py --build-inline
-
-The compact APNGs are exact-frame alpha downsamplings of the shipped WebPs,
-not synthetic rotations. --build-inline reproducibly regenerates only those
-three APNGs; update wire-motion.json checksums if the originals ever change.
+"""Decoded-asset audit (Python 3 + Pillow); run in the cloned repository.
+Every static atlas tile is compared with its original recorded pose. Inputs
+live in tools/references/wires (development only), never in the deploy ZIP.
 """
 from collections import deque
 from hashlib import sha256
@@ -18,42 +13,27 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[1]
 MOTION = ROOT / 'assets/motion'
 study = json.loads((ROOT / 'tools/references/wire-motion.json').read_text())
-size = (112, 76)
-palette = [v for _ in range(256) for v in (215, 207, 229)]
-transparency = bytes(min(j * 17, 255) for j in range(256))
-
 for kind, info in study['models'].items():
-    source = Image.open(MOTION / f'wire-{kind}.webp')
-    target = MOTION / f'wire-{kind}-inline.png'
-    if '--build-inline' in sys.argv:
-        frames, durations = [], []
-        for frame in range(source.n_frames):
-            source.seek(frame)
-            alpha = source.convert('RGBA').resize(size, Image.Resampling.LANCZOS).getchannel('A')
-            indexed = Image.frombytes('P', size, alpha.point(lambda v: round(v / 17)).tobytes())
-            indexed.putpalette(palette)
-            indexed.info['transparency'] = transparency
-            frames.append(indexed)
-            durations.append(source.info['duration'])
-        frames[0].save(target, save_all=True, append_images=frames[1:], duration=durations,
-                       loop=0, disposal=0, blend=0, optimize=True, bits=4)
-    decoded = Image.open(target)
-    assert decoded.n_frames == source.n_frames == info['frames'], kind
-    assert decoded.info['loop'] == 0 and decoded.size == size, kind
-    assert sha256(target.read_bytes()).hexdigest() == info['inlineMotion']['sha256'], kind
-    different, duration = set(), 0
-    for frame in range(source.n_frames):
-        source.seek(frame)
-        decoded.seek(frame)
-        expected = source.convert('RGBA').resize(size, Image.Resampling.LANCZOS).getchannel('A')
-        expected = expected.point(lambda v: round(v / 17) * 17)
-        actual = decoded.convert('RGBA').getchannel('A')
-        assert actual.tobytes() == expected.tobytes(), (kind, frame, 'pose mismatch')
-        assert abs(decoded.info['duration'] - source.info['duration']) < .001, (kind, frame)
-        duration += decoded.info['duration']
+    source = Image.open(ROOT / 'tools/references/wires' / f'wire-{kind}.webp')
+    meta = info['atlas']
+    primary = Image.open(MOTION / f'wire-{kind}-atlas.webp').convert('RGBA')
+    fallback = Image.open(MOTION / f'wire-{kind}-atlas-inline.png').convert('RGBA')
+    assert source.n_frames == meta['frames']
+    different = set()
+    for i in range(source.n_frames):
+        source.seek(i)
+        x, y = i % 8 * 328, i // 8 * 220
+        actual = primary.crop((x,y,x+328,y+220)).getchannel('A')
+        expected = source.convert('RGBA').getchannel('A')
+        assert actual.tobytes() == expected.tobytes(), (kind,i,'full-resolution pose')
+        x, y = i % 8 * 112, i // 8 * 76
+        actual = fallback.crop((x,y,x+112,y+76)).getchannel('A')
+        expected = source.convert('RGBA').resize((112,76),Image.Resampling.LANCZOS).getchannel('A').point(lambda v:round(v/17)*17)
+        assert actual.tobytes() == expected.tobytes(), (kind,i,'embedded pose')
+        assert source.info['duration'] == meta['durations'][i]
         different.add(actual.tobytes())
-    assert len(different) == source.n_frames and abs(duration - info['durationMs']) < .001
-    print(f'{kind}: {len(different)} different decoded poses; every frame and delay matches')
+    assert len(different) == source.n_frames
+    print(f'{kind}: {len(different)} distinct poses; every full/embedded atlas tile matches')
 
 # Eight-connected components, including the faint antialiased edges: touching
 # neighbours would merge here. This uses only Pillow and Python's standard lib.
