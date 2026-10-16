@@ -174,8 +174,6 @@ $storyPapers = [
     <div class="story-bg story-bg-green" aria-hidden="true"></div>
     <div class="story-bg story-bg-dark" aria-hidden="true"></div>
 
-    <img class="story-hand" src="/assets/img/story-hand.jpg" alt="" width="720" height="1080" loading="lazy" decoding="async" aria-hidden="true">
-
     <p class="story-line story-line-one">Feeling alone can feel like the whole story.</p>
 
     <div class="story-glass" aria-hidden="false" role="group" aria-label="Facts about mental health, shattered into glass">
