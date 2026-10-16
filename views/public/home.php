@@ -146,6 +146,92 @@ $clubWords = ['mind', 'body', 'connection', 'curiosity', 'growth', 'community', 
 
 <?= mt_brand_chapter((string) ($site['clubName'] ?? 'Mindful Tattva')) ?>
 
+<?php
+/* The scroll story: a red stage where a hand breaks a pane of glass into
+ * shards of positive-psychology facts; a green note with a portrait burns;
+ * "This club focuses on human" writes itself as you scroll; newspaper-style
+ * psychology clippings tear apart; then the horse herd comes back. Every
+ * scene is driven by one progress value set in app.js, so it reads as a
+ * continuous film. Copy is original. */
+$storyShards = [
+  ['pts' => '6% 30%, 50% 22%, 40% 50%, 8% 47%', 'dx' => '-22vw', 'dy' => '-18vh', 'rot' => '-14deg', 'text' => 'You are not alone.', 'big' => '', 'cx' => '24%', 'cy' => '37%'],
+  ['pts' => '50% 22%, 94% 31%, 92% 52%, 40% 50%', 'dx' => '18vw', 'dy' => '-26vh', 'rot' => '12deg', 'text' => '1 in 8 people worldwide live with a mental disorder.', 'big' => '12.5%', 'cx' => '67%', 'cy' => '38%'],
+  ['pts' => '8% 47%, 40% 50%, 44% 73%, 16% 70%', 'dx' => '-26vw', 'dy' => '24vh', 'rot' => '-9deg', 'text' => '1 in 5 U.S. adults live with a mental illness in a given year.', 'big' => '20%', 'cx' => '26%', 'cy' => '60%'],
+  ['pts' => '40% 50%, 92% 52%, 88% 74%, 44% 73%', 'dx' => '24vw', 'dy' => '22vh', 'rot' => '10deg', 'text' => 'Naming a feeling can help it settle.', 'big' => '', 'cx' => '66%', 'cy' => '62%'],
+];
+$storyPapers = [
+  ['kicker' => 'Psychology news', 'head' => 'Writing down three good things a day is a popular way to build gratitude.', 'body' => 'Small habits, practised daily, can shift attention toward what is working.', 'x' => '6%', 'y' => '10%', 'r' => '-5deg', 'k' => '1'],
+  ['kicker' => 'Psychology news', 'head' => 'Freud\'s dream notebooks still shape how we talk about the unconscious.', 'body' => 'His questions about slips and dreams are still asked in lecture halls today.', 'x' => '46%', 'y' => '6%', 'r' => '4deg', 'k' => '-1'],
+  ['kicker' => 'Psychology news', 'head' => 'Carl Rogers: being truly heard helps a person grow.', 'body' => 'Unconditional positive regard remains a cornerstone of counselling.', 'x' => '12%', 'y' => '44%', 'r' => '3deg', 'k' => '1.2'],
+  ['kicker' => 'Psychology news', 'head' => 'Jung\'s "shadow" is the part of us we would rather not see.', 'body' => 'Meeting it gently is often the first step towards becoming whole.', 'x' => '52%', 'y' => '42%', 'r' => '-4deg', 'k' => '-0.8'],
+  ['kicker' => 'Psychology news', 'head' => 'Maslow reminded us: belonging comes before self-actualisation.', 'body' => 'Rest, safety and friends are not extras. They are the foundations.', 'x' => '20%', 'y' => '72%', 'r' => '2deg', 'k' => '0.9'],
+  ['kicker' => 'Psychology news', 'head' => 'Why a short walk in open air can settle a crowded mind.', 'body' => 'Attention rests when the body moves through a quieter place.', 'x' => '56%', 'y' => '74%', 'r' => '-3deg', 'k' => '-1.1'],
+];
+?>
+<section class="story-chapter" id="story" aria-label="You are not alone">
+  <div class="story-stage" data-story-stage>
+    <div class="story-bg story-bg-red" aria-hidden="true"></div>
+    <div class="story-bg story-bg-green" aria-hidden="true"></div>
+    <div class="story-bg story-bg-dark" aria-hidden="true"></div>
+
+    <img class="story-hand" src="/assets/img/story-hand.jpg" alt="" width="720" height="1080" loading="lazy" decoding="async" aria-hidden="true">
+
+    <p class="story-line story-line-one">Feeling alone can feel like the whole story.</p>
+
+    <div class="story-glass" aria-hidden="false" role="group" aria-label="Facts about mental health, shattered into glass">
+      <?php foreach ($storyShards as $shard): ?>
+        <div class="story-shard" style="--dx:<?= e($shard['dx']) ?>;--dy:<?= e($shard['dy']) ?>;--rot:<?= e($shard['rot']) ?>">
+          <span class="story-shard-face" style="clip-path:polygon(<?= e($shard['pts']) ?>)"></span>
+          <span class="story-shard-text" style="left:<?= e($shard['cx']) ?>;top:<?= e($shard['cy']) ?>">
+            <?php if ($shard['big'] !== ''): ?><strong><?= e($shard['big']) ?></strong><?php endif; ?>
+            <span><?= e($shard['text']) ?></span>
+          </span>
+        </div>
+      <?php endforeach; ?>
+      <p class="story-you">You are not alone.</p>
+    </div>
+
+    <div class="story-burn" aria-hidden="true">
+      <div class="burn-wrap">
+        <div class="burn-note">
+          <img src="/assets/photos/freud-portrait.jpg" alt="" width="420" height="591" loading="lazy" decoding="async">
+          <span class="burn-note-title">Mindful Tattva note</span>
+          <span class="burn-note-sub">not legal tender · for reflection only</span>
+        </div>
+        <div class="burn-edge"></div>
+      </div>
+      <canvas class="burn-canvas" data-burn-canvas></canvas>
+    </div>
+
+    <p class="story-serif story-this-club" data-reveal="this">This club</p>
+    <p class="story-serif story-focus" data-reveal="focus">focuses on human</p>
+
+    <div class="story-papers" aria-hidden="false">
+      <?php foreach ($storyPapers as $paper): ?>
+        <article class="story-paper" style="--x:<?= e($paper['x']) ?>;--y:<?= e($paper['y']) ?>;--r:<?= e($paper['r']) ?>;--k:<?= e($paper['k']) ?>">
+          <div class="paper-half paper-top"><div class="paper-body">
+            <span class="paper-kicker"><?= e($paper['kicker']) ?></span>
+            <strong><?= e($paper['head']) ?></strong>
+            <span><?= e($paper['body']) ?></span>
+          </div></div>
+          <div class="paper-half paper-bottom"><div class="paper-body">
+            <span class="paper-kicker"><?= e($paper['kicker']) ?></span>
+            <strong><?= e($paper['head']) ?></strong>
+            <span><?= e($paper['body']) ?></span>
+          </div></div>
+        </article>
+      <?php endforeach; ?>
+    </div>
+
+    <div class="story-herd" data-herd>
+      <img class="herd-still" src="/assets/media/horses-running-poster.jpg" alt="The club's horse herd running across the plain" width="1280" height="720" loading="lazy" decoding="async">
+      <video class="herd-video" muted loop playsinline preload="none" poster="/assets/media/horses-running-poster.jpg"
+             data-desktop-src="/assets/media/horses-desktop.mp4" data-mobile-src="/assets/media/horses-mobile.mp4" tabindex="-1" aria-hidden="true"></video>
+      <p class="herd-line">The herd is back.</p>
+    </div>
+  </div>
+</section>
+
 <section class="happiness-section" aria-labelledby="happinessHeading">
   <div class="happiness-copy"><div class="eyebrow">Connection · belonging · growth</div><h2 id="happinessHeading">Club happiness index</h2><p>Making space for a happier campus, one conversation at a time.</p></div>
   <?= mt_happiness_graph($db) ?>

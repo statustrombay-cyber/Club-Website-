@@ -908,8 +908,284 @@
     targets.forEach(function (node) { observer.observe(node); });
   }
 
+  /* ------------------------------------------------------------------
+     Scroll story: one progress value (0 → 1 across the chapter) drives
+     every scene through CSS variables. Burning embers are drawn on a
+     canvas only while the note is alight.
+     ------------------------------------------------------------------ */
+  function setupStory() {
+    const story = $('#story');
+    if (!story) return;
+    const clamp = function (n, a, b) { return Math.max(a, Math.min(b, n)); };
+    const ramp = function (p, a, b) { return clamp((p - a) / (b - a), 0, 1); };
+    const herd = $('[data-herd]', story);
+    const herdVideo = $('.herd-video', story);
+    const wrap = $('.burn-wrap', story);
+    const canvas = $('[data-burn-canvas]', story);
+    const ctx = canvas && canvas.getContext ? canvas.getContext('2d') : null;
+    if (reduced()) {
+      story.classList.add('is-static');
+      return;
+    }
+    let frame = 0, burning = false, embers = [], burnFrame = 0, herdStarted = false;
+    function apply(p) {
+      const st = story.style;
+      const set = function (name, value) { st.setProperty(name, typeof value === 'number' ? value.toFixed(4) : value); };
+      set('--hand', ramp(p, 0, .14));
+      set('--line1', ramp(p, .02, .10) * (1 - ramp(p, .13, .19)));
+      set('--glass', ramp(p, .12, .18) * (1 - ramp(p, .36, .42)));
+      set('--s', ramp(p, .22, .30));
+      set('--you', ramp(p, .29, .35) * (1 - ramp(p, .36, .41)));
+      set('--note', ramp(p, .34, .39));
+      set('--burnp', ramp(p, .38, .47));
+      set('--burnp-on', ramp(p, .37, .39) * (1 - ramp(p, .46, .48)));
+      set('--this', ramp(p, .47, .51));
+      set('--focus', ramp(p, .51, .58));
+      set('--green', ramp(p, .36, .46) * (1 - ramp(p, .80, .86)));
+      set('--dark', ramp(p, .74, .84));
+      set('--paper', ramp(p, .56, .61));
+      set('--tear', ramp(p, .64, .76));
+      set('--herd', ramp(p, .76, .90));
+      burning = p >= .37 && p <= .48;
+      if (burning) scheduleBurn();
+      if (herd && !herdStarted && p >= .74) startHerd();
+    }
+    function startHerd() {
+      herdStarted = true;
+      if (!herdVideo) return;
+      const src = window.innerWidth < 720 ? herdVideo.dataset.mobileSrc : herdVideo.dataset.desktopSrc;
+      if (src) { herdVideo.src = src; herdVideo.load(); }
+      const play = herdVideo.play && herdVideo.play();
+      if (play && play.catch) play.catch(function () {});
+      herd.classList.add('is-playing');
+    }
+    function measure() {
+      frame = 0;
+      const total = Math.max(1, story.offsetHeight - window.innerHeight);
+      apply(clamp(-story.getBoundingClientRect().top / total, 0, 1));
+    }
+    function schedule() { if (!frame) frame = window.requestAnimationFrame(measure); }
+    /* embers along the burning edge */
+    function scheduleBurn() { if (!burnFrame && ctx) burnFrame = window.requestAnimationFrame(drawBurn); }
+    function drawBurn() {
+      burnFrame = 0;
+      if (!ctx || !wrap) return;
+      const box = canvas.getBoundingClientRect();
+      if (canvas.width !== Math.round(box.width) || canvas.height !== Math.round(box.height)) {
+        canvas.width = Math.max(1, Math.round(box.width)); canvas.height = Math.max(1, Math.round(box.height));
+      }
+      const r = wrap.getBoundingClientRect();
+      const burn = parseFloat(story.style.getPropertyValue('--burnp')) || 0;
+      const frontY = r.bottom - burn * r.height - box.top;
+      const left = r.left - box.left, width = r.width;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (burning) {
+        for (let i = 0; i < 6; i++) {
+          embers.push({ x: left + Math.random() * width, y: frontY + (Math.random() - .5) * 10, vx: (Math.random() - .5) * 1.6, vy: -(0.8 + Math.random() * 2.2), life: 1, size: 0.8 + Math.random() * 2.2 });
+        }
+      }
+      embers = embers.filter(function (e) { return e.life > 0; });
+      embers.forEach(function (e) {
+        e.x += e.vx; e.y += e.vy; e.vy *= .992; e.life -= .022;
+        const g = ctx.createRadialGradient(e.x, e.y, 0, e.x, e.y, e.size * 3);
+        g.addColorStop(0, 'rgba(255,240,170,' + (e.life).toFixed(3) + ')');
+        g.addColorStop(.4, 'rgba(255,130,40,' + (e.life * .8).toFixed(3) + ')');
+        g.addColorStop(1, 'rgba(120,20,0,0)');
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(e.x, e.y, e.size * 3, 0, Math.PI * 2); ctx.fill();
+      });
+      if (burning || embers.length) burnFrame = window.requestAnimationFrame(drawBurn);
+    }
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule);
+    measure();
+  }
+
+  /* One butterfly element, built from the same photographic wings the nav uses. */
+  function makeButterfly(kind) {
+    const el = document.createElement('div');
+    el.className = 'bf ' + kind;
+    el.setAttribute('aria-hidden', 'true');
+    el.innerHTML = '<div class="bf-flip">' +
+      '<img class="wing-left" src="/assets/img/butterfly-flight.png" alt="" width="626" height="428" decoding="async">' +
+      '<img class="wing-right" src="/assets/img/butterfly-flight.png" alt="" width="626" height="428" decoding="async">' +
+      '<img class="butterfly-body" src="/assets/img/butterfly-flight.png" alt="" width="626" height="428" decoding="async">' +
+      '</div>';
+    document.body.appendChild(el);
+    return el;
+  }
+
+  /* Calendar and every other menu link: the butterfly turns its head, flies
+     to the link, dives onto it, and only then does the page change. */
+  function setupCourier() {
+    const links = $$('.nav-wrap a[href]');
+    if (!links.length || reduced()) return;
+    let courier = null, busy = false;
+    function flyTo(el, target, done) {
+      const w = el.offsetWidth || 90, h = el.offsetHeight || 61;
+      const tr = target.getBoundingClientRect();
+      const goal = { x: tr.left + tr.width / 2, y: tr.top + tr.height / 2 };
+      const nav = $('.nav-butterfly');
+      const nr = nav ? nav.getBoundingClientRect() : null;
+      const start = nr && nr.width ? { x: nr.left + nr.width / 2, y: nr.top + nr.height / 2 } : { x: window.innerWidth - 80, y: 60 };
+      const hover = { x: goal.x, y: Math.max(4, tr.top - h * .75) };
+      const control = { x: (start.x + hover.x) / 2, y: Math.min(start.y, hover.y) - 70 };
+      el.classList.add('is-on', 'flap', 'is-moving');
+      el.classList.toggle('face-left', hover.x < start.x);
+      document.body.classList.add('bf-flying');
+      const t0 = window.performance.now(), A = 520, B = 300;
+      function frameAt(now) {
+        const e = now - t0;
+        let x, y, s = 1;
+        if (e <= A) {
+          const t = e / A, u = 1 - Math.pow(1 - t, 2.2), v = 1 - u;
+          x = v * v * start.x + 2 * v * u * control.x + u * u * hover.x;
+          y = v * v * start.y + 2 * v * u * control.y + u * u * hover.y;
+        } else {
+          const t = Math.min(1, (e - A) / B), u = t * t * t;
+          x = hover.x + (goal.x - hover.x) * u;
+          y = hover.y + (goal.y - hover.y) * u;
+          s = 1 - .45 * u;
+          if (t === 0 || e - A < 16) target.classList.add('bf-hit');
+        }
+        el.style.transform = 'translate3d(' + (x - w / 2).toFixed(1) + 'px,' + (y - h / 2).toFixed(1) + 'px,0) scale(' + s.toFixed(3) + ')';
+        if (e < A + B) window.requestAnimationFrame(frameAt);
+        else done();
+      }
+      window.requestAnimationFrame(frameAt);
+    }
+    links.forEach(function (a) {
+      a.addEventListener('click', function (event) {
+        if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        if (a.target && a.target !== '_self') return;
+        let url;
+        try { url = new URL(a.href, window.location.href); } catch (error) { return; }
+        if (url.origin !== window.location.origin || url.href === window.location.href) return;
+        const box = a.getBoundingClientRect();
+        if (busy || !box.width) return;
+        event.preventDefault();
+        busy = true;
+        if (!courier) courier = makeButterfly('bf-courier');
+        flyTo(courier, a, function () { window.location.href = url.href; });
+      });
+    });
+  }
+
+  /* The form companion: sits to the left of the field being typed in, flaps on
+     every keystroke and backspace, flies to the next field on focus, and dives
+     onto the submit button before the form is sent. */
+  function setupFormButterfly() {
+    const forms = $$('form.club-form, form.register-form');
+    if (!forms.length || reduced()) return;
+    const FIELD = 'input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=submit]):not([type=button]):not([type=file]):not([type=reset]), textarea, select';
+    const clamp = function (n, a, b) { return Math.max(a, Math.min(b, n)); };
+    let bf = null, active = null, hideTimer = 0, flapTimer = 0, frame = 0, last = 0;
+    let cur = null, lastX = null, diving = null, skipSubmit = false;
+    function ensure() { if (!bf) bf = makeButterfly('bf-form'); return bf; }
+    function goalFor(el) {
+      const r = el.getBoundingClientRect();
+      const w = bf.offsetWidth || 74, h = bf.offsetHeight || 51;
+      let x = r.left - w - 6, y = r.top + Math.min(r.height / 2, 20) - h * .4;
+      if (x < 4) { x = clamp(r.left, 4, window.innerWidth - w - 4); y = r.top - h * .8; }
+      return { x: x, y: y };
+    }
+    function paint(x, y, s) {
+      bf.style.transform = 'translate3d(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px,0) scale(' + (s || 1).toFixed(3) + ')';
+    }
+    function tick(now) {
+      frame = 0;
+      const dt = last ? clamp(now - last, 0, 240) : 16;
+      last = now;
+      if (diving) {
+        const d = diving, t = clamp((now - d.t0) / d.duration, 0, 1), u = t * t * (1.5 - .5 * t);
+        const v = 1 - u;
+        const x = v * v * d.from.x + 2 * v * u * d.control.x + u * u * d.to.x;
+        const y = v * v * d.from.y + 2 * v * u * d.control.y + u * u * d.to.y;
+        const s = t < .65 ? 1 + .2 * (t / .65) : 1.2 - .55 * ((t - .65) / .35);
+        paint(x, y, s);
+        if (t < 1) { frame = window.requestAnimationFrame(tick); return; }
+        const done = d.done;
+        diving = null;
+        done();
+        return;
+      }
+      if (!active || !bf) return;
+      const g = goalFor(active);
+      if (!cur) cur = { x: g.x - 120, y: g.y };
+      const k = 1 - Math.exp(-dt / 110);
+      const ox = cur.x;
+      cur.x += (g.x - cur.x) * k;
+      cur.y += (g.y - cur.y) * k;
+      const dx = cur.x - ox;
+      if (dx < -.4) bf.classList.add('face-left'); else if (dx > .4) bf.classList.remove('face-left');
+      bf.classList.toggle('is-moving', Math.abs(g.x - cur.x) > 3 || Math.abs(g.y - cur.y) > 3);
+      paint(cur.x, cur.y, 1);
+      frame = window.requestAnimationFrame(tick);
+    }
+    function schedule() { if (!frame) frame = window.requestAnimationFrame(tick); }
+    function flap() {
+      if (!bf) return;
+      bf.classList.add('flap');
+      window.clearTimeout(flapTimer);
+      flapTimer = window.setTimeout(function () { if (bf) bf.classList.remove('flap'); }, 280);
+    }
+    forms.forEach(function (form) {
+      form.addEventListener('focusin', function (event) {
+        const el = event.target;
+        if (!el.matches || !el.matches(FIELD) || el.closest('.honeypot')) return;
+        window.clearTimeout(hideTimer);
+        active = el;
+        ensure();
+        bf.classList.add('is-on');
+        schedule();
+      });
+      form.addEventListener('focusout', function () {
+        window.clearTimeout(hideTimer);
+        hideTimer = window.setTimeout(function () {
+          if (document.activeElement && document.activeElement.closest && document.activeElement.closest('form.club-form, form.register-form')) return;
+          active = null;
+          if (bf) bf.classList.remove('is-on', 'flap');
+        }, 900);
+      });
+      form.addEventListener('input', flap);
+      form.addEventListener('keydown', function (event) {
+        if (event.key === 'Backspace' || event.key === 'Delete') flap();
+      });
+    });
+    window.addEventListener('scroll', function () { if (active) schedule(); }, { passive: true });
+    /* dive onto the submit button, then send the form as usual */
+    document.addEventListener('click', function (event) {
+      if (skipSubmit || !event.target || !event.target.closest) return;
+      const btn = event.target.closest('button[type=submit], input[type=submit]');
+      if (!btn || !btn.form || !btn.form.matches('form.club-form, form.register-form') || btn.disabled) return;
+      event.preventDefault();
+      ensure();
+      const from = cur ? { x: cur.x, y: cur.y } : { x: window.innerWidth * .4, y: window.innerHeight * .4 };
+      const r = btn.getBoundingClientRect();
+      const w = bf.offsetWidth || 74, h = bf.offsetHeight || 51;
+      const to = { x: r.left + r.width / 2 - w / 2, y: r.top + r.height / 2 - h / 2 };
+      const control = { x: (from.x + to.x) / 2, y: Math.min(from.y, to.y) - 90 };
+      bf.classList.add('is-on', 'flap', 'is-moving');
+      cur = null;
+      diving = { t0: window.performance.now(), duration: 380, from: from, to: to, control: control, done: function () {
+        btn.classList.add('bf-hit');
+        window.setTimeout(function () {
+          btn.classList.remove('bf-hit');
+          bf.classList.remove('flap', 'is-moving');
+          window.setTimeout(function () { if (!active && bf) bf.classList.remove('is-on'); }, 500);
+          skipSubmit = true;
+          try { btn.click(); } finally { skipSubmit = false; }
+        }, 130);
+      } };
+      schedule();
+    }, false);
+  }
+
   function start() {
     setupButterfly();
+    setupCourier();
+    setupFormButterfly();
+    setupStory();
     setupSplash();
     setupBrandBand();
     setupWireObjects();
