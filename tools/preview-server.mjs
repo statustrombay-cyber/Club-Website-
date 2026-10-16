@@ -34,7 +34,7 @@ try {
 }
 
 /* ------------------------------------------------------------- virtual FS */
-const SKIP_DIRS = new Set(['.git', 'node_modules', '.arena', 'backup-original', 'data/logs', 'data/sessions', 'data/tmp-uploads']);
+const SKIP_DIRS = new Set(['.git', 'node_modules', '.arena', 'backup-original', 'tools/references', 'data/logs', 'data/sessions', 'data/tmp-uploads']);
 
 function collectSourceFiles(dir, base = '') {
   const out = [];
@@ -100,7 +100,7 @@ async function resyncChangedFiles() {
   const current = collectSourceFiles(ROOT);
   for (const rel of current) {
     const stamp = stampOf(rel);
-    if (fileStamps.get(rel) === stamp) continue;
+    if (fileStamps.has(rel) && fileStamps.get(rel) === stamp) continue;
     await syncFileIntoRuntime(rel);
     fileStamps.set(rel, stamp);
     console.log('preview: reloaded ' + rel);
@@ -109,16 +109,37 @@ async function resyncChangedFiles() {
 
 /** Copy files the app changed inside the runtime back to the real project. */
 const WRITE_BACK = ['data/site.json', 'data/config.php'];
+
+/** The store numbers every save, so a lower number on this side means the copy
+ *  on disk is newer (edited while the preview was running, or written by hand).
+ *  In that case the runtime copy must never win. */
+function revisionOf(text) {
+  try {
+    const parsed = JSON.parse(text);
+    const value = Number(parsed && parsed.revision);
+    return Number.isFinite(value) ? value : null;
+  } catch (error) {
+    return null;
+  }
+}
+
 async function writeBackToDisk() {
   for (const rel of WRITE_BACK) {
     try {
       const bytes = await php.readFile(VFS + '/' + rel);
       const text = typeof bytes === 'string' ? bytes : Buffer.from(Object.values(bytes)).toString('utf8');
       const abs = path.join(ROOT, rel);
-      if (!fs.existsSync(abs) || fs.readFileSync(abs, 'utf8') !== text) {
-        fs.mkdirSync(path.dirname(abs), { recursive: true });
-        fs.writeFileSync(abs, text);
+      if (fs.existsSync(abs) && fs.readFileSync(abs, 'utf8') === text) continue;
+      if (rel.endsWith('site.json') && fs.existsSync(abs)) {
+        const onDisk = revisionOf(fs.readFileSync(abs, 'utf8'));
+        const inRuntime = revisionOf(text);
+        if (onDisk !== null && inRuntime !== null && inRuntime < onDisk) {
+          console.log(`preview: kept data/site.json on disk (revision ${onDisk} is newer than ${inRuntime})`);
+          continue;
+        }
       }
+      fs.mkdirSync(path.dirname(abs), { recursive: true });
+      fs.writeFileSync(abs, text);
     } catch (error) { /* file not written */ }
   }
   // backups + uploads are append-only, so mirror any new ones
@@ -228,11 +249,20 @@ const REQUEST_PHP = String.raw`
     }
     $output = (string) ob_get_clean();
 
+    /* A PDF is not valid UTF-8, so it is handed over base64-encoded and the
+       Node side turns it back into bytes before it reaches the browser. */
+    $encoding = 'utf8';
+    if (!preg_match('//u', $output)) {
+        $output = base64_encode($output);
+        $encoding = 'base64';
+    }
+
     return json_encode([
-        'status'  => $GLOBALS['MT_TEST_STATUS'],
-        'body'    => $output,
-        'headers' => $GLOBALS['MT_TEST_HEADERS'],
-        'session' => $GLOBALS['MT_PREVIEW_SESSION'] ?? null,
+        'status'   => $GLOBALS['MT_TEST_STATUS'],
+        'body'     => $output,
+        'encoding' => $encoding,
+        'headers'  => $GLOBALS['MT_TEST_HEADERS'],
+        'session'  => $GLOBALS['MT_PREVIEW_SESSION'] ?? null,
     ]);
 })()
 `;
@@ -243,7 +273,11 @@ function runPhp(spec) {
     await php.writeFile('/site/.preview-spec.php', '<?php return json_decode(base64_decode("' + Buffer.from(JSON.stringify(spec), 'utf8').toString('base64') + '"), true);');
     const raw = await php.x([REQUEST_PHP]);
     try {
-      return JSON.parse(String(raw));
+      const parsed = JSON.parse(String(raw));
+      if (parsed && parsed.encoding === 'base64') {
+        parsed.buffer = Buffer.from(String(parsed.body), 'base64');
+      }
+      return parsed;
     } catch (error) {
       return { status: 500, body: '<pre>Preview runtime error: ' + String(raw).slice(0, 400) + '</pre>', headers: [] };
     }
@@ -260,6 +294,7 @@ const MIME = {
   '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp',
   '.gif': 'image/gif', '.ico': 'image/x-icon', '.pdf': 'application/pdf', '.txt': 'text/plain; charset=utf-8',
   '.woff2': 'font/woff2', '.mjs': 'text/javascript; charset=utf-8', '.md': 'text/plain; charset=utf-8',
+  '.mp4': 'video/mp4', '.m4v': 'video/mp4', '.mov': 'video/quicktime', '.webm': 'video/webm',
 };
 
 function sendFile(res, filePath, req) {
@@ -270,13 +305,37 @@ function sendFile(res, filePath, req) {
     res.writeHead(304, { ETag: etag });
     return res.end();
   }
-  res.writeHead(200, {
+
+  /* A video is not downloaded in one piece: the browser asks for a slice at a
+     time, and Safari refuses to play at all unless the answer is a real 206
+     with a Content-Range. So answer the range that was asked for. */
+  let start = 0;
+  let end = stat.size - 1;
+  let partial = false;
+  const asked = /^bytes=(\d*)-(\d*)$/.exec(String(req.headers.range || '').trim());
+  if (asked && !(asked[1] === '' && asked[2] === '')) {
+    const from = asked[1];
+    const to = asked[2];
+    start = from === '' ? Math.max(0, stat.size - Number(to)) : Number(from);
+    end = from === '' || to === '' ? stat.size - 1 : Math.min(Number(to), stat.size - 1);
+    if (!Number.isFinite(start) || !Number.isFinite(end) || start > end || start >= stat.size) {
+      res.writeHead(416, { 'Content-Range': 'bytes */' + stat.size, 'Accept-Ranges': 'bytes' });
+      return res.end();
+    }
+    partial = true;
+  }
+
+  const headers = {
     'Content-Type': MIME[ext] || 'application/octet-stream',
-    'Content-Length': stat.size,
+    'Content-Length': end - start + 1,
+    'Accept-Ranges': 'bytes',
     ETag: etag,
     'Cache-Control': 'no-cache',
-  });
-  fs.createReadStream(filePath).pipe(res);
+  };
+  if (partial) headers['Content-Range'] = 'bytes ' + start + '-' + end + '/' + stat.size;
+  res.writeHead(partial ? 206 : 200, headers);
+  if (req.method === 'HEAD') return res.end();
+  fs.createReadStream(filePath, { start, end }).pipe(res);
 }
 
 function readBody(req) {
@@ -407,8 +466,11 @@ const server = http.createServer(async (req, res) => {
   writeSessions(sessions);
 
   headers['Set-Cookie'] = 'mt_admin=' + sessionId + '; Path=/; HttpOnly; SameSite=Lax';
+  if (result.buffer) {
+    headers['Content-Length'] = String(result.buffer.length);
+  }
   res.writeHead(result.status || 200, headers);
-  res.end(result.body || '');
+  res.end(result.buffer || result.body || '');
 
   writeBackToDisk().catch(() => {});
 });

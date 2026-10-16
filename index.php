@@ -8,9 +8,13 @@
  * Routes
  *   /                     public website (home)
  *   /gallery /calendar    public pages
- *   /awareness            mental health awareness corner
- *   /dashboard            password-protected club dashboard
- *   /api/…                JSON API used by the pages and the dashboard
+ *   /members              the member directory
+ *   /register?event=…     event registration
+ *   /pass/<serial>        a student's own event pass
+ *   /dashboard            sign-in page (signed out) → the club area
+ *   /dashboard/overview   club area, one page per section:
+ *   /dashboard/team       overview · site copy · team · events · gallery …
+ *   /api/…                JSON API used by the pages and the club area
  *   /uploads/…            files uploaded from the dashboard
  *
  * @package MindfulTattva
@@ -35,15 +39,85 @@ if (str_starts_with($route, 'api/')) {
     return;
 }
 
+/* The club's old pages, printed on posters and past passes, still lead home. */
+$legacy = [
+    'index.html'    => '/',
+    'gallery.html'  => '/gallery',
+    'members.html'  => '/members',
+    'calendar.html' => '/calendar',
+    'admin.html'    => '/dashboard',
+];
+if (isset($legacy[$route])) {
+    mt_redirect($legacy[$route], 301);
+    return;
+}
+
+/* /pass/<private code> — the student's own pass. The code in the link is the
+ * only key: it is 20 random characters, stored as a hash, and never printed on
+ * the pass, drawn in a QR code or listed in the club dashboard. */
+if (str_starts_with($route, 'pass/')) {
+    $_GET['code'] = substr($route, 5);
+    $route = 'pass';
+}
+
+/* /verify/<public id> — what a scanned pass QR opens. Public on purpose: it
+ * says a pass is real without giving anything away. */
+if (str_starts_with($route, 'verify/')) {
+    $route = 'verify/' . substr($route, 7);
+}
+
+if (str_starts_with($route, 'register')) {
+    $route = 'register';
+}
+
+/* The club area is two pages, not one:
+ *   · signed out — a sign-in page and nothing else, so no dashboard markup,
+ *     no site copy and no registrations are ever sent to a browser that has
+ *     not signed in;
+ *   · signed in — one page per section: /dashboard/overview, /team, /events,
+ *     /gallery … The old single-page shell is gone. */
+$dashboardPanel = null;
 if ($route === 'dashboard' || $route === 'dashboard.php' || $route === 'admin' || $route === 'admin.php') {
-    $dashboardVars = [
-        'site'     => mt_db()['site'],
-        'db'       => mt_db(),
-        'csrf'     => mt_csrf_token(),
-        'authed'   => mt_authenticated(),
-        'noindex'  => true,
-    ];
-    mt_send_html(mt_inline_assets(mt_render('dashboard', $dashboardVars)));
+    $dashboardPanel = 'overview';
+} elseif (str_starts_with($route, 'dashboard/')) {
+    $dashboardPanel = trim(substr($route, 10), '/');
+}
+
+if ($dashboardPanel !== null) {
+    $known = ['overview', 'copy', 'team', 'events', 'events-register', 'gallery', 'inbox', 'data'];
+    if ($dashboardPanel !== 'overview' && !in_array($dashboardPanel, $known, true)) {
+        $dashboardPanel = 'overview';
+    }
+
+    if (!mt_authenticated()) {
+        /* A bookmarked section link is not an error — it just sends the club
+           to the sign-in page and, once in, straight on to where they meant
+           to go. */
+        if ($route !== 'dashboard' && $route !== 'dashboard.php') {
+            $_SESSION['mt_after_login'] = '/dashboard/' . ($dashboardPanel === 'overview' ? 'overview' : $dashboardPanel);
+        }
+        mt_send_html(mt_inline_assets(mt_render('login', [
+            'club'    => (string) (mt_db()['site']['clubName'] ?? 'Mindful Tattva'),
+            'noindex' => true,
+        ])));
+        return;
+    }
+
+    if ($route === 'dashboard' || $route === 'dashboard.php' || $dashboardPanel === 'overview') {
+        if ($dashboardPanel === 'overview' && $route !== 'dashboard/overview') {
+            mt_redirect('/dashboard/overview', 303);
+            return;
+        }
+    }
+
+    mt_send_html(mt_inline_assets(mt_render('dashboard', [
+        'site'    => mt_db()['site'],
+        'db'      => mt_db(),
+        'csrf'    => mt_csrf_token(),
+        'authed'  => true,
+        'noindex' => true,
+        'panel'   => $dashboardPanel,
+    ])));
     return;
 }
 

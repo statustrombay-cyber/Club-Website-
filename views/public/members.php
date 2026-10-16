@@ -1,50 +1,61 @@
 <?php
 /**
- * Member list page.
+ * The members page: the vision card and the directory, group by group.
  *
- * NOTE: this page is intentionally NOT linked in the public navigation and its
- * route is disabled in app/pages.php, because the club asked for the member
- * roster to stay inside the dashboard. To publish it again, add
- * `case 'members':` back to mt_public_page() and add a link in the layout.
- *
- * @var array $site
- * @var array $db
+ * @var array $db    Whole content store.
+ * @var array $site  Club copy.
  */
-$site    = $site ?? [];
-$db      = $db ?? mt_db();
-$members = mt_sorted($db['team'] ?? []);
-$groups  = [
-    'management' => ['Core Committee', 'The students who lead the club and keep it moving.'],
-    'heads'      => ['Head Committee', 'Coordinators for outreach, events, design and research.'],
-    'volunteers' => ['Volunteers', 'The hands and hearts behind every activity.'],
-];
+$grouped = [];
+foreach (MT_TEAM_GROUPS as $group) {
+    $grouped[$group] = [];
+}
+foreach (mt_sorted(mt_named_team($db['team'] ?? [])) as $person) {
+    $group = (string) ($person['group'] ?? 'management');
+    if (!isset($grouped[$group])) {
+        $group = 'management';
+    }
+    $grouped[$group][] = $person;
+}
+$bodyClass = 'members-page';
 ?>
-
-<section class="cal-hero">
-  <div class="container">
-    <span class="eyebrow">Mindful Tattva · our people</span>
-    <h1 class="display">Many minds. One gentle direction.</h1>
-    <p class="lede">Everyone who makes space for curiosity, care and community at <?= e((string) ($site['universityName'] ?? 'the university')) ?>.</p>
+<section class="members-hero">
+  <div class="container members-hero-grid">
+    <div>
+      <div class="eyebrow">The people who hold the space</div>
+      <h1 class="display">Meet the minds behind <em>Mindful Tattva.</em></h1>
+      <p class="members-hero-copy">This is a living directory of the students who organise, imagine and care for the psychology club at <?= e((string) ($site['universityName'] ?? '')) ?>.</p>
+      <div class="members-hero-actions">
+        <a class="solid-button" href="#members">Meet the members ↘</a>
+        <a class="outline-button" href="/#join">Join the club</a>
+      </div>
+    </div>
+    <div class="psi-orbit logo-orbit" aria-label="<?= e((string) ($site['clubName'] ?? 'Mindful Tattva')) ?> emblem">
+      <span class="psi-dot psi-dot-one"></span><span class="psi-dot psi-dot-two"></span>
+      <img class="orbit-logo" src="<?= e(mt_safe_image($site['logoImage'] ?? '') ?: '/assets/photos/mt-club-logo.jpg') ?>" alt="<?= e((string) ($site['clubName'] ?? 'Mindful Tattva')) ?>" loading="lazy" decoding="async">
+    </div>
   </div>
 </section>
 
-<section class="section section-tight">
+<section class="members-vision" id="vision">
+  <div class="container vision-card">
+    <div>
+      <div class="vision-label">Our members page vision</div>
+      <h2>Many minds.<br>One gentle direction.</h2>
+    </div>
+    <p id="memberVision"><?= e((string) ($site['memberVision'] ?? '')) ?></p>
+  </div>
+</section>
+
+<section class="member-directory" id="members">
   <div class="container">
-    <?php foreach ($groups as $key => [$label, $note]): ?>
-      <?php $list = array_values(array_filter($members, static fn($member) => ($member['group'] ?? 'management') === $key)); ?>
-      <div class="member-group">
-        <div class="member-group-head">
-          <h2><?= e($label) ?></h2>
-          <span><?= count($list) ?> member<?= count($list) === 1 ? '' : 's' ?> · <?= e($note) ?></span>
-        </div>
-        <div class="team-grid" data-render="team" data-team-scope="<?= e($key === 'management' ? 'all' : $key) ?>">
-          <?php if ($list): ?>
-            <?php foreach ($list as $member): ?><?= mt_team_card($member, $key === 'volunteers') ?><?php endforeach; ?>
-          <?php else: ?>
-            <div class="empty-state"><strong>No names here yet.</strong><p>This group will fill up as the club grows.</p></div>
-          <?php endif; ?>
-        </div>
-      </div>
-    <?php endforeach; ?>
+    <div class="member-directory-head">
+      <div><div class="eyebrow">People &amp; pathways</div><h2>Find the right<br>circle.</h2></div>
+      <p>The Core Committee and Head Committee hold the foundation of the club. Volunteers keep the circle open for students who want to contribute.</p>
+    </div>
+    <div id="memberGroups">
+      <?php foreach (MT_TEAM_GROUPS as $group): ?>
+        <?= mt_member_group($group, $grouped[$group] ?? []) ?>
+      <?php endforeach; ?>
+    </div>
   </div>
 </section>

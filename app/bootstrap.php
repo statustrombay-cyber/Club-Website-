@@ -22,6 +22,9 @@ if (!defined('MT_VERSION')) {
     define('MT_LOG_DIR', MT_DATA . '/logs');
     define('MT_SESSION_NAME', 'mt_admin');
     define('MT_SESSION_HOURS', 12);
+    /* A dashboard session dies after 12 quiet hours, and in any case after a
+       full day — a forgotten browser on a shared computer cannot stay open. */
+    define('MT_SESSION_MAX_HOURS', 24);
 }
 
 /* -------------------------------------------------------------------------
@@ -61,6 +64,10 @@ if (!function_exists('mb_strtolower')) {
 }
 
 require_once MT_APP . '/store.php';
+require_once MT_APP . '/health.php';
+require_once MT_APP . '/events.php';
+require_once MT_APP . '/qr.php';
+require_once MT_APP . '/passes.php';
 require_once MT_APP . '/cards.php';
 require_once MT_APP . '/pages.php';
 require_once MT_APP . '/api.php';
@@ -223,6 +230,23 @@ function mt_fail(int $status, string $message): void
 }
 
 /** Read the JSON body of a request (falls back to form encoding). */
+/** Send the visitor to another page and stop. */
+function mt_redirect(string $url, int $status = 303): void
+{
+    if (mt_headless()) {
+        $GLOBALS['MT_TEST_STATUS'] = $status;
+        $GLOBALS['MT_TEST_HEADERS'][] = ['Location', $url];
+        $GLOBALS['MT_HTML_SENT'] = true;
+        mt_stop();
+    }
+    if (!headers_sent()) {
+        http_response_code($status);
+        header('Location: ' . $url, true, $status);
+    }
+    echo 'Redirecting to ' . e($url) . '…';
+    mt_stop();
+}
+
 function mt_input(): array
 {
     if (isset($GLOBALS['MT_INPUT_CACHE']) && is_array($GLOBALS['MT_INPUT_CACHE'])) {
@@ -290,7 +314,7 @@ function mt_is_static_file(string $route): bool
     if (!str_starts_with($candidate, MT_ROOT . DIRECTORY_SEPARATOR)) {
         return false;
     }
-    return (bool) preg_match('#\.(css|js|mjs|png|jpe?g|webp|gif|svg|ico|pdf|woff2?|ttf|txt|map|json)$#i', $candidate);
+    return (bool) preg_match('#\.(css|js|mjs|png|jpe?g|webp|gif|svg|ico|pdf|woff2?|ttf|txt|map|json|mp4|m4v|mov|webm)$#i', $candidate);
 }
 
 /* -------------------------------------------------------------------------
@@ -349,6 +373,11 @@ function mt_session_flush(): void
     $save = $GLOBALS['MT_SESSION_SAVE'] ?? null;
     if (is_callable($save) && is_array($_SESSION ?? null)) {
         $save($_SESSION);
+    }
+    /* Headless runners (the preview server and the test suite) own their own
+       session store, so they are handed the state the request ended with. */
+    if (is_array($_SESSION ?? null)) {
+        $GLOBALS['MT_SESSION_OUT'] = $_SESSION;
     }
 }
 
@@ -413,11 +442,26 @@ function mt_authenticated(): bool
     if (empty($_SESSION['auth']) || $_SESSION['auth'] !== true) {
         return false;
     }
+
+    // 1. twelve quiet hours, or a full day in total, whichever comes first
     $seen = (int) ($_SESSION['seen'] ?? 0);
     if ($seen > 0 && (time() - $seen) > MT_SESSION_HOURS * 3600) {
         mt_logout();
         return false;
     }
+    $started = (int) ($_SESSION['started'] ?? $seen);
+    if ($started > 0 && (time() - $started) > MT_SESSION_MAX_HOURS * 3600) {
+        mt_logout();
+        return false;
+    }
+
+    // 2. the session has to belong to this device and this password generation
+    $expected = (string) ($_SESSION['fingerprint'] ?? '');
+    if ($expected === '' || !hash_equals($expected, mt_session_fingerprint())) {
+        mt_logout();
+        return false;
+    }
+
     $_SESSION['seen'] = time();
     return true;
 }
@@ -427,7 +471,15 @@ function mt_require_auth(): void
     if (!mt_authenticated()) {
         mt_fail(401, 'Please sign in to the club dashboard first.');
     }
-    mt_require_csrf();
+
+    /* Plain reads are protected by the session alone. The dashboard downloads
+       the register and the backup with ordinary links, and a link cannot send
+       a header — asking for the token there answered every download with
+       "your session expired". Anything that changes what the club has stored
+       still has to carry the token. */
+    if (!in_array(strtoupper(mt_method()), ['GET', 'HEAD', 'OPTIONS'], true)) {
+        mt_require_csrf();
+    }
 }
 
 function mt_require_csrf(): void
@@ -438,6 +490,27 @@ function mt_require_csrf(): void
     }
 }
 
+/**
+ * Stamp a session with the device that signed in, so a copied cookie is not a
+ * key all by itself.
+ *
+ * The stamp is the browser's user-agent plus the club's current session
+ * generation. It is stable for the device that signed in — the club is never
+ * locked out mid-evening — but a cookie copied to another device, or one left
+ * over from before a password change, stops working.
+ */
+function mt_session_fingerprint(): string
+{
+    $agent = (string) ($_SERVER['HTTP_USER_AGENT'] ?? '');
+    return hash('sha256', 'mindful-tattva-session|' . $agent . '|' . mt_session_generation());
+}
+
+/** Bumping this number (on a password change) signs every device out. */
+function mt_session_generation(): int
+{
+    return max(1, (int) (mt_config()['session_generation'] ?? 1));
+}
+
 function mt_login_success(): void
 {
     mt_session();
@@ -446,6 +519,8 @@ function mt_login_success(): void
     }
     $_SESSION['auth'] = true;
     $_SESSION['seen'] = time();
+    $_SESSION['started'] = time();
+    $_SESSION['fingerprint'] = mt_session_fingerprint();
     $_SESSION['csrf'] = bin2hex(random_bytes(24));
     mt_session_flush();
 }
@@ -453,7 +528,7 @@ function mt_login_success(): void
 function mt_logout(): void
 {
     mt_session();
-    unset($_SESSION['auth'], $_SESSION['seen']);
+    unset($_SESSION['auth'], $_SESSION['seen'], $_SESSION['started'], $_SESSION['fingerprint']);
     $_SESSION['csrf'] = bin2hex(random_bytes(24));
     mt_session_flush();
 }
