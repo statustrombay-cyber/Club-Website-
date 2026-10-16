@@ -1948,39 +1948,44 @@ html.no-js .chart-traveller animateMotion { display: none; }
    =================================================================== */
 .story-chapter { position: relative; height: 640vh; background: #120304; color: #fff; }
 .story-stage { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; isolation: isolate; }
-.story-bg { position: absolute; inset: 0; transition: none; }
+.story-bg { position: absolute; inset: 0; }
 .story-bg-red { background: radial-gradient(120% 90% at 50% 105%, #d3182a 0%, #8e0a16 45%, #3a0309 100%); opacity: calc(1 - var(--green, 0)); }
 .story-bg-green { background: radial-gradient(120% 90% at 50% 100%, #2c4a3a 0%, #13241c 55%, #07100c 100%); opacity: var(--green, 0); }
 .story-bg-dark { background: radial-gradient(100% 80% at 50% 60%, #1a1210 0%, #050303 100%); opacity: var(--dark, 0); }
+.story-stage::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(120% 80% at 50% 50%, transparent 55%, rgba(0,0,0,.45) 100%); }
 
 .story-line { position: absolute; left: 50%; top: 12%; width: min(86vw, 560px); margin: 0; transform: translateX(-50%); text-align: center; font: italic 400 clamp(1.25rem, 3.2vw, 1.9rem)/1.3 "Libre Baskerville", Georgia, serif; color: #ffe7e7; opacity: calc(var(--line1, 0) * (1 - var(--glass, 0))); text-shadow: 0 2px 18px rgba(0,0,0,.45); }
 
-/* Glass: a pane that tiles into shards. Each shard face is clipped; its text
-   moves with it. --s is the shatter amount (0 = whole pane, 1 = scattered). */
+/* The pane: a crack radiates from the centre, then the pane breaks into
+   shreds that fall away. --s is the shatter amount (0 whole, 1 scattered). */
 .story-glass { position: absolute; inset: 0; pointer-events: none; }
-.story-shard { position: absolute; inset: 0; transform: translate3d(calc(var(--s, 0) * var(--dx)), calc(var(--s, 0) * var(--dy)), 0) rotate(calc(var(--s, 0) * var(--rot))); opacity: var(--glass, 0); transition: none; }
-.story-shard-face { position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,.42), rgba(255,255,255,.08) 52%, rgba(255,235,235,.28)), rgba(255,120,120,.08); backdrop-filter: blur(5px) saturate(1.1); -webkit-backdrop-filter: blur(5px) saturate(1.1); box-shadow: inset 0 0 0 1px rgba(255,255,255,.55), inset 0 0 24px rgba(255,255,255,.12); }
-.story-shard-text { position: absolute; width: min(34vw, 170px); transform: translate(-50%, -50%); text-align: center; color: #fff; text-shadow: 0 1px 10px rgba(60,0,0,.5); }
-.story-shard-text strong { display: block; font: 700 clamp(1.6rem, 5vw, 2.6rem)/1 "Libre Baskerville", Georgia, serif; font-style: italic; margin-bottom: 4px; }
-.story-shard-text span { display: block; font: 500 clamp(.66rem, 1.7vw, .8rem)/1.35 Inter, system-ui, sans-serif; letter-spacing: .02em; }
-.story-you { position: absolute; left: 50%; top: 80%; margin: 0; transform: translateX(-50%); font: italic 400 clamp(1.5rem, 5.6vw, 2.6rem)/1 "Libre Baskerville", Georgia, serif; color: #fff; text-shadow: 0 0 22px rgba(255,140,140,.45); opacity: calc(var(--you, 0) * (1 - var(--burn-start, 0))); white-space: nowrap; }
+.glass-crack { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; opacity: calc(var(--glass, 0) * (1 - var(--s, 0))); }
+.glass-crack path { fill: none; stroke: rgba(255,255,255,.85); stroke-width: .35; vector-effect: non-scaling-stroke; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: calc(1 - var(--glass, 0)); pathLength: 1; }
+.glass-crack .crack-cross { stroke: rgba(255,255,255,.45); stroke-width: .18; }
+.glass-shreds { position: absolute; inset: 0; }
+.story-shard { position: absolute; inset: 0; opacity: var(--glass, 0); transform: translate3d(calc(var(--s, 0) * var(--dx)), calc(var(--s, 0) * var(--dy)), 0) rotate(calc(var(--s, 0) * var(--rot))); will-change: transform; }
+.story-shard-face { position: absolute; inset: 0; background: linear-gradient(118deg, rgba(255,255,255,.55), rgba(255,255,255,.1) 42%, rgba(255,235,235,.3) 70%, rgba(255,255,255,.14)); box-shadow: inset 0 0 0 .5px rgba(255,255,255,.7); }
+.story-shard-text { position: absolute; width: min(30vw, 150px); transform: translate(-50%, -50%); text-align: center; color: #fff; text-shadow: 0 1px 10px rgba(60,0,0,.5); }
+.story-shard-text strong { display: block; font: italic 700 clamp(1.4rem, 4.6vw, 2.4rem)/1 "Libre Baskerville", Georgia, serif; margin-bottom: 4px; }
+.story-shard-text span { display: block; font: 500 clamp(.6rem, 1.5vw, .76rem)/1.35 Inter, system-ui, sans-serif; letter-spacing: .02em; }
+.story-you { position: absolute; left: 50%; top: 80%; margin: 0; transform: translateX(-50%); font: italic 400 clamp(1.5rem, 5.6vw, 2.6rem)/1 "Libre Baskerville", Georgia, serif; color: #fff; text-shadow: 0 0 22px rgba(255,140,140,.45); opacity: var(--you, 0); white-space: nowrap; }
 
 /* Burning note */
 .story-burn { position: absolute; inset: 0; pointer-events: none; opacity: var(--note, 0); }
-.burn-wrap { position: absolute; left: 50%; top: 50%; width: min(70vw, 300px); aspect-ratio: 420 / 260; transform: translate(-50%, -50%) rotate(-6deg); --burn: var(--burnp, 0); }
-.burn-note { position: absolute; inset: 0; overflow: hidden; border-radius: 6px; background: linear-gradient(180deg, #d9ead8, #9cc6a4 60%, #7eaf8c); box-shadow: 0 18px 40px rgba(0,0,0,.45); display: grid; grid-template-columns: 42% 1fr; align-items: center; gap: 4%; padding: 6% 6%; box-sizing: border-box; color: #17361f;
-  -webkit-mask-image: linear-gradient(to top, transparent calc(var(--burn) * 100%), #000 calc(var(--burn) * 100% + 16%));
-          mask-image: linear-gradient(to top, transparent calc(var(--burn) * 100%), #000 calc(var(--burn) * 100% + 16%)); }
+.burn-wrap { position: absolute; left: 50%; top: 50%; width: min(70vw, 300px); aspect-ratio: 420 / 260; transform: translate(-50%, -50%) rotate(-6deg); }
+.burn-note { position: absolute; inset: 0; overflow: hidden; border-radius: 6px; background: linear-gradient(180deg, #d9ead8, #9cc6a4 60%, #7eaf8c); box-shadow: 0 18px 40px rgba(0,0,0,.45); display: grid; grid-template-columns: 42% 1fr; align-items: center; gap: 4%; padding: 6%; box-sizing: border-box; color: #17361f;
+  -webkit-mask-image: linear-gradient(to top, transparent calc(var(--burnp, 0) * 100%), #000 calc(var(--burnp, 0) * 100% + 16%));
+          mask-image: linear-gradient(to top, transparent calc(var(--burnp, 0) * 100%), #000 calc(var(--burnp, 0) * 100% + 16%)); }
 .burn-note img { width: 100%; height: 100%; object-fit: cover; border-radius: 3px; border: 1px solid rgba(23,54,31,.35); filter: sepia(.25) contrast(1.05); }
 .burn-note-title { font: italic 700 clamp(.9rem, 2.4vw, 1.05rem)/1.15 "Libre Baskerville", Georgia, serif; }
 .burn-note-sub { display: block; margin-top: 6px; font: 600 .62rem/1.3 Inter, system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; opacity: .75; }
-.burn-edge { position: absolute; left: -6%; right: -6%; height: 22px; bottom: calc(var(--burn) * 100%); transform: translateY(50%); background: radial-gradient(60% 100% at 50% 50%, rgba(255,226,120,.95), rgba(255,120,30,.75) 40%, rgba(120,20,0,0) 72%); filter: blur(2px); opacity: calc(var(--burnp-on, 0)); mix-blend-mode: screen; }
+.burn-edge { position: absolute; left: -6%; right: -6%; height: 22px; bottom: calc(var(--burnp, 0) * 100%); transform: translateY(50%); background: radial-gradient(60% 100% at 50% 50%, rgba(255,226,120,.95), rgba(255,120,30,.75) 40%, rgba(120,20,0,0) 72%); filter: blur(2px); opacity: var(--burnp-on, 0); mix-blend-mode: screen; }
 .burn-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 
 /* Serif lines that write themselves while you scroll */
-.story-serif { position: absolute; left: 50%; margin: 0; transform: translateX(-50%); white-space: nowrap; text-align: center; font: italic 400 clamp(2.4rem, 11vw, 5.2rem)/1 "Libre Baskerville", Georgia, serif; color: #f4fff6; text-shadow: 0 0 26px rgba(170,255,210,.45); clip-path: inset(0 calc((1 - var(--t, 0)) * 100%) 0 0); pointer-events: none; }
-.story-this-club { top: 26%; font-size: clamp(1.9rem, 7.4vw, 3.4rem); --t: var(--this, 0); }
-.story-focus { top: 44%; font-size: clamp(2.2rem, 9.6vw, 4.6rem); --t: var(--focus, 0); }
+.story-serif { position: absolute; left: 50%; margin: 0; transform: translateX(-50%); white-space: nowrap; text-align: center; font: italic 400 clamp(2.4rem, 11vw, 5.2rem)/1 "Libre Baskerville", Georgia, serif; color: #f4fff6; text-shadow: 0 0 26px rgba(170,255,210,.45); pointer-events: none; }
+.story-this-club { top: 26%; font-size: clamp(1.9rem, 7.4vw, 3.4rem); clip-path: inset(0 calc((1 - var(--this, 0)) * 100%) 0 0); }
+.story-focus { top: 44%; font-size: clamp(2.2rem, 9.6vw, 4.6rem); clip-path: inset(0 calc((1 - var(--focus, 0)) * 100%) 0 0); }
 
 /* Newspaper clippings that tear in two */
 .story-papers { position: absolute; inset: 0; pointer-events: none; opacity: var(--paper, 0); }
@@ -1988,23 +1993,22 @@ html.no-js .chart-traveller animateMotion { display: none; }
 .paper-half { position: absolute; inset: 0; overflow: hidden; background: linear-gradient(180deg, #f1ead8, #e4dbc2); color: #1d2b24; box-shadow: 0 8px 22px rgba(0,0,0,.35); }
 .paper-top { clip-path: polygon(0 0, 100% 0, 100% 47%, 92% 50%, 80% 46%, 68% 52%, 55% 47%, 40% 53%, 26% 48%, 12% 52%, 0 47%); transform: translateY(calc(var(--tear, 0) * var(--k, 1) * -34px)) rotate(calc(var(--tear, 0) * var(--k, 1) * -5deg)); }
 .paper-bottom { clip-path: polygon(0 47%, 12% 52%, 26% 48%, 40% 53%, 55% 47%, 68% 52%, 80% 46%, 92% 50%, 100% 47%, 100% 100%, 0 100%); transform: translateY(calc(var(--tear, 0) * var(--k, 1) * 34px)) rotate(calc(var(--tear, 0) * var(--k, 1) * 4deg)); }
-.paper-body { position: absolute; inset: 0; padding: 14px 14px; display: flex; flex-direction: column; gap: 7px; font-family: "Libre Baskerville", Georgia, serif; }
+.paper-body { position: absolute; inset: 0; padding: 14px; display: flex; flex-direction: column; gap: 7px; font-family: "Libre Baskerville", Georgia, serif; }
 .paper-kicker { font: 700 .55rem/1 Inter, system-ui, sans-serif; letter-spacing: .14em; text-transform: uppercase; color: #6a2026; }
 .paper-body strong { font: 700 .86rem/1.25 "Libre Baskerville", Georgia, serif; }
 .paper-body span:last-child { font: 400 .7rem/1.4 Inter, system-ui, sans-serif; color: #3b4a42; }
 
-/* Herd returns: the club's own footage, enhanced into a slow reveal */
+/* The herd returns */
 .story-herd { position: absolute; inset: 0; overflow: hidden; background: #0b0d0a; clip-path: inset(0 0 0 calc((1 - var(--herd, 0)) * 100%)); }
 .herd-still, .herd-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scale(calc(1.06 - .06 * var(--herd, 0))); filter: saturate(.9) brightness(.85); }
 .herd-video { opacity: 0; transition: opacity .8s ease; }
 .story-herd.is-playing .herd-video { opacity: 1; }
-.herd-line { position: absolute; left: 50%; bottom: 9%; margin: 0; transform: translateX(-50%); font: italic 400 clamp(1.8rem, 7vw, 3.2rem)/1 "Libre Baskerville", Georgia, serif; color: #fff; text-shadow: 0 2px 22px rgba(0,0,0,.55); white-space: nowrap; opacity: calc(var(--herd, 0)); }
+.herd-line { position: absolute; left: 50%; bottom: 9%; margin: 0; transform: translateX(-50%); font: italic 400 clamp(1.8rem, 7vw, 3.2rem)/1 "Libre Baskerville", Georgia, serif; color: #fff; text-shadow: 0 2px 22px rgba(0,0,0,.55); white-space: nowrap; opacity: var(--herd, 0); }
 
-/* Static fallback when motion is reduced: the stage becomes a readable stack
-   showing the final frame of the film. */
+/* Reduced motion: the stage becomes a readable stack of the final frame. */
 .story-chapter.is-static { height: auto; }
 .story-chapter.is-static .story-stage { position: relative; height: auto; min-height: 100vh; padding: 60px 0; }
-.story-chapter.is-static .story-chapter.is-static .story-line { position: relative; top: auto; transform: translateX(-50%); margin-top: 40px; }
+.story-chapter.is-static .story-line { position: relative; top: auto; transform: translateX(-50%); margin-top: 40px; }
 
 /* ===================================================================
    Butterfly flyers: the courier (menu links) and the form companion

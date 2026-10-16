@@ -910,8 +910,9 @@
 
   /* ------------------------------------------------------------------
      Scroll story: one progress value (0 → 1 across the chapter) drives
-     every scene through CSS variables. Burning embers are drawn on a
-     canvas only while the note is alight.
+     every scene through CSS variables. The glass pane is built once: a
+     radiating crack, then a jittered triangulation of shreds that fall
+     away when the pane breaks. Embers are drawn only while the note burns.
      ------------------------------------------------------------------ */
   function setupStory() {
     const story = $('#story');
@@ -923,17 +924,14 @@
     const wrap = $('.burn-wrap', story);
     const canvas = $('[data-burn-canvas]', story);
     const ctx = canvas && canvas.getContext ? canvas.getContext('2d') : null;
-    if (reduced()) {
-      story.classList.add('is-static');
-      return;
-    }
+    if (reduced()) { story.classList.add('is-static'); return; }
+    buildGlass(story);
     let frame = 0, burning = false, embers = [], burnFrame = 0, herdStarted = false;
     function apply(p) {
       const st = story.style;
       const set = function (name, value) { st.setProperty(name, typeof value === 'number' ? value.toFixed(4) : value); };
-      set('--hand', ramp(p, 0, .14));
       set('--line1', ramp(p, .02, .10) * (1 - ramp(p, .13, .19)));
-      set('--glass', ramp(p, .12, .18) * (1 - ramp(p, .36, .42)));
+      set('--glass', ramp(p, .10, .18) * (1 - ramp(p, .36, .42)));
       set('--s', ramp(p, .22, .30));
       set('--you', ramp(p, .29, .35) * (1 - ramp(p, .36, .41)));
       set('--note', ramp(p, .34, .39));
@@ -965,7 +963,6 @@
       apply(clamp(-story.getBoundingClientRect().top / total, 0, 1));
     }
     function schedule() { if (!frame) frame = window.requestAnimationFrame(measure); }
-    /* embers along the burning edge */
     function scheduleBurn() { if (!burnFrame && ctx) burnFrame = window.requestAnimationFrame(drawBurn); }
     function drawBurn() {
       burnFrame = 0;
@@ -988,7 +985,7 @@
       embers.forEach(function (e) {
         e.x += e.vx; e.y += e.vy; e.vy *= .992; e.life -= .022;
         const g = ctx.createRadialGradient(e.x, e.y, 0, e.x, e.y, e.size * 3);
-        g.addColorStop(0, 'rgba(255,240,170,' + (e.life).toFixed(3) + ')');
+        g.addColorStop(0, 'rgba(255,240,170,' + e.life.toFixed(3) + ')');
         g.addColorStop(.4, 'rgba(255,130,40,' + (e.life * .8).toFixed(3) + ')');
         g.addColorStop(1, 'rgba(120,20,0,0)');
         ctx.fillStyle = g;
@@ -999,6 +996,87 @@
     window.addEventListener('scroll', schedule, { passive: true });
     window.addEventListener('resize', schedule);
     measure();
+  }
+
+  /* Builds the crack and the shreds once. Points are jittered inside a grid
+     over the pane; each triangle becomes one shred that flies away from the
+     crack's centre with a little spin and gravity. */
+  function buildGlass(story) {
+    const holder = story.querySelector('[data-shreds]');
+    const svg = story.querySelector('[data-crack]');
+    if (!holder || !svg) return;
+    const NS = 'http://www.w3.org/2000/svg';
+    const cx = 50, cy = 46;
+    let facts = [];
+    try { facts = JSON.parse(holder.getAttribute('data-facts') || '[]'); } catch (error) { facts = []; }
+    /* crack: radial lines and two rings, drawn in the stage's own % space */
+    const rays = 12;
+    for (let i = 0; i < rays; i++) {
+      const a = (i / rays) * Math.PI * 2 + (i % 2 ? .12 : 0);
+      const len = 46 + ((i * 37) % 17);
+      const mid = { x: cx + Math.cos(a) * len * .5 + Math.cos(a + 1) * 2.4, y: cy + Math.sin(a) * len * .5 + Math.sin(a + 1) * 2.4 };
+      const path = document.createElementNS(NS, 'path');
+      path.setAttribute('d', 'M' + cx + ' ' + cy + ' Q' + mid.x.toFixed(2) + ' ' + mid.y.toFixed(2) + ' ' + (cx + Math.cos(a) * len).toFixed(2) + ' ' + (cy + Math.sin(a) * len * 1.6).toFixed(2));
+      svg.appendChild(path);
+    }
+    [9, 19].forEach(function (radius) {
+      const path = document.createElementNS(NS, 'path');
+      let d = '';
+      for (let i = 0; i <= 24; i++) {
+        const a = i / 24 * Math.PI * 2;
+        const r = radius * (1 + .08 * Math.sin(i * 1.7));
+        d += (i ? 'L' : 'M') + (cx + Math.cos(a) * r).toFixed(2) + ' ' + (cy + Math.sin(a) * r * 1.6).toFixed(2);
+      }
+      path.setAttribute('d', d + 'Z');
+      path.setAttribute('class', 'crack-cross');
+      svg.appendChild(path);
+    });
+    /* shreds: jittered grid, two triangles per cell */
+    const cols = 6, rows = 5, x0 = 6, x1 = 94, y0 = 22, y1 = 72;
+    const pts = [];
+    let seed = 7;
+    const rnd = function () { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+    for (let r = 0; r <= rows; r++) {
+      pts[r] = [];
+      for (let c = 0; c <= cols; c++) {
+        const edge = r === 0 || r === rows || c === 0 || c === cols;
+        const jx = edge ? 0 : (rnd() - .5) * (x1 - x0) / cols * .6;
+        const jy = edge ? 0 : (rnd() - .5) * (y1 - y0) / rows * .6;
+        pts[r][c] = { x: x0 + (x1 - x0) * c / cols + jx, y: y0 + (y1 - y0) * r / rows + jy };
+      }
+    }
+    const tris = [];
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      const a = pts[r][c], b = pts[r][c + 1], d = pts[r + 1][c], e = pts[r + 1][c + 1];
+      if ((r + c) % 2) { tris.push([a, b, e]); tris.push([a, e, d]); } else { tris.push([a, b, d]); tris.push([b, e, d]); }
+    }
+    let factIndex = 0;
+    const slots = tris.map(function (_, i) { return i; }).filter(function (i) { return i % 7 === 3; });
+    tris.forEach(function (t, i) {
+      const gx = (t[0].x + t[1].x + t[2].x) / 3, gy = (t[0].y + t[1].y + t[2].y) / 3;
+      const dirX = gx - cx, dirY = gy - cy;
+      const k = 1 + rnd() * .6;
+      const shard = document.createElement('div');
+      shard.className = 'story-shard';
+      shard.style.setProperty('--dx', (dirX * 1.6 + (rnd() - .5) * 10).toFixed(2) + 'vw');
+      shard.style.setProperty('--dy', (dirY * 1.1 * k + 26 + rnd() * 14).toFixed(2) + 'vh');
+      shard.style.setProperty('--rot', ((rnd() - .5) * 44).toFixed(1) + 'deg');
+      const face = document.createElement('span');
+      face.className = 'story-shard-face';
+      face.style.clipPath = 'polygon(' + t.map(function (p) { return p.x.toFixed(2) + '% ' + p.y.toFixed(2) + '%'; }).join(', ') + ')';
+      shard.appendChild(face);
+      if (slots.indexOf(i) !== -1 && facts.length) {
+        const fact = facts[factIndex % facts.length]; factIndex++;
+        const label = document.createElement('span');
+        label.className = 'story-shard-text';
+        label.style.left = gx.toFixed(2) + '%';
+        label.style.top = gy.toFixed(2) + '%';
+        if (fact.big) { const big = document.createElement('strong'); big.textContent = fact.big; label.appendChild(big); }
+        const line = document.createElement('span'); line.textContent = fact.text; label.appendChild(line);
+        shard.appendChild(label);
+      }
+      holder.appendChild(shard);
+    });
   }
 
   /* One butterfly element, built from the same photographic wings the nav uses. */

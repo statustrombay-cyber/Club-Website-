@@ -147,25 +147,25 @@ $clubWords = ['mind', 'body', 'connection', 'curiosity', 'growth', 'community', 
 <?= mt_brand_chapter((string) ($site['clubName'] ?? 'Mindful Tattva')) ?>
 
 <?php
-/* The scroll story: a red stage where a hand breaks a pane of glass into
- * shards of positive-psychology facts; a green note with a portrait burns;
- * "This club focuses on human" writes itself as you scroll; newspaper-style
- * psychology clippings tear apart; then the horse herd comes back. Every
- * scene is driven by one progress value set in app.js, so it reads as a
- * continuous film. Copy is original. */
-$storyShards = [
-  ['pts' => '6% 30%, 50% 22%, 40% 50%, 8% 47%', 'dx' => '-22vw', 'dy' => '-18vh', 'rot' => '-14deg', 'text' => 'You are not alone.', 'big' => '', 'cx' => '24%', 'cy' => '37%'],
-  ['pts' => '50% 22%, 94% 31%, 92% 52%, 40% 50%', 'dx' => '18vw', 'dy' => '-26vh', 'rot' => '12deg', 'text' => '1 in 8 people worldwide live with a mental disorder.', 'big' => '12.5%', 'cx' => '67%', 'cy' => '38%'],
-  ['pts' => '8% 47%, 40% 50%, 44% 73%, 16% 70%', 'dx' => '-26vw', 'dy' => '24vh', 'rot' => '-9deg', 'text' => '1 in 5 U.S. adults live with a mental illness in a given year.', 'big' => '20%', 'cx' => '26%', 'cy' => '60%'],
-  ['pts' => '40% 50%, 92% 52%, 88% 74%, 44% 73%', 'dx' => '24vw', 'dy' => '22vh', 'rot' => '10deg', 'text' => 'Naming a feeling can help it settle.', 'big' => '', 'cx' => '66%', 'cy' => '62%'],
+/* A scroll story in the club's own style. A red stage cracks at its centre
+ * and the pane breaks into glass shreds, some carrying facts; a club note
+ * burns; "This club focuses on human" writes itself; psychology clippings
+ * tear in two; the horse herd returns. One progress value (app.js) drives
+ * every scene. All copy and art here is original to the club. */
+$storyFacts = [
+  ['big' => '12.5%', 'text' => 'of people worldwide live with a mental disorder (WHO, 2022).'],
+  ['big' => '1 in 5', 'text' => 'U.S. adults live with a mental illness in a given year (NIMH).'],
+  ['big' => '', 'text' => 'Naming a feeling can help it settle (Lieberman et al., 2007).'],
+  ['big' => '14416', 'text' => 'Tele-MANAS: free mental health support, 24 hours, across India.'],
+  ['big' => '', 'text' => 'Noticing three good things at day’s end can lift your mood.'],
 ];
 $storyPapers = [
-  ['kicker' => 'Psychology news', 'head' => 'Writing down three good things a day is a popular way to build gratitude.', 'body' => 'Small habits, practised daily, can shift attention toward what is working.', 'x' => '6%', 'y' => '10%', 'r' => '-5deg', 'k' => '1'],
-  ['kicker' => 'Psychology news', 'head' => 'Freud\'s dream notebooks still shape how we talk about the unconscious.', 'body' => 'His questions about slips and dreams are still asked in lecture halls today.', 'x' => '46%', 'y' => '6%', 'r' => '4deg', 'k' => '-1'],
-  ['kicker' => 'Psychology news', 'head' => 'Carl Rogers: being truly heard helps a person grow.', 'body' => 'Unconditional positive regard remains a cornerstone of counselling.', 'x' => '12%', 'y' => '44%', 'r' => '3deg', 'k' => '1.2'],
-  ['kicker' => 'Psychology news', 'head' => 'Jung\'s "shadow" is the part of us we would rather not see.', 'body' => 'Meeting it gently is often the first step towards becoming whole.', 'x' => '52%', 'y' => '42%', 'r' => '-4deg', 'k' => '-0.8'],
-  ['kicker' => 'Psychology news', 'head' => 'Maslow reminded us: belonging comes before self-actualisation.', 'body' => 'Rest, safety and friends are not extras. They are the foundations.', 'x' => '20%', 'y' => '72%', 'r' => '2deg', 'k' => '0.9'],
-  ['kicker' => 'Psychology news', 'head' => 'Why a short walk in open air can settle a crowded mind.', 'body' => 'Attention rests when the body moves through a quieter place.', 'x' => '56%', 'y' => '74%', 'r' => '-3deg', 'k' => '-1.1'],
+  ['head' => 'Writing down three good things a day is a popular way to build gratitude.', 'body' => 'Small habits, practised daily, shift attention toward what is working.', 'x' => '6%', 'y' => '10%', 'r' => '-5deg', 'k' => '1'],
+  ['head' => 'Freud’s dream notebooks still shape how we talk about the unconscious.', 'body' => 'His questions about slips and dreams are still asked in lecture halls today.', 'x' => '46%', 'y' => '6%', 'r' => '4deg', 'k' => '-1'],
+  ['head' => 'Carl Rogers: being truly heard helps a person grow.', 'body' => 'Unconditional positive regard remains a cornerstone of counselling.', 'x' => '12%', 'y' => '44%', 'r' => '3deg', 'k' => '1.2'],
+  ['head' => 'Jung’s “shadow” is the part of us we would rather not see.', 'body' => 'Meeting it gently is often the first step towards becoming whole.', 'x' => '52%', 'y' => '42%', 'r' => '-4deg', 'k' => '-0.8'],
+  ['head' => 'Maslow reminded us: belonging comes before self-actualisation.', 'body' => 'Rest, safety and friends are not extras. They are the foundations.', 'x' => '20%', 'y' => '72%', 'r' => '2deg', 'k' => '0.9'],
+  ['head' => 'Why a short walk in open air can settle a crowded mind.', 'body' => 'Attention rests when the body moves through a quieter place.', 'x' => '56%', 'y' => '74%', 'r' => '-3deg', 'k' => '-1.1'],
 ];
 ?>
 <section class="story-chapter" id="story" aria-label="You are not alone">
@@ -174,18 +174,11 @@ $storyPapers = [
     <div class="story-bg story-bg-green" aria-hidden="true"></div>
     <div class="story-bg story-bg-dark" aria-hidden="true"></div>
 
-    <p class="story-line story-line-one">Feeling alone can feel like the whole story.</p>
+    <p class="story-line">Feeling alone can feel like the whole story.</p>
 
-    <div class="story-glass" aria-hidden="false" role="group" aria-label="Facts about mental health, shattered into glass">
-      <?php foreach ($storyShards as $shard): ?>
-        <div class="story-shard" style="--dx:<?= e($shard['dx']) ?>;--dy:<?= e($shard['dy']) ?>;--rot:<?= e($shard['rot']) ?>">
-          <span class="story-shard-face" style="clip-path:polygon(<?= e($shard['pts']) ?>)"></span>
-          <span class="story-shard-text" style="left:<?= e($shard['cx']) ?>;top:<?= e($shard['cy']) ?>">
-            <?php if ($shard['big'] !== ''): ?><strong><?= e($shard['big']) ?></strong><?php endif; ?>
-            <span><?= e($shard['text']) ?></span>
-          </span>
-        </div>
-      <?php endforeach; ?>
+    <div class="story-glass" data-glass role="group" aria-label="Facts about mental health, broken into glass">
+      <svg class="glass-crack" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" data-crack></svg>
+      <div class="glass-shreds" data-shreds data-facts="<?= e((string) json_encode($storyFacts, JSON_UNESCAPED_UNICODE)) ?>"></div>
       <p class="story-you">You are not alone.</p>
     </div>
 
@@ -201,19 +194,19 @@ $storyPapers = [
       <canvas class="burn-canvas" data-burn-canvas></canvas>
     </div>
 
-    <p class="story-serif story-this-club" data-reveal="this">This club</p>
-    <p class="story-serif story-focus" data-reveal="focus">focuses on human</p>
+    <p class="story-serif story-this-club">This club</p>
+    <p class="story-serif story-focus">focuses on human</p>
 
-    <div class="story-papers" aria-hidden="false">
+    <div class="story-papers" aria-hidden="true">
       <?php foreach ($storyPapers as $paper): ?>
         <article class="story-paper" style="--x:<?= e($paper['x']) ?>;--y:<?= e($paper['y']) ?>;--r:<?= e($paper['r']) ?>;--k:<?= e($paper['k']) ?>">
           <div class="paper-half paper-top"><div class="paper-body">
-            <span class="paper-kicker"><?= e($paper['kicker']) ?></span>
+            <span class="paper-kicker">Psychology news</span>
             <strong><?= e($paper['head']) ?></strong>
             <span><?= e($paper['body']) ?></span>
           </div></div>
           <div class="paper-half paper-bottom"><div class="paper-body">
-            <span class="paper-kicker"><?= e($paper['kicker']) ?></span>
+            <span class="paper-kicker">Psychology news</span>
             <strong><?= e($paper['head']) ?></strong>
             <span><?= e($paper['body']) ?></span>
           </div></div>
