@@ -1222,7 +1222,7 @@ html.photo-frame-open { overflow: hidden; }
    sections that are off screen. content-visibility does exactly that; the
    intrinsic size keeps the scrollbar honest, and browsers that do not know the
    property simply ignore it. */
-.section, .gallery-item, .archive-card, .member-card, .event-card, .calendar-month, .album, .timeline-item {
+.gallery-item, .archive-card, .member-card, .event-card, .calendar-month, .album, .timeline-item {
   content-visibility: auto;
   contain-intrinsic-size: auto 340px;
 }
@@ -1848,8 +1848,13 @@ html.js .scroll-reveal.is-visible { opacity: 1; transform: none; }
 .portrait-card:nth-child(even) .portrait-badge { background: #fff; color: #151419; border-color: #eeeaf4; box-shadow: 0 3px 8px #0003; }
 .portrait-card:nth-child(even) .badge-dark { display: none; }
 .portrait-card:nth-child(even) .badge-light { display: block; }
-.team-card > .portrait-badge, .member-card > .portrait-badge { top: 70px; left: min(calc(100% - 48px), 272px); right: auto; }
-.team-card:nth-child(even) > .portrait-badge, .member-card:nth-child(even) > .portrait-badge { top: 22px; left: 6px; }
+/* The fan belongs to the PHOTO, not the padded text card. Its centre sits
+   on the photo's top edge, including placeholders and newly added members. */
+.portrait-photo { position: relative; width: min(100%, 270px); margin: 0 0 16px; flex-shrink: 0; }
+.portrait-photo > .team-avatar, .portrait-photo > .member-photo { width: 100%; margin: 0; }
+.portrait-photo > .portrait-badge { top: 0; right: 0; left: auto; transform: translate(25%, -50%); animation: none; }
+.portrait-card:nth-child(even) .portrait-photo > .portrait-badge { left: 0; right: auto; transform: translate(-25%, -50%); }
+@media (max-width: 600px) { .portrait-photo { width: 100%; } }
 .portrait-card.photo-in-view .portrait-badge, .gallery-stage.photo-in-view .portrait-badge { animation: none; }
 .badge-fan { transform-origin: 32px 32px; }
 .photo-in-view .badge-fan { animation: fanTurn 8s linear infinite; }
@@ -1877,9 +1882,6 @@ html.js .scroll-reveal.is-visible { opacity: 1; transform: none; }
 @keyframes nStem { from { transform: scaleY(0); } to { transform: scaleY(1); } }
 @keyframes nArch { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 @keyframes introMarkLeave { to { opacity: 0; transform: translate(-50%,-50%) scale(.82); } }
-/* Raise the odd portrait's corner fan, without moving or bouncing the card. */
-.team-card > .portrait-badge, .member-card > .portrait-badge { top: 42px; }
-.team-card:nth-child(even) > .portrait-badge, .member-card:nth-child(even) > .portrait-badge { top: 22px; }
 .happiness-chart { padding: clamp(8px, 2vw, 22px); border-radius: 24px; background: radial-gradient(ellipse at 70% 10%,#342647,#19171e 70%); }
 .happiness-plot { width: 100%; overflow: visible; }
 .happiness-chart .chart-grid { stroke: #53465e; stroke-opacity: .28; stroke-width: 1; }
@@ -1908,3 +1910,15 @@ html.no-js .chart-traveller animateMotion { display: none; }
 .m-finish { transform-origin: center top; animation: nStem .3s linear calc(3.65s + var(--m-lead)) both; }
 .splash-ring-intro { animation-delay: 1.8s; animation-duration: .35s; }
 @media (prefers-reduced-motion: reduce) { .m-flow { animation: none; transform: none; } }
+
+/* Keep whole-page geometry stable while scrolling. Skipping an entire section
+   moved the closing pinned chapter by thousands of pixels as cards appeared.
+   Individual offscreen cards may still use content-visibility above. */
+.site-shell main > section { content-visibility: visible; contain-intrinsic-size: none; }
+/* Clip each dark scene to its own boundaries, without creating the scroll
+   container that overflow:hidden would introduce around a sticky stage. */
+.black-chapter { overflow: clip; }
+.menu-button { min-width: 44px; min-height: 44px; cursor: pointer; }
+/* Home's pinned scenes also depend on the sizes of the timeline/event cards.
+   Do not let their estimated heights move a dark scene under the reader. */
+.page-home .site-shell main * { content-visibility: visible; contain-intrinsic-size: none; }

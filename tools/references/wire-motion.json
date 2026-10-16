@@ -16,7 +16,17 @@
       "width": 328,
       "height": 220,
       "fallbackPngBytes": 11152,
-      "fallbackPngSha256": "c48658c67e6402a6020bae58f27e61cf962008e259876bc205c40b9b68630d8e"
+      "fallbackPngSha256": "c48658c67e6402a6020bae58f27e61cf962008e259876bc205c40b9b68630d8e",
+      "inlineMotion": {
+        "frames": 84,
+        "differentFrames": 84,
+        "bytes": 62637,
+        "durationMs": 3500,
+        "sha256": "ee4583d45b9f1c0f87273b03352d1af2ec98284f25776413c7b9d352a35745b6",
+        "width": 112,
+        "height": 76,
+        "method": "Exact frame order and delays from the full-resolution WebP; Lanczos downsample of alpha, 16 transparency levels, fixed pale-lilac RGB."
+      }
     },
     "prism": {
       "frames": 49,
@@ -32,7 +42,17 @@
       "width": 328,
       "height": 220,
       "fallbackPngBytes": 14160,
-      "fallbackPngSha256": "508237d2b83330b38c745683c881aa716c1041513eed8f294943038c615eb8fe"
+      "fallbackPngSha256": "508237d2b83330b38c745683c881aa716c1041513eed8f294943038c615eb8fe",
+      "inlineMotion": {
+        "frames": 49,
+        "differentFrames": 49,
+        "bytes": 42501,
+        "durationMs": 2042,
+        "sha256": "80d193b7f0a20ed92e2afb04ef15ab3fb4b3b5f2d381aed4471003702923e7bf",
+        "width": 112,
+        "height": 76,
+        "method": "Exact frame order and delays from the full-resolution WebP; Lanczos downsample of alpha, 16 transparency levels, fixed pale-lilac RGB."
+      }
     },
     "sphere": {
       "frames": 49,
@@ -48,8 +68,18 @@
       "width": 328,
       "height": 220,
       "fallbackPngBytes": 16732,
-      "fallbackPngSha256": "f35fc6fc453257f963ff0223eb5e47bbba64158a6f437b2506aae7da4e762fe2"
+      "fallbackPngSha256": "f35fc6fc453257f963ff0223eb5e47bbba64158a6f437b2506aae7da4e762fe2",
+      "inlineMotion": {
+        "frames": 49,
+        "differentFrames": 49,
+        "bytes": 39343,
+        "durationMs": 2042,
+        "sha256": "0fffe040ff15c0740d5340fe4f6b0fb84d173056a1bb3582ce6c3b848ed73bc3",
+        "width": 112,
+        "height": 76,
+        "method": "Exact frame order and delays from the full-resolution WebP; Lanczos downsample of alpha, 16 transparency levels, fixed pale-lilac RGB."
+      }
     }
   },
-  "delivery": "Embedded PNG silhouettes are server-rendered once per object; decoded animation preloads before promotion, with permanent per-object fallback after a failed request or decode. Explicit Apache image MIME mappings."
+  "delivery": "Static PNGs for offscreen, hidden-tab, reduced-motion and no-JS use. Onscreen motion starts immediately from embedded APNGs and promotes to full-resolution WebP only after decode. Failed, corrupt or slow external animation never leaves an onscreen still. A damaged inline image alone falls back to the static silhouette."
 }

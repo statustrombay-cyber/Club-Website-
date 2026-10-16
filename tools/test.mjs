@@ -908,7 +908,7 @@ ok('the bubbles keep their motion', ['bubbleDrift', 'orbitSpin', 'psiPulse', 'fa
 ok('the mobile menu is styled', /\.nav-links\.open/.test(appCss) || /nav-links\.open/.test(appCss));
 ok('the menu puts itself away when the visitor taps elsewhere',
   appJs.includes('if (nav.contains(event.target) || button.contains(event.target)) return;')
-  && appJs.includes("if (event.key === 'Escape' && nav.classList.contains('open')) close();"));
+  && appJs.includes("if (event.key === 'Escape' && nav.classList.contains('open')) { close(); button.focus(); }"));
 ok('a phone keeps the lights at a smaller cost',
   /\.drift-blob \{ filter: blur\(30px\); opacity: \.36; \}/.test(appCss)
   && /\.blob-c \{ display: none; \}/.test(appCss));
@@ -1144,7 +1144,7 @@ ok('the club emblem sits in the members stage, and the frame script is live',
 ok('the club emblem is faded into the member cards instead of psi',
   /\.member-card:after \{[^}]*mt-club-logo/.test(appCss) && !/\.member-card:after \{[^}]*content: 'Ψ'/.test(appCss));
 ok('the page skips work for what is off screen (a faster scroll)',
-  /\.section, \.gallery-item[^{]*\{[^}]*content-visibility: auto/.test(appCss));
+  /\.gallery-item, \.archive-card[^{]*\{[^}]*content-visibility: auto/.test(appCss));
 ok('the pictures below the fold wait until they are reached',
   (fs.readFileSync(path.join(ROOT, 'views/public/members.php'), 'utf8').match(/loading="lazy"/g) || []).length >= 1
   && (fs.readFileSync(path.join(ROOT, 'views/layout.php'), 'utf8').match(/loading="lazy"/g) || []).length >= 2);
@@ -1751,6 +1751,19 @@ for(const [name,study] of Object.entries(wireStudy.models)) {
   const {createHash}=await import('node:crypto');
   ok('wire '+name+' matches its reviewed decoded-motion provenance',createHash('sha256').update(bytes).digest('hex')===study.sha256);
 }
+for (const [name, study] of Object.entries(wireStudy.models)) {
+  const bytes=fs.readFileSync(path.join(ROOT,'assets/motion/wire-'+name+'-inline.png'));
+  let frames=0,duration=0,loop=-1;
+  for(let at=8;at+12<=bytes.length;) {
+    const size=bytes.readUInt32BE(at),type=bytes.toString('ascii',at+4,at+8),payload=at+8;
+    if(type==='acTL') loop=bytes.readUInt32BE(payload+4);
+    if(type==='fcTL'){frames++;duration+=1000*bytes.readUInt16BE(payload+20)/(bytes.readUInt16BE(payload+22)||100);}
+    at+=size+12;
+  }
+  const {createHash}=await import('node:crypto');
+  ok(name+' fallback is a genuine endless APNG with all original frames and times',frames===study.frames&&Math.abs(duration-study.durationMs)<.01&&loop===0);
+  ok(name+' embedded motion matches the reviewed frame-by-frame provenance',createHash('sha256').update(bytes).digest('hex')===study.inlineMotion.sha256);
+}
 const {createHash:motionDigest}=await import('node:crypto');
 const motionUrls=[...mindPage.body.matchAll(/(?:src|data-still-src|data-motion-src)="(\/assets\/motion\/[^\"]+)"/g)].map(match=>match[1]);
 ok('all fetched motion images use content hashes; stills are embedded PNG fallbacks',motionUrls.length===4&&motionUrls.every(value=>{
@@ -1780,6 +1793,33 @@ ok('wave artwork fades naturally rather than meeting a rectangular edge',
   cardsSource.includes('reference-ribbons.webp')
   && (mindPage.body.match(/class="blue-waves reference-ribbons"/g) || []).length === 1
   && round37Css.includes('mask-image: linear-gradient(transparent, #000 8%, #000 88%, transparent)'));
+/* Execute every menu dismissal path, including its visible icon and label. */
+{
+  const {runInNewContext}=await import('node:vm');
+  const events={},windowEvents={},links=[{handlers:{},addEventListener(n,f){this.handlers[n]=f;}}];
+  const classes=new Set();
+  const nav={classList:{contains:n=>classes.has(n),toggle(n,value){if(value)classes.add(n);else classes.delete(n);}},contains:target=>links.includes(target)};
+  const button={handlers:{},attrs:{},setAttribute(n,v){this.attrs[n]=v;},addEventListener(n,f){this.handlers[n]=f;},contains:target=>target===button,focus(){this.focused=true;}};
+  const win={innerWidth:390,addEventListener:(n,f)=>windowEvents[n]=f};
+  const begin=appJs.indexOf('function setupMenu()'),end=appJs.indexOf('function setupGalleryStage()',begin);
+  runInNewContext(appJs.slice(begin,end)+'\nsetupMenu();',{$:s=>s==='#menuButton'?button:nav,$$:()=>links,document:{addEventListener:(n,f)=>events[n]=f},window:win});
+  const closed=()=>button.textContent==='☰'&&button.attrs['aria-label']==='Open menu'&&button.attrs['aria-expanded']==='false'&&!classes.has('open');
+  const opened=()=>button.textContent==='×'&&button.attrs['aria-label']==='Close menu'&&button.attrs['aria-expanded']==='true'&&classes.has('open');
+  ok('menu initially has the hamburger and a truthful accessible label',closed());
+  button.handlers.click();ok('opening changes the hamburger into a cross',opened());
+  button.handlers.click();ok('closing with the cross restores the hamburger',closed());
+  button.handlers.click();events.click({target:{}});ok('outside dismissal restores the hamburger and label',closed());
+  button.handlers.click();events.keydown({key:'Escape'});ok('Escape closes and returns keyboard focus to the menu button',closed()&&button.focused);
+  button.handlers.click();links[0].handlers.click();ok('following a menu link restores its closed state',closed());
+  button.handlers.click();win.innerWidth=1440;windowEvents.resize();ok('desktop resize cannot leave the mobile menu open',closed());
+}
+ok('fans are nested with photos and anchored to their top edge',
+  /class="portrait-photo">\s*<span class="portrait-badge"/.test(home.body)
+  && round37Css.includes('.portrait-photo > .portrait-badge { top: 0; right: 0; left: auto; transform: translate(25%, -50%)'));
+ok('whole sections keep stable geometry and dark stages cannot paint outside their chapter',
+  round37Css.includes('.site-shell main > section { content-visibility: visible; contain-intrinsic-size: none; }')
+  && round37Css.includes('.black-chapter { overflow: clip; }')
+  && round37Css.includes('.page-home .site-shell main * { content-visibility: visible; contain-intrinsic-size: none; }'));
 /* Real cutout visibility lifecycle: start as stills; animate on screen only. */
 {
   const { runInNewContext } = await import('node:vm');
@@ -1789,7 +1829,7 @@ ok('wave artwork fades naturally rather than meeting a rectangular edge',
   const handlers = {};
   const nodes = ['orbit', 'prism', 'sphere'].map(type => {
     const still = '/assets/motion/wire-' + type + '-still.webp';
-    return { dataset: {}, image: { handlers: {}, addEventListener(name, fn) { this.handlers[name] = fn; }, src: still, dataset: { stillSrc: still, motionSrc: still.replace('-still', '') },
+    return { dataset: {}, image: { handlers: {}, addEventListener(name, fn) { this.handlers[name] = fn; }, src: still, dataset: { stillSrc: still, motionSrc: still.replace('-still', ''), inlineMotionSrc: '/inline-' + type + '.png' },
       getAttribute() { return this.src; }, setAttribute(name, value) { this.src = value; } } };
   });
   const doc = { hidden: false, addEventListener: (name, fn) => { handlers[name] = fn; } };
@@ -1810,9 +1850,13 @@ ok('wave artwork fades naturally rather than meeting a rectangular edge',
   ok('offscreen objects return to stills', nodes.every(n => n.image.src.endsWith('-still.webp')));
   intersection(nodes.map(target => ({ target, isIntersecting: true })));
   nodes.forEach(node => node.image.handlers.error());
-  ok('failed motion requests immediately restore all three known-good stills', nodes.every(n=>n.image.src.endsWith('-still.webp') && n.dataset.wireState === 'fallback'));
+  ok('failed motion requests keep all three recorded shapes moving in embedded APNGs', nodes.every(n=>n.image.src.includes('/inline-') && n.dataset.wireState === 'fallback-motion'));
   intersection(nodes.map(target => ({ target, isIntersecting: true })));
-  ok('visibility changes cannot retry broken motion and erase the fallback',nodes.every(n=>n.image.src.endsWith('-still.webp')));
+  ok('visibility changes preserve animated fallback without retrying a broken WebP',nodes.every(n=>n.image.src.includes('/inline-')));
+  doc.hidden=true;handlers.visibilitychange();
+  ok('animated fallbacks also pause in background tabs',nodes.every(n=>n.image.src.endsWith('-still.webp')));
+  doc.hidden=false;handlers.visibilitychange();
+  ok('animated fallbacks resume on returning to the tab',nodes.every(n=>n.dataset.wireState==='fallback-motion'));
   const waiting=[];
   const delayed=nodes.map(n=>({dataset:{},image:{...n.image,handlers:{}}}));
   runInNewContext(appJs.slice(begin,end)+'\nsetupWireObjects();',{
@@ -1821,9 +1865,28 @@ ok('wave artwork fades naturally rather than meeting a rectangular edge',
     window:{IntersectionObserver:Observer,matchMedia:()=>({addEventListener(){}})}
   });
   intersection(delayed.map(target=>({target,isIntersecting:true})));
-  ok('slow animation requests leave all three original silhouettes on screen',waiting.length===3&&delayed.every(n=>n.image.src.endsWith('-still.webp')&&n.dataset.wireState==='loading'));
+  ok('slow animation requests immediately show moving embedded frames',waiting.length===3&&delayed.every(n=>n.image.src.includes('/inline-')&&n.dataset.wireState==='loading-motion'));
   waiting.forEach(loader=>loader.onerror());
-  ok('preloader failures never promote a broken URL into the visible images',delayed.every(n=>n.image.src.endsWith('-still.webp')&&n.dataset.wireState==='fallback'));
+  ok('preloader failures retain animation without promoting a broken URL',delayed.every(n=>n.image.src.includes('/inline-')&&n.dataset.wireState==='fallback-motion'));
+  delayed.forEach(n=>n.image.handlers.error());
+  ok('a damaged embedded image still has a final valid static silhouette',delayed.every(n=>n.image.src.endsWith('-still.webp')&&n.dataset.wireState==='still'));
+
+  // Older browsers without IntersectionObserver still receive motion. A native
+  // decode rejection must keep that same moving fallback, not just a still.
+  const decodeNodes=nodes.map(n=>({dataset:{},image:{...n.image,dataset:{...n.image.dataset},src:n.image.dataset.stillSrc,handlers:{}}}));
+  let preferStill=false,preferenceChanged;
+  runInNewContext(appJs.slice(begin,end)+'\nsetupWireObjects();',{
+    $:(selector,node)=>node.image,$$:()=>decodeNodes,reduced:()=>preferStill,document:doc,
+    Image:class{set src(value){this.onload();}decode(){return Promise.reject(new Error('corrupt animation'));}},
+    window:{matchMedia:()=>({addEventListener:(name,fn)=>{preferenceChanged=fn;}})}
+  });
+  ok('without IntersectionObserver all three wires still start moving',decodeNodes.every(n=>n.image.src.includes('/inline-')));
+  await new Promise(resolve=>setImmediate(resolve));
+  ok('native image decode rejection retains the moving fallback',decodeNodes.every(n=>n.dataset.wireState==='fallback-motion'));
+  preferStill=true;preferenceChanged();
+  ok('changing reduced-motion preference pauses the embedded loops',decodeNodes.every(n=>n.dataset.wireState==='still'));
+  preferStill=false;preferenceChanged();
+  ok('changing the preference back resumes fallback motion without a network retry',decodeNodes.every(n=>n.dataset.wireState==='fallback-motion'));
 
 }
 /* The marquee uses measured distance / speed, including a resize/font reflow. */
@@ -2086,7 +2149,7 @@ ok('member fan is not clipped by automatic paint containment',
 ok('membership fields use the same browser rules as event registration',
   home.body.includes('name="name" data-rule="name"')&&home.body.includes('name="phone" data-rule="phone"'));
 ok('the inline PNG fallback is transmitted once per wire, not duplicated in data attributes',
-  (mindPage.body.match(/src="data:image\/png;base64,/g)||[]).length===3&&!cardsSource.includes('data-still-src="'));
+  (mindPage.body.match(/\ssrc="data:image\/png;base64,/g)||[]).length===3&&!cardsSource.includes('data-still-src="'));
 {
   const {runInNewContext}=await import('node:vm');
   const a=appJs.indexOf('function setupHappinessGraph()'),b=appJs.indexOf('function setupMarqueeTiming()',a);

@@ -191,8 +191,9 @@ function mt_manifest_object(string $type): string
         return '';
     }
     $still = 'data:image/png;base64,' . base64_encode((string) file_get_contents(MT_ASSETS . '/motion/wire-' . $type . '-fallback.png'));
+    $inlineMotion = 'data:image/png;base64,' . base64_encode((string) file_get_contents(MT_ASSETS . '/motion/wire-' . $type . '-inline.png'));
     $motion = mt_motion_url('wire-' . $type . '.webp');
-    return '<i class="mind-object object-' . $type . '" data-wire-object="' . $type . '" aria-hidden="true"><img src="' . $still . '" data-motion-src="' . $motion . '" alt="" width="164" height="110" decoding="async"></i>';
+    return '<i class="mind-object object-' . $type . '" data-wire-object="' . $type . '" aria-hidden="true"><img src="' . $still . '" data-motion-src="' . $motion . '" data-inline-motion-src="' . $inlineMotion . '" alt="" width="164" height="110" decoding="async"></i>';
 }
 
 /** Two aspirational paths; the role holders come from the same live team store. */
@@ -278,9 +279,11 @@ function mt_team_card(array $member): string
     $phone = trim((string) ($member['phone'] ?? ''));
     ob_start(); ?>
       <article class="team-card portrait-card">
-        <?= mt_portrait_badge() ?>
-        <div class="team-avatar<?= $image !== '' ? ' has-image' : '' ?>" role="img"
+        <div class="portrait-photo">
+          <?= mt_portrait_badge() ?>
+          <div class="team-avatar<?= $image !== '' ? ' has-image' : '' ?>" role="img"
              aria-label="<?= e($name) ?> <?= $image !== '' ? 'photo' : 'placeholder' ?>"<?= mt_background_style($image) ?>><span><?= e(mt_initials($name)) ?></span></div>
+        </div>
         <h3><?= e($name) ?></h3>
         <?php if ($role !== ''): ?><div class="team-role"><?= e($role) ?></div><?php endif; ?>
         <?php if (trim((string) ($member['bio'] ?? '')) !== ''): ?>
@@ -526,12 +529,14 @@ function mt_member_card(array $person, int $number, bool $volunteersOnly = false
       <article class="member-card portrait-card<?= $showPhoto && $image !== '' ? ' has-photo' : '' ?>">
         <span class="member-number"><?= str_pad((string) $number, 2, '0', STR_PAD_LEFT) ?></span>
         <?php if ($showPhoto): ?>
-          <?= mt_portrait_badge() ?>
+          <div class="portrait-photo">
+            <?= mt_portrait_badge() ?>
           <?php if ($image !== ''): ?>
             <div class="member-photo" role="img" aria-label="<?= e($name) ?> photo"<?= mt_background_style($image) ?>></div>
           <?php else: ?>
             <div class="member-photo member-photo-placeholder" role="img" aria-label="Mindful Tattva placeholder">MT</div>
           <?php endif; ?>
+          </div>
         <?php endif; ?>
         <h4><?= e($name) ?></h4>
         <?php if ($showPhoto && $role !== ''): ?><div class="member-role"><?= e($role) ?></div><?php endif; ?>

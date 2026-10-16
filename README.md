@@ -295,9 +295,13 @@ Two notes for the launch:
 ## Development
 
 ```bash
-npm test          # runs the PHP app in isolation and checks 304 behaviours
+npm test          # runs the PHP app and regression checks in isolation
 npm run lint      # load one PHP file in that runtime and print why it will not
 ```
+
+For the optional decoded motion-asset audit (Python 3 + Pillow), run
+`python tools/verify-motion-assets.py`. It checks every fallback frame/time and
+verifies that all 45 violet strands remain disconnected, including faint edges.
 
 The test suite boots the real application, then exercises pages, the JSON API,
 sign-in, CSRF protection, sanitising, uploads, the whole registration →

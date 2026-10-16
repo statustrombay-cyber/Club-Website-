@@ -200,3 +200,38 @@ original vectors, font files or 3D models.
   ten known, hash-verified fixture images and 23 new audit-time backups; no bulk
   sweep of user uploads. Source/reference video remains outside the website and
   exports; the three public horse MP4s remain unchanged.
+
+## Latest delivery and separation audit
+
+- Full-resolution wire loops retain their recorded poses, frame order and
+  41/42 ms frame delays. Each now has an embedded 112×76 APNG counterpart:
+  84 orbit frames, 49 prism frames and 49 sphere frames. These play while the
+  external WebP is loading and continue after request/decode failure. Only
+  offscreen, hidden-tab, no-script and reduced-motion states use the stills.
+- `python tools/verify-motion-assets.py` (Pillow required) decodes every APNG
+  frame and compares its quantised alpha to the corresponding downsampled
+  WebP frame, including timing. `--build-inline` regenerates these assets.
+  The inline animations total 144,481 bytes before HTML base64 encoding;
+  all motion assets together remain below the existing 2.2 MB budget.
+- The violet field has 45 continuous strands. Their centre lines retain
+  the source-guided flow, with laminar ordering and a Euclidean clearance
+  envelope to prevent crossings and touching strokes. Negligible alpha
+  values (≤5/255) are trimmed so even invisible antialias bridges cannot join
+  neighbours. The same audit counts **45 eight-connected components at every
+  positive alpha**, rather than relying on one screenshot.
+- Whole sections and all homepage card geometry no longer use
+  `content-visibility:auto`. Before this change,
+  the mobile closing chapter moved from y=11,714 to y=16,815 as skipped
+  sections were laid out during scrolling. Dark chapters also use
+  `overflow:clip`, which confines their paint without breaking native sticky
+  positioning. A distinct full-page black overlay was not reproduced in the
+  local Chromium investigation; do not describe that symptom as conclusively
+  diagnosed. Check normal-motion desktop and phone scroll boundaries too.
+
+Final normal-entry Chromium audit (no fragment, standard motion preference):
+the closing chapter stayed at y=16,815 on a 390px viewport and y=13,665 on a
+1440px viewport across 11 forward/reverse scroll positions each: **zero layout
+drift**. No visible full-viewport fixed dark overlay was present at those
+positions. The 91 visual/lifecycle checks additionally sampled changing rendered
+pixels for every wire at both widths under normal, 404, corrupt and held-up
+external requests; photos/menu/overflow were checked at 320/390/768/1440px.

@@ -98,27 +98,25 @@
     const button = $('#menuButton');
     const nav = $('#navLinks');
     if (!button || !nav) return;
-    button.addEventListener('click', function () {
-      const open = nav.classList.toggle('open');
+    function setOpen(open) {
+      nav.classList.toggle('open', open);
       button.setAttribute('aria-expanded', open ? 'true' : 'false');
-    });
-    const close = function () {
-      nav.classList.remove('open');
-      button.setAttribute('aria-expanded', 'false');
-    };
-    $$('a', nav).forEach(function (link) {
-      link.addEventListener('click', close);
-    });
-    /* Tapping anywhere else — the page, another link — puts the panel away, so
-       a pinned bar never leaves a menu open over the words. */
+      button.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+      button.textContent = open ? '×' : '☰';
+    }
+    const close = function () { setOpen(false); };
+    button.addEventListener('click', function () { setOpen(!nav.classList.contains('open')); });
+    $$('a', nav).forEach(function (link) { link.addEventListener('click', close); });
     document.addEventListener('click', function (event) {
       if (!nav.classList.contains('open')) return;
       if (nav.contains(event.target) || button.contains(event.target)) return;
       close();
     });
     document.addEventListener('keydown', function (event) {
-      if (event.key === 'Escape' && nav.classList.contains('open')) close();
+      if (event.key === 'Escape' && nav.classList.contains('open')) { close(); button.focus(); }
     });
+    window.addEventListener('resize', function () { if (window.innerWidth > 1100) close(); });
+    setOpen(false);
   }
 
   /* --------------------------------------------------- the gallery stage */
@@ -491,6 +489,8 @@
     };
     window.addEventListener('scroll', schedule, { passive: true });
     window.addEventListener('resize', schedule);
+    if ('ResizeObserver' in window) new ResizeObserver(schedule).observe(document.body);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(schedule);
     paint();
   }
 
@@ -499,11 +499,9 @@
   function setupWireObjects() {
     const objects = $$('[data-wire-object]');
     if (!objects.length) return;
-    const visible = new Set();
-    const failed = new Set();
-    const loaded = new Set();
-    const pending = new Map();
-    function fallback(node) {
+    const visible = new Set(), failed = new Set(), inlineFailed = new Set();
+    const loaded = new Set(), pending = new Map();
+    function failMotion(node) {
       failed.add(node);
       pending.delete(node);
       update();
@@ -511,40 +509,52 @@
     objects.forEach(function (node) {
       const image = $('img', node);
       image.dataset.stillSrc = image.dataset.stillSrc || image.getAttribute('src');
-      image.addEventListener('error', function () { fallback(node); });
+      image.addEventListener('error', function () {
+        const source = image.getAttribute('src');
+        if (source === image.dataset.motionSrc) failMotion(node);
+        else if (source === image.dataset.inlineMotionSrc) { inlineFailed.add(node); update(); }
+      });
     });
     function update() {
       objects.forEach(function (node) {
         const image = $('img', node);
-        const animate = visible.has(node) && !document.hidden && !reduced() && !failed.has(node);
-        if (animate && !loaded.has(node) && !pending.has(node)) {
+        const animate = visible.has(node) && !document.hidden && !reduced();
+        if (animate && !failed.has(node) && !loaded.has(node) && !pending.has(node)) {
           const loader = new Image();
           pending.set(node, loader);
-          const ready = function () { pending.delete(node); loaded.add(node); update(); };
+          const ready = function () {
+            if (pending.get(node) !== loader || failed.has(node)) return;
+            pending.delete(node); loaded.add(node); update();
+          };
           loader.onload = function () {
-            if (typeof loader.decode === 'function') loader.decode().then(ready, function () { fallback(node); });
+            if (typeof loader.decode === 'function') loader.decode().then(ready, function () { failMotion(node); });
             else ready();
           };
-          loader.onerror = function () { fallback(node); };
+          loader.onerror = function () { failMotion(node); };
           loader.src = image.dataset.motionSrc;
         }
-        // Never replace a valid silhouette with a still-pending network image.
-        const source = animate && loaded.has(node) ? image.dataset.motionSrc : image.dataset.stillSrc;
+        // These embedded APNGs contain the very same poses and frame times.
+        // A slow/missing/corrupt WebP must not freeze any of the three wires.
+        const fullMotion = animate && loaded.has(node) && !failed.has(node);
+        const inlineMotion = animate && !fullMotion && !inlineFailed.has(node) && image.dataset.inlineMotionSrc;
+        const source = fullMotion ? image.dataset.motionSrc : inlineMotion ? image.dataset.inlineMotionSrc : image.dataset.stillSrc;
         if (image.getAttribute('src') !== source) image.setAttribute('src', source);
-        node.dataset.wireState = failed.has(node) ? 'fallback' : animate ? loaded.has(node) ? 'motion' : 'loading' : 'still';
+        node.dataset.wireState = fullMotion ? 'motion' : inlineMotion ? failed.has(node) ? 'fallback-motion' : 'loading-motion' : 'still';
       });
     }
-    if (!('IntersectionObserver' in window)) return;
-    const observer = new IntersectionObserver(function (entries) {
-      entries.forEach(function (entry) {
-        if (entry.isIntersecting) visible.add(entry.target); else visible.delete(entry.target);
-      });
-      update();
-    }, { threshold: .01 });
-    objects.forEach(function (node) { observer.observe(node); });
+    if ('IntersectionObserver' in window) {
+      const observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) visible.add(entry.target); else visible.delete(entry.target);
+        });
+        update();
+      }, { threshold: .01 });
+      objects.forEach(function (node) { observer.observe(node); });
+    } else { objects.forEach(function (node) { visible.add(node); }); update(); }
     document.addEventListener('visibilitychange', update);
     const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
     if (preference.addEventListener) preference.addEventListener('change', update);
+    else if (preference.addListener) preference.addListener(update);
   }
 
   function setupHappinessGraph() {

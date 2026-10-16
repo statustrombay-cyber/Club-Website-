@@ -145,7 +145,7 @@ $nav = [
           <span class="brand-mark" id="brandMark"><img src="<?= e($logo) ?>" alt="<?= e($clubName) ?> logo" loading="lazy" decoding="async"></span>
           <span class="brand-name" id="brandName"><?= e($clubName) ?></span>
         </a>
-        <button class="menu-button" id="menuButton" aria-label="Open menu" aria-expanded="false" aria-controls="navLinks">☰</button>
+        <button type="button" class="menu-button" id="menuButton" aria-label="Open menu" aria-expanded="false" aria-controls="navLinks">☰</button>
         <nav class="nav-links" id="navLinks" aria-label="Main">
           <?php foreach ($nav as [$href, $label, $class]): ?>
             <?php
