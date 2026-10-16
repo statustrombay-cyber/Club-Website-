@@ -1581,7 +1581,7 @@ const navLayout = fs.readFileSync(path.join(ROOT, 'views/layout.php'), 'utf8');
 ok('the welcome screen is the first thing in the page',
   /<body class="<\?= e\(\$bodyClass\) \?>">\s*\n?\s*<\?php[\s\S]{0,600}?class="splash"/.test(navLayout));
 ok('the splash carries only the lowercase, unspaced club name', paintSource.includes('data-word="mindfultattva"')
-  && !navLayout.includes('Welcome to Club') && navLayout.includes('splash-letter-ring'));
+  && !navLayout.includes('Welcome to Club') && !navLayout.includes('splash-letter-ring'));
 ok('it opens on the front page only — never a pass, a check page or the club area',
   /\(\$route, \['home', 'index.php'\], true\)/.test(navLayout) && navLayout.includes('if ($splash):'));
 const splashCss = round37Css.slice(round37Css.indexOf('.splash {'));
@@ -1753,7 +1753,7 @@ for(const [name,study] of Object.entries(wireStudy.models)) {
 }
 const {createHash:motionDigest}=await import('node:crypto');
 const motionUrls=[...mindPage.body.matchAll(/(?:src|data-still-src|data-motion-src)="(\/assets\/motion\/[^\"]+)"/g)].map(match=>match[1]);
-ok('all ten motion image references use content hashes so replacement artwork gets a fresh URL',motionUrls.length===10&&motionUrls.every(value=>{
+ok('all fetched motion images use content hashes; stills are embedded PNG fallbacks',motionUrls.length===4&&motionUrls.every(value=>{
   const url=new URL(value,'https://club.example');
   return url.searchParams.get('v')===motionDigest('sha256').update(fs.readFileSync(path.join(ROOT,url.pathname))).digest('hex').slice(0,12);
 }));
@@ -1789,13 +1789,14 @@ ok('wave artwork fades naturally rather than meeting a rectangular edge',
   const handlers = {};
   const nodes = ['orbit', 'prism', 'sphere'].map(type => {
     const still = '/assets/motion/wire-' + type + '-still.webp';
-    return { image: { src: still, dataset: { stillSrc: still, motionSrc: still.replace('-still', '') },
+    return { dataset: {}, image: { handlers: {}, addEventListener(name, fn) { this.handlers[name] = fn; }, src: still, dataset: { stillSrc: still, motionSrc: still.replace('-still', '') },
       getAttribute() { return this.src; }, setAttribute(name, value) { this.src = value; } } };
   });
   const doc = { hidden: false, addEventListener: (name, fn) => { handlers[name] = fn; } };
   const Observer = class { constructor(fn) { intersection = fn; } observe() {} };
   runInNewContext(appJs.slice(begin, end) + '\nsetupWireObjects();', {
     $: (selector, node) => node.image, $$: () => nodes, reduced: () => false, document: doc, IntersectionObserver: Observer,
+    Image: class { set src(value) { this.onload(); } },
     window: { IntersectionObserver: Observer, matchMedia: () => ({ addEventListener() {} }) }
   });
   ok('wire objects start as antialiased stills without unnecessary JS frame work', nodes.every(n => n.image.src.endsWith('-still.webp')));
@@ -1807,6 +1808,23 @@ ok('wave artwork fades naturally rather than meeting a rectangular edge',
   ok('visible loops resume when the tab returns', nodes.every(n => !n.image.src.includes('-still')));
   intersection(nodes.map(target => ({ target, isIntersecting: false })));
   ok('offscreen objects return to stills', nodes.every(n => n.image.src.endsWith('-still.webp')));
+  intersection(nodes.map(target => ({ target, isIntersecting: true })));
+  nodes.forEach(node => node.image.handlers.error());
+  ok('failed motion requests immediately restore all three known-good stills', nodes.every(n=>n.image.src.endsWith('-still.webp') && n.dataset.wireState === 'fallback'));
+  intersection(nodes.map(target => ({ target, isIntersecting: true })));
+  ok('visibility changes cannot retry broken motion and erase the fallback',nodes.every(n=>n.image.src.endsWith('-still.webp')));
+  const waiting=[];
+  const delayed=nodes.map(n=>({dataset:{},image:{...n.image,handlers:{}}}));
+  runInNewContext(appJs.slice(begin,end)+'\nsetupWireObjects();',{
+    $:(selector,node)=>node.image,$$:()=>delayed,reduced:()=>false,document:doc,IntersectionObserver:Observer,
+    Image:class{set src(value){waiting.push(this)}},
+    window:{IntersectionObserver:Observer,matchMedia:()=>({addEventListener(){}})}
+  });
+  intersection(delayed.map(target=>({target,isIntersecting:true})));
+  ok('slow animation requests leave all three original silhouettes on screen',waiting.length===3&&delayed.every(n=>n.image.src.endsWith('-still.webp')&&n.dataset.wireState==='loading'));
+  waiting.forEach(loader=>loader.onerror());
+  ok('preloader failures never promote a broken URL into the visible images',delayed.every(n=>n.image.src.endsWith('-still.webp')&&n.dataset.wireState==='fallback'));
+
 }
 /* The marquee uses measured distance / speed, including a resize/font reflow. */
 {
@@ -2053,8 +2071,8 @@ console.log('\n— actual dashboard renderer and upload regressions —');
   ok('late font/layout callbacks cannot yank the page after the visitor scrolls',calls.length===before);
   ok('cross-page links retain normal navigation and malformed fragments do not throw',!tap('https://club.test/gallery')&&!tap('https://club.test/#%'));
 }
-ok('all thirteen glyphs paint connected centre lines, not closed contour crescents',
-  (paintSource.match(/id="ink-trace-/g)||[]).length===13
+ok('all thirteen calibrated glyphs remain; joined m/n fills avoid outline crescents',
+  (paintSource.match(/id="ink-letter-/g)||[]).length===13&&paintSource.includes('m-flow-pigment')&&paintSource.includes('n-flow-pigment')
   && !/<use[^>]*href="#ink-letter-2"[^>]*class="paint-(?:lead|pigment)"/.test(paintSource));
 ok('the intro begins with a centred seed and then blossoms outward',
   round37Css.includes('@keyframes seedRing')&&round37Css.includes('@keyframes splashBloom')&&cardsSource.includes('--seed-x:'));
@@ -2067,6 +2085,43 @@ ok('member fan is not clipped by automatic paint containment',
   round37Css.includes('.member-cards .member-card { content-visibility: visible; contain-intrinsic-size: none; }'));
 ok('membership fields use the same browser rules as event registration',
   home.body.includes('name="name" data-rule="name"')&&home.body.includes('name="phone" data-rule="phone"'));
+ok('the inline PNG fallback is transmitted once per wire, not duplicated in data attributes',
+  (mindPage.body.match(/src="data:image\/png;base64,/g)||[]).length===3&&!cardsSource.includes('data-still-src="'));
+{
+  const {runInNewContext}=await import('node:vm');
+  const a=appJs.indexOf('function setupHappinessGraph()'),b=appJs.indexOf('function setupMarqueeTiming()',a);
+  let graphSafe=true;
+  try{runInNewContext(appJs.slice(a,b)+'\nsetupHappinessGraph();',{$:()=>({})});}catch(error){graphSafe=false;}
+  ok('unsupported SVG animation APIs cannot break the remaining page setup',graphSafe);
+}
+console.log('\n— measured PDF fitting, including long unbroken tokens —');
+const widthMetrics=JSON.parse(String(await php.x(['json_encode([mt_pdf_width("nnnn1111WWW",10),mt_pdf_width("nnnn1111WWW",10,true)])'])));
+ok('PDF measures full Helvetica AFM widths rather than approximating n and digits',Math.abs(widthMetrics[0]-72.8)<.001&&Math.abs(widthMetrics[1]-75)<.001);
+const brokenToken=JSON.parse(String(await php.x(['json_encode(mt_pdf_wrap(str_repeat("W",150),10,112))'])));
+ok('a long unbroken token wraps without losing characters or overrunning its column',brokenToken.join('')==='W'.repeat(150)&&brokenToken.every(line=>line.length*9.44<112));
+const fitFixture=JSON.parse(String(await php.x(['json_encode(mt_pdf_fit("Alexandria Catherine Elizabeth Montgomery Harrington Sinclair",24,455.28,1,8,true))'])));
+ok('a realistic long holder name fits in full without colliding with the QR',fitFixture.lines.length===1&&!fitFixture.lines[0].includes('...')&&fitFixture.size>=12);
+const hugeFit=JSON.parse(String(await php.x(['json_encode(mt_pdf_fit(str_repeat("W",250),10,112,3,7.2))'])));
+ok('even extreme text is bounded to allocated rows and explicitly ellipsized',hugeFit.lines.length===3&&hugeFit.lines[2].endsWith('...')&&hugeFit.size>=7.2);
+console.log('\n— role-driven chart and automatic new member fans —');
+const chartFixture={team:[
+ {id:'chart-vp',name:'Vice Audit',role:'Vice President',group:'management',image:'/assets/photos/team-mohd-shafiq.jpg',order:0},
+ {id:'chart-president',name:'Chair Audit',role:'President',group:'management',image:'',order:1},
+ {id:'chart-secretary',name:'New Audit',role:'Secretary',group:'management',image:'',order:2}
+]};
+async function graphHtml(data){return String(await php.x(['mt_happiness_graph(json_decode(base64_decode("'+Buffer.from(JSON.stringify(data)).toString('base64')+'"),true))']));}
+const chartHtml=await graphHtml(chartFixture);
+ok('the live President is not confused with a Vice President who sorts first',chartHtml.includes('data-chart-role="president" data-member-id="chart-president"')&&chartHtml.includes('data-chart-role="vice-president" data-member-id="chart-vp"'));
+ok('both chart portraits travel back and forth on separate paths', (chartHtml.match(/<animateMotion/g)||[]).length===2&&(chartHtml.match(/keyPoints="0;1;0"/g)||[]).length===2&&chartHtml.includes('happinessViceCurve'));
+ok('missing President photo has an MT frame while the Vice President uses their actual photo',chartHtml.includes('>MT</text>')&&(chartHtml.match(/class="chart-portrait-image"/g)||[]).length===1&&chartHtml.includes('/assets/photos/team-mohd-shafiq.jpg'));
+chartFixture.team[1].image='/assets/img/favicon-48.png';
+const updatedChart=await graphHtml(chartFixture);
+ok('a changed member photo is read afresh by the next graph render',updatedChart.includes('/assets/img/favicon-48.png')&&(updatedChart.match(/class="chart-portrait-image"/g)||[]).length===2);
+const newMemberCards=String(await php.x(['implode("",array_map("mt_team_card",json_decode(base64_decode("'+Buffer.from(JSON.stringify(chartFixture.team)).toString('base64')+'"),true)))']));
+ok('every newly added core card automatically contains both alternating fan designs', (newMemberCards.match(/class="badge-dark"/g)||[]).length===3&&(newMemberCards.match(/class="badge-light"/g)||[]).length===3);
+ok('the initial m uses joined arches too and the central mark clears before painting',paintSource.includes('m-flow-pigment')&&round37Css.includes('.splash-ring-intro { animation-delay: 1.8s; animation-duration: .35s; }'));
+ok('the splash n uses joined filled regions and no detached ring overlay',paintSource.includes('n-flow-pigment')&&paintSource.includes('n-finish')&&!navLayout.includes('splash-letter-ring'));
+ok('all three wires embed a host-independent PNG fallback',(mindPage.body.match(/src="data:image\/png;base64,/g)||[]).length>=3&&cardsSource.includes("base64_encode((string) file_get_contents"));
 console.log('\n— the lamps that breathe —');
 ok('no dotted lamps sit before the small labels any more',
   !/\.eyebrow:before/.test(round37Css) && !/\.kicker:before\s*,?[^}]*lightPulse/.test(round37Css));

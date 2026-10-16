@@ -39,12 +39,14 @@ function mt_pdf_escape(string $value): string
 /** Rough width of a string in the given font size (Helvetica metrics). */
 function mt_pdf_width(string $text, float $size, bool $bold = false): float
 {
+    // Standard 14 Helvetica AFM advances, matching the fonts actually embedded.
+    // A partial table underestimated n/digits and let long values overrun.
     $widths = $bold
-        ? [' ' => 278, 'i' => 278, 'j' => 278, 'l' => 278, 'f' => 333, 't' => 333, 'r' => 389, 'I' => 278, '.' => 278, ',' => 278, '-' => 333, 'm' => 889, 'w' => 778, 'M' => 833, 'W' => 944]
-        : [' ' => 278, 'i' => 222, 'j' => 222, 'l' => 222, 'f' => 278, 't' => 278, 'r' => 333, 'I' => 278, '.' => 278, ',' => 278, '-' => 333, 'm' => 833, 'w' => 722, 'M' => 833, 'W' => 944];
-    $total = 0.0;
-    foreach (preg_split('//u', mt_pdf_text($text), -1, PREG_SPLIT_NO_EMPTY) ?: [] as $char) {
-        $total += $widths[$char] ?? ($bold ? 556 : 500);
+        ? [278,333,474,556,556,889,722,238,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,333,333,584,584,584,611,975,722,722,722,722,667,611,778,722,278,556,722,611,833,722,778,667,778,722,667,611,722,667,944,667,667,611,333,278,333,584,556,333,556,611,556,611,556,333,611,611,278,278,556,278,889,611,611,611,611,389,556,333,611,556,778,556,556,500,389,280,389,584]
+        : [278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,333,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,334,260,334,584];
+    $total = 0;
+    foreach (str_split(mt_pdf_text($text)) as $char) {
+        $total += $widths[ord($char) - 32] ?? 0;
     }
     return $total / 1000 * $size;
 }
@@ -61,18 +63,47 @@ function mt_pdf_wrap(string $text, float $size, float $maxWidth, bool $bold = fa
     $lines = [];
     $line = '';
     foreach ($words as $word) {
-        $candidate = $line === '' ? $word : $line . ' ' . $word;
-        if (mt_pdf_width($candidate, $size, $bold) <= $safeWidth || $line === '') {
-            $line = $candidate;
-        } else {
-            $lines[] = $line;
-            $line = $word;
+        // Split a single oversized token as well as ordinary word boundaries.
+        $chunks = [];
+        $chunk = '';
+        foreach (str_split($word) as $char) {
+            if ($chunk !== '' && mt_pdf_width($chunk . $char, $size, $bold) > $safeWidth) {
+                $chunks[] = $chunk; $chunk = '';
+            }
+            $chunk .= $char;
+        }
+        if ($chunk !== '') $chunks[] = $chunk;
+        foreach ($chunks as $part) {
+            $candidate = $line === '' ? $part : $line . ' ' . $part;
+            if (mt_pdf_width($candidate, $size, $bold) <= $safeWidth || $line === '') {
+                $line = $candidate;
+            } else {
+                $lines[] = $line;
+                $line = $part;
+            }
         }
     }
     if ($line !== '') {
         $lines[] = $line;
     }
     return $lines;
+}
+
+/** Fit text to an allocated rectangle without changing neighbouring rows. */
+function mt_pdf_fit(string $value, float $size, float $width, int $rows, float $minimum, bool $bold = false): array
+{
+    do {
+        $lines = mt_pdf_wrap($value, $size, $width, $bold);
+        if (count($lines) <= $rows || $size <= $minimum) break;
+        $size = max($minimum, $size - 0.4);
+    } while (true);
+    if (count($lines) > $rows) {
+        $lines = array_slice($lines, 0, $rows);
+        $last = array_pop($lines) ?? '';
+        while ($last !== '' && mt_pdf_width($last . '...', $size, $bold) > $width * 0.955) $last = substr($last, 0, -1);
+        $lines[] = rtrim($last) . '...';
+    }
+    return ['lines' => $lines, 'size' => $size];
 }
 
 /**
@@ -395,8 +426,10 @@ function mt_pass_pdf(array $registration, array $event, array $site): string
        letterhead. The band carries the club's name and nothing else: the two
        marks - the club's crest and the university's - sit at the foot of the
        page, where the club wanted them, and no picture is printed up here. */
-    $nameWidth = mt_pdf_width($club, 19, true);
-    $text(($width - $nameWidth) / 2, 664, $club, 19, true, [1, 0.976, 0.949]);
+    $clubFit = mt_pdf_fit($club, 19, $inner - 44, 1, 10, true);
+    $clubLabel = $clubFit['lines'][0] ?? '';
+    $nameWidth = mt_pdf_width($clubLabel, $clubFit['size'], true);
+    $text(($width - $nameWidth) / 2, 664, $clubLabel, $clubFit['size'], true, [1, 0.976, 0.949]);
     /* the department and the university, named under the club in one quiet
        line - the band says who is issuing the pass without any mark */
     $issuer = array_filter([
@@ -418,24 +451,30 @@ function mt_pass_pdf(array $registration, array $event, array $site): string
     /* who and which event */
     $y = 586.0;
     $text($margin + 22, $y, 'PASS HOLDER', 8, true, $terracotta);
-    $text($margin + 22, $y - 24, (string) ($registration['name'] ?? ''), 24, true, $plum);
+    $holderFit = mt_pdf_fit((string) ($registration['name'] ?? ''), 24, $inner - 44, 1, 8, true);
+    $text($margin + 22, $y - 24, $holderFit['lines'][0] ?? '', $holderFit['size'], true, $plum);
     $meta = array_filter([
         trim((string) ($registration['course'] ?? '')),
         trim((string) ($registration['year'] ?? '')),
         trim((string) ($registration['phone'] ?? '')),
         trim((string) ($registration['email'] ?? '')),
     ], static fn($part) => $part !== '');
-    $text($margin + 22, $y - 40, implode(' - ', $meta), 9, false, $soft);
+    $metaFit = mt_pdf_fit(implode(' - ', $meta), 9, 300, 2, 7.2);
+    foreach ($metaFit['lines'] as $index => $row) $text($margin + 22, $y - 40 - $index * 11, $row, $metaFit['size'], false, $soft);
 
     $y -= 70;
     $text($margin + 22, $y, 'EVENT', 8, true, $terracotta);
-    $titleLines = mt_pdf_wrap((string) ($event['title'] ?? $registration['eventTitle'] ?? ''), 15, 300, true);
+    $titleFit = mt_pdf_fit((string) ($event['title'] ?? $registration['eventTitle'] ?? ''), 15, 300, 2, 10.5, true);
+    $titleLines = $titleFit['lines'];
     $titleY = $y - 21;
     foreach (array_slice($titleLines, 0, 2) as $titleLine) {
-        $text($margin + 22, $titleY, $titleLine, 15, true, $plum);
+        $text($margin + 22, $titleY, $titleLine, $titleFit['size'], true, $plum);
         $titleY -= 18;
     }
-    $text($margin + 22, $titleY, mt_event_line($event), 9.5, false, $ink);
+    // Venue has its own bounded fact; do not repeat an unbounded venue across the QR.
+    $when = trim((string) ($registration['eventDate'] ?? '')) . ' - ' . trim((string) ($registration['eventTime'] ?? ''));
+    $whenFit = mt_pdf_fit(trim($when, ' -'), 9.5, 300, 1, 8);
+    $text($margin + 22, $titleY, $whenFit['lines'][0] ?? '', $whenFit['size'], false, $ink);
 
     /* the facts: two columns down the left of the card, clear of the QR box */
     $facts = [
@@ -448,21 +487,30 @@ function mt_pass_pdf(array $registration, array $event, array $site): string
     ];
     $columnWidth = 118.0;
     $factY = $titleY - 30;
+    $factFits = [];
+    $factRowHeight = 38.0;
+    foreach ($facts as [, $value]) {
+        $fit = mt_pdf_fit($value, 10, $columnWidth - 6, 3, 7.2);
+        if (count($fit['lines']) > 2) {
+            $fit = mt_pdf_fit($value, 8.5, $columnWidth - 6, 3, 7.2);
+            $factRowHeight = 42.0;
+        }
+        $factFits[] = $fit;
+    }
     $factsBottom = $factY;   // the lowest line the facts reach, for the box below
     foreach ($facts as $index => [$label, $value]) {
         $column = $index % 2;
         $row = intdiv($index, 2);
         $x = $margin + 22 + $column * ($columnWidth + 14);
-        $rowY = $factY - $row * 38;
+        $rowY = $factY - $row * $factRowHeight;
         $text($x, $rowY, $label, 7.5, true, $terracotta);
-        /* Every line of the value, not just the first: "Payment pending — the
-           seat is not held yet" must not print as "Payment pending — the".
-           Two lines fit inside the row's 38 points; a third would collide with
-           the row below, and no value the club can write is longer than two. */
-        $wrapped = mt_pdf_wrap($value, 10, $columnWidth - 6);
-        foreach (array_slice($wrapped, 0, 2) as $lineIndex => $valueLine) {
-            $text($x, $rowY - 13 - $lineIndex * 11, $valueLine, 10, false, $ink);
-            $factsBottom = min($factsBottom, $rowY - 13 - $lineIndex * 11);
+        /* Normal values keep their original type size. A long venue can use
+           three smaller lines in a taller fact row without touching PAYMENT. */
+        $fit = $factFits[$index];
+        $leading = count($fit['lines']) > 2 ? 9.0 : 11.0;
+        foreach ($fit['lines'] as $lineIndex => $valueLine) {
+            $text($x, $rowY - 13 - $lineIndex * $leading, $valueLine, $fit['size'], false, $ink);
+            $factsBottom = min($factsBottom, $rowY - 13 - $lineIndex * $leading);
         }
     }
 
@@ -471,7 +519,7 @@ function mt_pass_pdf(array $registration, array $event, array $site): string
        into it */
     $qrSize = 128.0;
     $qrX = $box - 16 - $qrSize;
-    $qrY = 424.0;
+    $qrY = 416.0;
     $rect($qrX - 8, $qrY - 8, $qrSize + 16, $qrSize + 16, [1, 1, 1]);
     $ops[] = sprintf('%.3f %.3f %.3f RG 0.8 w %.2f %.2f %.2f %.2f re S', 0.85, 0.83, 0.82, $qrX - 8, $qrY - 8, $qrSize + 16, $qrSize + 16);
     try {
@@ -524,7 +572,7 @@ function mt_pass_pdf(array $registration, array $event, array $site): string
        the words need more room than that, the type closes up — a step at a
        time, and if the club ever writes far more than six rules, right up to
        the smallest size the page will print. */
-    $boxFloor   = 196.0;                    // the footer rule sits at y 178
+    $boxFloor   = 188.0;                    // the footer rule sits at y 178
     $boxCeiling = min(404.0, $factsBottom - 16.0);
     $room       = max(72.0, $boxCeiling - $boxFloor);
     $boxTop     = 330.0;
@@ -578,7 +626,9 @@ function mt_pass_pdf(array $registration, array $event, array $site): string
     $text($margin + 22, 149, 'Issued by the club on registration — keep it safe.', 8.5, false, $soft);
     $serial = (string) ($registration['serial'] ?? '');
     $issued = 'Issued by ' . $club . ($serial !== '' ? ' - ' . $serial : '');
-    $text($box - 22 - mt_pdf_width($issued, 8.5), 162, $issued, 8.5, false, $soft);
+    $issuedFit = mt_pdf_fit($issued, 8.5, $inner / 2 - 12, 1, 6.5);
+    $issuedLabel = $issuedFit['lines'][0] ?? '';
+    $text($box - 22 - mt_pdf_width($issuedLabel, $issuedFit['size']), 162, $issuedLabel, $issuedFit['size'], false, $soft);
 
     /* ------------------------------------------------------------------ under
        the card: the club's crest and its name on the left, the university's
@@ -587,8 +637,10 @@ function mt_pass_pdf(array $registration, array $event, array $site): string
     if ($crestImage) {
         $drawImage($margin, 68, 32, 32, $crestImage);
     }
-    $text($margin + 42, 92, $club, 11, true, $plum);
-    $text($margin + 42, 79, $department, 7.6, false, $soft);
+    $footerClub = mt_pdf_fit($club, 11, $inner - 200, 1, 8, true);
+    $footerDepartment = mt_pdf_fit($department, 7.6, $inner - 200, 1, 6.5);
+    $text($margin + 42, 92, $footerClub['lines'][0] ?? '', $footerClub['size'], true, $plum);
+    $text($margin + 42, 79, $footerDepartment['lines'][0] ?? '', $footerDepartment['size'], false, $soft);
     if ($universityImage) {
         $bigTop = 54.0;
         $bigWide = $bigTop * ($universityImage['w'] / max(1, $universityImage['h']));

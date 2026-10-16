@@ -1865,3 +1865,46 @@ html.js .scroll-reveal.is-visible { opacity: 1; transform: none; }
   .photo-in-view .gallery-visual.has-image, .photo-in-view .archive-image,
   .photo-in-view .gallery-stage-image.has-image { animation: none !important; }
 }
+
+/* Final n repair: every painted region stays joined to its preceding stem. */
+.n-ink-lead { fill: #7655c4; }
+.n-ink-pigment { fill: #f6f5f7; }
+.n-flow { transform-box: fill-box; --n-lead: 0s; }
+.n-lead { --n-lead: -.12s; }
+.n-stem { transform-origin: center bottom; animation: nStem .65s linear calc(2.194s + var(--n-lead)) both; }
+.n-arch { transform-origin: left center; animation: nArch .65s linear calc(2.844s + var(--n-lead)) both; }
+.n-finish { transform-origin: center top; animation: nStem .6s linear calc(3.494s + var(--n-lead)) both; }
+@keyframes nStem { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes nArch { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes introMarkLeave { to { opacity: 0; transform: translate(-50%,-50%) scale(.82); } }
+/* Raise the odd portrait's corner fan, without moving or bouncing the card. */
+.team-card > .portrait-badge, .member-card > .portrait-badge { top: 42px; }
+.team-card:nth-child(even) > .portrait-badge, .member-card:nth-child(even) > .portrait-badge { top: 22px; }
+.happiness-chart { padding: clamp(8px, 2vw, 22px); border-radius: 24px; background: radial-gradient(ellipse at 70% 10%,#342647,#19171e 70%); }
+.happiness-plot { width: 100%; overflow: visible; }
+.happiness-chart .chart-grid { stroke: #53465e; stroke-opacity: .28; stroke-width: 1; }
+.happiness-line { stroke-width: 2; }
+.chart-line-president { stroke: #d4b7ff; }
+.chart-line-vice-president { stroke: #8f85e9; }
+.chart-portrait-rim { fill: #19171e; stroke: #d4b7ff; stroke-width: 2; }
+.chart-vice-president .chart-portrait-rim { stroke: #8f85e9; }
+.chart-mt { fill: #5c375f; font: 700 15px Georgia,serif; }
+.chart-person-bob { animation: chartBob 2.4s ease-in-out infinite; }
+.chart-vice-president .chart-person-bob { animation-delay: -1.2s; }
+@keyframes chartBob { 0%,100% { transform: translateY(-2px); } 50% { transform: translateY(3px); } }
+.chart-legend { display: flex; justify-content: center; flex-wrap: wrap; gap: 12px 24px; padding: 6px 4px 12px; color: #e0d5e6; font-size: .75rem; }
+.chart-legend span:before { content: ''; display: inline-block; width: 20px; height: 2px; margin: 0 7px 3px 0; background: #d4b7ff; }
+.chart-key-vice-president:before { background: #8f85e9 !important; }
+@media (prefers-reduced-motion: reduce) { .n-flow { animation: none; transform: none; } .chart-person-bob { animation: none; } }
+html.no-js .chart-traveller animateMotion { display: none; }
+
+/* The initial m had the same over-wide brush / detached arch failure as n. */
+.m-flow { transform-box: fill-box; --m-lead: 0s; }
+.m-lead { --m-lead: -.12s; }
+.m-stem { transform-origin: center bottom; animation: nStem .4s linear calc(2.15s + var(--m-lead)) both; }
+.m-arch-one { transform-origin: left center; animation: nArch .4s linear calc(2.55s + var(--m-lead)) both; }
+.m-middle { transform-origin: center top; animation: nStem .3s linear calc(2.95s + var(--m-lead)) both; }
+.m-arch-two { transform-origin: left center; animation: nArch .4s linear calc(3.25s + var(--m-lead)) both; }
+.m-finish { transform-origin: center top; animation: nStem .3s linear calc(3.65s + var(--m-lead)) both; }
+.splash-ring-intro { animation-delay: 1.8s; animation-duration: .35s; }
+@media (prefers-reduced-motion: reduce) { .m-flow { animation: none; transform: none; } }

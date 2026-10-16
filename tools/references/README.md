@@ -44,7 +44,7 @@ wheel/touch-event log, so elapsed playback seconds are not a universal scroll
 speed. Club wording, public horse-backed hero and functional safeguards remain
 unchanged. No reference footage is embedded into the public site.
 
-## Locally derived assets (third motion review)
+## Locally derived assets (third review, plus reliability follow-up)
 
 The video cannot supply original vectors, fonts or 3D models. Nothing was
 uploaded to a vector-conversion service. All analysis was local:
@@ -60,24 +60,33 @@ uploaded to a vector-conversion service. All analysis was local:
   silhouettes or poses. Upsampling does not recover unavailable source detail. Matching poses choose 3.500s / 2.042s /
   2.042s loops at 24fps (84 / 49 / 49 frames). The third is the recorded full
   graticule, not an invented wire model. Decoded timings, seam measurements and
-  asset hashes are in `wire-motion.json`. Corresponding `-still.webp`
-  files serve no-script, reduced-motion, hidden and offscreen states.
+  asset hashes are in `wire-motion.json`. Corresponding `-still.webp` files
+  remain as source stills. Their PNG derivatives are now embedded once per
+  object in the HTML, so static/no-script/reduced-motion silhouettes do not
+  depend on a WebP HTTP request. Animations are preloaded and decoded before
+  replacing a visible still. Failed requests/decodes permanently retain the
+  per-object fallback; visibility changes cannot retry broken animations.
 - `reference-ribbons.webp`: a temporal 12th percentile across 37–39.5s removes
   the moving white wordmark; local repair removes the stationary caption. The
-  current cleanup smooths observed strand contours, fills small internal black
-  holes and brightens the blue/violet strokes. Continuity healing is restricted
-  to the left side; speculative right-side joins were rejected. Deliberate dark
+  reliability follow-up redraws the complete observed strand centre-lines,
+  with smoothed widths/opacity and a normalized blue/violet colour field. This
+  removes embedded dark scars rather than painting patches over them. One
+  caption-interrupted strand is joined by matching tangent/order; two damaged
+  strands and one surviving fragment are reconstructed between intact
+  neighbours. Occluded geometry is an interpolation, not recovered pixels. Deliberate dark
   spaces between ribbons and the black canvas are retained. Phone chrome is
   excluded and a premultiplied alpha matte blends the field without rectangular
   edges. This is a small derived background image, **not a recording**, and not
   invented sinusoidal artwork; occluded original pixels are not exactly known.
 - `intro-word.svg`: filled Inter glyph contours with individually clipped,
-  connected centre-line brush masks. The **n** paints stem → arch → stem, rather
-  than exposing a detached crescent from the closed outline. A violet lead,
+  brush masks. The **n** now uses three joined filled reveal regions (stem →
+  arch → stem), not a round-capped stroke that can touch the arch early. A violet lead,
   white pigment and settled fill preserve solid lettering; the i dot follows
   its stem. Contours derive from bundled OFL Inter, not recovered original font
   files. The name is not assembled by sliding strips. A single central seed
-  blossoms into seven rings before the word settles. The normal intro is only
+  blossoms into seven rings before the word settles. The separate floating
+  last-letter flower is removed; the initial mark dissolves in place instead
+  of shrinking and travelling across the letters. The normal intro is only
   0.3s shorter (6.15s CSS / 6.5s safety fallback); taps, keys, wheel and touch do
   not skip it. The background is inert/locked until exit. Fragment links and
   reduced-motion preferences bypass it; no-script has an automatic CSS exit.
@@ -104,14 +113,14 @@ follow, a 320ms dark-section dwell and ≥2.8s leftward departure. Direction
 reversals start at the current position and tangent, without CSS opacity changes
 until the butterfly is fully offscreen. The mobile menu has reserved clearance.
 
-The derived motion WebPs total 1,931,382 bytes, below the 2.2MB regression budget.
+All files in `assets/motion` total 2,062,055 bytes, below the 2.2MB regression budget.
 The gathering/manifest chapter is 300svh (was 270svh); the separate closing
 band is 150svh (was 240svh). Reduced-motion and no-script layouts stay unpinned. Full reference footage remains
 outside the repository, deployment and source exports. Original horse media is
 unchanged. Visual comparisons remain necessary: passing workflow tests does not
 certify pixel-perfect reproduction of the original site's unavailable sources.
 
-### Verification — 16 October 2026, current revision
+### Previous verification — 16 October 2026, `f15a593`
 
 - `npm test`: **536 passed, 0 failed**. Includes real PHP validation for
   membership names/email/Indian phone numbers and normalized phone storage;
@@ -149,3 +158,45 @@ backups were removed separately. Existing club content and all horse media are
 preserved. Neither source nor deployment exports include the reference video.
 Passing tests does not establish pixel-perfect reproduction of unavailable
 original vectors, font files or 3D models.
+
+## Reliability follow-up — 16 October 2026, current revision
+
+- **554 automated tests passed.** Added real PHP role-driven chart rendering,
+  new core-card fan rendering, whole-font Helvetica metrics, bounded long-token
+  wrapping/fitting, slow/failed wire preloads, unsupported-SVG API protection,
+  and single-copy embedded PNG delivery. Existing backend safeguards retained.
+- **66 HTTP workflow checks passed again** after restarting with the current
+  PHP source. **52 actual browser workflow checks passed**: event creation,
+  save/reload/publication, poster upload, membership, free and paid registration,
+  screenshot gating and confirmation, private PDFs, payment verification, CSV,
+  event/member/gallery/logo uploads, photo expansion, isolated logo save,
+  JSON backup import retaining every private pass hash and event ID, and all
+  public internal links/fragment targets.
+- **25 visual/navigation/failure-path checks passed.** Desktop/mobile animation
+  seeks, non-skippable intro, direct Join landings, actual animated (not merely
+  static) wire decoding, intentional HTTP 404 and corrupt-image responses,
+  deliberately held animation requests, real timed intro exit, reduced-motion /
+  no-script behavior and overflow checks. Ten sampled **n** frames (390/1440px,
+  2.4–4.1s) each contain one connected white painted component, not a detached
+  crescent. The same ten-frame check also passes for the initial **m**; its
+  filled stem/arch regions avoid the same detached curl, and the central mark
+  is fully gone before white letter painting begins. Screenshots of the graph, waves, wires, fallback and fans reviewed.
+- Happiness chart now has two flowing unnumbered lines, with the live President
+  and Vice President travelling upright back and forth on separate paths.
+  Images come from the same team data as the cards; absent/failed photos leave
+  an MT frame. No fabricated measured scores. Reduced motion and no-script
+  leave static markers. Three added core members were checked for automatic
+  dark/white/dark fan alternation; the President's fan is raised to 42px.
+- PDF review uses an independent MuPDF renderer, not just source-string tests.
+  Actual free/paid PDFs and current-source long/extreme fixtures are single A4
+  pages. Checked text against margins and the QR frame, all terms inside their
+  coloured box, and successfully decoded the QR with OpenCV. Normal and long
+  pass images were visually reviewed. Helvetica AFM advances replace the
+  partial width estimate; holder/meta/title/fact/footer fields are fitted to
+  bounded regions; oversized tokens wrap. Extreme content beyond allotted rows
+  uses explicit ellipses; full submitted data remains in the registration store.
+- JS syntax/no-undef, PHP lint and diff whitespace checks passed. Original club
+  data restored byte-for-byte after checking for unexpected edits. Removed only
+  ten known, hash-verified fixture images and 23 new audit-time backups; no bulk
+  sweep of user uploads. Source/reference video remains outside the website and
+  exports; the three public horse MP4s remain unchanged.

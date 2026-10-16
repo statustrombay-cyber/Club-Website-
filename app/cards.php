@@ -190,9 +190,48 @@ function mt_manifest_object(string $type): string
     if (!in_array($type, ['orbit', 'prism', 'sphere'], true)) {
         return '';
     }
-    $still = mt_motion_url('wire-' . $type . '-still.webp');
+    $still = 'data:image/png;base64,' . base64_encode((string) file_get_contents(MT_ASSETS . '/motion/wire-' . $type . '-fallback.png'));
     $motion = mt_motion_url('wire-' . $type . '.webp');
-    return '<i class="mind-object object-' . $type . '" data-wire-object="' . $type . '" aria-hidden="true"><img src="' . $still . '" data-still-src="' . $still . '" data-motion-src="' . $motion . '" alt="" width="164" height="110" loading="lazy" decoding="async"></i>';
+    return '<i class="mind-object object-' . $type . '" data-wire-object="' . $type . '" aria-hidden="true"><img src="' . $still . '" data-motion-src="' . $motion . '" alt="" width="164" height="110" decoding="async"></i>';
+}
+
+/** Two aspirational paths; the role holders come from the same live team store. */
+function mt_happiness_graph(array $db): string
+{
+    $leaders = ['president' => null, 'vice-president' => null];
+    foreach (mt_sorted(mt_named_team($db['team'] ?? [])) as $person) {
+        if (($person['group'] ?? 'management') !== 'management') continue;
+        $role = strtolower(trim((string) ($person['role'] ?? '')));
+        $role = preg_replace('/[\s_-]+/', ' ', $role) ?? $role;
+        if ($role === 'vice president') $leaders['vice-president'] ??= $person;
+        elseif ($role === 'president') $leaders['president'] ??= $person;
+    }
+    $paths = [
+        'president' => 'M40 230 C78 230 84 142 130 168 S195 234 238 148 S296 208 342 115 S399 170 447 92 S514 142 560 60 S590 69 600 54',
+        'vice-president' => 'M40 282 C78 282 84 194 130 220 S195 286 238 200 S296 260 342 167 S399 222 447 144 S514 194 560 112 S590 121 600 106',
+    ];
+    ob_start(); ?>
+    <div class="happiness-chart" role="img" aria-label="Two flowing paths symbolising our hope to grow happier through connection and community. The President and Vice President travel along their own lines.">
+      <svg class="happiness-plot" viewBox="0 0 640 350" aria-hidden="true">
+        <defs><clipPath id="chartPortraitClip"><circle r="21"/></clipPath></defs>
+        <path d="M40 310H600 M40 250H600 M40 190H600 M40 130H600 M40 70H600" class="chart-grid"/>
+        <?php foreach ($paths as $key => $path): $person = $leaders[$key]; $image = mt_safe_image($person['image'] ?? '');
+          $coordinate = 0; $baseY = $key === 'president' ? 230 : 282;
+          $motionPath = preg_replace_callback('/-?\d+(?:\.\d+)?/', static function ($m) use (&$coordinate, $baseY) { return (string) ((float) $m[0] - ($coordinate++ % 2 ? $baseY : 40)); }, $path); ?>
+        <path id="<?= $key === 'president' ? 'happinessCurve' : 'happinessViceCurve' ?>" d="<?= e($path) ?>" class="happiness-line chart-line-<?= e($key) ?>"/>
+        <g class="chart-traveller chart-<?= e($key) ?>" data-chart-role="<?= e($key) ?>" data-member-id="<?= e((string) ($person['id'] ?? '')) ?>" transform="translate(<?= $key === 'president' ? '40 230' : '40 282' ?>)">
+          <animateMotion dur="<?= $key === 'president' ? '18s' : '21s' ?>" repeatCount="indefinite" begin="indefinite" path="<?= e((string) $motionPath) ?>" keyPoints="0;1;0" keyTimes="0;0.5;1" calcMode="linear"/>
+          <g class="chart-person-bob">
+            <circle r="24" class="chart-portrait-rim"/>
+            <circle r="21" fill="#e6b778"/><text class="chart-mt" text-anchor="middle" y="5">MT</text>
+            <?php if ($image !== ''): ?><image class="chart-portrait-image" href="<?= e($image) ?>" x="-21" y="-21" width="42" height="42" preserveAspectRatio="xMidYMid slice" clip-path="url(#chartPortraitClip)"/><?php endif; ?>
+          </g>
+        </g>
+        <?php endforeach; ?>
+      </svg>
+      <div class="chart-legend"><span class="chart-key-president">President</span><span class="chart-key-vice-president">Vice President</span></div>
+    </div>
+    <?php return (string) ob_get_clean();
 }
 
 /** One continuous sticky scene: assemble the rings, then introduce the words. */

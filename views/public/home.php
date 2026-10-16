@@ -146,9 +146,7 @@ $clubWords = ['mind', 'body', 'connection', 'curiosity', 'growth', 'community', 
 
 <section class="happiness-section" aria-labelledby="happinessHeading">
   <div class="happiness-copy"><div class="eyebrow">Connection · belonging · growth</div><h2 id="happinessHeading">Club happiness index</h2><p>Making space for a happier campus, one conversation at a time.</p></div>
-  <div class="happiness-chart" role="img" aria-label="An upward curve symbolising our hope to grow happier through connection and community.">
-    <svg viewBox="0 0 600 280" aria-hidden="true"><defs><linearGradient id="happyFill" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#c8acef" stop-opacity=".3"/><stop offset="1" stop-color="#c8acef" stop-opacity="0"/></linearGradient></defs><path d="M25 235H575M25 175H575M25 115H575M25 55H575" class="chart-grid"/><path d="M25 230 C90 235 90 130 160 165 S240 190 285 110 S365 135 415 75 S495 105 575 30 L575 265H25Z" fill="url(#happyFill)"/><path id="happinessCurve" d="M25 230 C90 235 90 130 160 165 S240 190 285 110 S365 135 415 75 S495 105 575 30" class="happiness-line"/><circle r="5" fill="#ebd3ff" class="happiness-dot"><animateMotion dur="7s" repeatCount="indefinite" path="M25 230 C90 235 90 130 160 165 S240 190 285 110 S365 135 415 75 S495 105 575 30"/></circle></svg>
-  </div>
+  <?= mt_happiness_graph($db) ?>
 </section>
 
 <section class="section details-section" id="details">

@@ -498,15 +498,43 @@
      objects animate; no-script and reduced-motion visitors receive stills. */
   function setupWireObjects() {
     const objects = $$('[data-wire-object]');
-    if (!objects.length || reduced() || !('IntersectionObserver' in window)) return;
+    if (!objects.length) return;
     const visible = new Set();
+    const failed = new Set();
+    const loaded = new Set();
+    const pending = new Map();
+    function fallback(node) {
+      failed.add(node);
+      pending.delete(node);
+      update();
+    }
+    objects.forEach(function (node) {
+      const image = $('img', node);
+      image.dataset.stillSrc = image.dataset.stillSrc || image.getAttribute('src');
+      image.addEventListener('error', function () { fallback(node); });
+    });
     function update() {
       objects.forEach(function (node) {
         const image = $('img', node);
-        const source = visible.has(node) && !document.hidden && !reduced() ? image.dataset.motionSrc : image.dataset.stillSrc;
+        const animate = visible.has(node) && !document.hidden && !reduced() && !failed.has(node);
+        if (animate && !loaded.has(node) && !pending.has(node)) {
+          const loader = new Image();
+          pending.set(node, loader);
+          const ready = function () { pending.delete(node); loaded.add(node); update(); };
+          loader.onload = function () {
+            if (typeof loader.decode === 'function') loader.decode().then(ready, function () { fallback(node); });
+            else ready();
+          };
+          loader.onerror = function () { fallback(node); };
+          loader.src = image.dataset.motionSrc;
+        }
+        // Never replace a valid silhouette with a still-pending network image.
+        const source = animate && loaded.has(node) ? image.dataset.motionSrc : image.dataset.stillSrc;
         if (image.getAttribute('src') !== source) image.setAttribute('src', source);
+        node.dataset.wireState = failed.has(node) ? 'fallback' : animate ? loaded.has(node) ? 'motion' : 'loading' : 'still';
       });
     }
+    if (!('IntersectionObserver' in window)) return;
     const observer = new IntersectionObserver(function (entries) {
       entries.forEach(function (entry) {
         if (entry.isIntersecting) visible.add(entry.target); else visible.delete(entry.target);
@@ -517,6 +545,35 @@
     document.addEventListener('visibilitychange', update);
     const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
     if (preference.addEventListener) preference.addEventListener('change', update);
+  }
+
+  function setupHappinessGraph() {
+    const graph = $('.happiness-plot');
+    if (!graph || typeof graph.pauseAnimations !== 'function' || typeof graph.unpauseAnimations !== 'function') return;
+    let started = false;
+    function syncMotion() {
+      if (reduced() || document.hidden) graph.pauseAnimations();
+      else {
+        if (!started) { $$('.chart-traveller animateMotion', graph).forEach(function (motion) { if (typeof motion.beginElement === 'function') motion.beginElement(); }); started = true; }
+        graph.unpauseAnimations();
+      }
+    }
+    // Intersection pauses the SVG clock, preserving positions while offscreen.
+    let inView = false;
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(function (entries) {
+        inView = entries.some(function (entry) { return entry.isIntersecting; });
+        if (inView) syncMotion(); else graph.pauseAnimations();
+      }).observe(graph);
+    } else inView = true;
+    const sync = function () { if (inView) syncMotion(); else graph.pauseAnimations(); };
+    document.addEventListener('visibilitychange', sync);
+    const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (preference.addEventListener) preference.addEventListener('change', sync);
+    $$('.chart-portrait-image', graph).forEach(function (image) {
+      image.addEventListener('error', function () { image.style.display = 'none'; });
+    });
+    sync();
   }
 
   /* Measured glyph displacement: 118.05 source pixels/sec at 720px wide.
@@ -775,6 +832,7 @@
     setupSplash();
     setupBrandBand();
     setupWireObjects();
+    setupHappinessGraph();
     setupMarqueeTiming();
     setupReveal();
     setupPortraits();

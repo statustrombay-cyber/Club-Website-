@@ -76,7 +76,6 @@ $nav = [
       <div class="splash-copy">
         <div class="splash-ring-intro"><?= mt_reference_rings(false, 'splash-rings') ?></div>
         <?= file_get_contents(MT_ASSETS . '/motion/intro-word.svg') ?>
-        <div class="splash-letter-ring"><?= mt_reference_rings(false, 'letter-rings') ?></div>
       </div>
     </div>
   <?php endif; ?>

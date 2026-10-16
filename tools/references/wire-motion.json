@@ -14,7 +14,9 @@
       "maximumDecodedFrameChange": 9.445565410199556,
       "sha256": "1c05a7627f44dcf8acf505c47b815da3d7b23d8d7d9c29ffb95583767edf101c",
       "width": 328,
-      "height": 220
+      "height": 220,
+      "fallbackPngBytes": 11152,
+      "fallbackPngSha256": "c48658c67e6402a6020bae58f27e61cf962008e259876bc205c40b9b68630d8e"
     },
     "prism": {
       "frames": 49,
@@ -28,7 +30,9 @@
       "maximumDecodedFrameChange": 11.622865853658537,
       "sha256": "1027ec300eadb15787a8fe5b8c788ec402d37fb4789e0fc54ede338460e9695a",
       "width": 328,
-      "height": 220
+      "height": 220,
+      "fallbackPngBytes": 14160,
+      "fallbackPngSha256": "508237d2b83330b38c745683c881aa716c1041513eed8f294943038c615eb8fe"
     },
     "sphere": {
       "frames": 49,
@@ -42,7 +46,10 @@
       "maximumDecodedFrameChange": 9.059631374722839,
       "sha256": "b5970cb7aab27faf77e01edb5a5fbf0d103fe56b2c6e73501fa92f01ebee4b15",
       "width": 328,
-      "height": 220
+      "height": 220,
+      "fallbackPngBytes": 16732,
+      "fallbackPngSha256": "f35fc6fc453257f963ff0223eb5e47bbba64158a6f437b2506aae7da4e762fe2"
     }
-  }
+  },
+  "delivery": "Embedded PNG silhouettes are server-rendered once per object; decoded animation preloads before promotion, with permanent per-object fallback after a failed request or decode. Explicit Apache image MIME mappings."
 }
