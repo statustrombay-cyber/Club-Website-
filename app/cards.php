@@ -152,7 +152,7 @@ function mt_reference_rings(bool $interactive = false, string $class = ''): stri
         <?php for ($ring = 0; $ring < 6; $ring++):
             $angle = deg2rad($ring * 60 - 90);
             $x = 300 + 100 * cos($angle); $y = 300 + 100 * sin($angle); ?>
-        <circle <?= $interactive ? 'data-ring="' . $ring . '"' : '' ?> cx="<?= round($x, 3) ?>" cy="<?= round($y, 3) ?>" r="100" style="--rx:<?= round(cos($angle) * 170, 3) ?>px;--ry:<?= round(sin($angle) * 170, 3) ?>px"/>
+        <circle <?= $interactive ? 'data-ring="' . $ring . '"' : '' ?> cx="<?= round($x, 3) ?>" cy="<?= round($y, 3) ?>" r="100" style="--rx:<?= round(cos($angle) * 170, 3) ?>px;--ry:<?= round(sin($angle) * 170, 3) ?>px;--seed-x:<?= round(-cos($angle) * 100, 3) ?>px;--seed-y:<?= round(-sin($angle) * 100, 3) ?>px"/>
         <?php endfor; ?>
       </g>
     </svg>
@@ -162,7 +162,11 @@ function mt_reference_rings(bool $interactive = false, string $class = ''): stri
 /** Club portrait badge: decorative, never covers a name or a face. */
 function mt_portrait_badge(): string
 {
-    return '<span class="portrait-badge" aria-hidden="true">' . mt_reference_rings() . '</span>';
+    return '<span class="portrait-badge" aria-hidden="true">'
+        . '<svg class="badge-dark" viewBox="0 0 64 64" fill="none"><g class="badge-fan"><path d="M32 13 48.45 22.5V41.5L32 51 15.55 41.5V22.5Z M32 13V51 M15.55 22.5 48.45 41.5 M48.45 22.5 15.55 41.5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></g></svg>'
+        . '<svg class="badge-light" viewBox="0 0 64 64" fill="none"><g class="badge-fan">'
+        . implode('', array_map(static fn($angle) => '<path transform="rotate(' . $angle . ' 32 32)" d="M29 10 Q32 7 35 10 L36 18 Q36 21 33 20 L27 16 Q25 14 29 10Z" stroke="currentColor" stroke-width="2.8" stroke-linejoin="round"/>', [0,60,120,180,240,300]))
+        . '</g></svg></span>';
 }
 
 /** Changed motion artwork gets a new URL despite the host's long image cache. */

@@ -355,15 +355,19 @@ function mt_api_submissions(string $method, ?string $id): void
         $item  = mt_submission_new($input);
 
         $errors = [];
-        if ($item['name'] === '') {
+        $name = mt_valid_person_name($item['name']);
+        if ($name === null) {
             $errors[] = 'name';
+        } else {
+            $item['name'] = $name;
         }
-        if (!filter_var($item['email'], FILTER_VALIDATE_EMAIL)) {
+        if (!mt_valid_email($item['email'])) {
             $errors[] = 'email';
         }
-        $digits = preg_replace('/\D+/', '', $item['phone']) ?? '';
-        if (strlen($digits) < 8) {
+        if (!mt_valid_phone($item['phone'])) {
             $errors[] = 'phone';
+        } else {
+            $item['phone'] = mt_normalise_phone($item['phone']);
         }
         if ($errors) {
             mt_json(422, ['ok' => false, 'error' => 'Please add a valid name, email address and phone number.', 'fields' => $errors]);

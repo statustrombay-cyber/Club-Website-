@@ -1807,3 +1807,61 @@ html.js .scroll-reveal.is-visible { opacity: 1; transform: none; }
 .paint-i-dot { fill: #f6f5f7; opacity: 0; animation: paintDot .3s ease 3.6s both; }
 @keyframes paintDot { to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .paint-i-dot { animation: none; opacity: 1; } }
+
+/* Recording follow-up: one centred seed blossoms into seven rings. The
+   non-interactive intro is only 0.3s shorter; deep links go straight to content. */
+.splash { animation: splashAway .65s ease 5.5s forwards; }
+body.intro-pending { overflow: hidden; touch-action: none; }
+html.section-entry .splash { display: none; }
+html.section-entry .site-shell main * { content-visibility: visible; contain-intrinsic-size: none; }
+.splash-ring-intro { animation-delay: 2.4s; }
+.splash-ring-intro .splash-rings { animation: introMarkSpin 2.65s ease-in-out both; }
+.splash-ring-intro .splash-rings circle { stroke: #f5f2ff; stroke-width: 1px; }
+.splash-ring-intro .splash-rings circle:first-child { transform-origin: 300px 300px; animation: seedRing .7s ease .1s both; }
+.splash-ring-intro .splash-rings circle:not(:first-child) { animation: splashBloom 1.05s cubic-bezier(.22,1,.36,1) .65s both; }
+@keyframes seedRing { from { opacity: 0; transform: scale(.3); } to { opacity: 1; transform: scale(1); } }
+@keyframes splashBloom { from { opacity: 0; transform: translate(var(--seed-x),var(--seed-y)); } 20% { opacity: 1; } to { opacity: 1; transform: translate(0,0); } }
+.paint-lead, .paint-pigment { stroke-width: 28; animation-duration: 2.1s; animation-delay: calc(var(--ink-delay) + .3s); }
+.paint-pigment { animation-delay: calc(var(--ink-delay) + .45s); }
+.paint-settled { fill: #f6f5f7; opacity: 0; animation: inkSettles .16s ease calc(var(--ink-delay) + 2.55s) both; }
+@keyframes inkSettles { to { opacity: 1; } }
+.paint-i-dot { animation-delay: 3.8s; }
+.splash-letter-ring { animation-delay: 3.65s; animation-duration: 1.5s; }
+.brand-rings circle { stroke: #f6f2ff; stroke-width: 1.55px; stroke-opacity: 1; }
+.brand-rings circle:nth-child(even), .brand-rings circle:first-child { stroke: #f6f2ff; }
+
+/* The calendar's months keep their individual cards, not a white sheet
+   painted by the generic main > div background behind the whole year. */
+.site-shell main > div.calendar-content { background: none; padding-block: 42px 60px; }
+
+/* Slow, single upward entrance. Text and neighbouring tiles follow in a
+   short cascade, rather than snapping or zooming their containing section. */
+html.js .scroll-reveal { transform: translateY(44px); transition: opacity 1.2s ease, transform 1.5s cubic-bezier(.22,1,.36,1); }
+html.js .scroll-reveal.is-visible { opacity: 1; transform: none; }
+
+/* The two observed portrait fans: a pale hexagonal six-sector wheel on dark,
+   and six rounded dark petals on white. Only the inner fan rotates. */
+/* Paint containment would clip the fan where it crosses the photo card. */
+.member-cards .member-card { content-visibility: visible; contain-intrinsic-size: none; }
+.portrait-badge { width: 60px; height: 60px; color: #d8c5f4; background: #25232b; border: 1.4px solid #d8c5f4; box-shadow: 0 0 0 3px #101014; }
+.portrait-badge .badge-light { display: none; }
+.portrait-card:nth-child(even) .portrait-badge { background: #fff; color: #151419; border-color: #eeeaf4; box-shadow: 0 3px 8px #0003; }
+.portrait-card:nth-child(even) .badge-dark { display: none; }
+.portrait-card:nth-child(even) .badge-light { display: block; }
+.team-card > .portrait-badge, .member-card > .portrait-badge { top: 70px; left: min(calc(100% - 48px), 272px); right: auto; }
+.team-card:nth-child(even) > .portrait-badge, .member-card:nth-child(even) > .portrait-badge { top: 22px; left: 6px; }
+.portrait-card.photo-in-view .portrait-badge, .gallery-stage.photo-in-view .portrait-badge { animation: none; }
+.badge-fan { transform-origin: 32px 32px; }
+.photo-in-view .badge-fan { animation: fanTurn 8s linear infinite; }
+@keyframes fanTurn { to { transform: rotate(360deg); } }
+.portrait-card.photo-in-view .team-avatar, .portrait-card.photo-in-view .member-photo,
+.photo-in-view .gallery-visual.has-image, .photo-in-view .archive-image,
+.photo-in-view .gallery-stage-image.has-image { animation: photoHeartbeat 2.8s ease-in-out infinite; }
+@keyframes photoHeartbeat { 0%,40%,100% { transform: scale(1); } 12% { transform: scale(1.025); } 22% { transform: scale(1); } 30% { transform: scale(1.012); } }
+@media (prefers-reduced-motion: reduce) {
+  html.js .scroll-reveal { opacity: 1; transform: none; transition: none; }
+  .paint-settled { animation: none; opacity: 1; }
+  .photo-in-view .badge-fan, .photo-in-view .team-avatar, .photo-in-view .member-photo,
+  .photo-in-view .gallery-visual.has-image, .photo-in-view .archive-image,
+  .photo-in-view .gallery-stage-image.has-image { animation: none !important; }
+}

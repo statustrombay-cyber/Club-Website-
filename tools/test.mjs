@@ -690,6 +690,15 @@ const botRegister = await sendJson('/api/registrations', 'POST', { eventId: 'eve
 ok('the event form drops bots too', botRegister.status === 200 && JSON.parse(botRegister.body).ignored === true, 'status ' + botRegister.status);
 const badForm = await sendJson('/api/submissions', 'POST', { name: 'A', email: 'not-an-email', phone: '12' });
 ok('invalid form data is rejected', badForm.status === 422, 'status ' + badForm.status);
+for(const [field,value] of [['name','Student 123'],['phone','12345678'],['email','a..b@example.com']]) {
+  const payload={name:'Join Student',email:'join-student@example.com',phone:'9876543210',[field]:value};
+  const rejected=await sendJson('/api/submissions','POST',payload);
+  ok('membership backend rejects invalid '+field+' even without browser validation',rejected.status===422&&JSON.parse(rejected.body).fields.includes(field));
+}
+const validJoin=JSON.parse((await sendJson('/api/submissions','POST',{name:'Join Student',email:'join-student@example.com',phone:'+91 98765 43210'})).body);
+const joinInbox=JSON.parse((await get('/api/submissions',AUTH)).body);
+ok('membership stores the same normalised ten-digit phone as event registration',(joinInbox.items||[]).some(row=>row.id===validJoin.id&&row.phone==='9876543210'));
+await request({uri:'/api/submissions/'+validJoin.id,method:'DELETE',...AUTH});
 const badRegister = await sendJson('/api/registrations', 'POST', { eventId: 'event-welcome-circle', name: 'Riya', email: 'not-an-email', phone: '+91 98765 43210' });
 ok('an invalid email cannot register', badRegister.status === 422, 'status ' + badRegister.status);
 const missingEvent = await sendJson('/api/registrations', 'POST', { eventId: 'no-such-event', name: 'Riya', email: 'riya@example.com', phone: '+91 98765 43210' });
@@ -1587,11 +1596,11 @@ ok('it reveals the site on its own, with no JavaScript needed',
 ok('the entrance settles and hands off to the page and butterfly',
   round37Css.includes('@keyframes pigmentDraw') && navLayout.includes("/motion/intro-word.svg") && !navLayout.includes('textLength=')
   && appJs.includes("window.dispatchEvent(new CustomEvent('mt:intro-ready'))")
-  && appJs.includes('window.setTimeout(finish, 6800)'));
-ok('a tap, a key or a scroll sends it away at once',
-  appJs.includes('function setupSplash()') && appJs.includes("splash.addEventListener('click', away)")
-  && appJs.includes("window.addEventListener('keydown', away") && appJs.includes("window.addEventListener('wheel', away")
-  && appJs.includes('setupSplash();'));
+  && appJs.includes('window.setTimeout(finish, 6500)'));
+ok('normal tapping, keys and scrolling never dismiss the timed intro',
+  !appJs.includes("splash.addEventListener('click', away)")
+  && !appJs.includes("window.addEventListener('touchstart', away")
+  && appJs.includes('shell.inert = true'));
 ok('anyone who asks for less motion never sees it',
   /prefers-reduced-motion: reduce\) \{ \.splash \{ display: none; \} \}/.test(round37Css));
 const splashCal = await get('/calendar');
@@ -1738,7 +1747,7 @@ for(const [name,study] of Object.entries(wireStudy.models)) {
     at=payload+size+(size%2);
   }
   ok('wire '+name+' has the verified 24fps dimensions, frames and loop timing',
-    width===164&&height===110&&loop===0&&frames===study.frames&&duration===study.durationMs&&min===41&&max===42);
+    width===328&&height===220&&loop===0&&frames===study.frames&&duration===study.durationMs&&min===41&&max===42);
   const {createHash}=await import('node:crypto');
   ok('wire '+name+' matches its reviewed decoded-motion provenance',createHash('sha256').update(bytes).digest('hex')===study.sha256);
 }
@@ -1756,7 +1765,7 @@ ok('people alternate left and right on home and member directory',
   && round37Css.includes('.team-grid, .member-cards { display: flex; flex-direction: column; gap: 70px; }'));
 ok('gallery gradients and captions cannot intercept photo clicks',
   round37Css.includes('.archive-card:after, .archive-caption, .gallery-item:after, .gallery-caption { pointer-events: none; }'));
-ok('portrait reveals are calm rather than bouncing and breathing',
+ok('portrait heartbeat stays on the photograph rather than bouncing text cards',
   appJs.includes('function setupPortraits()') && appJs.includes('setupPortraits();')
   && round37Css.includes('html.js .scroll-reveal { opacity: 0; transform: translateY(26px)') && round37Css.includes('.photo-in-view .member-photo, .photo-in-view .gallery-visual:after'));
 ok('happiness chart expresses an aspiration without a visible disclaimer or invented scores',
@@ -1812,8 +1821,8 @@ ok('wave artwork fades naturally rather than meeting a rectangular edge',
   ok('marquee preserves reference viewport-relative speed after resize', Math.abs(4000 / parseFloat(track.style.animationDuration) - 118.05) < .01);
 }
 const motionFiles = fs.readdirSync(path.join(ROOT, 'assets/motion'));
-ok('derived motion assets remain below 1.1MB and contain no recording',
-  motionFiles.reduce((sum, name) => sum + fs.statSync(path.join(ROOT, 'assets/motion', name)).size, 0) < 1100000
+ok('derived motion assets remain below 2.2MB and contain no recording',
+  motionFiles.reduce((sum, name) => sum + fs.statSync(path.join(ROOT, 'assets/motion', name)).size, 0) < 2200000
   && motionFiles.every(name => !/\.(mp4|webm|mov)$/i.test(name)));
 for (const type of ['orbit', 'prism', 'sphere']) {
   const bytes = fs.readFileSync(path.join(ROOT, 'assets/motion/wire-' + type + '.webp'));
@@ -1828,23 +1837,24 @@ ok('the splash brush paints filled contours, with a violet lead rather than stri
   paintSource.includes('class="paint-lead"') && paintSource.includes('class="paint-pigment"')
   && paintSource.includes('clipPath') && !paintSource.includes('feTurbulence')
   && !navLayout.includes('paint-strip') && round37Css.includes('@keyframes pigmentDraw')
-  && round37Css.includes('animation: splashAway .65s ease 5.8s forwards'));
+  && round37Css.includes('animation: splashAway .65s ease 5.5s forwards'));
 /* Splash exits are idempotent: animation, deliberate skip, fallback and
    reduced-motion all notify the waiting butterfly exactly once. */
 {
   const { runInNewContext } = await import('node:vm');
   const begin = appJs.indexOf('function setupSplash()');
   const end = appJs.indexOf('function setupButterfly()', begin);
-  for (const mode of ['animation', 'skip', 'fallback', 'reduced', 'no-splash']) {
+  for (const mode of ['animation', 'locked', 'fallback', 'reduced', 'no-splash', 'anchor']) {
     const classes = new Set(), handlers = {}, timers = {};
     let notifications = 0;
     const classList = { add: name => classes.add(name), remove: name => classes.delete(name), contains: name => classes.has(name) };
     const splash = { hidden: false, classList, addEventListener: (name, fn) => { handlers[name] = fn; } };
     runInNewContext(appJs.slice(begin, end) + '\nsetupSplash();', {
-      $: () => mode === 'no-splash' ? null : splash,
+      $: selector => selector === '.site-shell' ? null : mode === 'no-splash' ? null : splash,
       reduced: () => mode === 'reduced', CustomEvent: class { constructor(type) { this.type = type; } },
       document: { body: { classList } },
       window: {
+        location: {hash:mode==='anchor'?'#join':''},
         dispatchEvent: event => { if (event.type === 'mt:intro-ready') notifications++; },
         addEventListener: (name, fn) => { handlers[name] = fn; },
         setTimeout: (fn, ms) => { timers[ms] = fn; }
@@ -1852,10 +1862,11 @@ ok('the splash brush paints filled contours, with a violet lead rather than stri
     });
     if (mode === 'animation') {
       handlers.animationend({ target: splash, animationName: 'splashAway' });
-      timers[6800]();
-    } else if (mode === 'skip') {
-      handlers.click(); timers[650](); handlers.keydown(); timers[6800]();
-    } else if (mode === 'fallback') timers[6800]();
+      timers[6500]();
+    } else if (mode === 'locked') {
+      ok('no input listeners are attached to skip the intro',!handlers.click&&!handlers.keydown&&!handlers.wheel&&!handlers.touchstart&&notifications===0);
+      timers[6500]();
+    } else if (mode === 'fallback') timers[6500]();
     ok('splash exits once via ' + mode + ' and reveals the site',
       notifications === 1 && !classes.has('intro-pending') && classes.has('intro-revealed')
       && (mode === 'no-splash' || splash.hidden));
@@ -2019,6 +2030,43 @@ console.log('\n— actual dashboard renderer and upload regressions —');
   } });
   ok('saving the logo does not silently save unrelated unsaved text', patch.logoImage === '/new.png' && patch.announcement === undefined);
 }
+// Exercise the actual anchor controller, including cancelled late reflows.
+{
+  const {runInNewContext}=await import('node:vm');
+  const start=appJs.indexOf('function setupAnchorNavigation()');
+  const end=appJs.indexOf('function setupScrollUi()',start);
+  const calls=[],listeners={},clicks={},fonts=[];
+  const node=id=>({id,classList:{add(){}},scrollIntoView(){calls.push(id);}});
+  const form=node('membershipForm'),join=node('join'),contact=node('contact');
+  const ids={membershipForm:form,join,contact};
+  const location={href:'https://club.test/#join',hash:'#join',origin:'https://club.test',pathname:'/',search:''};
+  const win={location,requestAnimationFrame:fn=>fn(),addEventListener:(name,fn)=>listeners[name]=fn,
+    history:{pushState(_a,_b,hash){location.hash=hash;location.href='https://club.test/'+hash;}}};
+  const doc={readyState:'complete',fonts:{ready:{then:fn=>fonts.push(fn)}},getElementById:id=>ids[id]||null,
+    documentElement:{classList:{add(){}},getBoundingClientRect:()=>({})},addEventListener:(name,fn)=>clicks[name]=fn};
+  runInNewContext(appJs.slice(start,end)+'\nsetupAnchorNavigation();',{$:()=>form,document:doc,window:win,URL});
+  ok('a direct Join fragment targets the actual membership form, not its section heading',calls.join(',')==='membershipForm');
+  const tap=href=>{let prevented=false;clicks.click({button:0,target:{closest:()=>({href,target:'',hasAttribute:()=>false})},preventDefault(){prevented=true;}});return prevented;};
+  ok('same-page section links update history and align their real target',tap('https://club.test/#contact')&&location.hash==='#contact'&&calls.at(-1)==='contact');
+  ok('returning to Join still points to membership, not event registration',tap('https://club.test/#join')&&calls.at(-1)==='membershipForm');
+  const before=calls.length;listeners.wheel();fonts.forEach(fn=>fn());
+  ok('late font/layout callbacks cannot yank the page after the visitor scrolls',calls.length===before);
+  ok('cross-page links retain normal navigation and malformed fragments do not throw',!tap('https://club.test/gallery')&&!tap('https://club.test/#%'));
+}
+ok('all thirteen glyphs paint connected centre lines, not closed contour crescents',
+  (paintSource.match(/id="ink-trace-/g)||[]).length===13
+  && !/<use[^>]*href="#ink-letter-2"[^>]*class="paint-(?:lead|pigment)"/.test(paintSource));
+ok('the intro begins with a centred seed and then blossoms outward',
+  round37Css.includes('@keyframes seedRing')&&round37Css.includes('@keyframes splashBloom')&&cardsSource.includes('--seed-x:'));
+ok('calendar wrapper is explicitly transparent while month cards remain',
+  round37Css.includes('.site-shell main > div.calendar-content { background: none;')
+  && (await get('/calendar')).body.includes('container calendar-content'));
+ok('both observed portrait fan designs and a photo-only heartbeat are present',
+  cardsSource.includes('badge-dark')&&cardsSource.includes('badge-light')&&round37Css.includes('@keyframes photoHeartbeat')&&round37Css.includes('@keyframes fanTurn'));
+ok('member fan is not clipped by automatic paint containment',
+  round37Css.includes('.member-cards .member-card { content-visibility: visible; contain-intrinsic-size: none; }'));
+ok('membership fields use the same browser rules as event registration',
+  home.body.includes('name="name" data-rule="name"')&&home.body.includes('name="phone" data-rule="phone"'));
 console.log('\n— the lamps that breathe —');
 ok('no dotted lamps sit before the small labels any more',
   !/\.eyebrow:before/.test(round37Css) && !/\.kicker:before\s*,?[^}]*lightPulse/.test(round37Css));

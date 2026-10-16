@@ -28,7 +28,7 @@ $openEvents = mt_open_events($db);
   </div>
 </section>
 
-<div class="container">
+<div class="container calendar-content">
   <div class="calendar-intro">
     <div><div class="eyebrow">Yearly activities</div><h2>One year. Twelve invitations.</h2></div>
     <div>

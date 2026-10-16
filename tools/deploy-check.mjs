@@ -222,7 +222,7 @@ check('the photo can be recaptioned', recaptioned.status === 200 && String(JSON.
 step('the membership form');
 const joinPage = await req('/');
 const joinToken = (/name="csrf" value="([^"]+)"/.exec(String(joinPage.body)) || [])[1] || formToken;
-const join = await req('/api/submissions', { method: 'POST', json: { name: 'Deploy Join ' + stamp, email: 'join@example.com', phone: '+91 90000 12345', interest: 'workshops', csrf: joinToken } });
+const join = await req('/api/submissions', { method: 'POST', json: { name: 'Deploy Join Student', email: 'join@example.com', phone: '+91 90000 12345', interest: 'workshops', csrf: joinToken } });
 check('a membership interest is submitted', join.status === 201 || join.status === 200, 'status ' + join.status);
 const submissions = await req('/api/submissions');
 const submission = ((submissions.body || {}).items || []).find((item) => String(item.email || '').includes('join@example.com'));
@@ -296,6 +296,6 @@ for (const failure of failures) console.log('   · ' + failure);
 /* This walk uploads a photo and a payment proof of its own, and deletes the
    records it made — the files stay on disk until they are swept, which is why
    the note below is printed every time rather than left to memory. */
-console.log('   note  the walk left one photo and one proof in uploads/: run');
-console.log('         node tools/clean-test-data.mjs (with the preview stopped) to sweep them.');
+console.log('   note  the walk leaves its photo and proof fixture files in uploads/.');
+console.log('         Compare a pre-test upload snapshot and remove only those exact fixture paths.');
 process.exit(failures.length ? 1 : 0);

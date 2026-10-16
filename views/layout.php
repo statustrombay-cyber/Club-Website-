@@ -47,7 +47,7 @@ $nav = [
 ?>
 <!doctype html>
 <html lang="en" class="no-js">
-<script>document.documentElement.className = document.documentElement.className.replace("no-js", "js");</script>
+<script>document.documentElement.className = document.documentElement.className.replace("no-js", "js"); if (location.hash.length > 1) document.documentElement.classList.add("section-entry");</script>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -70,7 +70,7 @@ $nav = [
 
   <?php /* The seven circles assemble automatically, then the veil dissolves.
            CSS also dismisses it without JavaScript. Motion preferences and
-           deliberate skips are respected; only the front page has a splash. */ ?>
+           direct section links are respected; ordinary taps never dismiss the splash. */ ?>
   <?php if ($splash): ?>
     <div class="splash" id="splash" aria-hidden="true">
       <div class="splash-copy">

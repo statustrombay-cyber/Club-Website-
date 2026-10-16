@@ -28,7 +28,7 @@
 
   function setupReveal() {
     // Reveal words and tiles, not their entire containing section twice.
-    const targets = $$('.section-head > *, .section > .container > h2, .section > .container > p, .detail-card, .event-card, .gallery-item, .team-card, .calendar-item, .member-card, .psyche-card, .gallery-stage');
+    const targets = $$('.section-head > *, .section > .container > h2, .section > .container > p, .detail-card, .event-card, .gallery-item, .team-card, .calendar-item, .member-card, .psyche-card, .gallery-stage, .calendar-month, .calendar-card, .timeline-item, .gallery-side-note, .club-form');
     if (!('IntersectionObserver' in window) || reduced()) {
       targets.forEach(function (node) { node.classList.add('is-visible'); });
       return;
@@ -38,10 +38,10 @@
       // Stagger only siblings arriving together. A late section never inherits
       // a delay from its index in the whole document.
       entering.forEach(function (entry, index) {
-        entry.target.style.transitionDelay = Math.min(index % 4 * 75, 225) + 'ms';
+        entry.target.style.transitionDelay = Math.min(index % 4 * 140, 420) + 'ms';
         entry.target.classList.add('is-visible'); observer.unobserve(entry.target);
       });
-    }, { threshold: .08, rootMargin: '0px 0px -4% 0px' });
+    }, { threshold: .10, rootMargin: '0px 0px -6% 0px' });
     targets.forEach(function (node) { node.classList.add('scroll-reveal'); observer.observe(node); });
   }
 
@@ -321,6 +321,47 @@
   /* ------------------------------------------------------ scroll dressing */
   /* A borderless glass menu and the way back up. The butterfly, not a gold
      line, now carries the reading position across the header. */
+  function setupAnchorNavigation() {
+    function targetFor(hash) {
+      if (!hash || hash === '#') return null;
+      let id;
+      try { id = decodeURIComponent(hash.slice(1)); } catch (error) { return null; }
+      return id === 'join' ? $('#membershipForm') || document.getElementById(id) : document.getElementById(id);
+    }
+    let revision = 0;
+    function align(hash) {
+      const target = targetFor(hash);
+      if (!target) return;
+      const ticket = ++revision;
+      document.documentElement.classList.add('section-entry');
+      // Resolve every intrinsic placeholder before measuring a deep link.
+      document.documentElement.getBoundingClientRect();
+      const place = function () {
+        if (ticket !== revision || window.location.hash !== hash) return;
+        target.classList.add('is-visible');
+        target.scrollIntoView({ block: 'start', behavior: 'instant' });
+      };
+      window.requestAnimationFrame(function () { window.requestAnimationFrame(place); });
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(place);
+      if (document.readyState !== 'complete') window.addEventListener('load', place, { once: true });
+    }
+    document.addEventListener('click', function (event) {
+      const link = event.target.closest && event.target.closest('a[href]');
+      if (!link || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || link.target === '_blank' || link.hasAttribute('download')) return;
+      const url = new URL(link.href, window.location.href);
+      if (url.origin !== window.location.origin || url.pathname !== window.location.pathname || url.search !== window.location.search || !targetFor(url.hash)) return;
+      event.preventDefault();
+      if (url.hash !== window.location.hash) window.history.pushState(null, '', url.hash);
+      align(url.hash);
+    });
+    ['pointerdown', 'wheel', 'touchstart', 'keydown'].forEach(function (name) {
+      window.addEventListener(name, function () { revision++; }, { passive: true });
+    });
+    window.addEventListener('hashchange', function () { align(window.location.hash); });
+    window.addEventListener('popstate', function () { align(window.location.hash); });
+    if (window.location.hash) align(window.location.hash);
+  }
+
   function setupScrollUi() {
     const toTop = $('#toTop');
     if (!toTop) return;
@@ -501,25 +542,20 @@
       if (done) return;
       done = true;
       if (splash) splash.hidden = true;
+      const shell = $('.site-shell');
+      if (shell) shell.inert = false;
       document.body.classList.remove('intro-pending');
       document.body.classList.add('intro-revealed');
       window.dispatchEvent(new CustomEvent('mt:intro-ready'));
     };
-    if (!splash || reduced()) { finish(); return; }
+    if (!splash || reduced() || window.location.hash.length > 1) { finish(); return; }
+    const shell = $('.site-shell');
+    if (shell) shell.inert = true;
     document.body.classList.add('intro-pending');
-    const away = function () {
-      if (done || splash.classList.contains('is-done')) return;
-      splash.classList.add('is-done');
-      window.setTimeout(finish, 650);
-    };
     splash.addEventListener('animationend', function (event) {
       if (event.target === splash && event.animationName === 'splashAway') finish();
     });
-    splash.addEventListener('click', away);
-    window.addEventListener('keydown', away, { once: true });
-    window.addEventListener('wheel', away, { once: true, passive: true });
-    window.addEventListener('touchstart', away, { once: true, passive: true });
-    window.setTimeout(finish, 6800);
+    window.setTimeout(finish, 6500);
   }
 
   /* A single fixed photographic butterfly is independent of the menu layout.
@@ -747,6 +783,7 @@
     setupPhotoFrame();
     setupGalleryStage();
     setupForms();
+    setupAnchorNavigation();
     setupScrollUi();
     setupDriftField();
     setupLiveUpdates();

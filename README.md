@@ -272,10 +272,12 @@ anything fails. Point it at the live site once the bundle is uploaded:
 node tools/deploy-check.mjs https://your-new-domain.example
 ```
 
-`tools/clean-test-data.mjs` removes anything an interrupted run left behind,
-including uploaded files no record points at. **Stop the preview first**: the
-preview keeps its own copy of the project and writes it back to disk when it
-stops, so a file swept while it is running comes straight back.
+Before an audit, snapshot `data/site.json`, the existing upload paths and any
+backups. Afterwards remove only the run's identified records and fixture files;
+restore the pre-audit content after checking for unrelated edits. **Stop the
+preview before restoring disk files**, because its PHP filesystem is mirrored.
+Do not bulk-delete unreferenced uploads: they can still belong to the club.
+The old `tools/clean-test-data.mjs` sweep is not recommended for real content.
 
 Two notes for the launch:
 

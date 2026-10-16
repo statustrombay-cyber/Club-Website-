@@ -293,10 +293,10 @@ $clubWords = ['mind', 'body', 'connection', 'curiosity', 'growth', 'community', 
         <div class="form-kicker">Membership / join the club</div>
         <h3>Find your place in the circle.</h3>
         <p id="joiningIntro"><?= e((string) ($site['joiningIntro'] ?? '')) ?></p>
-        <label>Full name<input name="name" required placeholder="Your name" autocomplete="name"></label>
+        <label>Full name<input name="name" data-rule="name" required placeholder="Your name" autocomplete="name"></label>
         <div class="form-row">
-          <label>Email address<input name="email" type="email" required placeholder="you@example.com" autocomplete="email"></label>
-          <label>Phone number<input name="phone" type="tel" required placeholder="+91 ..." autocomplete="tel"></label>
+          <label>Email address<input name="email" data-rule="email" type="email" required placeholder="you@example.com" autocomplete="email"></label>
+          <label>Phone number<input name="phone" data-rule="phone" type="tel" required placeholder="+91 ..." autocomplete="tel"></label>
         </div>
         <div class="form-row">
           <label>Course / programme<input name="course" placeholder="Your programme"></label>

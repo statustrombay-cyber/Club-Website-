@@ -18,7 +18,8 @@ we do not rewrite the branch's history to change past downloads.
 The mobile content viewport is 720px wide, beneath the phone's
 status/browser bars. Do not copy the browser chrome into the website.
 
-- 0–1.9s: small, fine, rotating seven-circle mark on a dark, scattered starfield.
+- 0–0.8s: dark scattered starfield, then one small central circle.
+- 0.8–1.6s: satellites emerge from that seed into the seven-circle flower.
 - 2.04–3s: solid white letter fragments expand from the mark. Not a stroked
   outline of the entire word. Adapt the ring to the final **a** of mindfultattva.
 - 3–3.5s: complete name, then dissolve into the public website.
@@ -43,7 +44,7 @@ wheel/touch-event log, so elapsed playback seconds are not a universal scroll
 speed. Club wording, public horse-backed hero and functional safeguards remain
 unchanged. No reference footage is embedded into the public site.
 
-## Locally derived assets (second motion review)
+## Locally derived assets (third motion review)
 
 The video cannot supply original vectors, fonts or 3D models. Nothing was
 uploaded to a vector-conversion service. All analysis was local:
@@ -52,32 +53,45 @@ uploaded to a vector-conversion service. All analysis was local:
   silhouette loops cropped from the three capsules at 59–63 seconds. Capsules
   are normalised to 164 × 110; their original border/background is excluded.
   The observed poses replace the rejected invented 3D geometry. These are **2D
-  animation cutouts, not recovered 3D models**. The latest review uses fixed crops and shared page-translation correction,
-  rather than independently resizing each frame. A 20% unsharp mask adds only
-  slight crispness; high-frequency subpixel translation is stabilised without
-  removing the observed rotation. Matching poses choose 3.500s / 2.042s /
+  animation cutouts, not recovered 3D models**. Fixed crops and shared page-
+  translation correction avoid independently resizing each frame. The current
+  derivatives are 328 × 220, displayed at 164 × 110: shared 2× edge reconstruction,
+  alpha sharpening/lift and lighter strokes improve legibility without changing
+  silhouettes or poses. Upsampling does not recover unavailable source detail. Matching poses choose 3.500s / 2.042s /
   2.042s loops at 24fps (84 / 49 / 49 frames). The third is the recorded full
   graticule, not an invented wire model. Decoded timings, seam measurements and
   asset hashes are in `wire-motion.json`. Corresponding `-still.webp`
   files serve no-script, reduced-motion, hidden and offscreen states.
 - `reference-ribbons.webp`: a temporal 12th percentile across 37–39.5s removes
-  the moving white wordmark; local inpainting removes the stationary caption. The latest repair bridges
-  the interrupted strands using matched clean cross-sections and curved
-  tangents, with a small directional closing pass on the right. This removes
-  the dark slash under the club caption without replacing the black canvas.
-  Visible pixels and alpha outside source rows 420–580 remain unchanged.
-  Phone chrome is excluded; a premultiplied alpha matte removes the source
-  canvas so its edges blend without a rectangular patch. This preserves observed blue/violet colour and
-  ribbon curvature, not invented sinusoidal lines. It is a small background
-  image, **not a recording**; the caption occlusion cannot be recovered exactly.
-- `intro-word.svg`: Inter's actual filled glyph contours, clipped to each
-  letter and brush-painted with a violet lead and white pigment. Contours are
-  derived from the bundled OFL Inter font, not extracted from the recording.
-  The name is not assembled by sliding strips or revealed with noise. Painting
-  now takes 2.35s per staggered glyph. The initial seven rings stay together,
-  and the i dot appears only after its stem, avoiding a detached white moon.
-  The full name holds before the 5.8s exit; click/key/scroll skip and
-  reduced-motion fallbacks remain.
+  the moving white wordmark; local repair removes the stationary caption. The
+  current cleanup smooths observed strand contours, fills small internal black
+  holes and brightens the blue/violet strokes. Continuity healing is restricted
+  to the left side; speculative right-side joins were rejected. Deliberate dark
+  spaces between ribbons and the black canvas are retained. Phone chrome is
+  excluded and a premultiplied alpha matte blends the field without rectangular
+  edges. This is a small derived background image, **not a recording**, and not
+  invented sinusoidal artwork; occluded original pixels are not exactly known.
+- `intro-word.svg`: filled Inter glyph contours with individually clipped,
+  connected centre-line brush masks. The **n** paints stem → arch → stem, rather
+  than exposing a detached crescent from the closed outline. A violet lead,
+  white pigment and settled fill preserve solid lettering; the i dot follows
+  its stem. Contours derive from bundled OFL Inter, not recovered original font
+  files. The name is not assembled by sliding strips. A single central seed
+  blossoms into seven rings before the word settles. The normal intro is only
+  0.3s shorter (6.15s CSS / 6.5s safety fallback); taps, keys, wheel and touch do
+  not skip it. The background is inert/locked until exit. Fragment links and
+  reduced-motion preferences bypass it; no-script has an automatic CSS exit.
+- Portrait/album images have a restrained double heartbeat (2.8s), while the
+  surrounding text cards stay still. Two observed fan designs alternate: a dark
+  hexagonal six-sector badge and white badge with six rounded dark petals.
+  Only their inner fan rotates. These SVGs are reconstructed from observation,
+  not recovered source vectors. Member cards avoid paint containment so the
+  corner badge is not clipped. Reduced motion disables these animations.
+- Information reveals use 1.2s opacity / 1.5s upward movement with a short
+  stagger, not abrupt card zooming. The calendar container is transparent while
+  each month retains its own card. `#join` resolves to `#membershipForm`, with
+  content-visibility placeholders resolved before alignment; late font/load
+  callbacks are cancelled when the visitor starts interacting.
 - White-glyph phase correlation at y720–870 gives −118.075 px/s (37→38s),
   −118.035 px/s (38→39s). The marquee uses **118.05 / 720 viewport widths/s**;
   its duration is computed from its measured half-track width after fonts load
@@ -90,45 +104,48 @@ follow, a 320ms dark-section dwell and ≥2.8s leftward departure. Direction
 reversals start at the current position and tangent, without CSS opacity changes
 until the butterfly is fully offscreen. The mobile menu has reserved clearance.
 
-The derived motion assets together remain below the 1.1MB regression budget.
+The derived motion WebPs total 1,931,382 bytes, below the 2.2MB regression budget.
 The gathering/manifest chapter is 300svh (was 270svh); the separate closing
 band is 150svh (was 240svh). Reduced-motion and no-script layouts stay unpinned. Full reference footage remains
 outside the repository, deployment and source exports. Original horse media is
 unchanged. Visual comparisons remain necessary: passing workflow tests does not
 certify pixel-perfect reproduction of the original site's unavailable sources.
 
-### Verification — 15 October 2026, current revision
+### Verification — 16 October 2026, current revision
 
-- `npm test`: **519 passed, 0 failed**. New executed regressions cover Add
-  event and shared card rendering; all twelve one-based month values; legacy
-  dates; logo upload and isolated logo saving; brochure persistence; display
-  order; full backup import preserving IDs, registrations, pass hashes,
-  visibility and settings; monotonic restore revisions; actual WebP frame
-  counts, 24fps timings, dimensions, infinite-loop flags and reviewed hashes.
-  All motion image URLs are content-versioned, so revised artwork is fetched
-  correctly on hosts with long-lived image caching.
+- `npm test`: **536 passed, 0 failed**. Includes real PHP validation for
+  membership names/email/Indian phone numbers and normalized phone storage;
+  five executed anchor-controller regressions; non-skippable intro behavior;
+  all previous event/registration/payment/import/restore safeguards; actual
+  WebP frame counts, dimensions, timing, infinite-loop flags and reviewed hashes.
+  Motion URLs remain content-versioned.
 - `npm run lint`, browser JavaScript `no-undef`, and `git diff --check`: passed.
-- Real HTTP deployment workflow: **66 checks passed**, using a valid decodable
-  PNG and a genuinely anonymous forged-cookie request (signed-in cookies are
-  temporarily removed). Includes authenticated/public gates, free/paid
-  registration, screenshot upload, passes, CSV, gallery, forms and logout.
-- Actual browser dashboard workflow: **37 checks passed**. Clicked Add/Save/
-  Delete, changed published state, verified November remains November after
-  save/reload, uploaded and decoded event/logo images, registered a student,
-  downloaded PDF/CSV/JSON, and imported the exported JSON. Import assertions
-  check the retained event IDs and issued-pass records, not only HTTP status.
-  Created records are removed afterwards.
-- Browser layout/fallback audit: **33 checks passed** at 320/390/768/1440px,
-  plus reduced-motion and no-JavaScript: automatic/accessible splash exit,
-  delayed i dot, original horse hero, no horizontal overflow, independent
-  chapter lengths, all three decoded wires, dark-chapter state and wave asset.
-  Screenshots reviewed for the splash, all three wires and the closing band.
-- All three loops were independently decoded. Their wrap-seam alpha change is
-  within the normal frame-change envelope. Alpha-centroid second-difference
-  indicators for prism/sphere are substantially lower than the prior assets;
-  these are diagnostics, not proof of pixel-perfect motion or original 3D.
+- Real HTTP deployment workflow: **66 checks passed**. Authenticated/public
+  gates, anonymous forged-cookie rejection, free/paid registration, screenshot
+  upload, passes, CSV, gallery, membership and logout.
+- Actual browser workflows: **43 checks passed**. Clicked Add/Save/Delete,
+  changed publication state, saved/reloaded December; uploaded and decoded
+  event, member, gallery and logo images; submitted membership and free/paid
+  registrations; verified screenshot-gated paid PDF issuance and exact
+  “Payment received” confirmation; downloaded PDF/CSV/JSON; opened/closed a
+  full-size gallery photo; verified isolated logo saving; imported the exported
+  backup and checked every private pass hash and event ID survived. Public
+  internal links and fragment targets resolve correctly. No JavaScript errors.
+- Browser visual/navigation/fallback audit: **41 checks passed** at
+  320/390/768/1440px. Includes input that cannot skip the splash, central seed
+  then seven-ring bloom, automatic exit, stable direct membership-form landings
+  from calendar/gallery on desktop/mobile, transparent calendar wrapper, all
+  three 2× wire images decoding, no horizontal overflow, slow reveal timings,
+  uncut alternating fan badges, actual photo heartbeat and reduced-motion /
+  no-JavaScript fallbacks. Intermediate **n** paint frames and closing-band /
+  wire screenshots were visually reviewed, not only the final word.
+- Decoded loop seam alpha changes remain within each loop's normal frame-change
+  envelope. These are diagnostics, not proof of original 3D or exact pixels.
 
-Temporary workflow records, tiny fixture uploads and generated audit backups
-are cleaned separately, while the original club content and horse media are
-preserved. Passing tests does not establish pixel-perfect reproduction of
-unavailable original vectors, font files or 3D models.
+The original business data was restored **byte-for-byte** after verifying that
+only audit metadata/default normalization changed. Seven fixture uploads were
+removed only after checking their exact paths and content hashes; audit-time
+backups were removed separately. Existing club content and all horse media are
+preserved. Neither source nor deployment exports include the reference video.
+Passing tests does not establish pixel-perfect reproduction of unavailable
+original vectors, font files or 3D models.
