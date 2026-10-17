@@ -247,7 +247,11 @@
     return '';
   }
 
+  // Animation is optional. A missing butterfly can never block a form.
+  let butterflyDive = function () { return Promise.resolve(); };
+
   function setupForms() {
+    const sending = new WeakSet();
     /* a field tells the student as soon as they leave it */
     $$('[data-rule]').forEach(function (input) {
       input.addEventListener('blur', function () {
@@ -269,18 +273,22 @@
     $$('form[data-ajax-form]').forEach(function (form) {
       form.addEventListener('submit', async function (event) {
         event.preventDefault();
+        if (sending.has(form)) return;
         const complaint = checkForm(form);
         if (complaint) {
           setStatus(form, complaint, true);
           return;
         }
-        const button = form.querySelector('button[type="submit"]');
+        const button = event.submitter || form.querySelector('button[type="submit"]');
         const original = button ? button.textContent : '';
         const payload = Object.fromEntries(new FormData(form).entries());
         payload.type = form.dataset.formType || 'membership';
-        if (button) { button.disabled = true; button.textContent = 'Sending…'; }
-        setStatus(form, 'Sending…');
+        sending.add(form);
+        if (button) button.disabled = true;
         try {
+          await butterflyDive(button);
+          if (button) button.textContent = 'Sending…';
+          setStatus(form, 'Sending…');
           const result = await postJson(form.dataset.ajaxForm, payload);
           /* An event registration hands the student their own pass page. */
           if (result && result.passUrl) {
@@ -293,8 +301,26 @@
         } catch (error) {
           setStatus(form, error.message, true);
         } finally {
+          sending.delete(form);
           if (button) { button.disabled = false; button.textContent = original; }
         }
+      });
+    });
+
+    const proofPending = new WeakSet(), proofReplay = new WeakSet();
+    $$('form.proof-form').forEach(function (form) {
+      form.addEventListener('submit', function (event) {
+        if (proofReplay.has(form) || typeof form.requestSubmit !== 'function' || reduced()) return;
+        event.preventDefault();
+        if (proofPending.has(form)) return;
+        proofPending.add(form);
+        const button = event.submitter || form.querySelector('button[type="submit"]');
+        butterflyDive(button).then(function () {
+          if (!form.isConnected) return;
+          proofReplay.add(form);
+          try { form.requestSubmit(button || undefined); }
+          finally { proofReplay.delete(form); proofPending.delete(form); }
+        });
       });
     });
 
@@ -442,6 +468,7 @@
       const box = chapter.getBoundingClientRect();
       const top = window.innerWidth <= 1100 ? 68 : 84;
       const dark = $$('.black-chapter').some(function (section) {
+        if (section.parentElement && section.parentElement.dataset.storyPhase === 'herd') return false;
         const bounds = section.getBoundingClientRect();
         return bounds.top <= top + 1 && bounds.bottom > top;
       });
@@ -708,12 +735,14 @@
     let x = 0, y = 0, angle = 0, vx = 0, vy = 0, tilt = 0;
     let target = null, needsMeasure = true, desiredDark = false, committedDark = false, darkSince = 0;
     let lastScroll = window.scrollY || 0, scrollTimer = 0;
+    let interaction = null, activeField = null, photoScale = 1, flapTimer = 0;
     function measure(now) {
       const bounds = header.getBoundingClientRect();
       const width = butterfly.offsetWidth;
       const progress = clamp((window.scrollY || 0) / Math.max(1, document.documentElement.scrollHeight - window.innerHeight), 0, 1);
       target = { x: 10 + progress * Math.max(0, window.innerWidth - width - (window.innerWidth <= 1100 ? 84 : 32)), y: Math.max(4, (bounds.top || 0) + 12 - butterfly.offsetHeight), width: width };
       const dark = $$('.black-chapter').some(function (section) {
+        if (section.parentElement && section.parentElement.dataset.storyPhase === 'herd') return false;
         const box = section.getBoundingClientRect();
         return box.top <= bounds.bottom + 1 && box.bottom > bounds.bottom;
       });
@@ -721,6 +750,7 @@
       needsMeasure = false;
     }
     function render() {
+      butterfly.style.setProperty('--butterfly-size', photoScale.toFixed(3));
       butterfly.style.transform = 'translate3d(' + x.toFixed(2) + 'px,' + y.toFixed(2) + 'px,0) rotate(' + angle.toFixed(2) + 'deg)';
     }
     function schedule() {
@@ -741,6 +771,112 @@
       butterfly.classList.add('butterfly-arrived', 'butterfly-flying');
       schedule();
     }
+    function destination(node, kind) {
+      const box = node.getBoundingClientRect(), w = butterfly.offsetWidth, h = butterfly.offsetHeight;
+      const scale = kind === 'field' ? (window.innerWidth < 600 ? .38 : .42) : .66;
+      const cx = kind === 'field' ? Math.max(w * scale / 2 + 2, box.left - w * scale / 2 - 5) : clamp(box.left + box.width / 2, w * scale / 2, window.innerWidth - w * scale / 2);
+      const cy = kind === 'field' ? clamp(box.top + Math.min(box.height, 48) / 2, h / 2, window.innerHeight - h / 2) : clamp(box.top + box.height / 2, h / 2, window.innerHeight - h / 2);
+      return { x: cx - w / 2, y: cy - h / 2, scale: scale };
+    }
+    function moveTo(node, kind) {
+      if (!node || !node.isConnected || reduced()) return Promise.resolve();
+      if (interaction) interaction.cancel();
+      measure(performance.now());
+      if (state === 'waiting') { x = Math.max(0, node.getBoundingClientRect().left - 100); y = window.innerHeight + 80; }
+      flight = null; state = 'interacting';
+      const end = destination(node, kind), from = { x: x, y: y, angle: angle, scale: photoScale };
+      const duration = clamp(280 + Math.hypot(end.x - x, end.y - y) * .11, 320, 500);
+      butterfly.classList.add('butterfly-arrived', 'butterfly-flying');
+      butterfly.classList.remove('butterfly-away');
+      return new Promise(function (resolve) {
+        let timer;
+        const trip = { node: node, kind: kind, from: from, duration: duration, elapsed: 0, cancel: function () {
+          clearTimeout(timer); if (interaction === trip) interaction = null; resolve();
+        }, finish: function () {
+          clearTimeout(timer);
+          if (interaction !== trip) { resolve(); return; }
+          const landed = destination(node, kind);
+          x = landed.x; y = landed.y; photoScale = landed.scale; angle = 0;
+          interaction = null; state = kind === 'field' ? 'companion' : 'perched';
+          render();
+          if (kind === 'action') {
+            document.dispatchEvent(new CustomEvent('mt:butterfly-hit', { detail: { target: node } }));
+            if (activeField && activeField.isConnected && document.activeElement === activeField) moveTo(activeField, 'field');
+            else { measure(performance.now()); launch('return'); }
+          } else butterfly.classList.remove('butterfly-flying');
+          resolve();
+        } };
+        interaction = trip;
+        // A background tab, a stopped frame clock or a slow device cannot trap an action.
+        timer = window.setTimeout(trip.finish, 620);
+        schedule();
+      });
+    }
+    butterflyDive = function (node) { return moveTo(node, 'action'); };
+    function formField(node) {
+      return node && node.matches && node.matches('input:not([type="hidden"]):not([type="submit"]):not([type="checkbox"]):not([type="radio"]), textarea, select') && !node.closest('.honeypot') && node.closest('form.club-form, form.register-form, form.proof-form');
+    }
+    document.addEventListener('focusin', function (event) {
+      if (!formField(event.target)) return;
+      activeField = event.target;
+      if (!interaction || interaction.kind !== 'action') moveTo(activeField, 'field');
+    });
+    function companionVisibility() {
+      if (!activeField) {
+        const focused = document.activeElement;
+        if (formField(focused)) {
+          const box = focused.getBoundingClientRect(), bar = header.getBoundingClientRect();
+          if (box.bottom > bar.bottom + 4 && box.top < window.innerHeight - 12) {
+            activeField = focused;
+            if (!interaction || interaction.kind !== 'action') moveTo(focused, 'field');
+          }
+        }
+        return;
+      }
+      const box = activeField.getBoundingClientRect(), bar = header.getBoundingClientRect();
+      if (box.bottom > bar.bottom + 4 && box.top < window.innerHeight - 12) return;
+      activeField = null;
+      if (interaction && interaction.kind === 'field') interaction.cancel();
+      if (state === 'companion' || state === 'interacting' && !interaction) {
+        measure(performance.now()); launch('return');
+      }
+    }
+    document.addEventListener('focusout', function () {
+      window.setTimeout(function () {
+        if (formField(document.activeElement)) return;
+        activeField = null;
+        if (state === 'companion' || interaction && interaction.kind === 'field') {
+          if (interaction) interaction.finish();
+          measure(performance.now()); launch('return');
+        }
+      }, 0);
+    });
+    function flutter(event) {
+      if (!formField(event.target) || reduced()) return;
+      butterfly.classList.add('butterfly-typing');
+      clearTimeout(flapTimer);
+      flapTimer = window.setTimeout(function () { butterfly.classList.remove('butterfly-typing'); }, 280);
+    }
+    document.addEventListener('input', flutter);
+    document.addEventListener('keydown', function (event) { if (event.key === 'Backspace' || event.key === 'Delete') flutter(event); });
+    const replay = new WeakSet();
+    let actionTicket = 0;
+    document.addEventListener('click', function (event) {
+      const node = event.target.closest && event.target.closest('a[href], button');
+      if (!node || replay.has(node) || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || reduced() || node.disabled || node.closest('[data-no-butterfly]')) return;
+      if (node.tagName === 'A') {
+        const url = new URL(node.href, location.href);
+        // Downloads, external links, modifier clicks and named browsing contexts retain native semantics.
+        if (node.hasAttribute('download') || node.target && node.target !== '_self' || url.origin !== location.origin || !/^https?:$/.test(url.protocol)) return;
+      } else if (node.type === 'submit' || node.hasAttribute('data-print')) return;
+      event.preventDefault(); event.stopImmediatePropagation();
+      const ticket = ++actionTicket;
+      butterflyDive(node).then(function () {
+        if (ticket !== actionTicket || !node.isConnected) return;
+        replay.add(node);
+        try { node.click(); } finally { replay.delete(node); }
+      });
+    }, true);
     function tick(now) {
       frame = 0;
       if (document.hidden || state === 'waiting') { lastFrame = 0; return; }
@@ -753,6 +889,30 @@
         butterfly.classList.toggle('butterfly-away', desiredDark);
         butterfly.classList.remove('butterfly-flying'); render(); lastFrame = 0; return;
       }
+      if (interaction) {
+        const trip = interaction, end = destination(trip.node, trip.kind);
+        trip.elapsed += dt;
+        const t = clamp(trip.elapsed / trip.duration, 0, 1), u = clamp((t - .12) / .88, 0, 1);
+        const ease = u * u * (3 - 2 * u), arc = Math.sin(Math.PI * u);
+        x = trip.from.x + (end.x - trip.from.x) * ease;
+        y = trip.from.y + (end.y - trip.from.y) * ease - arc * Math.min(75, Math.abs(end.x - trip.from.x) * .15 + 24);
+        const heading = Math.atan2(end.y - trip.from.y, end.x - trip.from.x) * 180 / Math.PI + 90;
+        const turn = ((heading - trip.from.angle + 540) % 360) - 180;
+        angle = trip.from.angle + turn * Math.min(1, t / .18) * Math.sin(Math.PI * t * .82);
+        photoScale = trip.from.scale + (end.scale - trip.from.scale) * Math.min(1, t * 3);
+        render();
+        if (t === 1) trip.finish();
+        schedule(); return;
+      }
+      if (state === 'companion' && activeField) {
+        const end = destination(activeField, 'field');
+        x += (end.x - x) * (1 - Math.exp(-dt / 110));
+        y += (end.y - y) * (1 - Math.exp(-dt / 110));
+        angle += (0 - angle) * .15; photoScale = end.scale; render();
+        if (Math.abs(x - end.x) + Math.abs(y - end.y) > .15) schedule();
+        return;
+      }
+      photoScale += (1 - photoScale) * (1 - Math.exp(-dt / 240));
       // Brief crossings during a fast scroll never trigger a disappearance.
       if (desiredDark !== committedDark && now - darkSince >= 320) {
         committedDark = desiredDark;
@@ -806,7 +966,7 @@
     window.addEventListener('scroll', function () {
       const next = window.scrollY || 0;
       tilt = next === lastScroll ? tilt : next > lastScroll ? 7 : -7;
-      lastScroll = next; needsMeasure = true;
+      lastScroll = next; needsMeasure = true; companionVisibility();
       document.body.classList.add('butterfly-scrolling');
       window.clearTimeout(scrollTimer);
       scrollTimer = window.setTimeout(function () {
@@ -814,7 +974,7 @@
       }, 260);
       schedule();
     }, { passive: true });
-    window.addEventListener('resize', function () { needsMeasure = true; schedule(); });
+    window.addEventListener('resize', function () { needsMeasure = true; companionVisibility(); schedule(); });
     // Banners, font loading and content-visibility can move a chapter without
     // another scroll event. Refresh its boundary, but never reset a flight.
     if ('ResizeObserver' in window) {

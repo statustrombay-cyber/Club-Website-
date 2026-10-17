@@ -1,0 +1,116 @@
+{
+  "sourceCommit": "83b6645928b4ce86a916ad140ee77f2c6afeb6a3",
+  "purpose": "User-provided HD visual references, removed from the deployable tree; recover with git show <sourceCommit>:<gitPath>.",
+  "parts": [
+    {
+      "part": "part-00.mp4",
+      "width": 1080.0,
+      "height": 2400.0,
+      "seconds": 5.279544444444444,
+      "bytes": 19766762,
+      "sha256": "84596225f856130d43d0a74e82bfa8477daa39feb7d556a3206d974a02e24e5c",
+      "gitPath": "video_part_00.mp4",
+      "gitBlob": "72ac2edf387b1a05fbd024b6d3aed3fa8068f3cf"
+    },
+    {
+      "part": "part-01.mp4",
+      "width": 1080.0,
+      "height": 2400.0,
+      "seconds": 4.774488888888889,
+      "bytes": 21005494,
+      "sha256": "bd700bd0c908745e46d928f28ff63c2a813b4d1ac1ff3fe4f36b466874b0d194",
+      "gitPath": "video_part_01.mp4",
+      "gitBlob": "8a66692548dc4182eadfbb19db011abedcb62dda"
+    },
+    {
+      "part": "part-02.mp4",
+      "width": 1080.0,
+      "height": 2400.0,
+      "seconds": 5.271155555555556,
+      "bytes": 21826912,
+      "sha256": "0be682ab1bf3e61e2f252640447ca7704bf3718e299659e58314efa98087937f",
+      "gitPath": "video_part_02.mp4",
+      "gitBlob": "93c6719dcbc8cd943af79934aae664f73651963a"
+    },
+    {
+      "part": "part-03.mp4",
+      "width": 1080.0,
+      "height": 2400.0,
+      "seconds": 5.2934777777777775,
+      "bytes": 21765136,
+      "sha256": "64aea758f67b47589c698312363272b3ccfe09f516fead3fb9cbec8a46f58ddb",
+      "gitPath": "video_part_03.mp4",
+      "gitBlob": "56dc165c2b15fdcb378d941e60631c6d889c7797"
+    },
+    {
+      "part": "part-04.mp4",
+      "width": 1080.0,
+      "height": 2400.0,
+      "seconds": 5.1284,
+      "bytes": 22809191,
+      "sha256": "7ed87921dd0c835a217bf4c27da8e2f8e5bb7cb3db77da31ea79cd0e11b2c220",
+      "gitPath": "video_part_04.mp4",
+      "gitBlob": "a04e392ec8ae901ffe92c8351f5a87a2701aee27"
+    },
+    {
+      "part": "part-05.mp4",
+      "width": 1080.0,
+      "height": 2400.0,
+      "seconds": 4.366555555555555,
+      "bytes": 20476797,
+      "sha256": "980373efd49a2c53f3fe6c069f84aa437c342bd9410af7d88aaddaaf09ce2be6",
+      "gitPath": "video_part_05.mp4",
+      "gitBlob": "e4c32da9b51d49df34bad8fd4e3d2093cae05b0d"
+    },
+    {
+      "part": "part-06.mp4",
+      "width": 1080.0,
+      "height": 2400.0,
+      "seconds": 5.210400000000001,
+      "bytes": 24411904,
+      "sha256": "2eb284d70d3fb615df4678f0c2496e44a8e6ba9d697093e189f4e52031ade0dc",
+      "gitPath": "video_part_06.mp4",
+      "gitBlob": "1792828380babef1ed34de0325ec60786370e4b1"
+    },
+    {
+      "part": "part-07.mp4",
+      "width": 1080.0,
+      "height": 2400.0,
+      "seconds": 5.449277777777778,
+      "bytes": 22609026,
+      "sha256": "80370992e849e97a07a71f1cc417b18bbdb8712a100e8688670ccee2204266a4",
+      "gitPath": "video_part_07.mp4",
+      "gitBlob": "ba662e00442db288cdb7b411b27d12cdf4b8bafc"
+    },
+    {
+      "part": "part-08.mp4",
+      "width": 1080.0,
+      "height": 2400.0,
+      "seconds": 5.097433333333333,
+      "bytes": 21213928,
+      "sha256": "722f1e7b0a9d87779876a9900de02c78f96302566636ffa0b04605b039cec2e9",
+      "gitPath": "video_part_08.mp4",
+      "gitBlob": "59e01b380e954b2c8d879ffeef9f9433e7bda3a8"
+    },
+    {
+      "part": "part-09.mp4",
+      "width": 1080.0,
+      "height": 2400.0,
+      "seconds": 4.952466666666667,
+      "bytes": 21162230,
+      "sha256": "4ab09931a1350c7035e19dff38e88cdc2a0a0d7843719198a3d9257ee9b3874d",
+      "gitPath": "video_part_09.mp4",
+      "gitBlob": "213553e7dec68789f02b8b1f3a950576e59e2ef1"
+    },
+    {
+      "part": "part-10.mp4",
+      "width": 1080.0,
+      "height": 2400.0,
+      "seconds": 3.8989000000000003,
+      "bytes": 16767410,
+      "sha256": "76bcb129f881bb679ae12e652d5a8f7114017564d3f7930a68ea079908d61cb8",
+      "gitPath": "video_part_10.mp4",
+      "gitBlob": "4b6e1694537b3fc1e57948cc839ca35ead8bd86f"
+    }
+  ]
+}

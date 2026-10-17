@@ -65,6 +65,10 @@ $nav = [
   <meta property="og:description" content="<?= e(mb_substr($description, 0, 180)) ?>">
   <meta property="og:image" content="<?= e($logo) ?>">
   <link rel="stylesheet" href="/assets/app.css">
+  <?php if ($splash): ?>
+    <link rel="stylesheet" href="/assets/story.css">
+    <script src="/assets/story.js" defer></script>
+  <?php endif; ?>
 </head>
 <body class="<?= e($bodyClass) ?>">
 

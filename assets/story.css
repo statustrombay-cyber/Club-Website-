@@ -1,0 +1,79 @@
+/* HD-reference chapter. Locally hosted OFL fonts; these are licensed stylistic
+   matches, not a claim to possess the reference site's original typefaces. */
+@font-face { font-family: "Story Bodoni"; src: url('/assets/fonts/bodoni-moda-latin.woff2') format('woff2'); font-style: normal; font-weight: 400 900; font-display: swap; }
+@font-face { font-family: "Story Script"; src: url('/assets/fonts/pinyon-script-latin.woff2') format('woff2'); font-style: normal; font-weight: 400; font-display: swap; }
+.site-shell main > section.mind-story { position: relative; isolation: isolate; background: none; }
+.mind-story { --story-white: #f3fff3; color: var(--story-white); }
+.mind-story .story-track { position: relative; overflow: clip; background: transparent; }
+.story-stage { position: relative; min-height: 100svh; overflow: clip; background: radial-gradient(ellipse at 55% 30%, #a91916, #310707 75%); }
+.story-canvas { display: none; position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.story-glass { position: relative; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; max-width: 900px; padding: 80px 24px 48px; margin: auto; perspective: 1000px; }
+.story-shard { position: relative; display: flex; flex-direction: column; justify-content: center; min-width: 0; min-height: 200px; padding: 28px 22px; color: #fff8f4; text-align: center; background: linear-gradient(135deg, #ffffff18, #ffffff02 54%, #ffbd8d17); border: 1px solid #ffefdb77; }
+.story-shard h2, .story-shard h3 { margin: 0 0 12px; color: inherit; font-family: "Story Bodoni", Georgia, serif; font-size: 54px; font-weight: 400; line-height: .94; letter-spacing: -.065em; }
+.story-shard h3 small { font-size: .5em; letter-spacing: -.04em; }
+.story-shard p { margin: 0; font-family: "Story Bodoni", Georgia, serif; font-size: 20px; line-height: 1.14; letter-spacing: -.015em; }
+.story-shard em { font: 400 1.18em/.9 "Story Script", cursive; letter-spacing: 0; }
+.story-shard-note { display: block; margin-top: 12px; font: 400 11px/1.5 var(--font-body, sans-serif); letter-spacing: 0; opacity: .88; }
+.story-shard-message h2, .story-shard-message h3 { font-size: 48px; }
+.story-static-art { max-width: 720px; padding: 35px 22px; margin: auto; }
+.story-static-art img { display: block; width: 100%; height: auto; }
+.story-type { margin: 0; padding: 60px 20px 100px; color: var(--story-white); text-align: center; font: 400 clamp(3rem, 10vw, 9rem)/.92 "Story Bodoni", Georgia, serif; letter-spacing: -.065em; background: radial-gradient(ellipse at 50% 40%, #173d2e, #040a08 75%); }
+.story-type > span { display: block; }
+.story-type em { display: inline-block; margin-right: -.055em; font: 400 1.12em/.7 "Story Script", cursive; letter-spacing: -.01em; }
+.story-type-focus { margin: .19em 0 .13em; font-size: .72em; }
+.story-type .story-type-human { font-size: clamp(5rem, 23vw, 18rem); line-height: 1.06; }
+.story-type-human em { margin-right: -.09em; }
+.story-research { position: relative; padding: 24px max(24px, calc((100% - 1100px) / 2)); border: 0; color: var(--ink, #403634); background: rgba(252,248,243,.93); }
+.story-research summary { cursor: pointer; font-size: .8rem; font-weight: 700; padding: 8px 0; }
+.story-research summary span { margin-left: 12px; color: var(--ink-soft, #6b5d57); font-size: .7rem; font-weight: 400; }
+.story-research summary:focus-visible { outline: 2px solid var(--terracotta-ink, #a64f3d); outline-offset: 6px; }
+.story-research-body { padding: 30px 0 12px; font-size: .85rem; line-height: 1.8; }
+.story-research h3 { margin: 0 0 12px; font-family: var(--font-display, Georgia, serif); font-size: 1.6rem; font-weight: 400; }
+.story-research a { color: #7f3c2c; text-decoration: underline; text-underline-offset: 3px; }
+.story-research li { margin: 0 0 16px; padding-left: 6px; }
+.story-archive { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 30px; margin: 32px 0; }
+.story-archive article { min-width: 0; padding: 24px; border: 1px solid #786d5a50; color: #312b24; background: #e9e3d4; }
+.story-archive article > span { font-size: .62rem; letter-spacing: .1em; text-transform: uppercase; }
+.story-archive h3 { margin: 20px 0 10px; font-family: "Story Bodoni", Georgia, serif; font-size: 2.3rem; }
+.story-archive h4 { padding: 12px 0; border-block: 1px solid #786d5a70; font-family: Georgia, serif; font-size: 1rem; }
+.story-archive p { margin: 14px 0 0; font: 400 .85rem/1.6 Georgia, serif; }
+.story-art-note { max-width: 75ch; color: var(--ink-soft); font-size: .72rem; }
+/* Enhancement is attached only once a drawing context actually exists. No JS,
+   failed assets, Save-Data or reduced motion keep the entire readable story. */
+.story-enhanced .story-track { height: 650svh; }
+.story-enhanced .story-stage { position: sticky; top: 0; height: 100svh; min-height: 0; background: transparent; }
+.story-enhanced .story-canvas { display: block; }
+.story-enhanced .story-static-art { display: none; }
+.story-enhanced .story-glass { position: absolute; inset: 0; display: block; max-width: none; padding: 0; margin: 0; perspective: 1100px; pointer-events: none; }
+.story-enhanced .story-shard { position: absolute; top: 0; left: 0; width: 320px; height: 250px; min-height: 0; padding: 28px; border: none; opacity: 0; will-change: transform; transform-style: preserve-3d; clip-path: polygon(0 8%, 93% 0, 100% 93%, 6% 100%);  background: linear-gradient(138deg, #fff7ee21, #ffffff03 34%, #ffffff04 58%, #fff7ee18); }
+.story-enhanced .story-shard-message { width: 360px; height: 240px; }
+.story-shard::before, .story-shard::after { content: ""; position: absolute; inset: 0; pointer-events: none; }
+.story-enhanced .story-shard::before { background: linear-gradient(146deg, #d7f6ffb5, transparent 22% 71%, #f5d2a276), linear-gradient(76deg, transparent 38%, #fff2 38.3%, transparent 39%); clip-path: polygon(0 8%, 93% 0, 100% 93%, 6% 100%, 0 8%, .7% 8.6%, 6.6% 99.3%, 99.3% 92.6%, 92.8% .7%, .7% 8.6%); }
+.story-enhanced .story-shard::after { background: linear-gradient(151deg, transparent 32%, #fff2 32.15%, transparent 32.4%), linear-gradient(127deg, transparent 72%, #ffdab615 72.1%, transparent 72.25%); }
+.story-enhanced .story-type { position: absolute; top: 50%; left: 4%; width: 92%; padding: 0 0 30px; background: none; pointer-events: none; transform: translateY(-50%); text-shadow: 0 0 36px #a8ffc438, 0 0 90px #aeffc525; }
+.story-enhanced .story-type > span { opacity: 0; will-change: transform, opacity; }
+@media (max-width: 600px) {
+  .story-glass { grid-template-columns: minmax(0, 1fr); max-width: 420px; }
+  .story-shard { padding: 26px 18px; }
+  .story-enhanced .story-shard { width: 252px; height: 236px; padding: 25px 22px; }
+  .story-enhanced .story-shard h3 { font-size: 43px; }
+  .story-enhanced .story-shard p { font-size: 17px; }
+  .story-enhanced .story-shard-note { font-size: 11px; line-height: 1.5; margin-top: 9px; }
+  .story-enhanced .story-shard-message { width: 294px; height: 202px; }
+  .story-enhanced .story-shard-message h2, .story-enhanced .story-shard-message h3 { font-size: 47px; }
+  .story-enhanced .story-shard-message p { font-size: 17px; }
+  .story-research summary span { display: block; margin: 6px 0 0 18px; }
+  .story-archive { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .story-enhanced .story-track { height: auto; }
+  .story-enhanced .story-stage { position: relative; height: auto; }
+  .story-enhanced .story-canvas { display: none; }
+}
+@media print {
+  .story-track, .story-enhanced .story-track { height: auto; }
+  .story-enhanced .story-stage { position: relative; height: auto; }
+  .story-canvas, .story-enhanced .story-canvas, .story-enhanced .story-glass, .story-enhanced .story-type { display: none; }
+  .story-research { background: white; }
+  .story-research > * { display: block; }
+}

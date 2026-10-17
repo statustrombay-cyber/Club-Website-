@@ -8,12 +8,14 @@ import { PhpNode } from 'php-wasm/PhpNode';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..');
 const TARGET = process.argv[2] || 'app/passes.php';
-const SKIP = new Set(['.git', 'node_modules', '.arena', 'backup-original', 'data/logs', 'data/sessions', 'data/backups']);
+const SKIP = new Set(['.git', 'node_modules', '.arena', '.rollback', 'backup-original', 'data/logs', 'data/sessions', 'data/backups']);
 
 function collect(dir, base = '') {
   const out = [];
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const rel = base ? base + '/' + entry.name : entry.name;
+    // Root recordings and generated bundles are never PHP runtime inputs.
+    if (!base && /\.(mp4|zip)$/i.test(entry.name)) continue;
     if (SKIP.has(entry.name) || SKIP.has(rel)) continue;
     if (entry.isDirectory()) out.push(...collect(path.join(dir, entry.name), rel));
     else if (entry.isFile()) out.push([rel, path.join(dir, entry.name)]);

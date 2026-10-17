@@ -146,6 +146,8 @@ $clubWords = ['mind', 'body', 'connection', 'curiosity', 'growth', 'community', 
 
 <?= mt_brand_chapter((string) ($site['clubName'] ?? 'Mindful Tattva')) ?>
 
+<?php require __DIR__ . '/mind-story.php'; ?>
+
 <section class="happiness-section" aria-labelledby="happinessHeading">
   <div class="happiness-copy"><div class="eyebrow">Connection · belonging · growth</div><h2 id="happinessHeading">Club happiness index</h2><p>Making space for a happier campus, one conversation at a time.</p></div>
   <?= mt_happiness_graph($db) ?>

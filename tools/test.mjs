@@ -18,12 +18,14 @@ import { PhpNode } from 'php-wasm/PhpNode';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..');
-const SKIP = new Set(['.git', 'node_modules', '.arena', 'backup-original', 'data/logs', 'data/sessions', 'data/backups']);
+const SKIP = new Set(['.git', 'node_modules', '.arena', '.rollback', 'backup-original', 'data/logs', 'data/sessions', 'data/backups']);
 
 function collect(dir, base = '') {
   const out = [];
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const rel = base ? base + '/' + entry.name : entry.name;
+    // Root recordings and generated bundles are never PHP runtime inputs.
+    if (!base && /\.(mp4|zip)$/i.test(entry.name)) continue;
     if (SKIP.has(entry.name) || SKIP.has(rel)) continue;
     if (entry.isDirectory()) out.push(...collect(path.join(dir, entry.name), rel));
     else if (entry.isFile()) out.push([rel, path.join(dir, entry.name)]);
@@ -358,7 +360,7 @@ const verifyPage = await get('/verify/' + encodeURIComponent(registration.public
 ok('the QR opens the club\'s own page and that page says the pass is true',
   verifyPage.status === 200 && /This pass is verified as true\./i.test(verifyPage.body));
 ok('the scanned page masks the holder and shows no contact details',
-  verifyPage.body.includes(mtMask(registration.name)) && !verifyPage.body.includes(registration.email));
+  verifyPage.body.includes(mtMask('Riya Sharma')) && !verifyPage.body.includes('riya@example.com') && !verifyPage.body.includes('9876543210'));
 ok('the scanned page explains no steps and offers no form to fill in',
   !/<form/i.test(verifyPage.body) && !/Check this pass|scan the QR|register holds/i.test(verifyPage.body));
 const verifyMiss = await get('/verify/v000000000000000000');
@@ -1939,7 +1941,7 @@ ok('the splash brush paints filled contours, with a violet lead rather than stri
       remove: (...names) => names.forEach(name => classes.delete(name)),
       toggle: (name, active) => active ? classes.add(name) : classes.delete(name)
     };
-    const butterfly = { offsetWidth: 82, offsetHeight: 56, style: {}, classList };
+    const butterfly = { offsetWidth: 82, offsetHeight: 56, style: { setProperty(name, value) { this[name] = value; } }, classList };
     const header = { getBoundingClientRect: () => ({ top: headerTop, bottom: headerTop + 68 }) };
     const section = { getBoundingClientRect: () => ({ top: dark ? 0 : 200, bottom: dark ? 400 : 600 }) };
     const doc = { hidden: false, documentElement: { scrollHeight: 4844 }, body: { classList }, addEventListener: (name, fn) => { events[name] = fn; } };
@@ -2180,6 +2182,35 @@ ok('hamburger lens row matches other links with no chip, glow or dot',
 ok('the menu renders with its chip, on the live page',
   mindPage.body.includes('class="nav-lens"') && mindPage.body.includes('>The lens</a>')
   && (mindPage.body.match(/class="nav-lens"/g) || []).length === 1);
+
+console.log('\n— the HD psychology story —');
+const storySource = fs.readFileSync(path.join(ROOT, 'assets/story.js'), 'utf8');
+const storyCss = fs.readFileSync(path.join(ROOT, 'assets/story.css'), 'utf8');
+const storyView = fs.readFileSync(path.join(ROOT, 'views/public/mind-story.php'), 'utf8');
+const hdReference = JSON.parse(fs.readFileSync(path.join(ROOT, 'tools/references/zero-hd-manifest.json'), 'utf8'));
+ok('the psychology sequence is inserted after the working wire chapter',
+  home.body.indexOf('id="human-story"') > home.body.indexOf('class="brand-chapter') && home.body.indexOf('id="human-story"') < home.body.indexOf('class="happiness-section"'));
+ok('the story runtime is inlined and initialises after markup exists',
+  home.body.includes('function startStory()') && storySource.includes("document.addEventListener('DOMContentLoaded', startStory") && !home.body.includes('src="/assets/story.js"'));
+ok('the glass keeps its qualifier and primary-source citations',
+  storyView.includes('283 participants · low-certainty evidence') && storyView.includes('PMC10393216') && storyView.includes('PMC12280877'));
+ok('newspapers carry historical profiles and a dated research reading, not invented quotations',
+  ['Sigmund Freud', 'Carl Rogers', 'William James', 'Research reading · 2025', 'not historical newspaper facsimiles'].every(text => storyView.includes(text)));
+ok('the chapter has native-scroll, motion-preference and missing-asset fallbacks',
+  storySource.includes('staticStory()') && storySource.includes('Illustration timed out') && storySource.includes("motion.addEventListener('change', configure)") && !storySource.includes("addEventListener('wheel'"));
+ok('the decorative canvas stays out of the accessible tree but the actual facts do not',
+  storyView.includes('class="story-canvas" aria-hidden="true"') && storyView.includes('<article class="story-shard">') && !storySource.includes("shard.style.visibility"));
+ok('the classic herd is revealed by clearing the canvas, not replaced by another recording',
+  storySource.includes('ctx.clearRect(0, 0, W, H)') && storySource.includes('1 - smooth(.925, .995, p)') && !/<video|\.mp4/i.test(storyView + storySource));
+ok('both story typefaces are self-hosted with their OFL notices',
+  ['bodoni-moda-latin.woff2', 'pinyon-script-latin.woff2', 'BodoniModa-OFL.txt', 'PinyonScript-OFL.txt'].every(name => fs.existsSync(path.join(ROOT, 'assets/fonts', name))) && !/https?:/.test(storyCss));
+ok('all four story images are compact non-recording assets',
+  fs.readdirSync(path.join(ROOT, 'assets/story')).length === 4 && fs.readdirSync(path.join(ROOT, 'assets/story')).every(name => name.endsWith('.webp')) && fs.readdirSync(path.join(ROOT, 'assets/story')).reduce((sum, name) => sum + fs.statSync(path.join(ROOT, 'assets/story', name)).size, 0) < 500000);
+ok('the full-resolution reference manifest preserves all eleven recoverable clips',
+  hdReference.parts.length === 11 && hdReference.parts.every((part, i) => part.width === 1080 && part.height === 2400 && part.gitPath === `video_part_${String(i).padStart(2, '0')}.mp4` && /^[a-f0-9]{40}$/.test(part.gitBlob) && /^[a-f0-9]{64}$/.test(part.sha256)));
+ok('root reference MP4s are no longer in the live tree', !fs.readdirSync(ROOT).some(name => /\.mp4$/i.test(name)));
+ok('all three original horse encodes are retained at their original sizes',
+  [['running', 9938593], ['desktop', 3831086], ['mobile', 1894350]].every(([name, bytes]) => fs.statSync(path.join(ROOT, `assets/media/horses-${name}.mp4`)).size === bytes));
 
 console.log('\n— clean output check —');
 for (const route of ['/', '/gallery', '/calendar', '/members', '/register?event=event-welcome-circle', '/dashboard', '/does-not-exist']) {

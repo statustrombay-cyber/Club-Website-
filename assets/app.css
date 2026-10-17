@@ -1941,3 +1941,15 @@ html.no-js .chart-traveller animateMotion { display: none; }
 .deck-ready .psyche-card p { max-width: 38ch; font-size: .98rem; line-height: 1.65; }
 @media (max-width: 1100px) { .deck-ready .psyche-deck-stage { top: 68px; height: calc(100svh - 68px); } }
 @media (prefers-reduced-motion: reduce) { [data-wire-object] canvas { display: none !important; } [data-wire-object] img { visibility: visible !important; } }
+
+/* The same photographic wings accompany a field; no input is covered and no
+   extra hit target is introduced. This scale is driven by the flight clock. */
+.nav-butterfly .butterfly-flight { transform: translate(-50%,-50%) rotate(-7deg) scale(var(--butterfly-size, 1)); }
+.nav-butterfly.butterfly-typing .wing-left, .nav-butterfly.butterfly-typing .wing-right { animation-duration: .16s; }
+.nav-butterfly.butterfly-typing .wing-left { animation-name: photoWingLeft; }
+.nav-butterfly.butterfly-typing .wing-right { animation-name: photoWingBeat; }
+form.club-form .form-row { column-gap: 40px; }
+.register-form .form-grid { column-gap: 40px; }
+@media (prefers-reduced-motion: reduce) {
+  .nav-butterfly.butterfly-typing .wing-left, .nav-butterfly.butterfly-typing .wing-right { animation: none; }
+}

@@ -1,17 +1,24 @@
-# Motion study — current recording only
+# Motion reference studies — never runtime recordings
 
 The club uploaded `screen-20261015-174326.mp4` in commit `f11a32d`.
 It is 66.50 seconds, 720 × 1600, 16,469,423 bytes. Its checksum and storage
 location are in `recording.json`.
 
-**The recording lives outside this repository**, at
-`/home/user/club-motion-reference/reference-20261015-174326.mp4` in the Arena
-workspace. The superseded 50.81-second recording has been deleted. Neither
-recording is a website asset or included in the deployment ZIP. Root screen
-recordings and reference video files are also export-ignored in source archives.
-The club's horse film and its two optimised renditions are unrelated public
-assets and remain intact. Old Git commits still contain their historic uploads;
-we do not rewrite the branch's history to change past downloads.
+The recording is not in the current runtime tree. Temporary external study
+copies are not durable backups; its original committed Git blob is the recovery
+source. Neither this recording nor the superseded recording is a website asset
+or included in deployment ZIPs. The club's horse film and its two optimised
+renditions are unrelated public assets and remain intact. Old Git commits still
+contain their historic uploads; no history rewrite is needed.
+
+## New HD hand/glass/burning-paper study
+
+The eleven 1080×2400 parts from source commit `83b6645` were reviewed in order.
+See `zero-hd-manifest.json` for exact hashes, timings, paths and Git recovery IDs,
+and `story-credits.md` for the reconstruction, font licences and psychology
+sources. The root clips are removed from the working tree and export-ignored.
+Runtime assets are compact cutouts/illustrations plus procedural canvas/CSS,
+not full-frame recording playback. The original wires below remain unchanged.
 
 ## Frame measurements and sequencing
 

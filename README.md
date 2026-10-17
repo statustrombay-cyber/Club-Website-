@@ -343,3 +343,62 @@ primary-sheet failure/hold/wrong-size paths, no-IntersectionObserver playback,
 card order/reverse scrolling, resize stability, overflow and reduced-motion.
 `MT_BASE_URL`, `CHROME_EXECUTABLE_PATH` and `MT_SCREENSHOT_DIR` are optional.
 These browser dependencies and tools are not included in deployment packages.
+
+### HD-reference psychology story and butterfly interactions
+
+The homepage continues **after the existing rings/wire chapter** with a
+scroll-reversible hand/glass scene, floating research fragments, burning Freud
+art notes, the “this club, focuses on Humans” typography, and torn illustrated
+psychology newspapers. At the end the drawing clears to the original running
+herd; the classic opening and the remainder of the club site are unchanged.
+
+- `views/public/mind-story.php` contains the actual accessible copy, original
+  editorial archive and expandable primary-source research notes. The 6.86%
+  figure describes questionnaire scores from two gratitude studies (n=283,
+  low-certainty evidence), **not measured club outcomes or a personal guarantee**.
+- `assets/story.js` uses native sticky scrolling and a capped, visibility-aware
+  canvas clock. Paper curl is projected in 3D and textured in triangles; tearing
+  and burning are procedural and reverse with scroll. There is no recording
+  embedded in the page, no wheel/touch hijacking and no WebGL dependency.
+- Missing/corrupt/timed-out illustrations, unavailable canvas, Save-Data and
+  reduced motion restore readable static HTML without a dead scroll runway.
+  Inline script loading is supported: `defer` alone is not sufficient once
+  production inlines the script in the head.
+- The hand cutout derives from the user-supplied HD reference. The banknote and
+  Rogers/James engravings are newly generated illustrative artwork, not original
+  historical documents or recovered reference-site 3D models. The newspaper
+  designs and copy are new. See `tools/references/story-credits.md` for provenance.
+- Bodoni Moda and Pinyon Script are locally hosted **OFL-licensed stylistic
+  matches**, not an assertion that the original site's unidentified fonts were
+  recovered. Both notices are shipped in `assets/fonts/`.
+- The photographic butterfly retains its slow initial ascent/header flight.
+  An ordinary primary link/button click takes a short turn-and-dive before the
+  original action. Modifier clicks, named targets, external links, downloads
+  and print controls retain native behaviour. A 620ms timer releases the action
+  if rendering is paused. Reduced motion skips the dive.
+- Membership/event inputs get a left-side companion with independent wing
+  flaps on input, deletion and backspace. It flies between fields, releases an
+  offscreen field before dark chapters, and returns if that still-focused field
+  comes back into view. Validation precedes submit dives. A per-form lock blocks
+  repeated AJAX submits; errors restore the original button and feedback.
+  Payment proof remains a revalidated **native multipart upload**, preserving
+  the CSRF token, filename and file contents.
+
+Run `node tools/test-story-browser.mjs` with the preview running and the optional
+browser dependencies installed. It checks actual rendered pixels, burn-away,
+reverse scroll, herd reveal, mobile/desktop forms, duplicate suppression,
+action ordering, native uploads, modifier links and failure fallbacks.
+`MT_STORY_GROUP` can select `story`, `fallback`, `forms`, `navigation` or `upload`;
+the default runs everything. The same `MT_BASE_URL`, `CHROME_EXECUTABLE_PATH` and
+`MT_SCREENSHOT_DIR` options apply. All write endpoints in this browser audit are
+intercepted, so no audit members, passes or proof files enter the real store.
+
+**Rollback / recordings:** the pre-story working source checkpoint is
+`bfab92b847132c2757b1999705c0f2015f1d9933`. The local ignored
+`.rollback/before-zero-story-bfab92b.zip` was CRC-verified; restore code/design
+paths only, never overwrite the current `data/` or `uploads/`. The eleven root
+HD clips were visually studied at 1080×2400 and removed from the runtime tree.
+Their original Git commit, paths, blob IDs, sizes, timings and SHA-256 hashes are
+preserved in `tools/references/zero-hd-manifest.json`; recover a part with
+`git show <sourceCommit>:<gitPath> > /a/reference/folder/part.mp4`, outside the site.
+No history rewrite is needed, and the three working horse MP4s are not references.
