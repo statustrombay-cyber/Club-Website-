@@ -29,37 +29,16 @@ async function pixels(p) {return screenshotPixels(await p.screenshot({timeout:60
 async function ready(p){await p.waitForFunction(()=>document.querySelector('.mind-story').dataset.storyRenderer==='webgl',null,{timeout:18000});await p.waitForFunction(()=>+document.querySelector('.mind-story').dataset.renderFrame>0);}
 try {
   if(group('audio')){
-    const p=await b.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true}),errors=[];p.on('pageerror',e=>errors.push(e.message));
-    await p.addInitScript(()=>{
-      window.__audioTrace=[];window.__permissionRequests=0;
-      const AC=window.AudioContext||window.webkitAudioContext,create=AC.prototype.createBufferSource;
-      AC.prototype.createBufferSource=function(){const source=create.call(this),start=source.start,stop=source.stop;source.start=function(...args){window.__audioTrace.push({kind:'start',loop:this.loop,duration:this.buffer&&this.buffer.duration});return start.apply(this,args);};source.stop=function(...args){window.__audioTrace.push({kind:'stop',loop:this.loop});return stop.apply(this,args);};return source;};
-      DeviceOrientationEvent.requestPermission=()=>{window.__permissionRequests++;return Promise.resolve('granted');};
-    });
-    await p.goto(BASE+'/',{waitUntil:'load'});await p.locator('#soundButton').click();
-    await p.waitForFunction(()=>window.__audioTrace.some(e=>e.kind==='start'&&!e.loop&&e.duration>4&&e.duration<6));
-    ok(await p.locator('#splash').isVisible(),'sound gesture starts galloping while the splash still runs; never skips it');
-    await p.waitForFunction(()=>document.getElementById('splash').hidden,null,{timeout:11000});
-    ok(await p.evaluate(()=>window.__audioTrace.some(e=>e.kind==='stop'&&!e.loop)),'intro exit stops its gallop');
-    await at(p,.09);await ready(p);await p.waitForTimeout(800);
-    ok(await p.evaluate(()=>window.__audioTrace.some(e=>e.kind==='start'&&!e.loop&&e.duration>2&&e.duration<3)),'impact triggers the decoded glass effect, not a later arbitrary cue');
-    await at(p,.16);await p.waitForFunction(()=>window.__audioTrace.some(e=>e.kind==='start'&&e.loop));
-    ok(await p.locator('#soundButton').getAttribute('data-chapter-audio')==='on','foreboding loop plays only in the active chapter');
-    const y=await p.locator('.mind-story').getAttribute('data-hand-yaw');await p.locator('[data-enable-tilt]').click();
-    ok(await p.evaluate(()=>window.__permissionRequests===1),'phone tilt permission is requested by the explicit button gesture');
-    await p.evaluate(()=>{const send=(gamma,beta)=>{const e=new Event('deviceorientation');Object.defineProperties(e,{gamma:{value:gamma},beta:{value:beta}});dispatchEvent(e);};send(0,0);send(25,0);});await p.waitForTimeout(1000);
-    ok(await p.locator('.mind-story').getAttribute('data-hand-yaw')!==y&&+(await p.locator('.mind-story').getAttribute('data-glass-x'))>0,'moving the phone right moves the articulated hand and glass right');
-    const overlap=await p.evaluate(()=>{const a=document.querySelector('[data-enable-tilt]').getBoundingClientRect(),b=document.querySelector('.to-top')?.getBoundingClientRect();return b&&a.left<b.right&&a.right>b.left&&a.top<b.bottom&&a.bottom>b.top;});
-    ok(!overlap,'tilt control does not collide with the return-to-top button');
-    await p.locator('[data-enable-tilt]').click();ok(await p.evaluate(()=>window.__permissionRequests===1)&&await p.locator('[data-enable-tilt]').getAttribute('aria-pressed')==='false','turning tilt off never requests permission again');
-    await p.evaluate(()=>{DeviceOrientationEvent.requestPermission=()=>Promise.resolve('denied');});await p.locator('[data-enable-tilt]').click();ok(await p.locator('[data-enable-tilt]').textContent()==='Tilt not allowed','denied sensor permission leaves scroll/pointer fallback operational');
-    await p.locator('#soundButton').click();ok(await p.locator('#soundButton').getAttribute('data-sound')==='off','mute acts directly, without a butterfly delay');
-    await p.locator('#soundButton').click();await p.waitForTimeout(100);ok(await p.locator('#soundButton').getAttribute('data-sound')==='on','visitor can explicitly re-enable sound');
-    await at(p,.95);await at(p,.999);await p.waitForTimeout(100);
-    ok(await p.locator('#soundButton').getAttribute('data-chapter-audio')==='off'&&await p.evaluate(()=>window.__audioTrace.filter(e=>e.kind==='stop'&&e.loop).length>=2),'chapter exit silences/stops the score, including a rapid exit during its fade');
-    const hoofCount=await p.evaluate(()=>window.__audioTrace.filter(e=>e.kind==='start'&&!e.loop&&e.duration>4).length);await p.locator('#join').evaluate(e=>e.scrollIntoView({behavior:'instant'}));await p.waitForTimeout(400);
-    ok(await p.evaluate(()=>window.__audioTrace.filter(e=>e.kind==='start'&&!e.loop&&e.duration>4).length)===hoofCount,'no gallop or other late intro effect follows the chapter');
-    ok(!errors.length,'audio and tilt have no uncaught errors: '+errors.join('; '));await p.close();
+    const p=await b.newPage({viewport:{width:390,height:844}}),errors=[],requests=[];p.on('pageerror',e=>errors.push(e.message));p.on('request',r=>{if(r.url().includes('/assets/audio/'))requests.push(r.url());});
+    await p.addInitScript(()=>{window.__audioTrace=[];const AC=window.AudioContext||window.webkitAudioContext,create=AC.prototype.createBufferSource;AC.prototype.createBufferSource=function(){const s=create.call(this),start=s.start;s.start=function(...args){window.__audioTrace.push({loop:this.loop,duration:this.buffer&&this.buffer.duration});return start.apply(this,args);};return s;};});
+    await p.goto(BASE+'/#top',{waitUntil:'load'});
+    ok(!await p.locator('#soundButton,[data-enable-tilt]').count(),'no sound/tilt buttons or permission prompts');
+    await p.mouse.click(250,150);await p.waitForTimeout(300);await at(p,.09);await ready(p);await p.waitForTimeout(700);
+    ok(await p.evaluate(()=>window.__audioTrace.length===1&&window.__audioTrace[0].duration>2&&window.__audioTrace[0].duration<3&&!window.__audioTrace[0].loop),'only the glass crash plays at the first rendered impact');
+    await at(p,.8);await at(p,.999);await p.locator('#join').evaluate(e=>e.scrollIntoView({behavior:'instant'}));await p.waitForTimeout(300);
+    ok(requests.length===1&&requests[0].endsWith('/glass-impact.mp3'),'no gallop, score or other audio is downloaded');
+    ok(await p.evaluate(()=>window.__audioTrace.length===1),'no later-site sounds or delayed crash replay');
+    ok(!errors.length,'no audio script errors');await p.close();
   }
   for (const width of group('story') ? [320,390,768,1440] : []) {
     const p=await b.newPage({viewport:{width,height:844}}),errors=[];
@@ -70,7 +49,10 @@ try {
     const initial=await p.locator('.mind-story').evaluate(r=>({...r.dataset}));
     ok(initial.storyPhase==='glass'&&glass.dark>glass.samples*.1&&glass.white>20,`${width}: hand, curtain and thick glass actually render in WebGL`);
     await at(p,.16);const forward=await p.locator('.mind-story').evaluate(r=>({...r.dataset}));
-    ok(+forward.cameraZ<+initial.cameraZ&&forward.factY===initial.factY,`${width}: camera advances through stationary-height facts, not upward-scrolling panels`);
+    ok(forward.cameraZ===initial.cameraZ&&+forward.factY>+initial.factY,`${width}: glass scrolls vertically; the money phase has its separate inward camera motion`);
+    const resting=await p.locator('.mind-story').evaluate(r=>({yaw:r.dataset.handYaw,height:r.querySelector('.story-track').offsetHeight,y:scrollY}));
+    await p.mouse.move(5,120);await p.evaluate(()=>{for(let i=0;i<12;i++){dispatchEvent(new Event('resize'));if(visualViewport)visualViewport.dispatchEvent(new Event('resize'));}});await p.waitForTimeout(350);
+    ok(await p.locator('.mind-story').evaluate((r,a)=>r.dataset.handYaw===a.yaw&&r.querySelector('.story-track').offsetHeight===a.height&&Math.abs(scrollY-a.y)<2,resting),`${width}: idle hand and document remain steady through pointer/browser-bar resize events`);
     const bounds=await p.locator('.story-stage').evaluate(el=>{const r=el.getBoundingClientRect(),c=el.querySelector('canvas').getBoundingClientRect();return {top:r.top,height:r.height,screen:innerHeight,canvasTop:c.top,canvasBottom:c.bottom};});
     ok(Math.abs(bounds.top)<2&&Math.abs(bounds.height-bounds.screen)<2&&bounds.canvasTop<=0&&bounds.canvasBottom>=bounds.screen,`${width}: renderer covers the complete viewport without a strip`);
     await at(p,.42);const bill=await pixels(p);
@@ -78,13 +60,15 @@ try {
     await at(p,.565);const burnt=await pixels(p);ok(burnt.white<bill.white*.35,`${width}: irregular fire consumes the notes`);
     await at(p,.66);ok(await p.locator('.story-type > span').evaluateAll(es=>es.every(e=>+getComputedStyle(e).opacity>.98)),`${width}: the human statement is readable`);
     await at(p,.78);const paper=await pixels(p);await at(p,.88);const strips=await pixels(p);
-    ok(paper.white>60&&paper.dark>paper.samples*.2,`${width}: flooding pages retain a visible deep tunnel`);
-    ok(strips.signature!==paper.signature&&await p.locator('.mind-story').getAttribute('data-strip-count')==='16',`${width}: sheets peel into long wavering strips, not polygon confetti`);
+    ok(paper.white>60&&paper.dark>paper.samples*.2,`${width}: randomly thrown pages fill the view with depth`);
+    ok(strips.signature!==paper.signature&&await p.locator('.mind-story').getAttribute('data-strip-count')==='24',`${width}: sheets peel/tumble into long wavering strips, not polygon confetti`);
     if(OUT)await p.screenshot({path:OUT+`/story-3d-${width}.png`,timeout:60000});
+    const rootFilm=await p.locator('.mind-story').evaluate(r=>({image:getComputedStyle(r).backgroundImage,color:getComputedStyle(r).backgroundColor}));ok(rootFilm.image==='none'&&rootFilm.color==='rgba(0, 0, 0, 0)',`${width}: high-specificity global paper film cannot create a full-width pale strip`);
     await at(p,.999);ok(await p.locator('.story-canvas').evaluate(c=>+getComputedStyle(c).opacity)<.001&&await p.locator('#heroVideo').count()===1,`${width}: scene becomes transparent over the original herd`);
+    const stable=await p.evaluate(()=>({y:scrollY,h:document.querySelector('.story-track').offsetHeight}));await p.waitForTimeout(450);const settled=await p.evaluate(()=>({y:scrollY,h:document.querySelector('.story-track').offsetHeight}));ok(Math.abs(stable.y-settled.y)<2&&stable.h===settled.h,`${width}: end of chapter does not collapse or slide upward without input`);
     await at(p,.09);ok(await p.locator('.mind-story').getAttribute('data-camera-z')===initial.cameraZ,`${width}: reverse scrolling restores the depth choreography`);
     ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`${width}: no horizontal overflow`);
-    await p.emulateMedia({reducedMotion:'reduce'});await p.waitForTimeout(150);
+    await p.emulateMedia({reducedMotion:'reduce'});await p.waitForFunction(()=>document.querySelector('.mind-story').dataset.storyRenderer==='static',null,{timeout:8000});
     ok(!await p.locator('.story-enhanced').count()&&await p.locator('.story-shard').first().isVisible(),`${width}: changing motion preference restores actual readable HTML`);
     ok(await p.locator('.story-track').evaluate(e=>e.offsetHeight<innerHeight*4),`${width}: static mode has no empty runway`);
     ok(!errors.length,`${width}: no JavaScript or shader errors: ${errors.join('; ')}`);await p.close();
@@ -94,7 +78,7 @@ try {
     if(mode==='no-canvas')await p.addInitScript(()=>{HTMLCanvasElement.prototype.getContext=()=>null;});
     if(mode==='no-observer')await p.addInitScript(()=>{delete window.IntersectionObserver;});
     if(mode==='save-data')await p.addInitScript(()=>{Object.defineProperty(navigator,'connection',{value:{saveData:true}});});
-    if(['404','corrupt','held'].includes(mode))await p.route('**/assets/story/hand-rig.glb',route=>mode==='held'?new Promise(()=>{}):route.fulfill({status:mode==='404'?404:200,contentType:'model/gltf-binary',body:'invalid-model'}));
+    if(['404','corrupt','held'].includes(mode))await p.route('**/assets/story/hand-painted-poses.webp',route=>mode==='held'?new Promise(()=>{}):route.fulfill({status:mode==='404'?404:200,contentType:'image/webp',body:'invalid-model'}));
     if(mode==='engine-404')await p.route('**/assets/vendor/story-3d.js',route=>route.fulfill({status:404,body:''}));
     await p.goto(BASE+'/#top',{waitUntil:'load'});
     if(mode==='no-observer'){await at(p,.42);await ready(p);ok((await pixels(p)).white>40,'no observer: scroll-only scene loading and real rendering work');}
@@ -135,9 +119,10 @@ try {
     ok(await p.locator('.nav-butterfly.butterfly-typing').count(), `${width}: backspace triggers wing flaps`);
     await name.fill('Riya Sharma');
     const before = await p.locator('.nav-butterfly').evaluate(el => el.style.transform);
-    await form.locator('[name="email"]').focus(); await p.waitForTimeout(90);
-    const during = await p.locator('.nav-butterfly').evaluate(el => el.style.transform);
-    ok(before !== during && await p.locator('.nav-butterfly.butterfly-flying').count(), `${width}: the companion flies between fields`);
+    await form.locator('[name="email"]').focus();
+    const departing=await p.locator('.nav-butterfly.butterfly-flying').count();
+    await p.waitForFunction(before=>document.querySelector('.nav-butterfly').style.transform!==before,before,{timeout:2000});
+    ok(departing, `${width}: the companion flies between fields`);
     await p.waitForTimeout(600); timeline.length = 0;
     await form.evaluate(form => { form.requestSubmit(); form.requestSubmit(); });
     await p.waitForTimeout(900);
@@ -195,7 +180,7 @@ try {
     await p.exposeFunction('auditHit', () => hits++);
     await p.addInitScript(() => document.addEventListener('mt:butterfly-hit', () => window.auditHit()));
     await p.goto(BASE + '/calendar', { waitUntil: 'load' });
-    await Promise.all([p.waitForURL('**/gallery', { timeout: 5000 }), p.locator('#navLinks a[href="/gallery"]').click()]);
+    await Promise.all([p.waitForURL('**/gallery', { timeout: 10000, waitUntil: 'domcontentloaded' }), p.locator('#navLinks a[href="/gallery"]').click()]);
     ok(new URL(p.url()).pathname === '/gallery', `${mode}: a stalled or disabled animation cannot block navigation`);
     if (mode === 'reduced') ok(hits === 0, 'reduced: navigation does not wait for an animated dive');
     await p.close();

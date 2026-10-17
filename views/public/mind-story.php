@@ -7,7 +7,6 @@
 <section class="mind-story" id="human-story" aria-labelledby="humanStoryTitle">
   <div class="story-track black-chapter">
     <div class="story-stage">
-      <div class="story-controls" data-no-butterfly><button class="story-tilt" type="button" data-enable-tilt aria-pressed="false" hidden>Enable tilt</button></div>
       <canvas class="story-canvas" aria-hidden="true"></canvas>
       <div class="story-glass">
         <article class="story-shard story-shard-message">

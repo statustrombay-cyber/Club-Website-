@@ -86,11 +86,7 @@ $nav = [
     </div>
   <?php endif; ?>
 
-  <?php if ($splash): ?>
-    <button class="sound-control" id="soundButton" type="button" data-no-butterfly aria-label="Enable sound" aria-pressed="false" data-sound="off">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path class="sound-waves" d="M16 8c3 2 3 6 0 8m3-11c5 4 5 10 0 14"/><path class="sound-slash" d="m16 9 5 6m0-6-5 6"/></svg><span>Sound</span>
-    </button>
-  <?php endif; ?>
+
 
   <div class="bubble-field" aria-hidden="true">
     <span class="bubble bubble-a"></span><span class="bubble bubble-b"></span><span class="bubble bubble-c"></span>

@@ -360,37 +360,39 @@ herd; the classic opening and the remainder of the club site are unchanged.
   `assets/vendor/story-3d.js` bundle contains Three.js and the scene; no CDN or
   Node build is needed on the PHP host. Source is in `tools/story/`. Rebuild with
   `npm ci && npm run build:story` (pinned Three.js 0.186.1 / esbuild 0.28.2).
-- A genuine skinned, articulated hand rises/thrusts into a clear pane; the pane
-  suddenly gives way to thick irregular shards. Facts keep fixed world heights
-  while a perspective camera advances through depth. There is no spiderweb
-  overlay or upward-scrolling DOM-panel animation. The curtain is deliberately
-  optically soft. Four separately warped notes burn from irregular edges.
-- A hollow corridor of 48 mobile / 72 desktop fluttering newspapers floods the
-  frame; nearby pages peel into sixteen thin, independently waving ribbons.
-  Skin, glass refraction, geometry, camera travel and paper deformation are 3D,
-  not photographic cutouts projected on a 2D canvas. Small/software GPUs use a
-  lower render resolution; bloom is omitted on phones/software rendering.
-- Native sticky scrolling, viewport resize, pointer/scroll parallax and reverse
-  travel are retained. Optional **Enable tilt** is available on coarse-pointer
-  devices with orientation support. iOS requires HTTPS and a synchronous button
-  permission gesture; refusal leaves scrolling/pointer interaction working.
-  Sensor signals are local only and never stored or transmitted.
-- `assets/audio.js` plays only three cues: an original synthesized gallop during
-  the splash, a single synthesized glass crash at impact, and an original low
-  foreboding score within this chapter. The score stops at the herd/exit, on
-  mute or when the page is hidden. Sound preference is remembered locally.
-  Autoplay cannot be guaranteed: **Sound** / the first permitted interaction
-  unlocks Web Audio; an already-finished intro never gallops late. No extra
-  navigation, butterfly, typing or later-page sound effects were added.
-- Missing/corrupt/timed-out model/engine/illustrations, unavailable WebGL,
-  Save-Data and reduced motion restore readable static HTML without a dead
-  runway. Reduced-motion changes also dispose the scene. Inline head script
-  startup is supported; only the lazy scene bundle remains external.
-- The hand rig is MIT-licensed WebXR input-profile geometry, not the reference
-  site's proprietary rig. Skin, theatre and the American-dollar-style Freud prop
-  are newly AI-generated artwork; the latter includes an ART SPECIMEN marking.
-  Rogers/James engravings and newspaper designs are original illustrations, not
-  historical documents. See `tools/references/story-credits.md` for provenance.
+- **Latest correction:** the generic XR hand is removed. Eight caption-free
+  painted poses from the user's HD reference now sit on a shallow relief mesh,
+  preserving the original baked artwork/light. A single eased rise/strike replaces
+  finger/time/pointer wobble; no tilt sensor or tilt/sound buttons are present.
+- Glass uses a **vertical scroll**; the camera advances inward during the four
+  curling/burning Freud dollar props and the subsequent paper flight instead.
+- 52 phone / 76 desktop pages are independently thrown/tumbled at random
+  positions and depths, not placed around an evenly spaced corridor. Each page
+  can release 24 long strips progressively from left to right, with independent
+  rotation/gravity/curl. Nearby pages pass over/beside the lens.
+- The high-specificity global paper-film CSS is explicitly excluded from the
+  chapter, including desktop gradients. Scroll-space is locked in pixels at
+  startup; mobile visual viewport events resize the drawing, not the document.
+  Canvas backing dimensions are only reset on genuine size changes, within the
+  same animation frame that redraws them, avoiding transparent/white flashes.
+- Engine/font fetches are parallel; prewarm starts in the preceding wire chapter
+  and decoded atlases upload individually before first use. The generic rig,
+  PMREM environment and its startup rendering cost are gone. The local bundle is
+  about 602 KiB, not a remote CDN dependency. Save-Data/reduced motion/missing
+  assets/WebGL failures still fall back to actual readable HTML.
+- **Only the glass-break sound remains.** No gallop, score, loops, sound button,
+  stored mute preference, orientation listener or permission prompt. A trusted
+  pointer/key/touch gesture unlocks Web Audio where permitted. The crash follows
+  the first rendered broken-glass frame; if playback is blocked/not decoded at
+  that instant it is skipped, not replayed later. Browser autoplay rules still apply.
+- Hand-pose editing/provenance is in `tools/references/bake-hand-poses.py` and
+  `story-credits.md`. The Freud prop and Rogers/James portraits are illustrative
+  artwork, not authentic banknotes/historical newspaper facsimiles.
+- Source-site extraction research, the original developer's technical case study,
+  extension/HAR instructions and a body-only CDP capture tool are documented in
+  **`tools/references/reference-capture.md`**. The sandbox cannot perform a full
+  browser capture of the reference host. No original editable scene or private
+  source is claimed recovered. Source clips stay outside the runtime/deployment.
 - Bodoni Moda and Pinyon Script are locally hosted **OFL-licensed stylistic
   matches**, not an assertion that the original site's unidentified fonts were
   recovered. Both notices are shipped in `assets/fonts/`.
@@ -410,8 +412,8 @@ herd; the classic opening and the remainder of the club site are unchanged.
 Run `node tools/test-story-browser.mjs` with the preview running and the optional
 browser dependencies installed. It checks PNG screenshots of actual WebGL output, burn-away,
 reverse scroll, herd reveal, mobile/desktop forms, duplicate suppression,
-action ordering, native uploads, modifier links, failure fallbacks, decoded audio
-start/stop boundaries, and simulated orientation permission/grant/refusal. These
+action ordering, native uploads, modifier links, failure fallbacks, glass-only decoded audio, absence of removed controls, vertical glass versus
+forward money travel, and chapter-end geometry stability. These
 are Chromium emulation checks, not a substitute for physical iPhone/Android QA.
 `MT_STORY_GROUP` can select `audio`, `story`, `fallback`, `forms`, `navigation` or `upload`;
 the default runs everything. The same `MT_BASE_URL`, `CHROME_EXECUTABLE_PATH` and
@@ -434,8 +436,13 @@ Before this rebuild, `.rollback/before-3d-rebuild-6d7aa13.zip` was created from
 `6d7aa13c20eb4725eb0d2e15a71aaa7bc1864bfb` and CRC-verified. It is ignored and is
 not deployed. Restore code/assets only, never the current data/uploads.
 
-The foreboding score and effects are original deterministic synthesis, not
-licensed recordings extracted from the reference. To regenerate, install Python
-`numpy` and `imageio-ffmpeg`, then run `python tools/make-story-audio.py`.
-The reconstruction follows the supplied choreography; it is not a claim to
-possess the original scene, scan, font files or soundtrack or to be pixel-identical.
+The retained glass effect is deterministic synthesis, not a recording taken from
+the reference. To regenerate only this cue, install Python `numpy` and
+`imageio-ffmpeg`, then run `python tools/make-story-audio.py`.
+
+The 49ce5d8 revision's generic hand, gallop, score and controls were rejected.
+A fresh pre-correction backup is `.rollback/before-reference-correction-49ce5d8.zip`.
+The current work corrects those choices but is **not accepted as an exact clone**.
+For the actual original assets, use the capture instructions above and share the
+public export. A stitched phone recording would retain burnt-in source UI/copy;
+only the clean hand imagery has been adapted, not a falsely relabelled full video.

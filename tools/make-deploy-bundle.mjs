@@ -68,6 +68,8 @@ if (UPDATE) {
     'Extract over the existing site; do not delete its folders first.\n' +
     'This package reuses the three unchanged horse MP4s already installed in assets/media/.\n' +
     'It does not remove or replace your data/, uploads/ or existing media.\n' +
+    'After extraction, obsolete files may be removed individually: assets/audio/intro-gallop.mp3, assets/audio/chapter-foreboding.mp3, assets/story/hand-rig.glb, assets/story/hand-skin.webp and assets/story/HAND-LICENSE.txt.\n' +
+    'Never delete whole data/, uploads/, assets/ or media folders.\n' +
     'For a fresh install use Club-Website-deploy.zip, which includes all required media.\n'
   )});
 }

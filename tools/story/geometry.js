@@ -19,12 +19,3 @@ export function jaggedShape(seed=0){
  profile.forEach(([x,y],i)=>{const a=[(x-.5)*2.1,(.5-y)*1.47],n=profile[(i+1)%profile.length],b=[(n[0]-.5)*2.1,(.5-n[1])*1.47];i?s.lineTo(...a):s.moveTo(...a);for(let j=1;j<4;j++){const d=Math.sin(i*17+j*31+seed)*.005;s.lineTo(a[0]+(b[0]-a[0])*j/4+d,a[1]+(b[1]-a[1])*j/4+d);}});s.closePath();return s;
 }
 export function shapeWithUV(shape){const g=new T.ShapeGeometry(shape);const pos=g.attributes.position,uv=g.attributes.uv;for(let i=0;i<pos.count;i++)uv.setXY(i,(pos.getX(i)+1.05)/2.1,(pos.getY(i)+.735)/1.47);return g;}
-export function armGeometry(){
- const pos=[],uv=[],ix=[],rings=32,sides=40;
- for(let r=0;r<=rings;r++){
-  const t=r/rings,y=-t*7.4;const rx=.47+Math.sin(t*Math.PI*.68)*.55,rz=.34+Math.sin(t*Math.PI*.7)*.43;
-  for(let j=0;j<=sides;j++){const a=j/sides*Math.PI*2;pos.push(Math.cos(a)*rx+Math.sin(t*2.3)*.12,y,Math.sin(a)*rz);uv.push(j/sides,t);}
- }
- for(let r=0;r<rings;r++)for(let j=0;j<sides;j++){const a=r*(sides+1)+j;ix.push(a,a+1,a+sides+1,a+1,a+sides+2,a+sides+1);}
- const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(pos,3));g.setAttribute('uv',new T.Float32BufferAttribute(uv,2));g.setIndex(ix);g.computeVertexNormals();return g;
-}

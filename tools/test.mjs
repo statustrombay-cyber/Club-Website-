@@ -2207,20 +2207,20 @@ ok('the classic herd is revealed by clearing the canvas, not replaced by another
   sceneSource.includes('1-smooth(.945,.998,p)') && sceneSource.includes("phase==='herd'") && !/<video|\.mp4/i.test(storyView + storySource));
 ok('both story typefaces are self-hosted with their OFL notices',
   ['bodoni-moda-latin.woff2', 'pinyon-script-latin.woff2', 'BodoniModa-OFL.txt', 'PinyonScript-OFL.txt'].every(name => fs.existsSync(path.join(ROOT, 'assets/fonts', name))) && !/https?:/.test(storyCss));
-ok('the actual rig, local scene bundle and MIT licenses ship without source recordings',
-  ['story/hand-rig.glb','story/HAND-LICENSE.txt','vendor/story-3d.js','vendor/THREE-LICENSE.txt'].every(name => fs.existsSync(path.join(ROOT,'assets',name))) && fs.statSync(path.join(ROOT,'assets/vendor/story-3d.js')).size < 800000);
-ok('the hand uses skinning, articulated joints and physical glass, not a spiderweb overlay',
-  sceneSource.includes('parent.attach(joint)') && sceneSource.includes('bone.node.rotateX') && sceneSource.includes('MeshPhysicalMaterial') && !/spiderweb|crackPaths/.test(sceneSource));
-ok('facts and bills are approached along the camera rail rather than scrolling upward',
-  sceneSource.includes('function cameraRail') && sceneSource.includes('camera.position.z-g.position.z') && sceneSource.includes('i<4') && shaderSource.includes('uBurn'));
-ok('the flood uses 16-strip subdivided pages and long curling vertex deformation',
-  sceneSource.includes('shredGeometry(16,28)') && sceneSource.includes('matches?48:72') && shaderSource.includes('uTear*(flutter'));
-ok('phone tilt requires a gesture/permission and desktop pointer parallax is available',
-  sceneSource.includes('DeviceOrientationEvent.requestPermission()') && sceneSource.includes("'deviceorientation'") && sceneSource.includes("'pointermove'") && storyView.includes('data-no-butterfly'));
-ok('dynamic viewport coverage and subpixel canvas bleed prevent a baseline/gap strip',
-  storyCss.includes('height: 100dvh') && storyCss.includes('width: calc(100% + 2px)') && storyCss.includes('.story-research { background: transparent'));
-ok('three scoped audio assets have gesture-unlock, mute, visibility and chapter-exit guards',
-  ['intro-gallop','glass-impact','chapter-foreboding'].every(name=>fs.existsSync(path.join(ROOT,'assets/audio',name+'.mp3'))) && audioSource.includes('context.resume()') && audioSource.includes('progress<0||progress>=.985') && audioSource.includes('introDone') && audioSource.includes('visibilitychange'));
+ok('the painted source-pose atlas and local scene bundle replace the generic glove',
+  fs.existsSync(path.join(ROOT,'assets/story/hand-painted-poses.webp')) && !fs.existsSync(path.join(ROOT,'assets/story/hand-rig.glb')) && fs.existsSync(path.join(ROOT,'assets/vendor/THREE-LICENSE.txt')) && fs.statSync(path.join(ROOT,'assets/vendor/story-3d.js')).size<650000);
+ok('the hand retains baked artwork without timer/pointer/gyro shake',
+  sceneSource.includes('handUniforms.uPose.value=smooth') && !sceneSource.includes('DeviceOrientationEvent') && !sceneSource.includes('bone.node.rotateX') && !sceneSource.includes('RoomEnvironment'));
+ok('glass scrolls vertically while money alone starts forward camera travel',
+  sceneSource.includes('if(progress<.375)return 12') && sceneSource.includes('vertical=smooth') && sceneSource.includes('i<4') && shaderSource.includes('uBurn'));
+ok('thrown papers have random independent positions and independently tumbling strips',
+  sceneSource.includes('shredGeometry(24,28)') && sceneSource.includes('throwSpeed') && shaderSource.includes('past=clamp') && !sceneSource.includes('radius=1.8'));
+ok('no sound or tilt controls are injected into the public layout',
+  !storyView.includes('data-enable-tilt') && !fs.readFileSync(path.join(ROOT,'views/layout.php'),'utf8').includes('soundButton') && !sceneSource.includes('requestPermission'));
+ok('dynamic viewport drawing does not change reserved document height or reveal the global paper film',
+  storyCss.includes('height: 100dvh') && storyCss.includes('background: none !important') && storySource.includes('innerHeight*6.6') && sceneSource.includes('const resized=resizeNeeded?applyResize():false'));
+ok('glass is the sole audio asset, gesture unlocked without a button or late replay',
+  fs.readdirSync(path.join(ROOT,'assets/audio')).join(',')==='glass-impact.mp3' && audioSource.includes('context.resume()') && audioSource.includes("context.state!=='running'") && !audioSource.includes('localStorage') && !audioSource.includes('intro-gallop') && !audioSource.includes('foreboding'));
 ok('the full-resolution reference manifest preserves all eleven recoverable clips',
   hdReference.parts.length === 11 && hdReference.parts.every((part, i) => part.width === 1080 && part.height === 2400 && part.gitPath === `video_part_${String(i).padStart(2, '0')}.mp4` && /^[a-f0-9]{40}$/.test(part.gitBlob) && /^[a-f0-9]{64}$/.test(part.sha256)));
 ok('root reference MP4s are no longer in the live tree', !fs.readdirSync(ROOT).some(name => /\.mp4$/i.test(name)));

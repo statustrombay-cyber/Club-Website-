@@ -22,16 +22,13 @@ renderer and not a claim of pixel-identical reproduction.
 - Three.js **0.186.1**, MIT, bundled locally with esbuild **0.28.2**. The complete
   Three notice ships at `assets/vendor/THREE-LICENSE.txt`. Rebuild source:
   `tools/story/{scene,geometry,shaders,paper}.js`; command `npm run build:story`.
-- `assets/story/hand-rig.glb`: genuine skinned generic right human hand from
-  npm `@webxr-input-profiles/assets@1.0.20`,
-  `dist/profiles/generic-hand/right.glb`. MIT, Copyright 2019 Amazon.com, Inc.
-  or its affiliates; complete notice at `assets/story/HAND-LICENSE.txt`.
-  1,360 vertices, 25 joints. Runtime reparents the flat bone list while retaining
-  bind space, articulates fingers and joins a procedural tapered forearm.
-  This is not the source site's original hand model. The rejected photographic
-  `hand.webp` cutout was removed from runtime; it is recoverable at 6d7aa13.
-- `hand-skin.webp`: newly AI-generated neutral palm skin atlas applied to actual
-  mesh surfaces, not a flat image plane. Procedural fine bump adds surface detail.
+- `assets/story/hand-painted-poses.webp`: eight caption-free painted poses from
+  the user's HD part 01 at 0–0.56 seconds. The earlier hand-only alpha matte
+  from 6d7aa13 was registered by SIFT and transferred using optical flow. Baked
+  lighting is retained, with no generic XR model or generated skin atlas.
+  The matte/pose authoring helper is `tools/references/bake-hand-poses.py`.
+  These are edited reference frames, not the original proprietary rig/atlas.
+  The XR rig, its skin texture and now-unused model license were removed.
 - `freud-note.webp`: newly AI-generated American-$100-inspired art prop,
   with Freud replacing the portrait and a visible ART SPECIMEN marking. It is
   fictional artwork, not an authentic banknote or a historical document.
@@ -39,28 +36,32 @@ renderer and not a claim of pixel-identical reproduction.
 - `rogers-engraving.webp` and `james-engraving.webp`: newly AI-generated editorial
   portraits, not archival photographs. All four newspaper layouts/copy are new.
 - Geometry and shaders produce true thick refractive irregular glass, sudden
-  impact/debris, a forward camera rail, four curled burning notes, ember particles
-  and a deep corridor of subdivided papers peeling into sixteen long strips.
+  impact/debris, vertical glass travel, forward camera travel for four curled burning notes,
+  ember particles and independently thrown papers peeling/tumbling into 24 strips.
   There is no spiderweb crack overlay and no upward-scrolling fact-card rail.
 - Newspaper profiles identify Freud (1900), William James (1890), Carl Rogers
   (1951) and a dated 2025 gratitude research reading. No invented quotation is
   attributed to a historical person. Actual readable copy is in the HTML.
 
-## Audio
+## Audio — latest request
 
-Three new original, deterministic synthesized clips; no third-party samples or
-reference soundtrack are embedded:
+Only `assets/audio/glass-impact.mp3` remains: the original 2.5-second synthesized
+broadband/glass resonance effect. The gallop and score are removed, together with
+sound/tilt controls and all orientation requests. Gesture-unlocked playback is
+attempted only at visible impact; blocked playback is skipped rather than delayed.
+The glass-only authoring script is `tools/make-story-audio.py` (numpy and
+imageio-ffmpeg). No music or extra effects are generated or deployed.
 
-- `assets/audio/intro-gallop.mp3` — 4.8-second asymmetrical hoof-clop synthesis.
-- `assets/audio/glass-impact.mp3` — 2.5-second broadband impact/glass resonances.
-- `assets/audio/chapter-foreboding.mp3` — 24-second D-minor drone/pulse score.
+## Further extraction / fidelity
 
-Reproducible authoring script: `tools/make-story-audio.py` (numpy and
-imageio-ffmpeg). These are synthesized effects/music, not real field recordings.
-The intro cue is never replayed after the splash. No other site sound effects
-were added. Gesture unlocking, local mute preference, hidden-tab suspension,
-chapter-end hard stop and permission-based local-only tilt are documented in
-README. Browser policies may require pressing Sound before any cue can play.
+The source developer documents baked hand textures and per-strip tumbling:
+https://tympanus.net/codrops/2026/07/17/zero-the-engineering-behind-a-defiant-interactive-narrative/
+
+See `reference-capture.md` for Save All Resources, HAR and the body-only capture
+helper. The current sandbox cannot browse/capture the reference host's complete
+WebGL asset network. No full-scroll extension capture or original editable scene
+is claimed. Screen recordings include UI and occluded statistics; they are not
+silently shipped as an edited club-specific video.
 
 ## Typography
 
@@ -112,3 +113,5 @@ registration/payment/pass and PDF implementations are retained.
 New pre-WebGL rollback: `.rollback/before-3d-rebuild-6d7aa13.zip`, from
 `6d7aa13c20eb4725eb0d2e15a71aaa7bc1864bfb`, CRC-verified before rebuilding.
 All three horse files, current data and uploads remain unchanged.
+
+Pre-latest-correction backup: `.rollback/before-reference-correction-49ce5d8.zip`.

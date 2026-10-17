@@ -4,13 +4,16 @@ float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);return mix(mix(
 float fbm(vec2 p){float v=0.,a=.5;for(int i=0;i<4;i++){v+=a*noise(p);p=p*2.03+vec2(8.2,3.1);a*=.5;}return v;}`;
 export const paperVertex = `
 attribute float stripId; uniform float uTime,uTear,uSeed; varying vec2 vUv; varying vec3 vView;
-void main(){vUv=uv;vec3 p=position;
- float s=stripId, flutter=sin(uv.y*7.+uTime*.9+uSeed+s*3.7);
- float release=smoothstep(.02,.85,uv.y);
- p.z+=sin(p.y*4.2+uTime*.65+uSeed)*.07+cos(p.x*3.1+uSeed)*.10;
- p.x+=uTear*(sin(uv.y*6.5+uTime*.7+s*2.3+uSeed)*.32*release+(s-.5)*.65);
- p.z+=uTear*(flutter*.42*release+sin(s*17.+uSeed)*.30);
- p.y+=uTear*(sin(s*53.+uSeed)*.28+cos(uv.y*4.+s*5.+uTime*.4)*.10);
+float h(float n){return fract(sin(n*127.1+uSeed)*43758.5453);}
+void main(){vUv=uv;vec3 p=position;float s=stripId;
+ p.z+=sin(p.y*4.2+uTime*.65+uSeed)*.10+cos(p.x*3.1+uSeed)*.14;
+ float past=clamp((uTear-s)/.38,0.,1.),e=past*past;
+ float angle=e*(h(s*31.)-.5)*4.8;
+ vec2 q=vec2(p.x-(s-.5),p.y+.70);
+ q=mat2(cos(angle),sin(angle),-sin(angle),cos(angle))*q;
+ p.x=(s-.5)+q.x+e*sin(uv.y*5.3+uTime*.8+uSeed+s*6.)*.48;
+ p.y=q.y-.70-e*(.25+h(s*17.)*.75);
+ p.z+=e*(sin(uv.y*7.5+uTime*.7+s*9.+uSeed)*.65+sin(s*27.+uSeed)*.40);
  vec4 mv=modelViewMatrix*vec4(p,1.);vView=mv.xyz;gl_Position=projectionMatrix*mv;}`;
 export const paperFragment = `
 uniform sampler2D uMap;uniform float uOpacity; varying vec2 vUv; varying vec3 vView;
