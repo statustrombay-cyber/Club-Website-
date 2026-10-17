@@ -87,3 +87,20 @@ This is a **static-resource downloader**, not an executed/full-scroll browser
 capture. Computed URLs and worker/interaction-only loads may still be missing.
 It records failures and rejects a marketing redirect or script-stripped page.
 It is fixture-tested, not claimed as an actual successful source-site capture.
+
+
+## Latest inspection and environment blockers (18 October 2026)
+
+The new `university.html` is the correct narrative's HTML/CSS/font shell, but its
+scripts are stripped and it does not contain the hand/glass/audio assets. The
+embedded CSS/fonts have been recovered outside the project; the raw upload was
+moved out of the public root. Earlier irrelevant `part_aa`/`part_ab`/`part_ac`
+were removed after an external, CRC-verified backup.
+
+The Python downloader was actually run here: its source-host TLS connection was
+closed before HTML arrived; curl and Node independently failed too. A hosted
+GitHub Actions attempt was rejected because the GitHub connection lacks
+`workflows` permission. No active workflow was installed. The template is
+`recover-reference.yml.example`; reconnect GitHub in Arena with the required
+permission, if offered, before another hosted attempt. Success is not guaranteed.
+See `university-inspection-2026-10-18.md` for exact findings, hashes, and errors.

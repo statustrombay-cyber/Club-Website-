@@ -82,3 +82,13 @@ whose outbound browser/network allowlist still excludes that host.
 
 The full browser/DevTools workflow remains in `reference-capture.md`. Existing
 HD recordings do not need to be uploaded again.
+
+
+### Subsequent cleanup, 18 October
+
+At the user's request the irrelevant three split files were removed from the
+branch after a CRC-verified external backup. Their original bytes remain in Git
+history and `/home/user/reference-recovery/before-reference-cleanup-8481909.zip`.
+The new, correct-host HTML was inspected separately; see
+`university-inspection-2026-10-18.md`. Do not restore the deleted wrong-page files
+into the public site merely because this historical report mentions them.

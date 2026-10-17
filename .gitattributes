@@ -6,5 +6,7 @@ screen-*.mp4 export-ignore
 /.rollback/ export-ignore
 /*.mp4 export-ignore
 
-# User-uploaded split design-reference HTML stays in Git, never source/deploy exports.
+# Any re-uploaded reference dumps must stay out of source/deployment exports.
 /part_* export-ignore
+
+/university*.html export-ignore
