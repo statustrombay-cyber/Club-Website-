@@ -1,3 +1,7 @@
 # Recordings are design references, never part of GitHub source ZIP downloads.
 screen-*.mp4 export-ignore
 /tools/references/*.mp4 export-ignore
+
+# Never export local rollback archives or uploaded root recordings.
+/.rollback/ export-ignore
+/*.mp4 export-ignore

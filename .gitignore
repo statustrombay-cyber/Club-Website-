@@ -23,3 +23,7 @@ Thumbs.db
 # Screen recordings are studied outside the website, never shipped.
 /screen-*.mp4
 /tools/references/*.mp4
+
+# Rollback archive stays local; uploaded root videos are references.
+/.rollback/
+/*.mp4
