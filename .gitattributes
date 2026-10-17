@@ -5,3 +5,6 @@ screen-*.mp4 export-ignore
 # Never export local rollback archives or uploaded root recordings.
 /.rollback/ export-ignore
 /*.mp4 export-ignore
+
+# User-uploaded split design-reference HTML stays in Git, never source/deploy exports.
+/part_* export-ignore

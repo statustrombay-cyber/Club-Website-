@@ -71,3 +71,19 @@ change a banknote portrait as it curls using a simple edit. Full video deploymen
 would also be a responsive/seek-performance trade-off and should not be called
 an editable original scene. Only caption-free hand artwork is baked into this
 revision; no source MP4, XP, source statistics or source navigation is deployed.
+
+## Android/Termux without a desktop Chrome
+
+The October 17 split upload was successfully recovered, but it contains the
+`www.zero.university` marketing homepage, not the `why.zero.university`
+narrative. See `upload-recovery-2026-10-17.md` for byte counts and inspected assets.
+
+Use the standalone Python 3 script `tools/recover-zero-assets.py` from a directory
+outside this project. No pip/browser is required. It targets the correct URL,
+keeps downloaded JS intact, follows literal resource references, and packages a
+manifest/files ZIP (automatically split into 20 MiB parts if necessary).
+
+This is a **static-resource downloader**, not an executed/full-scroll browser
+capture. Computed URLs and worker/interaction-only loads may still be missing.
+It records failures and rejects a marketing redirect or script-stripped page.
+It is fixture-tested, not claimed as an actual successful source-site capture.
