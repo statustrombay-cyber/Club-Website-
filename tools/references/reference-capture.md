@@ -46,12 +46,17 @@ Option B — body-only Playwright/CDP capture, no extension required:
 1. Install optional developer dependency: `npm install --no-save --package-lock=false playwright-core`.
 2. Launch a **fresh temporary Chrome profile** with remote debugging enabled,
    e.g. `google-chrome --remote-debugging-port=9222 --user-data-dir=/tmp/zero-reference-profile`.
-3. Open https://why.zero.university/ in that Chrome.
+3. Open only https://why.zero.university/ in that fresh Chrome; close unrelated tabs.
 4. Run `node tools/capture-reference.mjs /a/folder/outside/the/project/zero-capture`.
 5. Once “Capture armed” appears, reload the tab, complete the gates and scroll
    the full site manually. Press Enter in the terminal only when finished.
 6. ZIP the output folder. It contains response bodies plus URL/hash/MIME mapping,
    never request cookies, auth headers, browser storage or a browser profile.
+
+The capture helper has been runtime-checked against controlled local Chrome
+fixtures (including worker fetches); this is not a capture of the original site.
+Review response bodies and URLs before sharing; URLs can carry identifiers or
+public API keys even in a fresh profile.
 
 Then exact accessible GLB/DRACO/KTX2/atlases and compiled JS can be inspected,
 licensed/reusable components identified, and the choreography adapted rather
