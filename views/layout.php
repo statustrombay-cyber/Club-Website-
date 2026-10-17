@@ -67,10 +67,12 @@ $nav = [
   <link rel="stylesheet" href="/assets/app.css">
   <?php if ($splash): ?>
     <link rel="stylesheet" href="/assets/story.css">
+    <script src="/assets/audio.js" defer></script>
     <script src="/assets/story.js" defer></script>
   <?php endif; ?>
 </head>
 <body class="<?= e($bodyClass) ?>">
+
 
   <?php /* The seven circles assemble automatically, then the veil dissolves.
            CSS also dismisses it without JavaScript. Motion preferences and
@@ -82,6 +84,12 @@ $nav = [
         <?= file_get_contents(MT_ASSETS . '/motion/intro-word.svg') ?>
       </div>
     </div>
+  <?php endif; ?>
+
+  <?php if ($splash): ?>
+    <button class="sound-control" id="soundButton" type="button" data-no-butterfly aria-label="Enable sound" aria-pressed="false" data-sound="off">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path class="sound-waves" d="M16 8c3 2 3 6 0 8m3-11c5 4 5 10 0 14"/><path class="sound-slash" d="m16 9 5 6m0-6-5 6"/></svg><span>Sound</span>
+    </button>
   <?php endif; ?>
 
   <div class="bubble-field" aria-hidden="true">

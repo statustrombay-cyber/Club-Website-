@@ -38,42 +38,47 @@
 .story-archive h4 { padding: 12px 0; border-block: 1px solid #786d5a70; font-family: Georgia, serif; font-size: 1rem; }
 .story-archive p { margin: 14px 0 0; font: 400 .85rem/1.6 Georgia, serif; }
 .story-art-note { max-width: 75ch; color: var(--ink-soft); font-size: .72rem; }
-/* Enhancement is attached only once a drawing context actually exists. No JS,
-   failed assets, Save-Data or reduced motion keep the entire readable story. */
-.story-enhanced .story-track { height: 650svh; }
-.story-enhanced .story-stage { position: sticky; top: 0; height: 100svh; min-height: 0; background: transparent; }
-.story-enhanced .story-canvas { display: block; }
-.story-enhanced .story-static-art { display: none; }
-.story-enhanced .story-glass { position: absolute; inset: 0; display: block; max-width: none; padding: 0; margin: 0; perspective: 1100px; pointer-events: none; }
-.story-enhanced .story-shard { position: absolute; top: 0; left: 0; width: 320px; height: 250px; min-height: 0; padding: 28px; border: none; opacity: 0; will-change: transform; transform-style: preserve-3d; clip-path: polygon(0 8%, 93% 0, 100% 93%, 6% 100%);  background: linear-gradient(138deg, #fff7ee21, #ffffff03 34%, #ffffff04 58%, #fff7ee18); }
-.story-enhanced .story-shard-message { width: 360px; height: 240px; }
-.story-shard::before, .story-shard::after { content: ""; position: absolute; inset: 0; pointer-events: none; }
-.story-enhanced .story-shard::before { background: linear-gradient(146deg, #d7f6ffb5, transparent 22% 71%, #f5d2a276), linear-gradient(76deg, transparent 38%, #fff2 38.3%, transparent 39%); clip-path: polygon(0 8%, 93% 0, 100% 93%, 6% 100%, 0 8%, .7% 8.6%, 6.6% 99.3%, 99.3% 92.6%, 92.8% .7%, .7% 8.6%); }
-.story-enhanced .story-shard::after { background: linear-gradient(151deg, transparent 32%, #fff2 32.15%, transparent 32.4%), linear-gradient(127deg, transparent 72%, #ffdab615 72.1%, transparent 72.25%); }
-.story-enhanced .story-type { position: absolute; top: 50%; left: 4%; width: 92%; padding: 0 0 30px; background: none; pointer-events: none; transform: translateY(-50%); text-shadow: 0 0 36px #a8ffc438, 0 0 90px #aeffc525; }
-.story-enhanced .story-type > span { opacity: 0; will-change: transform, opacity; }
+/* The entire stage is viewport-height, not small-viewport height: this avoids
+   the pale strip left by collapsing mobile browser bars. No canvas baseline. */
+.story-pending .story-track, .story-enhanced .story-track { height: 760svh; }
+.story-pending .story-stage, .story-enhanced .story-stage { position: sticky; top: 0; height: 100vh; height: 100dvh; min-height: 0; margin: 0; border: 0; background: transparent; overflow: clip; }
+.story-pending .story-stage { background: #270604 url('/assets/story/velvet-curtain.webp') center / cover; }
+.story-enhanced .story-canvas { display: block; position: absolute; left: -1px; top: -1px; width: calc(100% + 2px); height: calc(100% + 2px); margin: 0; vertical-align: top; }
+.story-pending .story-static-art, .story-enhanced .story-static-art { display: none; }
+.story-pending .story-glass, .story-enhanced .story-glass { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: normal; }
+.story-enhanced .story-type, .story-pending .story-type { position: absolute; top: 50%; left: 5%; width: 90%; padding: 0 0 30px; background: none; pointer-events: none; transform: translateY(-50%); text-shadow: 0 0 36px #a8ffc438; }
+.story-enhanced .story-type > span, .story-pending .story-type > span { opacity: 0; transform-origin: 50% 50%; }
+.mind-story:not(.story-enhanced) .story-controls { display: none; }
+.story-controls { position: absolute; z-index: 4; bottom: max(86px, calc(env(safe-area-inset-bottom) + 74px)); right: 18px; }
+.story-tilt { border: 1px solid #ffffff40; border-radius: 30px; padding: 9px 14px; color: #f2f7ef; background: #0c170d80; font: 500 12px var(--font-body, sans-serif); backdrop-filter: blur(10px); }
+.story-tilt[hidden] { display: none; }
+.story-tilt:focus-visible, .sound-control:focus-visible { outline: 2px solid #e4b78a; outline-offset: 5px; }
+/* Research remains available but is not an opaque full-width white band. */
+.story-research { background: transparent; padding-block: 16px; }
+.story-research summary { width: fit-content; max-width: 100%; padding: 12px 18px; border-radius: 24px; background: #fcf8f3cc; backdrop-filter: blur(10px); }
+.story-research[open] { background: #fcf8f3ed; }
+.sound-control { position: fixed; z-index: 10020; bottom: max(18px, env(safe-area-inset-bottom)); left: 18px; display: flex; align-items: center; gap: 8px; padding: 10px 14px; border: 1px solid #ffffff35; border-radius: 30px; color: #fff9ed; background: #171816a6; backdrop-filter: blur(12px); font: 500 12px var(--font-body, sans-serif); cursor: pointer; visibility: hidden; }
+body.intro-pending .sound-control, body.in-psychology-story .sound-control { visibility: visible; }
+.sound-control svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.sound-control[data-sound="off"] .sound-waves, .sound-control[data-sound="on"] .sound-slash { display: none; }
 @media (max-width: 600px) {
   .story-glass { grid-template-columns: minmax(0, 1fr); max-width: 420px; }
   .story-shard { padding: 26px 18px; }
-  .story-enhanced .story-shard { width: 252px; height: 236px; padding: 25px 22px; }
-  .story-enhanced .story-shard h3 { font-size: 43px; }
-  .story-enhanced .story-shard p { font-size: 17px; }
-  .story-enhanced .story-shard-note { font-size: 11px; line-height: 1.5; margin-top: 9px; }
-  .story-enhanced .story-shard-message { width: 294px; height: 202px; }
-  .story-enhanced .story-shard-message h2, .story-enhanced .story-shard-message h3 { font-size: 47px; }
-  .story-enhanced .story-shard-message p { font-size: 17px; }
   .story-research summary span { display: block; margin: 6px 0 0 18px; }
   .story-archive { grid-template-columns: minmax(0, 1fr); gap: 20px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .story-enhanced .story-track { height: auto; }
+  .story-pending .story-track, .story-enhanced .story-track { height: auto; }
   .story-enhanced .story-stage { position: relative; height: auto; }
   .story-enhanced .story-canvas { display: none; }
 }
 @media print {
-  .story-track, .story-enhanced .story-track { height: auto; }
+  .story-track, .story-pending .story-track, .story-enhanced .story-track { height: auto; }
   .story-enhanced .story-stage { position: relative; height: auto; }
   .story-canvas, .story-enhanced .story-canvas, .story-enhanced .story-glass, .story-enhanced .story-type { display: none; }
+  .sound-control, .story-controls { display: none !important; }
+  .story-pending .story-glass, .story-enhanced .story-glass { display: grid; position: relative; width: auto; height: auto; margin: auto; overflow: visible; clip-path: none; }
+  .story-pending .story-stage { position: relative; height: auto; }
   .story-research { background: white; }
   .story-research > * { display: block; }
 }

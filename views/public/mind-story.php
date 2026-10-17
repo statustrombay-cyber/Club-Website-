@@ -7,6 +7,7 @@
 <section class="mind-story" id="human-story" aria-labelledby="humanStoryTitle">
   <div class="story-track black-chapter">
     <div class="story-stage">
+      <div class="story-controls" data-no-butterfly><button class="story-tilt" type="button" data-enable-tilt aria-pressed="false" hidden>Enable tilt</button></div>
       <canvas class="story-canvas" aria-hidden="true"></canvas>
       <div class="story-glass">
         <article class="story-shard story-shard-message">
@@ -36,7 +37,7 @@
           <p>There is more to every mind.</p>
         </article>
       </div>
-      <div class="story-static-art" aria-hidden="true"><img src="/assets/story/freud-note.webp" alt="" width="1280" height="514" loading="lazy" decoding="async"></div>
+      <div class="story-static-art" aria-hidden="true"><img src="/assets/story/freud-note.webp" alt="" width="1568" height="665" loading="lazy" decoding="async"></div>
       <h2 class="story-type" aria-label="This club focuses on humans.">
         <span class="story-type-club" aria-hidden="true">this <em>c</em>lub,</span>
         <span class="story-type-focus" aria-hidden="true">focuses on</span>

@@ -52,7 +52,7 @@ const files = collect(ROOT);
 for (const [rel, absSource] of files) {
   const target = '/site/' + rel;
   await ensureDir(target.slice(0, target.lastIndexOf('/')));
-  if (/\.(png|jpe?g|webp|gif|ico|pdf|mp4|m4v|mov|webm)$/i.test(rel)) {
+  if (/\.(png|jpe?g|webp|gif|ico|pdf|mp4|m4v|mov|webm|mp3|glb|woff2)$/i.test(rel)) {
     await php.writeFile(target, new Uint8Array(fs.readFileSync(absSource)));
   } else {
     await php.writeFile(target, fs.readFileSync(absSource, 'utf8'));
@@ -2185,27 +2185,42 @@ ok('the menu renders with its chip, on the live page',
 
 console.log('\n— the HD psychology story —');
 const storySource = fs.readFileSync(path.join(ROOT, 'assets/story.js'), 'utf8');
+const sceneSource = fs.readFileSync(path.join(ROOT, 'tools/story/scene.js'), 'utf8');
+const shaderSource = fs.readFileSync(path.join(ROOT, 'tools/story/shaders.js'), 'utf8');
+const audioSource = fs.readFileSync(path.join(ROOT, 'assets/audio.js'), 'utf8');
 const storyCss = fs.readFileSync(path.join(ROOT, 'assets/story.css'), 'utf8');
 const storyView = fs.readFileSync(path.join(ROOT, 'views/public/mind-story.php'), 'utf8');
 const hdReference = JSON.parse(fs.readFileSync(path.join(ROOT, 'tools/references/zero-hd-manifest.json'), 'utf8'));
 ok('the psychology sequence is inserted after the working wire chapter',
   home.body.indexOf('id="human-story"') > home.body.indexOf('class="brand-chapter') && home.body.indexOf('id="human-story"') < home.body.indexOf('class="happiness-section"'));
 ok('the story runtime is inlined and initialises after markup exists',
-  home.body.includes('function startStory()') && storySource.includes("document.addEventListener('DOMContentLoaded', startStory") && !home.body.includes('src="/assets/story.js"'));
+  home.body.includes('function startStory()') && storySource.includes("document.addEventListener('DOMContentLoaded',startStory") && !home.body.includes('src="/assets/story.js"'));
 ok('the glass keeps its qualifier and primary-source citations',
   storyView.includes('283 participants · low-certainty evidence') && storyView.includes('PMC10393216') && storyView.includes('PMC12280877'));
 ok('newspapers carry historical profiles and a dated research reading, not invented quotations',
   ['Sigmund Freud', 'Carl Rogers', 'William James', 'Research reading · 2025', 'not historical newspaper facsimiles'].every(text => storyView.includes(text)));
 ok('the chapter has native-scroll, motion-preference and missing-asset fallbacks',
-  storySource.includes('staticStory()') && storySource.includes('Illustration timed out') && storySource.includes("motion.addEventListener('change', configure)") && !storySource.includes("addEventListener('wheel'"));
+  storySource.includes('staticStory()') && storySource.includes('3D engine timed out') && storySource.includes("motion.addEventListener('change',configure)") && !storySource.includes("addEventListener('wheel'"));
 ok('the decorative canvas stays out of the accessible tree but the actual facts do not',
   storyView.includes('class="story-canvas" aria-hidden="true"') && storyView.includes('<article class="story-shard">') && !storySource.includes("shard.style.visibility"));
 ok('the classic herd is revealed by clearing the canvas, not replaced by another recording',
-  storySource.includes('ctx.clearRect(0, 0, W, H)') && storySource.includes('1 - smooth(.925, .995, p)') && !/<video|\.mp4/i.test(storyView + storySource));
+  sceneSource.includes('1-smooth(.945,.998,p)') && sceneSource.includes("phase==='herd'") && !/<video|\.mp4/i.test(storyView + storySource));
 ok('both story typefaces are self-hosted with their OFL notices',
   ['bodoni-moda-latin.woff2', 'pinyon-script-latin.woff2', 'BodoniModa-OFL.txt', 'PinyonScript-OFL.txt'].every(name => fs.existsSync(path.join(ROOT, 'assets/fonts', name))) && !/https?:/.test(storyCss));
-ok('all four story images are compact non-recording assets',
-  fs.readdirSync(path.join(ROOT, 'assets/story')).length === 4 && fs.readdirSync(path.join(ROOT, 'assets/story')).every(name => name.endsWith('.webp')) && fs.readdirSync(path.join(ROOT, 'assets/story')).reduce((sum, name) => sum + fs.statSync(path.join(ROOT, 'assets/story', name)).size, 0) < 500000);
+ok('the actual rig, local scene bundle and MIT licenses ship without source recordings',
+  ['story/hand-rig.glb','story/HAND-LICENSE.txt','vendor/story-3d.js','vendor/THREE-LICENSE.txt'].every(name => fs.existsSync(path.join(ROOT,'assets',name))) && fs.statSync(path.join(ROOT,'assets/vendor/story-3d.js')).size < 800000);
+ok('the hand uses skinning, articulated joints and physical glass, not a spiderweb overlay',
+  sceneSource.includes('parent.attach(joint)') && sceneSource.includes('bone.node.rotateX') && sceneSource.includes('MeshPhysicalMaterial') && !/spiderweb|crackPaths/.test(sceneSource));
+ok('facts and bills are approached along the camera rail rather than scrolling upward',
+  sceneSource.includes('function cameraRail') && sceneSource.includes('camera.position.z-g.position.z') && sceneSource.includes('i<4') && shaderSource.includes('uBurn'));
+ok('the flood uses 16-strip subdivided pages and long curling vertex deformation',
+  sceneSource.includes('shredGeometry(16,28)') && sceneSource.includes('matches?48:72') && shaderSource.includes('uTear*(flutter'));
+ok('phone tilt requires a gesture/permission and desktop pointer parallax is available',
+  sceneSource.includes('DeviceOrientationEvent.requestPermission()') && sceneSource.includes("'deviceorientation'") && sceneSource.includes("'pointermove'") && storyView.includes('data-no-butterfly'));
+ok('dynamic viewport coverage and subpixel canvas bleed prevent a baseline/gap strip',
+  storyCss.includes('height: 100dvh') && storyCss.includes('width: calc(100% + 2px)') && storyCss.includes('.story-research { background: transparent'));
+ok('three scoped audio assets have gesture-unlock, mute, visibility and chapter-exit guards',
+  ['intro-gallop','glass-impact','chapter-foreboding'].every(name=>fs.existsSync(path.join(ROOT,'assets/audio',name+'.mp3'))) && audioSource.includes('context.resume()') && audioSource.includes('progress<0||progress>=.985') && audioSource.includes('introDone') && audioSource.includes('visibilitychange'));
 ok('the full-resolution reference manifest preserves all eleven recoverable clips',
   hdReference.parts.length === 11 && hdReference.parts.every((part, i) => part.width === 1080 && part.height === 2400 && part.gitPath === `video_part_${String(i).padStart(2, '0')}.mp4` && /^[a-f0-9]{40}$/.test(part.gitBlob) && /^[a-f0-9]{64}$/.test(part.sha256)));
 ok('root reference MP4s are no longer in the live tree', !fs.readdirSync(ROOT).some(name => /\.mp4$/i.test(name)));

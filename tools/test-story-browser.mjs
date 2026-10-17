@@ -8,6 +8,7 @@ import { chromium } from 'playwright-core';
 import c from '@sparticuz/chromium';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import {screenshotPixels} from './png-pixels.mjs';
 const BASE = process.env.MT_BASE_URL || 'http://localhost:4173';
 const OUT = process.env.MT_SCREENSHOT_DIR;
 const GROUP = process.env.MT_STORY_GROUP || 'all';
@@ -22,76 +23,85 @@ async function at(p, progress) {
     scrollTo({ top: track.getBoundingClientRect().top + scrollY + (track.offsetHeight - innerHeight) * progress, behavior: 'instant' });
   }, progress);
   await p.waitForTimeout(180);
+  if(await p.locator('.story-enhanced').count())await p.waitForFunction(progress=>Math.abs(+document.querySelector('.mind-story').style.getPropertyValue('--story-progress')-progress)<.003,progress,{timeout:25000});
 }
-async function pixels(p) {
-  return p.evaluate(() => {
-    const c = document.querySelector('.story-canvas'), g = c.getContext('2d'), data = g.getImageData(0, 0, c.width, c.height).data;
-    let white = 0, opaque = 0, signature = 0;
-    for (let i = 0; i < data.length; i += 256) {
-      if (data[i + 3] > 10) opaque++;
-      if (data[i] > 150 && data[i + 1] > 150 && data[i + 2] > 125 && data[i + 3] > 100) white++;
-      signature = (signature + data[i] * 3 + data[i + 1] * 7 + data[i + 2] * 11) % 1000000007;
-    }
-    return { white, opaque, signature };
-  });
-}
+async function pixels(p) {return screenshotPixels(await p.screenshot({timeout:60000}));}
+async function ready(p){await p.waitForFunction(()=>document.querySelector('.mind-story').dataset.storyRenderer==='webgl',null,{timeout:18000});await p.waitForFunction(()=>+document.querySelector('.mind-story').dataset.renderFrame>0);}
 try {
-  for (const width of group('story') ? [320, 390, 768, 1440] : []) {
-    const p = await b.newPage({ viewport: { width, height: 844 } });
-    const errors = []; p.on('pageerror', error => errors.push(error.message));
-    await p.goto(BASE + '/#top', { waitUntil: 'load' });
-    ok(await p.locator('.mind-story.story-enhanced').count(), `${width}: inlined head script initialises after the DOM`);
-    await at(p, .12);
-    await p.waitForFunction(() => document.querySelector('.story-canvas').getContext('2d').getImageData(1, 1, 1, 1).data[0] > 0);
-    await p.waitForTimeout(300);
-    const y = await p.locator('.story-shard').nth(1).evaluate(el => new DOMMatrix(getComputedStyle(el).transform).m42);
-    const glass = await pixels(p);
-    ok(await p.locator('.mind-story').getAttribute('data-story-phase') === 'glass', `${width}: hand and glass phase responds to scroll`);
-    await at(p, .405); const bill = await pixels(p);
-    ok(bill.white > 40 && bill.signature !== glass.signature, `${width}: Freud artwork is actually drawn, not a placeholder`);
-    await at(p, .545); const burned = await pixels(p);
-    ok(burned.white < bill.white * .35, `${width}: scroll burns away the note's pixels`);
-    await at(p, .66);
-    ok(await p.locator('.story-type > span').evaluateAll(els => els.every(el => +getComputedStyle(el).opacity > .98)), `${width}: the complete club/human statement is readable`);
-    await at(p, .735); const paper = await pixels(p);
-    ok(paper.white > 90 && await p.locator('.mind-story').getAttribute('data-story-phase') === 'newspaper', `${width}: illustrated psychology newspapers render`);
-    await at(p, .84); const torn = await pixels(p);
-    ok(torn.signature !== paper.signature, `${width}: torn pieces change positions and curl in perspective`);
-    await at(p, .999); const herd = await pixels(p);
-    ok(herd.opaque === 0 && await p.locator('#heroVideo').count() === 1, `${width}: illustration clears completely to reveal the original herd`);
-    await at(p, .12);
-    const restored = await p.locator('.story-shard').nth(1).evaluate(el => new DOMMatrix(getComputedStyle(el).transform).m42);
-    ok(Math.abs(y - restored) < 2, `${width}: reverse scrolling restores the glass choreography`);
-    ok(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${width}: no horizontal page overflow`);
-    if (OUT) await p.screenshot({ path: `${OUT}/story-${width}.png` });
-    await p.emulateMedia({ reducedMotion: 'reduce' });
-    await p.waitForTimeout(100);
-    ok(!await p.locator('.mind-story.story-enhanced').count() && await p.locator('.story-shard').first().isVisible(), `${width}: changing to reduced motion restores a readable static story`);
-    ok(await p.locator('.story-track').evaluate(el => el.offsetHeight < innerHeight * 4), `${width}: static mode has no six-screen empty scroll trap`);
-    ok(errors.length === 0, `${width}: no JavaScript errors: ${errors.join('; ')}`);
-    await p.close();
+  if(group('audio')){
+    const p=await b.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true}),errors=[];p.on('pageerror',e=>errors.push(e.message));
+    await p.addInitScript(()=>{
+      window.__audioTrace=[];window.__permissionRequests=0;
+      const AC=window.AudioContext||window.webkitAudioContext,create=AC.prototype.createBufferSource;
+      AC.prototype.createBufferSource=function(){const source=create.call(this),start=source.start,stop=source.stop;source.start=function(...args){window.__audioTrace.push({kind:'start',loop:this.loop,duration:this.buffer&&this.buffer.duration});return start.apply(this,args);};source.stop=function(...args){window.__audioTrace.push({kind:'stop',loop:this.loop});return stop.apply(this,args);};return source;};
+      DeviceOrientationEvent.requestPermission=()=>{window.__permissionRequests++;return Promise.resolve('granted');};
+    });
+    await p.goto(BASE+'/',{waitUntil:'load'});await p.locator('#soundButton').click();
+    await p.waitForFunction(()=>window.__audioTrace.some(e=>e.kind==='start'&&!e.loop&&e.duration>4&&e.duration<6));
+    ok(await p.locator('#splash').isVisible(),'sound gesture starts galloping while the splash still runs; never skips it');
+    await p.waitForFunction(()=>document.getElementById('splash').hidden,null,{timeout:11000});
+    ok(await p.evaluate(()=>window.__audioTrace.some(e=>e.kind==='stop'&&!e.loop)),'intro exit stops its gallop');
+    await at(p,.09);await ready(p);await p.waitForTimeout(800);
+    ok(await p.evaluate(()=>window.__audioTrace.some(e=>e.kind==='start'&&!e.loop&&e.duration>2&&e.duration<3)),'impact triggers the decoded glass effect, not a later arbitrary cue');
+    await at(p,.16);await p.waitForFunction(()=>window.__audioTrace.some(e=>e.kind==='start'&&e.loop));
+    ok(await p.locator('#soundButton').getAttribute('data-chapter-audio')==='on','foreboding loop plays only in the active chapter');
+    const y=await p.locator('.mind-story').getAttribute('data-hand-yaw');await p.locator('[data-enable-tilt]').click();
+    ok(await p.evaluate(()=>window.__permissionRequests===1),'phone tilt permission is requested by the explicit button gesture');
+    await p.evaluate(()=>{const send=(gamma,beta)=>{const e=new Event('deviceorientation');Object.defineProperties(e,{gamma:{value:gamma},beta:{value:beta}});dispatchEvent(e);};send(0,0);send(25,0);});await p.waitForTimeout(1000);
+    ok(await p.locator('.mind-story').getAttribute('data-hand-yaw')!==y&&+(await p.locator('.mind-story').getAttribute('data-glass-x'))>0,'moving the phone right moves the articulated hand and glass right');
+    const overlap=await p.evaluate(()=>{const a=document.querySelector('[data-enable-tilt]').getBoundingClientRect(),b=document.querySelector('.to-top')?.getBoundingClientRect();return b&&a.left<b.right&&a.right>b.left&&a.top<b.bottom&&a.bottom>b.top;});
+    ok(!overlap,'tilt control does not collide with the return-to-top button');
+    await p.locator('[data-enable-tilt]').click();ok(await p.evaluate(()=>window.__permissionRequests===1)&&await p.locator('[data-enable-tilt]').getAttribute('aria-pressed')==='false','turning tilt off never requests permission again');
+    await p.evaluate(()=>{DeviceOrientationEvent.requestPermission=()=>Promise.resolve('denied');});await p.locator('[data-enable-tilt]').click();ok(await p.locator('[data-enable-tilt]').textContent()==='Tilt not allowed','denied sensor permission leaves scroll/pointer fallback operational');
+    await p.locator('#soundButton').click();ok(await p.locator('#soundButton').getAttribute('data-sound')==='off','mute acts directly, without a butterfly delay');
+    await p.locator('#soundButton').click();await p.waitForTimeout(100);ok(await p.locator('#soundButton').getAttribute('data-sound')==='on','visitor can explicitly re-enable sound');
+    await at(p,.95);await at(p,.999);await p.waitForTimeout(100);
+    ok(await p.locator('#soundButton').getAttribute('data-chapter-audio')==='off'&&await p.evaluate(()=>window.__audioTrace.filter(e=>e.kind==='stop'&&e.loop).length>=2),'chapter exit silences/stops the score, including a rapid exit during its fade');
+    const hoofCount=await p.evaluate(()=>window.__audioTrace.filter(e=>e.kind==='start'&&!e.loop&&e.duration>4).length);await p.locator('#join').evaluate(e=>e.scrollIntoView({behavior:'instant'}));await p.waitForTimeout(400);
+    ok(await p.evaluate(()=>window.__audioTrace.filter(e=>e.kind==='start'&&!e.loop&&e.duration>4).length)===hoofCount,'no gallop or other late intro effect follows the chapter');
+    ok(!errors.length,'audio and tilt have no uncaught errors: '+errors.join('; '));await p.close();
   }
-  // Asset and platform failures must retain real HTML, rather than a black stage.
-  for (const mode of group('fallback') ? ['404', 'corrupt', 'held', 'no-canvas', 'no-observer', 'no-js'] : []) {
-    const p = await b.newPage({ viewport: { width: 390, height: 844 }, javaScriptEnabled: mode !== 'no-js' });
-    const errors = []; p.on('pageerror', e => errors.push(e.message));
-    if (mode === 'no-canvas') await p.addInitScript(() => { HTMLCanvasElement.prototype.getContext = () => null; });
-    if (mode === 'no-observer') await p.addInitScript(() => { delete window.IntersectionObserver; });
-    if (['404', 'corrupt', 'held'].includes(mode)) await p.route('**/assets/story/hand.webp', route => mode === 'held' ? new Promise(() => {}) : route.fulfill({ status: mode === '404' ? 404 : 200, contentType: 'image/webp', body: 'not-an-image' }));
-    await p.goto(BASE + '/#top', { waitUntil: 'load' });
-    if (mode === 'no-observer') {
-      await at(p, .42); await p.waitForTimeout(700);
-      ok((await pixels(p)).white > 40, 'no observer: scroll-only loading and rendering work');
-    } else {
-      if (['404', 'corrupt', 'held'].includes(mode)) {
-        await at(p, .12);
-        await p.waitForFunction(() => !document.querySelector('.mind-story').classList.contains('story-enhanced'), null, { timeout: 11000 });
-      }
-      ok(!await p.locator('.mind-story.story-enhanced').count(), `${mode}: enhancement fails open to real HTML`);
-      ok(await p.locator('.story-track').evaluate(el => el.offsetHeight < innerHeight * 4), `${mode}: no dead scroll runway`);
-    }
-    ok(errors.length === 0, `${mode}: no uncaught script errors`);
-    await p.close();
+  for (const width of group('story') ? [320,390,768,1440] : []) {
+    const p=await b.newPage({viewport:{width,height:844}}),errors=[];
+    p.on('pageerror',e=>errors.push(e.message));p.on('console',m=>{if(m.type()==='error'&&/shader|WebGLProgram/.test(m.text()))errors.push(m.text());});
+    await p.goto(BASE+'/#top',{waitUntil:'load'});
+    ok(await p.locator('.story-pending').count(),`${width}: DOM-ready boot reserves the chapter without loading WebGL into the hero`);
+    await at(p,.09);await ready(p);await p.waitForTimeout(900);const glass=await pixels(p);
+    const initial=await p.locator('.mind-story').evaluate(r=>({...r.dataset}));
+    ok(initial.storyPhase==='glass'&&glass.dark>glass.samples*.1&&glass.white>20,`${width}: hand, curtain and thick glass actually render in WebGL`);
+    await at(p,.16);const forward=await p.locator('.mind-story').evaluate(r=>({...r.dataset}));
+    ok(+forward.cameraZ<+initial.cameraZ&&forward.factY===initial.factY,`${width}: camera advances through stationary-height facts, not upward-scrolling panels`);
+    const bounds=await p.locator('.story-stage').evaluate(el=>{const r=el.getBoundingClientRect(),c=el.querySelector('canvas').getBoundingClientRect();return {top:r.top,height:r.height,screen:innerHeight,canvasTop:c.top,canvasBottom:c.bottom};});
+    ok(Math.abs(bounds.top)<2&&Math.abs(bounds.height-bounds.screen)<2&&bounds.canvasTop<=0&&bounds.canvasBottom>=bounds.screen,`${width}: renderer covers the complete viewport without a strip`);
+    await at(p,.42);const bill=await pixels(p);
+    ok(bill.white>60&&bill.signature!==glass.signature&&await p.locator('.mind-story').getAttribute('data-bill-count')==='4',`${width}: four three-dimensional Freud dollar props are present`);
+    await at(p,.565);const burnt=await pixels(p);ok(burnt.white<bill.white*.35,`${width}: irregular fire consumes the notes`);
+    await at(p,.66);ok(await p.locator('.story-type > span').evaluateAll(es=>es.every(e=>+getComputedStyle(e).opacity>.98)),`${width}: the human statement is readable`);
+    await at(p,.78);const paper=await pixels(p);await at(p,.88);const strips=await pixels(p);
+    ok(paper.white>60&&paper.dark>paper.samples*.2,`${width}: flooding pages retain a visible deep tunnel`);
+    ok(strips.signature!==paper.signature&&await p.locator('.mind-story').getAttribute('data-strip-count')==='16',`${width}: sheets peel into long wavering strips, not polygon confetti`);
+    if(OUT)await p.screenshot({path:OUT+`/story-3d-${width}.png`,timeout:60000});
+    await at(p,.999);ok(await p.locator('.story-canvas').evaluate(c=>+getComputedStyle(c).opacity)<.001&&await p.locator('#heroVideo').count()===1,`${width}: scene becomes transparent over the original herd`);
+    await at(p,.09);ok(await p.locator('.mind-story').getAttribute('data-camera-z')===initial.cameraZ,`${width}: reverse scrolling restores the depth choreography`);
+    ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`${width}: no horizontal overflow`);
+    await p.emulateMedia({reducedMotion:'reduce'});await p.waitForTimeout(150);
+    ok(!await p.locator('.story-enhanced').count()&&await p.locator('.story-shard').first().isVisible(),`${width}: changing motion preference restores actual readable HTML`);
+    ok(await p.locator('.story-track').evaluate(e=>e.offsetHeight<innerHeight*4),`${width}: static mode has no empty runway`);
+    ok(!errors.length,`${width}: no JavaScript or shader errors: ${errors.join('; ')}`);await p.close();
+  }
+  for (const mode of group('fallback') ? ['404','corrupt','held','engine-404','no-canvas','no-observer','no-js','save-data'] : []) {
+    const p=await b.newPage({viewport:{width:390,height:844},javaScriptEnabled:mode!=='no-js'}),errors=[];p.on('pageerror',e=>errors.push(e.message));
+    if(mode==='no-canvas')await p.addInitScript(()=>{HTMLCanvasElement.prototype.getContext=()=>null;});
+    if(mode==='no-observer')await p.addInitScript(()=>{delete window.IntersectionObserver;});
+    if(mode==='save-data')await p.addInitScript(()=>{Object.defineProperty(navigator,'connection',{value:{saveData:true}});});
+    if(['404','corrupt','held'].includes(mode))await p.route('**/assets/story/hand-rig.glb',route=>mode==='held'?new Promise(()=>{}):route.fulfill({status:mode==='404'?404:200,contentType:'model/gltf-binary',body:'invalid-model'}));
+    if(mode==='engine-404')await p.route('**/assets/vendor/story-3d.js',route=>route.fulfill({status:404,body:''}));
+    await p.goto(BASE+'/#top',{waitUntil:'load'});
+    if(mode==='no-observer'){await at(p,.42);await ready(p);ok((await pixels(p)).white>40,'no observer: scroll-only scene loading and real rendering work');}
+    else{if(!['no-js','save-data'].includes(mode)){await at(p,.12);await p.waitForFunction(()=>document.querySelector('.mind-story').dataset.storyRenderer==='static',null,{timeout:15000});}
+      ok(!await p.locator('.story-enhanced,.story-pending').count(),`${mode}: failure opens into real HTML`);
+      ok(await p.locator('.story-track').evaluate(e=>e.offsetHeight<innerHeight*4),`${mode}: no dead scroll runway`);}
+    ok(!errors.length,`${mode}: no uncaught errors`);await p.close();
   }
   for (const [width, route, formSelector, api] of group('forms') ? [
     [390, '/#join', '#membershipForm', '/api/submissions'],
@@ -139,7 +149,7 @@ try {
     ok(!await form.locator('button[type="submit"]').isDisabled() && (await form.locator('.form-status').textContent()).includes('Audit retry message'), `${width}: errors leave the form ready to retry`);
     if (formSelector === '#membershipForm') {
       await name.focus(); await p.waitForTimeout(650);
-      await at(p, .42); await p.waitForTimeout(3500);
+      await at(p, .42); await ready(p); await p.waitForFunction(()=>document.querySelector('.nav-butterfly').classList.contains('butterfly-away'),null,{timeout:15000});
       ok(await p.locator('.nav-butterfly.butterfly-away').count(), `${width}: a focused but offscreen field cannot hold the butterfly over a dark chapter`);
       await name.evaluate(el => el.scrollIntoView({ block: 'center', behavior: 'instant' })); await p.waitForTimeout(750);
       ok(!await p.locator('.nav-butterfly.butterfly-away').count(), `${width}: returning to the still-focused field restores its companion`);

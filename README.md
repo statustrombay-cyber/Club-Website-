@@ -347,8 +347,8 @@ These browser dependencies and tools are not included in deployment packages.
 ### HD-reference psychology story and butterfly interactions
 
 The homepage continues **after the existing rings/wire chapter** with a
-scroll-reversible hand/glass scene, floating research fragments, burning Freud
-art notes, the “this club, focuses on Humans” typography, and torn illustrated
+scroll-reversible WebGL hand/glass scene, irregular refractive research shards, four burning Freud
+American-dollar-style art notes, the “this club, focuses on Humans” typography, and torn illustrated
 psychology newspapers. At the end the drawing clears to the original running
 herd; the classic opening and the remainder of the club site are unchanged.
 
@@ -356,18 +356,41 @@ herd; the classic opening and the remainder of the club site are unchanged.
   editorial archive and expandable primary-source research notes. The 6.86%
   figure describes questionnaire scores from two gratitude studies (n=283,
   low-certainty evidence), **not measured club outcomes or a personal guarantee**.
-- `assets/story.js` uses native sticky scrolling and a capped, visibility-aware
-  canvas clock. Paper curl is projected in 3D and textured in triangles; tearing
-  and burning are procedural and reverse with scroll. There is no recording
-  embedded in the page, no wheel/touch hijacking and no WebGL dependency.
-- Missing/corrupt/timed-out illustrations, unavailable canvas, Save-Data and
-  reduced motion restore readable static HTML without a dead scroll runway.
-  Inline script loading is supported: `defer` alone is not sufficient once
-  production inlines the script in the head.
-- The hand cutout derives from the user-supplied HD reference. The banknote and
-  Rogers/James engravings are newly generated illustrative artwork, not original
-  historical documents or recovered reference-site 3D models. The newspaper
-  designs and copy are new. See `tools/references/story-credits.md` for provenance.
+- `assets/story.js` is the small DOM-ready/lazy loader. The committed local
+  `assets/vendor/story-3d.js` bundle contains Three.js and the scene; no CDN or
+  Node build is needed on the PHP host. Source is in `tools/story/`. Rebuild with
+  `npm ci && npm run build:story` (pinned Three.js 0.186.1 / esbuild 0.28.2).
+- A genuine skinned, articulated hand rises/thrusts into a clear pane; the pane
+  suddenly gives way to thick irregular shards. Facts keep fixed world heights
+  while a perspective camera advances through depth. There is no spiderweb
+  overlay or upward-scrolling DOM-panel animation. The curtain is deliberately
+  optically soft. Four separately warped notes burn from irregular edges.
+- A hollow corridor of 48 mobile / 72 desktop fluttering newspapers floods the
+  frame; nearby pages peel into sixteen thin, independently waving ribbons.
+  Skin, glass refraction, geometry, camera travel and paper deformation are 3D,
+  not photographic cutouts projected on a 2D canvas. Small/software GPUs use a
+  lower render resolution; bloom is omitted on phones/software rendering.
+- Native sticky scrolling, viewport resize, pointer/scroll parallax and reverse
+  travel are retained. Optional **Enable tilt** is available on coarse-pointer
+  devices with orientation support. iOS requires HTTPS and a synchronous button
+  permission gesture; refusal leaves scrolling/pointer interaction working.
+  Sensor signals are local only and never stored or transmitted.
+- `assets/audio.js` plays only three cues: an original synthesized gallop during
+  the splash, a single synthesized glass crash at impact, and an original low
+  foreboding score within this chapter. The score stops at the herd/exit, on
+  mute or when the page is hidden. Sound preference is remembered locally.
+  Autoplay cannot be guaranteed: **Sound** / the first permitted interaction
+  unlocks Web Audio; an already-finished intro never gallops late. No extra
+  navigation, butterfly, typing or later-page sound effects were added.
+- Missing/corrupt/timed-out model/engine/illustrations, unavailable WebGL,
+  Save-Data and reduced motion restore readable static HTML without a dead
+  runway. Reduced-motion changes also dispose the scene. Inline head script
+  startup is supported; only the lazy scene bundle remains external.
+- The hand rig is MIT-licensed WebXR input-profile geometry, not the reference
+  site's proprietary rig. Skin, theatre and the American-dollar-style Freud prop
+  are newly AI-generated artwork; the latter includes an ART SPECIMEN marking.
+  Rogers/James engravings and newspaper designs are original illustrations, not
+  historical documents. See `tools/references/story-credits.md` for provenance.
 - Bodoni Moda and Pinyon Script are locally hosted **OFL-licensed stylistic
   matches**, not an assertion that the original site's unidentified fonts were
   recovered. Both notices are shipped in `assets/fonts/`.
@@ -385,10 +408,12 @@ herd; the classic opening and the remainder of the club site are unchanged.
   the CSRF token, filename and file contents.
 
 Run `node tools/test-story-browser.mjs` with the preview running and the optional
-browser dependencies installed. It checks actual rendered pixels, burn-away,
+browser dependencies installed. It checks PNG screenshots of actual WebGL output, burn-away,
 reverse scroll, herd reveal, mobile/desktop forms, duplicate suppression,
-action ordering, native uploads, modifier links and failure fallbacks.
-`MT_STORY_GROUP` can select `story`, `fallback`, `forms`, `navigation` or `upload`;
+action ordering, native uploads, modifier links, failure fallbacks, decoded audio
+start/stop boundaries, and simulated orientation permission/grant/refusal. These
+are Chromium emulation checks, not a substitute for physical iPhone/Android QA.
+`MT_STORY_GROUP` can select `audio`, `story`, `fallback`, `forms`, `navigation` or `upload`;
 the default runs everything. The same `MT_BASE_URL`, `CHROME_EXECUTABLE_PATH` and
 `MT_SCREENSHOT_DIR` options apply. All write endpoints in this browser audit are
 intercepted, so no audit members, passes or proof files enter the real store.
@@ -402,3 +427,15 @@ Their original Git commit, paths, blob IDs, sizes, timings and SHA-256 hashes ar
 preserved in `tools/references/zero-hd-manifest.json`; recover a part with
 `git show <sourceCommit>:<gitPath> > /a/reference/folder/part.mp4`, outside the site.
 No history rewrite is needed, and the three working horse MP4s are not references.
+
+### WebGL revision checkpoint
+
+Before this rebuild, `.rollback/before-3d-rebuild-6d7aa13.zip` was created from
+`6d7aa13c20eb4725eb0d2e15a71aaa7bc1864bfb` and CRC-verified. It is ignored and is
+not deployed. Restore code/assets only, never the current data/uploads.
+
+The foreboding score and effects are original deterministic synthesis, not
+licensed recordings extracted from the reference. To regenerate, install Python
+`numpy` and `imageio-ffmpeg`, then run `python tools/make-story-audio.py`.
+The reconstruction follows the supplied choreography; it is not a claim to
+possess the original scene, scan, font files or soundtrack or to be pixel-identical.

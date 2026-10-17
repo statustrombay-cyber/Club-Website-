@@ -36,7 +36,7 @@ for (const dir of ['/site/data/logs', '/site/data/sessions', '/site/data/backups
 for (const [rel, abs] of collect(ROOT)) {
   const target = '/site/' + rel;
   await ensureDir(target.slice(0, target.lastIndexOf('/')));
-  if (/\.(png|jpe?g|webp|gif|ico|pdf|mp4|m4v|mov|webm)$/i.test(rel)) await php.writeFile(target, new Uint8Array(fs.readFileSync(abs)));
+  if (/\.(png|jpe?g|webp|gif|ico|pdf|mp4|m4v|mov|webm|mp3|glb|woff2)$/i.test(rel)) await php.writeFile(target, new Uint8Array(fs.readFileSync(abs)));
   else await php.writeFile(target, fs.readFileSync(abs, 'utf8'));
 }
 
