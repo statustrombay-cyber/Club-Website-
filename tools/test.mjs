@@ -2236,6 +2236,35 @@ const binaryAllowed=JSON.parse(String(await php.x(['json_encode(array_map("mt_is
 ok('the actual PHP built-in-server asset gate permits all four original-scene binary types',binaryAllowed.every(Boolean),JSON.stringify(binaryAllowed));
 await php.writeFile('/site/data/not-public.glb',new Uint8Array([0,1,2]));
 ok('the binary-type allowance does not expose a private-data model',String(await php.x(['mt_is_static_file("data/not-public.glb") ? "leak" : "private"']))==='private');
+console.log('\n— PHP-hosted scene delivery —');
+const sceneAssets=JSON.parse(String(await php.x(['json_encode(require MT_APP . "/scene-manifest.php")'])));
+for(const [id,entry] of Object.entries(sceneAssets)){
+ const response=await get('/scene-assets.php?asset='+id);
+ const source=fs.readFileSync(path.join(ROOT,entry.path));
+ const actual=Buffer.from(response.body,id==='engine'?'utf8':'binary');
+ ok('PHP scene delivery is byte-identical: '+id,response.status===200&&source.equals(actual),String(response.status));
+ ok('PHP scene delivery uses correct type: '+id,response.headers.some(([k,v])=>k==='Content-Type'&&v===entry.type));
+ const head=await request({uri:'/scene-assets.php?asset='+id,method:'HEAD'});
+ ok('HEAD scene delivery is body-free: '+id,head.status===200&&head.body==='');
+ const conditional=await get('/scene-assets.php?asset='+id,{headers:{'If-None-Match':'"'+entry.sha256+'"'}});
+ ok('scene ETag revalidation works: '+id,conditional.status===304&&conditional.body==='');
+}
+for(const query of ['asset=../../data/site.json','asset[]=engine','asset=missing','file=app/bootstrap.php']){
+ const response=await get('/scene-assets.php?'+query);ok('scene delivery rejects arbitrary files: '+query,response.status===404&&!String(response.body).includes('Csmu'));
+}
+const missingPayloadPath='/site/app/scene-payloads/'+sceneAssets['basis-wasm'].chunks[0];
+const intactPayload=await php.readFile(missingPayloadPath);
+await php.unlink(missingPayloadPath);
+const missingPayload=await get('/scene-assets.php?asset=basis-wasm');
+ok('incomplete upload gives a named recoverable error, not HTML as WASM',missingPayload.status===503&&missingPayload.body.includes('basis-wasm')&&!missingPayload.body.includes('/site/'));
+await php.writeFile(missingPayloadPath,"<?php return 'not-base64!!';");
+const damagedPayload=await get('/scene-assets.php?asset=basis-wasm');
+ok('damaged upload cannot be served as a valid decoder',damagedPayload.status===503&&damagedPayload.body.includes('damaged'));
+await php.writeFile(missingPayloadPath,intactPayload);
+const invalidSceneMethod=await request({uri:'/scene-assets.php?asset=engine',method:'POST'});
+ok('scene delivery is read-only',invalidSceneMethod.status===405);
+const sceneCheck=await get('/scene-check.php');
+ok('hosting diagnostic page loads without private-data access',sceneCheck.status===200&&sceneCheck.body.includes('Browser WebGL 2')&&!sceneCheck.body.includes('Csmu@MT'));
 ok('the full-resolution reference manifest preserves all eleven recoverable clips',
   hdReference.parts.length === 11 && hdReference.parts.every((part, i) => part.width === 1080 && part.height === 2400 && part.gitPath === `video_part_${String(i).padStart(2, '0')}.mp4` && /^[a-f0-9]{40}$/.test(part.gitBlob) && /^[a-f0-9]{64}$/.test(part.sha256)));
 ok('root reference MP4s are no longer in the live tree', !fs.readdirSync(ROOT).some(name => /\.mp4$/i.test(name)));

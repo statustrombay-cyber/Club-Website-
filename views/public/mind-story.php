@@ -85,7 +85,7 @@
           <p>Evidence is a starting point for curiosity, not a promise that one practice works equally for everyone. Read Choi et al. in the research links above.</p>
         </article>
       </div>
-      <p class="story-art-note">The moving newspapers are newly designed illustrations, not historical newspaper facsimiles. The Freud banknote is fictional artwork, not currency.</p>
+      <p class="story-art-note">The moving newspapers are newly designed illustrations, not historical newspaper facsimiles.</p>
     </div>
   </details>
 </section>

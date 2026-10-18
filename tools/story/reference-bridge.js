@@ -8,7 +8,20 @@ window.MTStory3D={async create(root){
  const scene=new $o(),camera=new Ir(innerWidth<768?40:30,1,.1,120);scene.add(camera);camera.position.z=.5;
  renderer.setClearColor(0,0);renderer.toneMapping=0;renderer.outputColorSpace=fe;
  const loader=new _g(renderer);
- loader.manager.setURLModifier(url=>/^(?:data:|blob:|https?:)/.test(url)||url.startsWith('/assets/reference/')?url:'/assets/reference/'+url.replace(/^\//,''));
+ // Restricted shared hosts may reject direct WASM/KTX2/GLB requests. Route
+ // only these known public files through PHP; no arbitrary-path/file proxy.
+ const hosted={
+  'vendor/basis/basis_transcoder.wasm':'basis-wasm','vendor/draco/draco_decoder.wasm':'draco-wasm',
+  'assets/atlases/human_hands.ktx2':'hand-atlas','assets/atlases/texts.ktx2':'texts-atlas','assets/atlases/leather-money-shreds.ktx2':'money-atlas',
+  'assets/models/human_hand_2.glb':'hand-model','assets/models/camera_2.glb':'camera-model',
+  'assets/models/stage2_glass-shatter.glb':'fracture-model','assets/models/glass_shards.glb':'shard-model','assets/models/tunnel_new_new.glb':'tunnel-model'
+ };
+ loader.manager.setURLModifier(url=>{
+  if(/^(?:data:|blob:)/.test(url))return url;
+  const path=url.replace(/^\/assets\/reference\//,'');
+  if(hosted[path])return '/scene-assets.php?asset='+hosted[path];
+  return /^(?:https?:|\/assets\/reference\/)/.test(url)?url:'/assets/reference/'+url.replace(/^\//,'');
+ });
  loader.stageAssets.initial=loader.stageAssets.initial.filter(a=>['humanHandsAtlas','spcAtlas','textsAtlas','handMatcap'].includes(a.key));
  loader.stageAssets.stage4=[];loader.stageAssets.worldMap=[];
  loader.stageAssets.stage3.push({type:'texture',key:'clubPaperAtlas',path:'assets/atlases/club-money-papers.webp',mipmaps:false});

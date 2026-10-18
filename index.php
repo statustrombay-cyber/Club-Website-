@@ -34,6 +34,20 @@ if (PHP_SAPI === 'cli-server' && mt_is_static_file($route)) {
     return false;
 }
 
+/* Public scene delivery/check routes, also used by PHP shared hosting. */
+if ($route === 'scene-assets.php') {
+    require_once MT_APP . '/scene-assets.php';
+    mt_scene_asset_handle();
+    return;
+}
+if ($route === 'scene-check.php') {
+    mt_header('Content-Type', 'text/html; charset=utf-8');
+    mt_header('Cache-Control', 'no-store');
+    mt_header('X-Robots-Tag', 'noindex, nofollow');
+    require MT_VIEWS . '/public/scene-check.php';
+    return;
+}
+
 if (str_starts_with($route, 'api/')) {
     mt_api_handle($route);
     return;

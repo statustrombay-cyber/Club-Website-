@@ -21,6 +21,7 @@ try{
    const proto=window.AudioBufferSourceNode?.prototype;
    if(proto){const start=proto.start,stop=proto.stop;proto.start=function(...args){window.__activeAudio.add(this);this.addEventListener('ended',()=>window.__activeAudio.delete(this),{once:true});return start.apply(this,args);};proto.stop=function(...args){window.__activeAudio.delete(this);return stop.apply(this,args);};}
   });
+  await context.route(/\/assets\/reference\/.*\.(?:wasm|ktx2|glb)(?:\?|$)/,r=>r.fulfill({status:500,contentType:'text/html',body:'Host rejects direct binary URL'}));
   const page=await context.newPage(),issues=[];
   page.on('pageerror',e=>issues.push(e.stack));
   page.on('console',m=>{if(m.type()==='error')issues.push(m.text());});
@@ -84,7 +85,7 @@ try{
  for(const mode of ['reduced-motion','save-data','slow-engine']){
   const c=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,reducedMotion:mode==='reduced-motion'?'reduce':'no-preference'});
   if(mode==='save-data')await c.addInitScript(()=>Object.defineProperty(navigator,'connection',{value:{saveData:true,addEventListener(){}}}));
-  const p=await c.newPage();if(mode==='slow-engine')await p.route('**/assets/vendor/story-3d.js',async r=>{await new Promise(resolve=>setTimeout(resolve,14000));await r.continue();});
+  const p=await c.newPage();if(mode==='slow-engine')await p.route('**/scene-assets.php?asset=engine',async r=>{await new Promise(resolve=>setTimeout(resolve,14000));await r.continue();});
   await p.goto(base+'/#human-story');
   await p.waitForFunction(()=>document.querySelector('.mind-story')?.dataset.storyState==='ready',null,{timeout:70000});
   check(await p.locator('.story-canvas').isVisible(),mode+' retains visible WebGL');

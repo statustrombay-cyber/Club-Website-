@@ -147,3 +147,47 @@ burn shader, UV rotation, geometry and camera animation.
 A source-canvas WebM recording and inspected stills are kept outside the public
 checkout. A recording of this implementation is evidence of actual rendering,
 not a replacement footage layer or a pixel-identical/physical-device claim.
+
+## PHP shared-host delivery (2026-10-18)
+
+The reported public site still failed despite the local repair. The public
+HTML/bootstrap and decoder JavaScript were reachable through the page-fetch
+tool; WASM/KTX2 fetches returned tool errors and the large engine fetch had no
+extracted text. Those results alone do **not** establish that the origin host
+blocked these types: binary extraction/tool behavior was not independently
+ruled out. Direct sandbox TLS to that host was unavailable. No production
+upload/deployment has been performed by this agent.
+
+The hosting-compatible build now delivers the prebuilt engine, both WASM
+decoders, three KTX2 atlases and five GLBs through `scene-assets.php` using a
+fixed allowlist. `tools/build-scene-assets.mjs` creates private PHP/base64
+payload chunks below 400 KiB, with original byte counts and SHA-256 checks.
+The endpoint does not run/transcode the animation, fetch external URLs, accept
+paths or access club records. Both DRACO and KTX2 share the scoped URL manager.
+Normal browser execution/Blob workers/WebGL2 are still required; no server
+Node.js, Java or Three.js installation is required. Unchanged WebP textures,
+small decoder JavaScript and MP3 audio remain ordinary static assets.
+
+`scene-check.php` is an unlinked, read-only, noindex browser diagnostic: checks
+WebGL2, WebAssembly, a Blob worker, all eleven downloaded byte counts/hashes,
+and actual scene-engine registration. It never exposes PHP configuration,
+credentials, filesystem paths or student data. An all-green result verifies
+asset delivery/capabilities, not every animation frame or physical-phone GPU.
+
+Verification of this revision:
+- PHP/site suite: **656 passed, 0 failed**, including every byte-identical
+  endpoint response, correct MIME, HEAD, ETags, arbitrary-path/array rejection,
+  unsupported methods and incomplete/damaged-upload errors.
+- Actual scene browser suite: **154 checks, errors []**, 390×844 and 1440×900,
+  with all direct WASM/KTX2/GLB URLs deliberately returning HTTP 500. Also
+  retains reduced-motion, Data Saver, delayed-engine and movement/audio tests.
+- Public diagnostic: **15 checks passed** locally; a simulated HTTP-200 HTML
+  protection page replacing the Basis decoder correctly produces one named
+  failure instead of a false pass.
+- Newly rendered hand/banknote/shred screenshots inspected outside the repo.
+
+The update ZIP excludes live `data/`, uploaded club/student files and the three
+unchanged horse MP4s. Extract locally, back up the live site, and overwrite the
+included files in the existing site folder; do not delete existing folders or
+leave the ZIP publicly accessible. Validate `/scene-check.php` on the actual
+domain after upload before claiming the public issue is resolved.
