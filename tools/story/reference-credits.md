@@ -242,3 +242,71 @@ Verification:
 No new upload ZIP was created, no production server was accessed, and no
 main-branch merge was performed. Actual production verification still requires
 the user's full upload and a real-browser check on the domain.
+
+## Targeted repair on the restored PHP loader (after aa93875)
+
+The previous full rollback restored playback but also undid the requested paper,
+header and reverse-scroll work. This revision reapplies **only** that requested
+scene work. It keeps the existing `/index.php?scene-asset=engine` entry point,
+allowlisted model/atlas endpoints, shared Draco loading manager, PHP payloads,
+Apache configuration and GitHub export safeguards. The normal build regenerates
+both the browser engine and its PHP chunks/manifest together. No separate or
+nested deployment ZIP is produced. Backup before editing:
+`/home/user/reference-study/before-targeted-story-aa93875.tar.gz`.
+
+- Removed the complete “Behind the fragments” details panel. Published-study
+  qualifiers/citations remain in the accessible shard text.
+- Hide the navbar, butterfly and back-to-top control from arrival at the header until the whole story
+  track exits. Header links are inert; normal navigation returns outside.
+- Six newspaper and eight archive UV islands have real greyscale photographic
+  portraits of Freud, Rogers and James, headings and dense printed columns.
+  Their reverse faces are also printed. The original burning banknote is
+  untouched. Photo sources/reuse caveat and the editorial-summary distinction
+  are in `assets/story/portraits/CREDITS.md`.
+- Upward motion latches glass dismissal instead of rewinding the fracture/SFX.
+  Composite opacity retains intermediate rendered frames, even with a slow
+  GPU. A fresh forward visit after leaving above rearms once. Existing hand/
+  shard objects are reused and the source mouse listener is removed on disposal.
+- Preload the **PHP-served** engine in the home-page head; start preparation
+  early instead of waiting for the chapter. Opening assets have priority over
+  paper downloads; unused advertising-text KTX2 and stage-one procedural assets
+  are not loaded. No loading/reconnecting banner. Genuine failure messages and
+  the accessible fallback remain, rather than hiding an actual loading failure.
+- Disable unused lens/text passes and fact-glass rendering outside its phase.
+  Raster caps are 1 DPR on mobile / 1.25 desktop (rather than up to 1.5), with
+  existing reduced-motion/Data Saver behavior. Lighter grain keeps ink clearer.
+  Initial offscreen rendering warms the opening without a mandatory asynchronous
+  shader-compile wait that could delay readiness on a particular driver.
+
+**An additional actual rapid-scroll bug was caught visually before release.**
+The first draft passed phase/mesh-count assertions but its cold .79 screenshots
+were completely black. The supplied opening sets foreground exposure to zero;
+normal entry into the facts stage resets it, but a direct opening → paper jump
+skipped that reset. The bridge now starts in the phase matching the actual
+scroll position, explicitly resets exposure/contrast/red tint/background zoom
+when entering papers, and cleans up the opening hand if the facts stage is
+skipped. `tools/tests/fast-story.mjs` checks the **painted PNG pixels**, not just
+"16 papers exist", after cold entry and repeated nonsequential phase jumps.
+The repaired mobile/desktop fast-entry screenshots visibly show the photographs
+and independently shredding printed papers, with no header.
+
+Verification: unit tests retain the hosting/security/backend checks; normal
+browser regression runs with direct scene-engine/WASM/KTX2/GLB URLs blocked.
+Additional scripts exercise actual upward opacity frames, no repeated fracture,
+one fresh-visit rearm, whole-track navigation conceal/restore, cold rapid entry,
+all fourteen photo/text UV islands and unchanged banknote bytes. Public delivery
+checks exercise correct bytes and simulated HTML/403 responses. Screenshots and
+logs are outside the website. Local software-GPU timings are not a production
+network/physical-phone FPS guarantee; no pixel-exact/bug-free claim is made.
+
+Final local results: **713 unit checks, zero failures; 157 desktop/mobile
+browser checks, zero page errors; 15/15 normal scene-delivery checks** (simulated
+HTML and 403 replies were correctly identified). The separate smoothness run
+sampled **1 → .75 → .5 → .25 → 0** opacity with one unchanged fracture count,
+then exactly one rearm on a new visit. All fourteen atlas islands, three B/W
+portraits and the original banknote checksum pass. Two cold fast-scroll contexts
+plus repeated opening/paper/fact jumps pass painted-pixel assertions with direct
+scene URLs forbidden. The cold offscreen opening prepared at ~1.3 s in one local
+run; first paper frames on a direct jump took ~2.6 s mobile / ~3.5 s desktop on
+the software GPU. These are measured local observations, not promised hosted
+load times or physical-device frame rates.

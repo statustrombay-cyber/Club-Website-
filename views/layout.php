@@ -66,6 +66,7 @@ $nav = [
   <meta property="og:image" content="<?= e($logo) ?>">
   <link rel="stylesheet" href="/assets/app.css">
   <?php if ($splash): ?>
+    <link rel="preload" as="script" href="/index.php?scene-asset=engine" fetchpriority="high">
     <link rel="stylesheet" href="/assets/story.css">
     <script src="/assets/audio.js" defer></script>
     <script src="/assets/story.js" defer></script>

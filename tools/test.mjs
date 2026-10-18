@@ -2197,8 +2197,21 @@ ok('the story runtime is inlined and initialises after markup exists',
   home.body.includes('function startStory()') && storySource.includes("document.addEventListener('DOMContentLoaded',startStory") && !home.body.includes('src="/assets/story.js"'));
 ok('the glass keeps its qualifier and primary-source citations',
   storyView.includes('283 participants · low-certainty evidence') && storyView.includes('PMC10393216') && storyView.includes('PMC12280877'));
-ok('newspapers carry historical profiles and a dated research reading, not invented quotations',
-  ['Sigmund Freud', 'Carl Rogers', 'William James', 'Research reading · 2025', 'not historical newspaper facsimiles'].every(text => storyView.includes(text)));
+const atlasBaker=fs.readFileSync(path.join(ROOT,'tools/story/adapt-atlases.py'),'utf8');
+ok('photographed psychology papers use the supplied UV islands without the removed research panel',
+  ['Sigmund Freud','Carl Rogers','William James'].every(text=>atlasBaker.includes(text)) && !storyView.includes('story-research') && !storyView.includes('Behind the fragments'));
+ok('every psychologist photograph is local and available to the atlas baker',
+  ['freud','rogers','james'].every(name=>fs.statSync(path.join(ROOT,'assets/story/portraits',name+'.webp')).size>1000));
+ok('both paper shaders print their reverse faces instead of blank stock',
+  (fs.readFileSync(path.join(ROOT,'tools/story/reference-core.js'),'utf8').match(/vec2 paperUv = gl_FrontFacing/g)||[]).length===2 && !fs.readFileSync(path.join(ROOT,'tools/story/reference-core.js'),'utf8').includes('vec3 backBase = vec3(0.341'));
+ok('scene warms early without a loading banner and hides the header only within its chapter',
+  storySource.includes('engine().then(') && storySource.includes('requestIdleCallback') && !storySource.includes("announce('Loading the animated scene") && storySource.includes("classList.toggle('story-immersive',active)") && storySource.includes('header.inert=active'));
+ok('upward scroll dismisses actual glass passes without replaying the fracture',
+  ['glassDismissed=true','gateMax=gateProgress','uStoryGlassAlpha.value=glassOpacity','shatter.enabled=false;glass.enabled=false'].every(t=>fs.readFileSync(path.join(ROOT,'tools/story/reference-bridge.js'),'utf8').includes(t)));
+
+
+ok('cold fast-scroll entry skips the opening black grade and cleans up skipped hand phases',
+  ['measure();await change(p<.18?0:p<.49?1:2)', 'fg.uniforms.uExposure.value=1;fg.uniforms.uContrast.value=1;fg.uniforms.uRedTint.value=0;bg.uniforms.uZoom.value=1', 'if(next===2)Wb.teardown(ctx)'].every(text=>fs.readFileSync(path.join(ROOT,'tools/story/reference-bridge.js'),'utf8').includes(text)));
 ok('the chapter has native-scroll, motion-preference and missing-asset fallbacks',
   storySource.includes('function staticStory(reason)') && storySource.includes('3D engine timed out') && storySource.includes("motion.addEventListener('change',configure)") && !storySource.includes("addEventListener('wheel'"));
 ok('the decorative canvas stays out of the accessible tree but the actual facts do not',
