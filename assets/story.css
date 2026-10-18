@@ -72,3 +72,9 @@
   .story-research { background: white; }
   .story-research > * { display: block; }
 }
+/* The recovered renderer owns its own glass geometry/labels. Never stack the
+   former DOM reconstruction or source loader/HUD on top of the native scene. */
+.mind-story.story-reference .story-glass{visibility:hidden;pointer-events:none}
+.mind-story.story-reference .story-type{opacity:var(--reference-end,0);pointer-events:none}
+.mind-story.story-reference .story-type > span{opacity:1!important;transform:none!important}
+.mind-story.story-reference .story-static-art{display:none}

@@ -20,7 +20,7 @@
   function engine(){return new Promise((resolve,reject)=>{if(window.MTStory3D){resolve();return;}const script=document.createElement('script'),timer=setTimeout(()=>reject(Error('3D engine timed out')),12000);script.src='/assets/vendor/story-3d.js';script.onload=()=>{clearTimeout(timer);resolve();};script.onerror=()=>{clearTimeout(timer);reject(Error('3D engine unavailable'));};document.head.append(script);});}
   function warmDownloads(){
    if(prefetched)return;prefetched=true;
-   for(const [url,kind] of [['/assets/vendor/story-3d.js','script'],['/assets/story/hand-painted-poses.webp','image'],['/assets/story/velvet-curtain.webp','image'],['/assets/story/freud-note.webp','image']]){const link=document.createElement('link');link.rel='preload';link.as=kind;link.href=url;document.head.append(link);}
+   for(const [url,kind] of [['/assets/vendor/story-3d.js','script']]){const link=document.createElement('link');link.rel='preload';link.as=kind;link.href=url;document.head.append(link);}
   }
   function idleOrVisible(){return new Promise(resolve=>{function check(){const r=track.getBoundingClientRect();if(low()||r.top<innerHeight&&r.bottom>0||performance.now()-lastScrollAt>280)resolve();else setTimeout(check,80);}check();});}
   async function prepare(){

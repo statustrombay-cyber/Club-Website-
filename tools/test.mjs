@@ -2203,24 +2203,30 @@ ok('the chapter has native-scroll, motion-preference and missing-asset fallbacks
   storySource.includes('staticStory()') && storySource.includes('3D engine timed out') && storySource.includes("motion.addEventListener('change',configure)") && !storySource.includes("addEventListener('wheel'"));
 ok('the decorative canvas stays out of the accessible tree but the actual facts do not',
   storyView.includes('class="story-canvas" aria-hidden="true"') && storyView.includes('<article class="story-shard">') && !storySource.includes("shard.style.visibility"));
-ok('the classic herd is revealed by clearing the canvas, not replaced by another recording',
-  sceneSource.includes('1-smooth(.945,.998,p)') && sceneSource.includes("phase==='herd'") && !/<video|\.mp4/i.test(storyView + storySource));
+const referenceCore=fs.readFileSync(path.join(ROOT,'tools/story/reference-core.js'),'utf8');
+const referenceBridge=fs.readFileSync(path.join(ROOT,'tools/story/reference-bridge.js'),'utf8');
+ok('the recovered engine returns transparently to the existing herd',
+  referenceBridge.includes("canvas.style.opacity=String(1-clamp((p-.97)/.03))") && referenceBridge.includes("p>.975?'herd'") && !/<video|\.mp4/i.test(storyView + storySource));
 ok('both story typefaces are self-hosted with their OFL notices',
   ['bodoni-moda-latin.woff2', 'pinyon-script-latin.woff2', 'BodoniModa-OFL.txt', 'PinyonScript-OFL.txt'].every(name => fs.existsSync(path.join(ROOT, 'assets/fonts', name))) && !/https?:/.test(storyCss));
-ok('the painted source-pose atlas and local scene bundle replace the generic glove',
-  fs.existsSync(path.join(ROOT,'assets/story/hand-painted-poses.webp')) && !fs.existsSync(path.join(ROOT,'assets/story/hand-rig.glb')) && fs.existsSync(path.join(ROOT,'assets/vendor/THREE-LICENSE.txt')) && fs.statSync(path.join(ROOT,'assets/vendor/story-3d.js')).size<650000);
-ok('the hand retains baked artwork without timer/pointer/gyro shake',
-  sceneSource.includes('handUniforms.uPose.value=smooth') && !sceneSource.includes('DeviceOrientationEvent') && !sceneSource.includes('bone.node.rotateX') && !sceneSource.includes('RoomEnvironment'));
-ok('glass scrolls vertically while money alone starts forward camera travel',
-  sceneSource.includes('if(progress<.375)return 12') && sceneSource.includes('vertical=smooth') && sceneSource.includes('i<4') && shaderSource.includes('uBurn'));
-ok('thrown papers have random independent positions and independently tumbling strips',
-  sceneSource.includes('shredGeometry(24,28)') && sceneSource.includes('throwSpeed') && shaderSource.includes('past=clamp') && !sceneSource.includes('radius=1.8'));
-ok('no sound or tilt controls are injected into the public layout',
-  !storyView.includes('data-enable-tilt') && !fs.readFileSync(path.join(ROOT,'views/layout.php'),'utf8').includes('soundButton') && !sceneSource.includes('requestPermission'));
-ok('dynamic viewport drawing does not change reserved document height or reveal the global paper film',
-  storyCss.includes('height: 100dvh') && storyCss.includes('background: none !important') && storySource.includes('innerHeight*6.6') && sceneSource.includes('const resized=resizeNeeded?applyResize():false'));
-ok('glass is the sole audio asset, gesture unlocked without a button or late replay',
-  fs.readdirSync(path.join(ROOT,'assets/audio')).join(',')==='glass-impact.mp3' && audioSource.includes('context.resume()') && audioSource.includes("context.state!=='running'") && !audioSource.includes('localStorage') && !audioSource.includes('intro-gallop') && !audioSource.includes('foreboding'));
+ok('original hand, camera, glass and paper assets replace the rejected reconstruction',
+  ['human_hand_2.glb','camera_2.glb','stage2_glass-shatter.glb','glass_shards.glb','tunnel_new_new.glb'].every(name=>fs.existsSync(path.join(ROOT,'assets/reference/assets/models',name))) && fs.existsSync(path.join(ROOT,'assets/vendor/THREE-LICENSE.txt')) && fs.statSync(path.join(ROOT,'assets/vendor/story-3d.js')).size<1000000 && !fs.readFileSync(path.join(ROOT,'tools/build-story.mjs'),'utf8').includes('scene.js'));
+ok('the original baked hand and camera animations are used',
+  referenceCore.includes('class extends Kv') && referenceBridge.includes('new Lb(loader)') && referenceBridge.includes('Wb.scrub(ctx,local)') && referenceCore.includes('humanHandsAtlas'));
+ok('camera-attached glass moves down, while the recovered bills/papers retain inward camera travel',
+  referenceCore.includes('shard.startPosition[1] *= -1') && referenceCore.includes('shard.endPosition[1] *= -1') && referenceBridge.includes('Xx.scrub(ctx,local)'));
+ok('original paper and individual-strip shaders are constructed synchronously for reversible scrolling',
+  referenceBridge.includes('ctx._stage3DeferredStarted=true;eS(ctx);nS(ctx);rS(ctx);uS(ctx)') && referenceCore.includes('certConvergeRotOffsets'));
+ok('no sound/tilt controls or gyro permission request are installed',
+  !storyView.includes('data-enable-tilt') && !fs.readFileSync(path.join(ROOT,'views/layout.php'),'utf8').includes('soundButton') && !referenceCore.includes('requestPermission(') && referenceBridge.includes("addEventListener('deviceorientation',rig._handleGyro,{passive:true})"));
+ok('native viewport rendering preserves document height and handles context loss',
+  storyCss.includes('height: 100dvh') && storyCss.includes('background: none !important') && storySource.includes('innerHeight*6.6') && referenceBridge.includes("canvas.addEventListener('webglcontextlost',contextLost)"));
+ok('only the requested chapter audio is eligible; leaving it stops every sound',
+  referenceBridge.includes("['glass-shatter','stage2-ambient','money-burn'].includes(key)") && referenceBridge.includes('if(!visible){stopAudio()') && referenceBridge.includes('function gesture(e){if(e.isTrusted)X.unlockNow();}') && referenceBridge.includes('X.setEnabled(false)') && !audioSource.includes('localStorage'));
+ok('missing-texture white portal and original HUD/text are not rendered',
+  referenceBridge.includes('ctx.components.portalCircle.visible=false') && referenceBridge.includes('text.textScene.visible=false') && referenceBridge.includes('_xpReplaySkip:true') && !referenceCore.includes('var WO = window.location.hash'));
+ok('club-specific atlases retain the original UV layout without source advertisements',
+  ['club-fragments.webp','club-money-papers.webp','club-archive.webp'].every(name=>fs.existsSync(path.join(ROOT,'assets/reference/assets/atlases',name)) && referenceBridge.includes(name)));
 ok('the full-resolution reference manifest preserves all eleven recoverable clips',
   hdReference.parts.length === 11 && hdReference.parts.every((part, i) => part.width === 1080 && part.height === 2400 && part.gitPath === `video_part_${String(i).padStart(2, '0')}.mp4` && /^[a-f0-9]{40}$/.test(part.gitBlob) && /^[a-f0-9]{64}$/.test(part.sha256)));
 ok('root reference MP4s are no longer in the live tree', !fs.readdirSync(ROOT).some(name => /\.mp4$/i.test(name)));

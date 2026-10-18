@@ -10,3 +10,6 @@ screen-*.mp4 export-ignore
 /part_* export-ignore
 
 /university*.html export-ignore
+
+# Uploaded reference archives are never deployable runtime files.
+/*.zip export-ignore
