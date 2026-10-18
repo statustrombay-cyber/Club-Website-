@@ -15,8 +15,8 @@ for name,boxes in [('club-money-papers.webp',portrait_boxes),('club-archive.webp
         tile=im.crop((x,y,x+w,y+h))
         assert ImageStat.Stat(tile.convert('L')).stddev[0]>25,(name,index,'blank sheet')
         if h>600:
-            photograph=tile.crop((30,430,285,655))
-            text=tile.crop((10,0,w-10,200))
+            photograph=tile.crop((30,250,440,575))
+            text=tile.crop((10,0,w-10,180))
         else:
             photograph=tile.crop((25,155,245,400))
             text=tile.crop((285,170,630,430))

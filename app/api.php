@@ -890,6 +890,9 @@ function mt_api_import(): void
     if (isset($payload['settings']['frontendRegistration'])) {
         $clean['settings']['frontendRegistration'] = mt_truthy($payload['settings']['frontendRegistration']);
     }
+    // An explicit club restore is authoritative, including intentional empty
+    // public collections. Do not re-run starter recovery over that decision.
+    $clean['settings']['publicContentRecovery'] = 1;
     // A restore is a new change, not a return to an old revision number.
     mt_db_transaction(function (array &$db) use ($clean): bool {
         $revision = $db['revision'];

@@ -64,6 +64,7 @@ if (!function_exists('mb_strtolower')) {
 }
 
 require_once MT_APP . '/store.php';
+require_once MT_APP . '/club-content.php';
 require_once MT_APP . '/health.php';
 require_once MT_APP . '/events.php';
 require_once MT_APP . '/qr.php';
@@ -122,6 +123,8 @@ function mt_boot(): void
             }
         }
     });
+    // Additive, versioned recovery uses the store lock and last-good backup.
+    if (!$testing) mt_boot_public_content();
 }
 
 function mt_is_html_done(): bool

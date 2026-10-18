@@ -54,6 +54,7 @@ $nav = [
   <title><?= e($fullTitle) ?></title>
   <meta name="description" content="<?= e(mb_substr($description, 0, 180)) ?>">
   <meta name="theme-color" content="#403634">
+  <?php if ($splash): ?><script>if (!location.hash) { document.documentElement.classList.add('intro-cover'); document.querySelector('meta[name="theme-color"]').content='#09090b'; }</script><?php endif; ?>
   <meta name="color-scheme" content="light">
   <link rel="icon" href="/assets/img/favicon-48.png" sizes="48x48" type="image/png">
   <link rel="icon" href="/assets/img/favicon-32.png" sizes="32x32" type="image/png">
@@ -66,7 +67,7 @@ $nav = [
   <meta property="og:image" content="<?= e($logo) ?>">
   <link rel="stylesheet" href="/assets/app.css">
   <?php if ($splash): ?>
-    <link rel="preload" as="script" href="/index.php?scene-asset=engine" fetchpriority="high">
+    <link rel="preload" as="script" href="/index.php?scene-asset=engine" fetchpriority="low">
     <link rel="stylesheet" href="/assets/story.css">
     <script src="/assets/audio.js" defer></script>
     <script src="/assets/story.js" defer></script>
@@ -117,8 +118,10 @@ $nav = [
            It is never dark and never in front of a word. */ ?>
   <div class="hero-media" aria-hidden="true">
     <img class="hero-still" id="heroStill" src="/assets/media/horses-running-poster.jpg" alt="" decoding="async">
-    <video class="hero-video" id="heroVideo" muted loop playsinline autoplay preload="none" data-desktop-src="/assets/media/horses-desktop.mp4" data-mobile-src="/assets/media/horses-mobile.mp4"
+    <video class="hero-video" id="heroVideo" muted loop playsinline autoplay preload="auto" data-desktop-src="/assets/media/horses-desktop.mp4" data-mobile-src="/assets/media/horses-mobile.mp4"
            poster="/assets/media/horses-running-poster.jpg" tabindex="-1">
+      <source src="/assets/media/horses-mobile.mp4" media="(prefers-reduced-motion: no-preference) and (max-width: 900px)" type="video/mp4">
+      <source src="/assets/media/horses-desktop.mp4" media="(prefers-reduced-motion: no-preference)" type="video/mp4">
       <?php /* The 1440px master stays in assets; the player selects one lighter
                fast-start rendition before making any media request. */ ?>
     </video>
@@ -184,6 +187,9 @@ $nav = [
         <div class="footer-institution">
           <img src="/assets/img/university-logo.png" alt="<?= e((string) ($site['universityName'] ?? '')) ?>" loading="lazy" decoding="async">
           <span><?= e($department) ?> — Psychology Club</span>
+          <?php if ($address !== '' && !in_array($routeClass, ['pass', 'verify'], true)): ?><a class="footer-address" href="<?= e($mapUrl) ?>" target="_blank" rel="noopener noreferrer"><?= e($address) ?></a><?php endif; ?>
+          <?php if ($email !== ''): ?><a href="mailto:<?= e($email) ?>"><?= e($email) ?></a><?php endif; ?>
+          <?php if ($instagram !== ''): ?><a href="<?= e($instagram) ?>" target="_blank" rel="noopener noreferrer"><?= e((string) ($site['instagramHandle'] ?? 'Instagram')) ?> ↗</a><?php endif; ?>
         </div>
         <div class="footer-links">
           <a href="/members">Members</a>

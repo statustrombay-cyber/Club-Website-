@@ -1968,3 +1968,40 @@ body { isolation:isolate; }
 /* Reading and form access never depend on a delayed intersection animation. */
 .page-home #about .scroll-reveal, .page-home #join .scroll-reveal,
 .page-home .section-head .scroll-reveal { opacity:1; transform:none; transition:none; }
+
+/* Content cannot disappear while an observer or busy GPU catches up. */
+html.js .scroll-reveal { opacity:1; transform:none; transition:none; }
+.calendar-content { padding-top:clamp(40px,6vw,80px); padding-bottom:72px; }
+.calendar-intro { align-items:start; gap:32px; }
+.calendar-intro > div { min-width:0; }
+.calendar-chip { margin-bottom:18px; }
+.calendar-intro p { margin-top:0; }
+.calendar-teaser { margin-top:32px; }
+.contact-row > div { min-width:0; }
+.contact-row a, .footer-address { overflow-wrap:anywhere; }
+.footer-institution { max-width:450px; min-width:0; }
+.footer-institution a { line-height:1.65; }
+html.intro-cover, html.intro-cover body { background-color:#09090b; }
+.splash { inset:-4px; width:calc(100% + 8px); height:calc(100lvh + 8px); min-height:calc(100dvh + 8px); padding-bottom:env(safe-area-inset-bottom,0px); background-color:#09090b; }
+@media(max-width:780px) {
+ .calendar-intro { display:grid; gap:26px; }
+ .calendar-teaser { flex-direction:column; align-items:flex-start!important; }
+ .footer-row { flex-wrap:wrap; }
+ .footer-institution { width:100%; }
+}
+
+/* Both leaders are discoverable together; preserve each photo's own fan. */
+#team .team-grid, .member-group .member-cards { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:48px; }
+#team .team-card, .member-group .member-card { width:100%; max-width:none; margin:0; align-self:stretch; }
+@media(max-width:780px) { #team .team-grid, .member-group .member-cards { grid-template-columns:minmax(0,1fr); gap:36px; } }
+
+html.intro-cover { color-scheme:dark; }
+/* A local reading surface, not an opaque sheet across the horse-backed page. */
+.calendar-intro { padding:clamp(20px,3vw,32px); border-radius:24px; background:rgba(237,227,220,.94); border:1px solid rgba(78,49,85,.12); }
+
+.calendar-event-actions { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-top:16px; font-size:.75rem; }
+.calendar-event-actions .event-link { padding-top:0; }
+/* Estimated offscreen widths must not widen a one-column phone calendar. */
+.calendar-month { min-width:0; content-visibility:visible; contain-intrinsic-size:none; }
+.calendar-event { min-width:0; overflow-wrap:anywhere; }
+@media(max-width:520px) { .calendar-months { grid-template-columns:minmax(0,1fr); } }

@@ -102,3 +102,7 @@ body.story-immersive .bubble-field *, body.story-immersive .drift-field * { anim
 @media screen {
   .story-pending .story-stage, .story-enhanced .story-stage { min-height:100dvh; }
 }
+
+/* Post-burn identity occupies the source title beat, before printed papers. */
+.story-burn-title { display:none; }
+.story-reference .story-burn-title { display:block; position:absolute; inset:0; margin:0; padding:24px; display:grid; place-items:center; text-align:center; pointer-events:none; color:#f3fff3; font:400 clamp(3.5rem,11vw,10rem)/.95 'MT Reference',sans-serif; letter-spacing:-.065em; opacity:var(--burn-title,0); transform:scale(var(--burn-title-scale,1)); }

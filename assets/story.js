@@ -20,7 +20,7 @@
   function engine(){
    if(window.MTStory3D)return Promise.resolve();if(enginePromise)return enginePromise;
    enginePromise=new Promise((resolve,reject)=>{
-    const script=document.createElement('script');script.src='/index.php?scene-asset=engine';script.async=true;script.fetchPriority='high';
+    const script=document.createElement('script');script.src='/index.php?scene-asset=engine';script.async=true;script.fetchPriority='low';
     // Mobile downloads are allowed to finish. The former 12s timeout reproduced
     // a permanent HTML-only scene even when the script arrived two seconds later.
     const timer=setTimeout(()=>{script.remove();reject(Error('3D engine timed out after 60 seconds'));},60000);
@@ -53,7 +53,7 @@
    const width=document.documentElement.clientWidth;
    if(width!==viewportWidth){
     root.style.removeProperty('--story-viewport-height');
-    viewportHeight=Math.ceil(Math.max(innerHeight,visualViewport?.height||0,root.querySelector('.story-stage').clientHeight));
+    viewportHeight=Math.ceil(Math.max(innerHeight,window.visualViewport?.height||0,root.querySelector('.story-stage').clientHeight));
     viewportWidth=width;
    }else viewportHeight=Math.max(viewportHeight,Math.ceil(innerHeight));
    root.style.setProperty('--story-viewport-height',viewportHeight+'px');

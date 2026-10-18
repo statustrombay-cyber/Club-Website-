@@ -1,6 +1,6 @@
 {
-    "revision": 473,
-    "updatedAt": "2026-10-15T00:18:01+00:00",
+    "revision": 474,
+    "updatedAt": "2026-10-18T14:24:45+00:00",
     "site": {
         "clubName": "Mindful Tattva",
         "shortName": "MT",
@@ -134,6 +134,7 @@
     "registrations": [],
     "submissions": [],
     "settings": {
-        "frontendRegistration": true
+        "frontendRegistration": true,
+        "publicContentRecovery": 1
     }
 }

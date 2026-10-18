@@ -1907,7 +1907,7 @@ ok('the splash brush paints filled contours, with a violet lead rather than stri
     runInNewContext(appJs.slice(begin, end) + '\nsetupSplash();', {
       $: selector => selector === '.site-shell' ? null : mode === 'no-splash' ? null : splash,
       reduced: () => mode === 'reduced', CustomEvent: class { constructor(type) { this.type = type; } },
-      document: { body: { classList } },
+      document: { body: { classList }, documentElement: { classList } },
       window: {
         location: {hash:mode==='anchor'?'#join':''},
         dispatchEvent: event => { if (event.type === 'mt:intro-ready') notifications++; },
@@ -2217,6 +2217,16 @@ ok('upward scroll dismisses actual glass passes without replaying the fracture',
 
 ok('cold fast-scroll entry skips the opening black grade and cleans up skipped hand phases',
   ['measure();await change(p<.18?0:p<.49?1:2)', 'fg.uniforms.uExposure.value=1;fg.uniforms.uContrast.value=1;fg.uniforms.uRedTint.value=0;bg.uniforms.uZoom.value=1', 'if(next===2)Wb.teardown(ctx)'].every(text=>fs.readFileSync(path.join(ROOT,'tools/story/reference-bridge.js'),'utf8').includes(text)));
+const recoveredPublic=JSON.parse(String(await php.x(["json_encode(mt_recover_public_content(mt_db_defaults()))"])));
+ok('fresh source exports recover public contact, institution, leadership, sample event and test logo',
+  recoveredPublic.site.email==='mindfultattva@csmu.ac.in' && recoveredPublic.site.address.includes('410206') && recoveredPublic.team.length===2 && recoveredPublic.team.every(p=>p.name&&p.phone) && recoveredPublic.events[0].published && recoveredPublic.events[0].closesAt==='' && recoveredPublic.gallery[0].image==='/uploads/club-logo-test.jpg');
+const blankLeader=JSON.parse(String(await php.x(["(function(){ $db=mt_db_defaults(); $db['team']=[['id'=>'team-tanisha','name'=>'','role'=>'President','phone'=>'']]; return json_encode(mt_recover_public_content($db)['team'][0]); })()"])));
+ok('blank historical leadership rows are repaired instead of silently hiding the card',blankLeader.name==='Tanisha' && blankLeader.phone==='+91 70460 75606');
+const recoveryPreserved=JSON.parse(String(await php.x(["(function(){ $db=mt_db_defaults(); $db['site']=['email'=>'club@example.org']; $db['registrations']=[['id'=>'private-seat']]; $db['team']=[['id'=>'new-leader','name'=>'Current Leader','role'=>'President','phone'=>'9999999999']]; $db['events']=[['id'=>'event-welcome-circle','title'=>'Edited event','published'=>false]]; $db=mt_recover_public_content($db); $leaders=$db['team']; $email=$db['site']['email']; $db['site']['email']=''; $db['team']=[]; return json_encode(['leaders'=>$leaders,'email'=>$email,'initial'=>$db,'again'=>mt_recover_public_content($db)]); })()"])));
+ok('content recovery preserves private seats, drafts and replacement leaders; later deletions stay deleted',
+  recoveryPreserved.leaders[0].name==='Current Leader' && recoveryPreserved.email==='club@example.org' && recoveryPreserved.initial.registrations[0].id==='private-seat' && recoveryPreserved.initial.events[0].published===false && JSON.stringify(recoveryPreserved.initial)===JSON.stringify(recoveryPreserved.again));
+ok('newspaper traversal completes the source depth before returning to the herd',
+  fs.readFileSync(path.join(ROOT,'tools/story/reference-bridge.js'),'utf8').includes('clamp((p-.49)/.51);') && !fs.readFileSync(path.join(ROOT,'tools/story/reference-bridge.js'),'utf8').includes('rS(ctx);uS(ctx)'));
 ok('story viewport stays locked through browser-toolbar resizes with opaque underpaint',
   storySource.includes('function lockViewport()') && storySource.includes('Math.max(viewportHeight,Math.ceil(innerHeight))') && storyCss.includes('var(--story-viewport-height, 100lvh)') && storyCss.includes('background:#230706'));
 const blankIdentityHtml=String(await php.x(["(function(){ $db=mt_db(); foreach(['department','universityName','intro','aboutHeading','aboutBody','joiningIntro'] as $key) $db['site'][$key]=''; ob_start(); require MT_ROOT . '/views/public/home.php'; return ob_get_clean(); })()"]));
@@ -2243,7 +2253,7 @@ ok('the original baked hand and camera animations are used',
 ok('camera-attached glass moves down, while the recovered bills/papers retain inward camera travel',
   referenceCore.includes('shard.startPosition[1] *= -1') && referenceCore.includes('shard.endPosition[1] *= -1') && referenceBridge.includes('Xx.scrub(ctx,local)'));
 ok('original paper and individual-strip shaders are constructed synchronously for reversible scrolling',
-  referenceBridge.includes('ctx._stage3DeferredStarted=true;eS(ctx);nS(ctx);rS(ctx);uS(ctx)') && referenceCore.includes('certConvergeRotOffsets'));
+  referenceBridge.includes('ctx._stage3DeferredStarted=true;eS(ctx);nS(ctx);rS(ctx)') && referenceCore.includes('certConvergeRotOffsets'));
 ok('no sound/tilt controls or gyro permission request are installed',
   !storyView.includes('data-enable-tilt') && !fs.readFileSync(path.join(ROOT,'views/layout.php'),'utf8').includes('soundButton') && !referenceCore.includes('requestPermission(') && referenceBridge.includes("addEventListener('deviceorientation',rig._handleGyro,{passive:true})"));
 ok('native viewport rendering preserves document height and handles context loss',
@@ -2319,6 +2329,20 @@ const homeAgain = await get('/');
 ok('assets are inlined, never linked', !/href="\/assets\/app\.css"/.test(homeAgain.body) && !/src="\/assets\/app\.js"/.test(homeAgain.body));
 ok('no duplicate page files are served from the old build', !fs.existsSync(path.join(ROOT, 'index.html')) && !fs.existsSync(path.join(ROOT, 'server.js')) && !fs.existsSync(path.join(ROOT, 'admin.html')));
 
+// A fresh source download intentionally has no live database. Exercise the
+// actual recovery write path inside this isolated PHP filesystem, not the repo.
+await php.x(["(function(){ @unlink(MT_DB_FILE); $GLOBALS['MT_DB_CACHE']=null; mt_boot_public_content(); return 'recovered'; })()"]);
+const freshPublic=await get('/');
+ok('a source-only installation renders contact, both leaders and the sample registration',
+  freshPublic.status===200 && freshPublic.body.includes('mindfultattva@csmu.ac.in') && freshPublic.body.includes('Tanisha') && freshPublic.body.includes('Mohd Shafiq') && freshPublic.body.includes('/register?event=event-welcome-circle') && freshPublic.body.includes('footer-address'));
+const freshStore=JSON.parse(String(await php.x(["json_encode(mt_db(true))"])));
+ok('new installation seeds only public club material, never private student records',
+  freshStore.registrations.length===0 && freshStore.submissions.length===0 && freshStore.settings.publicContentRecovery===1);
+const freshRegister=await get('/register?event=event-welcome-circle',{session:FORM_SESSION});
+ok('the restored sample has a real editable registration form',freshRegister.status===200 && freshRegister.body.includes('name="csrf"') && freshRegister.body.includes('name="email"'));
+await php.writeFile('/site/data/site.json','{malformed-live-content');
+await php.x(["(function(){ $GLOBALS['MT_DB_CACHE']=null; mt_boot_public_content(); return 'checked'; })()"]);
+ok('public recovery never overwrites a malformed live store',String(await php.x(['file_get_contents(MT_DB_FILE)']))==='{malformed-live-content');
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 if (failures.length) {
   console.log('\nFailures:');

@@ -16,9 +16,11 @@ try{
  await page.goto(base+'/',{waitUntil:'domcontentloaded'});
  const splash=await page.locator('.splash').evaluate(e=>({top:e.getBoundingClientRect().top,bottom:e.getBoundingClientRect().bottom,viewport:innerHeight}));
  assert.ok(splash.top<=0&&splash.bottom>=splash.viewport);
+ assert.equal(await page.locator('meta[name=theme-color]').getAttribute('content'),'#09090b','native splash/browser underpaint matches the black background');
  await page.setViewportSize({width:390,height:928});
  const splashShot=await page.screenshot();noWhiteBand(splashShot);if(dest)fs.writeFileSync(`${dest}/splash-resize.png`,splashShot);
  await page.waitForFunction(()=>document.body.classList.contains('intro-revealed'));
+ assert.equal(await page.locator('meta[name=theme-color]').getAttribute('content'),'#403634');
  await page.waitForFunction(()=>document.querySelector('.mind-story')?.dataset.storyState==='ready',null,{timeout:60000});
  const originalHeight=await page.locator('.story-track').evaluate(e=>e.offsetHeight);
  for(const [progress,height]of [[.08,928],[.35,844],[.68,754],[.8,844],[.4,928],[.82,754],[.93,844]]){

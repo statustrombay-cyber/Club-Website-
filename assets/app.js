@@ -710,6 +710,8 @@
       const shell = $('.site-shell');
       if (shell) shell.inert = false;
       document.body.classList.remove('intro-pending');
+      document.documentElement.classList.remove('intro-cover');
+      const theme = $('meta[name="theme-color"]'); if (theme) theme.content = '#403634';
       document.body.classList.add('intro-revealed');
       window.dispatchEvent(new CustomEvent('mt:intro-ready'));
     };
@@ -868,6 +870,7 @@
         const url = new URL(node.href, location.href);
         // Downloads, external links, modifier clicks and named browsing contexts retain native semantics.
         if (node.hasAttribute('download') || node.target && node.target !== '_self' || url.origin !== location.origin || !/^https?:$/.test(url.protocol)) return;
+        butterflyDive(node); return;
       } else if (node.type === 'submit' || node.hasAttribute('data-print')) return;
       event.preventDefault(); event.stopImmediatePropagation();
       const ticket = ++actionTicket;
@@ -998,9 +1001,9 @@
     let waitingTimer = 0;
     function coveredByStory() {
       const story = $('.mind-story');
-      return document.body.classList.contains('story-immersive') && story?.dataset.storyCovered !== 'false';
+      return window.matchMedia('(max-width: 900px)').matches && document.body.classList.contains('story-immersive') && story?.dataset.storyCovered !== 'false';
     }
-    function drop() { video.hidden = true; }
+    function drop() { video.hidden = true; pause(); }
     function pause() { try { video.pause(); } catch (error) { /* already stopped */ } }
     function play() {
       if (!allowed || document.hidden || video.hidden || coveredByStory()) return;
@@ -1009,7 +1012,8 @@
     }
     if (!allowed) { drop(); return; }
     const mobile = window.matchMedia('(max-width: 900px)').matches || (connection && /(^|-)2g|3g/.test(connection.effectiveType || ''));
-    video.src = mobile ? video.dataset.mobileSrc : video.dataset.desktopSrc;
+    const wantedSource = mobile ? video.dataset.mobileSrc : video.dataset.desktopSrc;
+    if (!video.currentSrc || !video.currentSrc.split('?')[0].endsWith(wantedSource)) video.src = wantedSource;
     video.preload = 'auto';
     video.muted = true;
     video.playsInline = true;

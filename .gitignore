@@ -27,3 +27,6 @@ Thumbs.db
 # Rollback archive stays local; uploaded root videos are references.
 /.rollback/
 /*.mp4
+
+# One-time public-content recovery lock (never deploy runtime locks).
+data/.store.lock

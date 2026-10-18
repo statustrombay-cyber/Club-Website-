@@ -504,6 +504,13 @@ function mt_month_card(int $index, string $month, array $events): string
                 <?php if (trim((string) ($event['description'] ?? '')) !== ''): ?>
                   <p><?= e((string) $event['description']) ?></p>
                 <?php endif; ?>
+                <?php $window = mt_event_registration_state(mt_db(), $event); ?>
+                <?php if (!empty($window['open'])): ?>
+                  <div class="calendar-event-actions">
+                    <span><?= e(mt_event_fee($event) > 0 ? mt_money(mt_event_fee($event)) : 'Free entry') ?></span>
+                    <a class="event-link" href="/register?event=<?= e((string) $event['id']) ?>">Register ↗</a>
+                  </div>
+                <?php endif; ?>
                 <?php $brochure = mt_safe_url($event['brochureUrl'] ?? $event['attachment'] ?? ''); ?>
                 <?php if ($brochure !== ''): ?>
                   <a class="calendar-event-brochure" href="<?= e($brochure) ?>" target="_blank" rel="noreferrer noopener">View brochure / poster ↗</a>

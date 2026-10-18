@@ -21192,7 +21192,7 @@ HOLD`, onHoldStart: (e36, { resumeT: t2 } = {}) => {
 function eS(e36) {
   let t2 = Zx.length, n2 = Cx(1.4, 1, 10, 32), r2 = 2048, i2 = [[0, 0, 658, 512], [658, 0, 658, 512], [1316, 0, 658, 512], [0, 512, 658, 512], [0, 1024, 658, 512], [0, 1536, 658, 512], [658, 1536, 658, 512], [1316, 1536, 658, 512]], a2 = i2.length, o2 = e36.assetLoader.getAsset(`certAtlas`), s2 = i2.map(([e37, t3, n3, i3]) => ({ offset: [e37 / r2, 1 - (t3 + i3) / r2], scale: [n3 / r2, i3 / r2] })), c2 = e36.assetLoader.getAsset(`certMatcap`) || wv(`assets/textures/matcap-certificate.webp`, { assetLoader: e36.assetLoader }), l2 = [], u2 = [], d2 = [], f2 = [], p2 = [];
   for (let r3 = 0; r3 < t2; r3++) {
-    let t3 = Math.random(), i3 = s2[r3 % a2], m2 = Ex(o2, { numStrips: 10, waviness: 0.015 + Math.random() * 0.01, seed: t3, matcap: c2, opacity: 0, texOffset: i3.offset, texScale: i3.scale }), h2 = new Cr(n2, m2), g2 = Zx[r3], _2 = [g2.position[0] * Qx, g2.position[1] * Qx, g2.position[2]];
+    let t3 = Math.random(), i3 = s2[r3 % a2], m2 = Ex(o2, { numStrips: 10, matcapStrength: 0.35, waviness: 0.01 + Math.random() * 0.005, seed: t3, matcap: c2, opacity: 0, texOffset: i3.offset, texScale: i3.scale }), h2 = new Cr(n2, m2), g2 = Zx[r3], _2 = [g2.position[0] * Qx, g2.position[1] * Qx, g2.position[2]];
     h2.position.set(..._2), h2.rotation.set(...g2.rotation), h2.scale.setScalar(g2.scale);
     let v2 = [...g2.rotation];
     e36.scene.add(h2), l2.push(h2), u2.push(m2), d2.push(t3), f2.push(v2), p2.push(_2);
@@ -21203,7 +21203,7 @@ var tS = [{ position: [0.25, -0.15, 12], rotation: [3.3, 0.1, 3.19], scale: 0.3 
 function nS(e36) {
   let t2 = e36.assetLoader.getAsset(`certMatcap`) || wv(`assets/textures/matcap-certificate.webp`, { assetLoader: e36.assetLoader }), n2 = new Zr(1, 1.8, 16, 16), r2 = 2048, i2 = [[0, 0, 492, 912], [492, 0, 492, 912], [982, 0, 492, 912], [0, 911, 491, 1137], [492, 913, 490, 1135], [983, 912, 491, 911]], a2 = e36.assetLoader.getAsset(`clubPaperAtlas`) || e36.assetLoader.getAsset(`moneyShredsAtlas`), o2 = i2.map(([e37, t3, n3, i3]) => ({ offset: [e37 / r2, 1 - (t3 + i3) / r2], scale: [n3 / r2, i3 / r2] })), s2 = i2.map(([, , e37, t3]) => e37 / t3), c2 = [], l2 = [], u2 = [], d2 = [];
   for (let r3 = 0; r3 < o2.length; r3++) {
-    let i3 = o2[r3], f2 = Math.random(), p2 = kx(a2, { waviness: 0.012 + Math.random() * 8e-3, seed: f2, matcap: t2, opacity: 0, texOffset: i3.offset, texScale: i3.scale }), m2 = new Cr(n2, p2), h2 = tS[r3], g2 = s2[r3];
+    let i3 = o2[r3], f2 = Math.random(), p2 = kx(a2, { matcapStrength: 0.35, waviness: 0.01 + Math.random() * 0.005, seed: f2, matcap: t2, opacity: 0, texOffset: i3.offset, texScale: i3.scale }), m2 = new Cr(n2, p2), h2 = tS[r3], g2 = s2[r3];
     m2.position.set(...h2.position), m2.rotation.set(...h2.rotation), m2.scale.set(h2.scale, h2.scale * 0.5555555555555556 / g2, h2.scale), e36.scene.add(m2), c2.push(m2), l2.push(p2), u2.push(f2), d2.push([...h2.rotation]);
   }
   e36.components.shredMeshes = c2, e36.components.shredMaterials = l2, e36.components.shredSeeds = u2, e36.components.shredBaseRotations = d2, e36.components.shredGeo = n2;

@@ -25,9 +25,9 @@ window.MTStory3D={async create(root){
  loader.stageAssets.initial=loader.stageAssets.initial.filter(a=>['humanHandsAtlas','spcAtlas','handMatcap'].includes(a.key));
  loader.mandatoryAssets=loader.mandatoryAssets.filter(a=>a.key==='frosting');
  loader.stageAssets.stage4=[];loader.stageAssets.worldMap=[];
- loader.stageAssets.stage3.push({type:'texture',key:'clubPaperAtlas',path:'assets/atlases/club-money-papers.webp',mipmaps:false});
+ loader.stageAssets.stage3.push({type:'texture',key:'clubPaperAtlas',path:'assets/atlases/club-money-papers.webp',mipmaps:true});
  const clubAtlases={spcAtlas:'club-fragments.webp',certAtlas:'club-archive.webp'};
- for(const asset of Object.values(loader.stageAssets).flat())if(clubAtlases[asset.key]){asset.type='texture';asset.path='assets/atlases/'+clubAtlases[asset.key];asset.mipmaps=false;}
+ for(const asset of Object.values(loader.stageAssets).flat())if(clubAtlases[asset.key]){asset.type='texture';asset.path='assets/atlases/'+clubAtlases[asset.key];asset.mipmaps=asset.key==='certAtlas';}
  for(const asset of [...loader.mandatoryAssets,...Object.values(loader.stageAssets).flat()])if(asset.path)asset.path='/assets/reference/'+asset.path.replace(/^\//,'');
  const required=keys=>{for(const key of keys)if(!loader.getAsset(key))throw Error('Missing original scene asset: '+key);};
  // Let the hand/glass render before the later paper textures finish downloading.
@@ -61,7 +61,7 @@ window.MTStory3D={async create(root){
  const nativeDispose=loader.dispose.bind(loader);
  function resize(){resizeNeeded=true;schedule();}
  function applySize(){
-  resizeNeeded=false;const w=stage.clientWidth,h=stage.clientHeight,dpr=software?(w<600?.65:.5):Math.min(devicePixelRatio||1,constrained()||w<768?1:1.25);
+  resizeNeeded=false;const w=stage.clientWidth,h=stage.clientHeight,dpr=software?(w<600?.65:.5):Math.min(devicePixelRatio||1,constrained()?.85:1);
   if(w===width&&h===height&&renderer.getPixelRatio()===dpr)return;
   width=w;height=h;ctx._vw=w;ctx._vh=h;camera.fov=w<768?40:30;camera.aspect=w/h;camera.updateProjectionMatrix();
   renderer.setPixelRatio(dpr);renderer.setSize(w,h,false);composer.setPixelRatio(dpr);composer.setSize(w,h);glass.setSize(w,h);shatter.setSize(w,h);text.setSize(w,h);lens.setSize(w*dpr,h*dpr);
@@ -102,7 +102,7 @@ window.MTStory3D={async create(root){
     if(ctx.components.portalCircle)ctx.components.portalCircle.visible=false;
     // Build the original paper/shred objects once, not in an uncancellable
     // deferred callback that can attach objects to the wrong phase on reversal.
-    ctx._stage3DeferredStarted=true;eS(ctx);nS(ctx);rS(ctx);uS(ctx);
+    ctx._stage3DeferredStarted=true;eS(ctx);nS(ctx);rS(ctx);
    }
    phase=next;glass.enabled=next===1;root.dataset.storyPhase=['hand-glass','glass-facts','money-paper'][phase];
   }finally{busy=false;schedule();}
@@ -112,14 +112,14 @@ window.MTStory3D={async create(root){
   raf=0;if(!alive)return;const dt=reduced()?0:Math.min(.05,Math.max(0,(now-prevTime)/1000));prevTime=now;
   measure();if(!visible){gateLastTime=null;stopAudio();ctx._stage2Video?.pause();return;}
   // Do not keep rendering a fully transparent WebGL tail over the next page.
-  if(p>=1){stopAudio();ctx._stage2Video?.pause();canvas.style.opacity='0';root.style.setProperty('--reference-end','0');root.dataset.storyPhase='herd';root.dataset.storyProgress='1.0000';lastRenderedProgress=p;return;}
+  if(p>=1){stopAudio();ctx._stage2Video?.pause();canvas.style.opacity='0';root.style.setProperty('--reference-end','0');root.style.setProperty('--burn-title','0');root.dataset.storyPhase='herd';root.dataset.storyProgress='1.0000';lastRenderedProgress=p;return;}
   if(software&&now-lastDraw<48&&!resizeNeeded){schedule();return;}lastDraw=now;
   if(resizeNeeded)applySize();
   const next=p<.18?0:p<.49?1:2;
   if(next!==phase){change(next).catch(fail);return;}
   if(busy){schedule();return;}
   X.setEnabled(true);root.dataset.storyAudio='chapter-only';if((phase>0||ctx._gateShatterSfxFired)&&!glassDismissed&&!X._ambientActive.has('stage2-ambient'))X.play('stage2-ambient');if(ctx._stage2Video){if(reduced())ctx._stage2Video.pause();else Ov(ctx._stage2Video);}
-  const local=phase===0?clamp(p/.18):phase===1?clamp((p-.18)/.31):clamp((p-.49)/.51)*.84;
+  const local=phase===0?clamp(p/.18):phase===1?clamp((p-.18)/.31):clamp((p-.49)/.51);
   if(phase===0){
    // The supplied gate is a three-second automatic fracture, not a frozen
    // frame waiting for another scroll. Scroll can still fast-forward it, and
@@ -145,7 +145,9 @@ window.MTStory3D={async create(root){
   loader.chunkedUploader?.tick();text.enabled=false;
   lastRenderedProgress=p;const renderCamera=camera.position.toArray();composer.render(dt);rig.restore();
   root.dataset.storyProgress=p.toFixed(4);
-  root.dataset.storyNative=JSON.stringify({phase,gateAuto,gateClock,glassDismissed,glassOpacity,gateMax,breakCount:ctx._storyBreakCount||0,renderCamera,shatterEnabled:shatter.enabled,shatterTime:shatter._actions[0]?.time,handTime:ctx.components.handsModel?._scrubProgress,hand:!!ctx.components.handsModel,camera:camera.position.toArray(),papers:ctx.components.certMeshes?.length||0,shreds:ctx.components.shredMeshes?.length||0,gyro:rig.gyroActive,portalVisible:!!ctx.components.portalCircle?.visible,sourceTextVisible:text.textScene.visible,audioEnabled:X.isEnabled(),playing:[...X._howls].filter(([,h])=>h.playing()).map(([k])=>k),glassY:ctx.components.glassShards?.shards[0]?.position.y});
+  root.dataset.storyNative=JSON.stringify({phase,gateAuto,gateClock,glassDismissed,glassOpacity,gateMax,breakCount:ctx._storyBreakCount||0,renderCamera,shatterEnabled:shatter.enabled,shatterTime:shatter._actions[0]?.time,handTime:ctx.components.handsModel?._scrubProgress,hand:!!ctx.components.handsModel,camera:camera.position.toArray(),paperProgress:phase===2?local:0,paperClearance:phase===2?camera.position.z-Math.max(...[...(ctx.components.certMeshes||[]),...(ctx.components.shredMeshes||[])].map(m=>m.position.z)):null,papers:ctx.components.certMeshes?.length||0,shreds:ctx.components.shredMeshes?.length||0,gyro:rig.gyroActive,portalVisible:!!ctx.components.portalCircle?.visible,sourceTextVisible:text.textScene.visible,audioEnabled:X.isEnabled(),playing:[...X._howls].filter(([,h])=>h.playing()).map(([k])=>k),glassY:ctx.components.glassShards?.shards[0]?.position.y});
+  root.style.setProperty('--burn-title',String(phase===2?clamp((local-.28)/.04)*(1-clamp((local-.38)/.05)):0));
+  root.style.setProperty('--burn-title-scale',String(1+(phase===2?clamp((local-.28)/.15)*.12:0)));
   root.style.setProperty('--reference-end',String(clamp((p-.90)/.04)*(1-clamp((p-.97)/.03))));
   canvas.style.opacity=String(1-clamp((p-.97)/.03));root.dataset.storyPhase=p>.975?'herd':['hand-glass','glass-facts','money-paper'][phase];
   schedule();

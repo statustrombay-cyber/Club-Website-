@@ -37,6 +37,7 @@
         </article>
       </div>
       <div class="story-static-art" aria-hidden="true"><img src="/assets/reference/assets/textures/original-banknote.webp" alt="" width="1284" height="574" loading="lazy" decoding="async"></div>
+      <p class="story-burn-title" aria-hidden="true">mindful tattva</p>
       <h2 class="story-type" aria-label="This club focuses on humans.">
         <span class="story-type-club" aria-hidden="true">this <em>c</em>lub,</span>
         <span class="story-type-focus" aria-hidden="true">focuses on</span>
