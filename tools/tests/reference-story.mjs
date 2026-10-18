@@ -85,7 +85,7 @@ try{
  for(const mode of ['reduced-motion','save-data','slow-engine']){
   const c=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,reducedMotion:mode==='reduced-motion'?'reduce':'no-preference'});
   if(mode==='save-data')await c.addInitScript(()=>Object.defineProperty(navigator,'connection',{value:{saveData:true,addEventListener(){}}}));
-  const p=await c.newPage();if(mode==='slow-engine')await p.route('**/scene-assets.php?asset=engine',async r=>{await new Promise(resolve=>setTimeout(resolve,14000));await r.continue();});
+  const p=await c.newPage();if(mode==='slow-engine')await p.route('**/index.php?scene-asset=engine',async r=>{await new Promise(resolve=>setTimeout(resolve,14000));await r.continue();});
   await p.goto(base+'/#human-story');
   await p.waitForFunction(()=>document.querySelector('.mind-story')?.dataset.storyState==='ready',null,{timeout:70000});
   check(await p.locator('.story-canvas').isVisible(),mode+' retains visible WebGL');

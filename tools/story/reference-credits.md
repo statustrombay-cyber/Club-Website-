@@ -191,3 +191,54 @@ unchanged horse MP4s. Extract locally, back up the live site, and overwrite the
 included files in the existing site folder; do not delete existing folders or
 leave the ZIP publicly accessible. Validate `/scene-check.php` on the actual
 domain after upload before claiming the public issue is resolved.
+
+## InfinityFree 403 and normal GitHub ZIP workflow (2026-10-18)
+
+The user supplied the shared InfinityFree 403 error-page URL and requested
+normal repository updates only: **no additional or nested deployment ZIP**.
+Consulted the host's 403 guide (`/docs?topic=58664`), browser-security guide
+(topic 49353), and published file-size limits (topic 49310). The shared error
+URL does not identify the denied original request. New automated probes of
+the public root/index/diagnostic returned tool errors or the host's 404 page;
+these are not a verified diagnosis of the user's browser 403 or a successful
+production deployment. The host documents mandatory JavaScript/cookie checks
+for browsers, including limitations for automated tools.
+
+Changes for this upload workflow:
+- The original scene now requests `/index.php?scene-asset=<fixed-key>` and the
+  diagnostic opens at `/index.php?scene-check=1`. These use the existing front
+  controller, with no dependency on an additional public script or pretty-URL
+  rewrite. Older scene endpoint URLs remain compatible; method/allowlist,
+  byte integrity, MIME and conditional responses retain their protections.
+- Removed inline comments from Apache RewriteRule directives for portable
+  configuration syntax. Private directory rules and disabled directory
+  listing remain intact. No host firewall or private-folder protection was
+  disabled, and this is not claimed to fix an account-level denial.
+- GitHub export attributes omit development tools/package manifests and live
+  `data/site.json`/`data/config.php` on normal Download ZIP. Production payloads,
+  folder-protection files and all three original horse videos stay included.
+  Source/build tools and data files remain in Git; no data was deleted/reset.
+- README now explains the exact domain directory, GitHub outer-folder trap,
+  correct root .htaccess versus intentionally private app/data rules, 755/644
+  permissions, full-download branch selection, and first-install versus
+  existing-site data handling. Node/npm are local development tools only.
+
+Verification:
+- **708 PHP/site checks passed**, including both URL forms for all eleven
+  assets, malformed array/path requests, HEAD/ETags/read-only behavior and
+  diagnostic access through index.php.
+- **154 actual-scene browser checks passed, errors []** at 390×844/1440×900,
+  retaining deliberate failures of direct WASM/KTX2/GLB URLs and the existing
+  movement/audio/preference checks.
+- Diagnostic: 15 positive checks pass. Simulated HTML-instead-of-WASM and
+  HTTP-403 responses each produce the expected named decoder failure and
+  preserve the original requested URL in the report.
+- `tools/tests/source-export.py` inspects a GitHub-equivalent tar stream in
+  memory: **142 files**, eleven byte-identical scene payloads, three original
+  horse clips, no nested ZIP, no data/password overwrite, no development tools,
+  every exported file within conservative published hosting-size limits.
+  This check creates no deployment archive on disk.
+
+No new upload ZIP was created, no production server was accessed, and no
+main-branch merge was performed. Actual production verification still requires
+the user's full upload and a real-browser check on the domain.

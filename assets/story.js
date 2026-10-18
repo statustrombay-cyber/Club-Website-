@@ -20,7 +20,7 @@
   function engine(){
    if(window.MTStory3D)return Promise.resolve();if(enginePromise)return enginePromise;
    enginePromise=new Promise((resolve,reject)=>{
-    const script=document.createElement('script');script.src='/scene-assets.php?asset=engine';script.async=true;
+    const script=document.createElement('script');script.src='/index.php?scene-asset=engine';script.async=true;
     // Mobile downloads are allowed to finish. The former 12s timeout reproduced
     // a permanent HTML-only scene even when the script arrived two seconds later.
     const timer=setTimeout(()=>{script.remove();reject(Error('3D engine timed out after 60 seconds'));},60000);

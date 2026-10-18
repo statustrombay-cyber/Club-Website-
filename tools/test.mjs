@@ -2238,20 +2238,32 @@ await php.writeFile('/site/data/not-public.glb',new Uint8Array([0,1,2]));
 ok('the binary-type allowance does not expose a private-data model',String(await php.x(['mt_is_static_file("data/not-public.glb") ? "leak" : "private"']))==='private');
 console.log('\n— PHP-hosted scene delivery —');
 const sceneAssets=JSON.parse(String(await php.x(['json_encode(require MT_APP . "/scene-manifest.php")'])));
-for(const [id,entry] of Object.entries(sceneAssets)){
- const response=await get('/scene-assets.php?asset='+id);
+for(const delivery of ['/scene-assets.php?asset=','/index.php?scene-asset='])for(const [id,entry] of Object.entries(sceneAssets)){
+ const response=await get(delivery+id);
  const source=fs.readFileSync(path.join(ROOT,entry.path));
  const actual=Buffer.from(response.body,id==='engine'?'utf8':'binary');
  ok('PHP scene delivery is byte-identical: '+id,response.status===200&&source.equals(actual),String(response.status));
  ok('PHP scene delivery uses correct type: '+id,response.headers.some(([k,v])=>k==='Content-Type'&&v===entry.type));
- const head=await request({uri:'/scene-assets.php?asset='+id,method:'HEAD'});
+ const head=await request({uri:delivery+id,method:'HEAD'});
  ok('HEAD scene delivery is body-free: '+id,head.status===200&&head.body==='');
- const conditional=await get('/scene-assets.php?asset='+id,{headers:{'If-None-Match':'"'+entry.sha256+'"'}});
+ const conditional=await get(delivery+id,{headers:{'If-None-Match':'"'+entry.sha256+'"'}});
  ok('scene ETag revalidation works: '+id,conditional.status===304&&conditional.body==='');
 }
 for(const query of ['asset=../../data/site.json','asset[]=engine','asset=missing','file=app/bootstrap.php']){
  const response=await get('/scene-assets.php?'+query);ok('scene delivery rejects arbitrary files: '+query,response.status===404&&!String(response.body).includes('Csmu'));
 }
+for(const query of ['scene-asset=../../data/site.json','scene-asset[]=engine','scene-asset=missing']){
+ const response=await get('/index.php?'+query);ok('front controller keeps the asset allowlist: '+query,response.status===404&&!String(response.body).includes('/site/'));
+}
+const blockedDirectMethod=await request({uri:'/index.php?scene-asset=engine',method:'POST'});
+ok('front controller asset delivery is still read-only',blockedDirectMethod.status===405);
+const directSceneCheck=await get('/index.php?scene-check=1');
+ok('hosting check uses the existing PHP entry point without rewrite rules',directSceneCheck.status===200&&directSceneCheck.body.includes('Browser WebGL 2')&&directSceneCheck.body.includes('/index.php?scene-asset='));
+const malformedSceneCheck=await get('/index.php?scene-check[]=1');
+ok('array query cannot replace homepage with a diagnostic or expose a PHP warning',malformedSceneCheck.status===200&&clean(malformedSceneCheck.body)&&!malformedSceneCheck.body.includes('const report={host:'));
+const apacheRules=fs.readFileSync(path.join(ROOT,'.htaccess'),'utf8');
+ok('Apache directives do not use unsupported inline comments',apacheRules.split('\n').filter(line=>line.trim()&&!line.trim().startsWith('#')).every(line=>!line.includes(' # ')));
+ok('private access restrictions remain in place while public index is accessible',apacheRules.includes('RewriteRule ^(app|views|data|tools)/ - [F,L]')&&apacheRules.includes('Options -Indexes')&&!/^\s*(?:Deny from all|Require all denied)\s*$/m.test(apacheRules.split('<FilesMatch')[0]));
 const missingPayloadPath='/site/app/scene-payloads/'+sceneAssets['basis-wasm'].chunks[0];
 const intactPayload=await php.readFile(missingPayloadPath);
 await php.unlink(missingPayloadPath);

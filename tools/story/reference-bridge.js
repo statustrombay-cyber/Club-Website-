@@ -19,7 +19,7 @@ window.MTStory3D={async create(root){
  loader.manager.setURLModifier(url=>{
   if(/^(?:data:|blob:)/.test(url))return url;
   const path=url.replace(/^\/assets\/reference\//,'');
-  if(hosted[path])return '/scene-assets.php?asset='+hosted[path];
+  if(hosted[path])return '/index.php?scene-asset='+hosted[path];
   return /^(?:https?:|\/assets\/reference\/)/.test(url)?url:'/assets/reference/'+url.replace(/^\//,'');
  });
  loader.stageAssets.initial=loader.stageAssets.initial.filter(a=>['humanHandsAtlas','spcAtlas','textsAtlas','handMatcap'].includes(a.key));
