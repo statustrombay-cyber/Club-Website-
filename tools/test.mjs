@@ -2197,8 +2197,19 @@ ok('the story runtime is inlined and initialises after markup exists',
   home.body.includes('function startStory()') && storySource.includes("document.addEventListener('DOMContentLoaded',startStory") && !home.body.includes('src="/assets/story.js"'));
 ok('the glass keeps its qualifier and primary-source citations',
   storyView.includes('283 participants · low-certainty evidence') && storyView.includes('PMC10393216') && storyView.includes('PMC12280877'));
-ok('newspapers carry historical profiles and a dated research reading, not invented quotations',
-  ['Sigmund Freud', 'Carl Rogers', 'William James', 'Research reading · 2025', 'not historical newspaper facsimiles'].every(text => storyView.includes(text)));
+const atlasBaker=fs.readFileSync(path.join(ROOT,'tools/story/adapt-atlases.py'),'utf8');
+ok('photographed psychology papers use the supplied UV islands without the removed research panel',
+  ['Sigmund Freud','Carl Rogers','William James'].every(text=>atlasBaker.includes(text)) && !storyView.includes('story-research') && !storyView.includes('Behind the fragments'));
+ok('every psychologist photograph is local and available to the atlas baker',
+  ['freud','rogers','james'].every(name=>fs.statSync(path.join(ROOT,'assets/story/portraits',name+'.webp')).size>1000));
+ok('both paper shaders print their reverse faces instead of blank stock',
+  (fs.readFileSync(path.join(ROOT,'tools/story/reference-core.js'),'utf8').match(/vec2 paperUv = gl_FrontFacing/g)||[]).length===2 && !fs.readFileSync(path.join(ROOT,'tools/story/reference-core.js'),'utf8').includes('vec3 backBase = vec3(0.341'));
+ok('scene warms early without a loading banner and hides the header only within its chapter',
+  storySource.includes('engine().then(') && storySource.includes('requestIdleCallback') && !storySource.includes("announce('Loading the animated scene") && storySource.includes("classList.toggle('story-immersive',active)") && storySource.includes('header.inert=active'));
+ok('upward scroll dismisses actual glass passes without replaying the fracture',
+  ['glassDismissed=true','gateMax=gateProgress','uStoryGlassAlpha.value=glassOpacity','shatter.enabled=false;glass.enabled=false'].every(t=>fs.readFileSync(path.join(ROOT,'tools/story/reference-bridge.js'),'utf8').includes(t)));
+
+
 ok('the chapter has native-scroll, motion-preference and missing-asset fallbacks',
   storySource.includes('function staticStory(reason)') && storySource.includes('3D engine timed out') && storySource.includes("motion.addEventListener('change',configure)") && !storySource.includes("addEventListener('wheel'"));
 ok('the decorative canvas stays out of the accessible tree but the actual facts do not',
@@ -2236,47 +2247,6 @@ const binaryAllowed=JSON.parse(String(await php.x(['json_encode(array_map("mt_is
 ok('the actual PHP built-in-server asset gate permits all four original-scene binary types',binaryAllowed.every(Boolean),JSON.stringify(binaryAllowed));
 await php.writeFile('/site/data/not-public.glb',new Uint8Array([0,1,2]));
 ok('the binary-type allowance does not expose a private-data model',String(await php.x(['mt_is_static_file("data/not-public.glb") ? "leak" : "private"']))==='private');
-console.log('\n— PHP-hosted scene delivery —');
-const sceneAssets=JSON.parse(String(await php.x(['json_encode(require MT_APP . "/scene-manifest.php")'])));
-for(const delivery of ['/scene-assets.php?asset=','/index.php?scene-asset='])for(const [id,entry] of Object.entries(sceneAssets)){
- const response=await get(delivery+id);
- const source=fs.readFileSync(path.join(ROOT,entry.path));
- const actual=Buffer.from(response.body,id==='engine'?'utf8':'binary');
- ok('PHP scene delivery is byte-identical: '+id,response.status===200&&source.equals(actual),String(response.status));
- ok('PHP scene delivery uses correct type: '+id,response.headers.some(([k,v])=>k==='Content-Type'&&v===entry.type));
- const head=await request({uri:delivery+id,method:'HEAD'});
- ok('HEAD scene delivery is body-free: '+id,head.status===200&&head.body==='');
- const conditional=await get(delivery+id,{headers:{'If-None-Match':'"'+entry.sha256+'"'}});
- ok('scene ETag revalidation works: '+id,conditional.status===304&&conditional.body==='');
-}
-for(const query of ['asset=../../data/site.json','asset[]=engine','asset=missing','file=app/bootstrap.php']){
- const response=await get('/scene-assets.php?'+query);ok('scene delivery rejects arbitrary files: '+query,response.status===404&&!String(response.body).includes('Csmu'));
-}
-for(const query of ['scene-asset=../../data/site.json','scene-asset[]=engine','scene-asset=missing']){
- const response=await get('/index.php?'+query);ok('front controller keeps the asset allowlist: '+query,response.status===404&&!String(response.body).includes('/site/'));
-}
-const blockedDirectMethod=await request({uri:'/index.php?scene-asset=engine',method:'POST'});
-ok('front controller asset delivery is still read-only',blockedDirectMethod.status===405);
-const directSceneCheck=await get('/index.php?scene-check=1');
-ok('hosting check uses the existing PHP entry point without rewrite rules',directSceneCheck.status===200&&directSceneCheck.body.includes('Browser WebGL 2')&&directSceneCheck.body.includes('/index.php?scene-asset='));
-const malformedSceneCheck=await get('/index.php?scene-check[]=1');
-ok('array query cannot replace homepage with a diagnostic or expose a PHP warning',malformedSceneCheck.status===200&&clean(malformedSceneCheck.body)&&!malformedSceneCheck.body.includes('const report={host:'));
-const apacheRules=fs.readFileSync(path.join(ROOT,'.htaccess'),'utf8');
-ok('Apache directives do not use unsupported inline comments',apacheRules.split('\n').filter(line=>line.trim()&&!line.trim().startsWith('#')).every(line=>!line.includes(' # ')));
-ok('private access restrictions remain in place while public index is accessible',apacheRules.includes('RewriteRule ^(app|views|data|tools)/ - [F,L]')&&apacheRules.includes('Options -Indexes')&&!/^\s*(?:Deny from all|Require all denied)\s*$/m.test(apacheRules.split('<FilesMatch')[0]));
-const missingPayloadPath='/site/app/scene-payloads/'+sceneAssets['basis-wasm'].chunks[0];
-const intactPayload=await php.readFile(missingPayloadPath);
-await php.unlink(missingPayloadPath);
-const missingPayload=await get('/scene-assets.php?asset=basis-wasm');
-ok('incomplete upload gives a named recoverable error, not HTML as WASM',missingPayload.status===503&&missingPayload.body.includes('basis-wasm')&&!missingPayload.body.includes('/site/'));
-await php.writeFile(missingPayloadPath,"<?php return 'not-base64!!';");
-const damagedPayload=await get('/scene-assets.php?asset=basis-wasm');
-ok('damaged upload cannot be served as a valid decoder',damagedPayload.status===503&&damagedPayload.body.includes('damaged'));
-await php.writeFile(missingPayloadPath,intactPayload);
-const invalidSceneMethod=await request({uri:'/scene-assets.php?asset=engine',method:'POST'});
-ok('scene delivery is read-only',invalidSceneMethod.status===405);
-const sceneCheck=await get('/scene-check.php');
-ok('hosting diagnostic page loads without private-data access',sceneCheck.status===200&&sceneCheck.body.includes('Browser WebGL 2')&&!sceneCheck.body.includes('Csmu@MT'));
 ok('the full-resolution reference manifest preserves all eleven recoverable clips',
   hdReference.parts.length === 11 && hdReference.parts.every((part, i) => part.width === 1080 && part.height === 2400 && part.gitPath === `video_part_${String(i).padStart(2, '0')}.mp4` && /^[a-f0-9]{40}$/.test(part.gitBlob) && /^[a-f0-9]{64}$/.test(part.sha256)));
 ok('root reference MP4s are no longer in the live tree', !fs.readdirSync(ROOT).some(name => /\.mp4$/i.test(name)));

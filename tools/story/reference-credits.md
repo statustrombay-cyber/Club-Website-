@@ -148,97 +148,70 @@ A source-canvas WebM recording and inspected stills are kept outside the public
 checkout. A recording of this implementation is evidence of actual rendering,
 not a replacement footage layer or a pixel-identical/physical-device claim.
 
-## PHP shared-host delivery (2026-10-18)
+## Photographic papers, early warmup and one-way glass dismissal
 
-The reported public site still failed despite the local repair. The public
-HTML/bootstrap and decoder JavaScript were reachable through the page-fetch
-tool; WASM/KTX2 fetches returned tool errors and the large engine fetch had no
-extracted text. Those results alone do **not** establish that the origin host
-blocked these types: binary extraction/tool behavior was not independently
-ruled out. Direct sandbox TLS to that host was unavailable. No production
-upload/deployment has been performed by this agent.
+The user confirmed the reported hosting failure was an unextracted upload and
+requested the working version back. This revision reverses **both** hosting
+workaround commits (`db9f874` and `4dcccca`): normal static engine/decoder/model
+requests are restored; PHP payload chunks, endpoints and host-only diagnostics
+are removed. No additional deployment ZIP was created. The pre-edit backup is
+`/home/user/reference-study/before-newspaper-smooth-db9f874.tar.gz`, outside the
+website. Protected club data, uploads, payment/pass/backend behavior and all
+three horse files have no changes relative to the working `8b1f20f` baseline.
 
-The hosting-compatible build now delivers the prebuilt engine, both WASM
-decoders, three KTX2 atlases and five GLBs through `scene-assets.php` using a
-fixed allowlist. `tools/build-scene-assets.mjs` creates private PHP/base64
-payload chunks below 400 KiB, with original byte counts and SHA-256 checks.
-The endpoint does not run/transcode the animation, fetch external URLs, accept
-paths or access club records. Both DRACO and KTX2 share the scoped URL manager.
-Normal browser execution/Blob workers/WebGL2 are still required; no server
-Node.js, Java or Three.js installation is required. Unchanged WebP textures,
-small decoder JavaScript and MP3 audio remain ordinary static assets.
+The previous atlas adaptation flattened newspapers into plain rectangular text
+panels, and both original paper fragment shaders deliberately returned blank
+stock for backfaces. The replacement now preserves the supplied six portrait
+and eight landscape UV islands, using large editorial headings, dense columns
+and real black-and-white photographic portraits of Freud, Rogers and James.
+Both faces sample printed texture; reverse-face UVs are mirrored so letters
+are not backwards. The live banknote remains byte-identical to the supplied
+KTX2. Photograph provenance and the unverified Rogers reuse rights are recorded
+in `assets/story/portraits/CREDITS.md` (not a claim of public-domain status).
+The moving objects still use the supplied geometry, camera and deformation/
+individual-strip shaders; this is an adapted source layout, not a claim of
+pixel-identical historical typography or content.
 
-`scene-check.php` is an unlinked, read-only, noindex browser diagnostic: checks
-WebGL2, WebAssembly, a Blob worker, all eleven downloaded byte counts/hashes,
-and actual scene-engine registration. It never exposes PHP configuration,
-credentials, filesystem paths or student data. An all-green result verifies
-asset delivery/capabilities, not every animation frame or physical-phone GPU.
+Removed the whole “Behind the fragments” details panel rather than hiding its
+summary. Published-study qualifiers/source links remain in the accessible fact
+markup, without another button or panel. Within the story, a scroll-measured
+body class hides the header, butterfly and back-to-top control; the header is
+also inert/unfocusable. Normal navigation returns outside the chapter.
 
-Verification of this revision:
-- PHP/site suite: **656 passed, 0 failed**, including every byte-identical
-  endpoint response, correct MIME, HEAD, ETags, arbitrary-path/array rejection,
-  unsupported methods and incomplete/damaged-upload errors.
-- Actual scene browser suite: **154 checks, errors []**, 390×844 and 1440×900,
-  with all direct WASM/KTX2/GLB URLs deliberately returning HTTP 500. Also
-  retains reduced-motion, Data Saver, delayed-engine and movement/audio tests.
-- Public diagnostic: **15 checks passed** locally; a simulated HTTP-200 HTML
-  protection page replacing the Basis decoder correctly produces one named
-  failure instead of a false pass.
-- Newly rendered hand/banknote/shred screenshots inspected outside the repo.
+For faster entry, the engine starts fetching on initialisation and prepares
+models/shaders during an early idle period. The unused source advertising-text
+atlas and unused initial procedural backgrounds are not loaded, initial assets
+have priority over later papers, first-use shaders warm offscreen, an unused
+lens/text pass is disabled, and real-GPU backing resolution is capped at 1.25
+DPR. No loading/reconnecting banner is painted; genuine rendering failures
+still expose the accessible fallback rather than being silently concealed.
+The low-strength grain is reduced so photographs/ink read more clearly.
 
-The update ZIP excludes live `data/`, uploaded club/student files and the three
-unchanged horse MP4s. Extract locally, back up the live site, and overwrite the
-included files in the existing site folder; do not delete existing folders or
-leave the ZIP publicly accessible. Validate `/scene-check.php` on the actual
-domain after upload before claiming the public issue is resolved.
+Fracture progress is monotonic during a forward visit. An upward gesture
+latches dismissal: both actual glass composites and their fact overlays fade,
+with intermediate rendered frames retained even on a slow GPU, then their
+passes are disabled. Entering the opening phase from below cannot start a new
+fracture/SFX. Only a new forward visit after leaving above the chapter rearms
+it. Hand/shard objects are reused across the first two phases and on rearming
+instead of needlessly rebuilding them. Mouse listeners are explicitly cleaned
+up on disposal.
 
-## InfinityFree 403 and normal GitHub ZIP workflow (2026-10-18)
+Verification evidence is kept outside the public tree. The actual desktop
+paper frames at progress .77/.79/.81 show photographs, printed reverse faces,
+independent torn sheets and no navigation overlays. A cold local software-GPU
+run prepared the scene at approximately **1,932 ms**, while the track was still
+7,379 px below the initial view: evidence that early warmup ran, not a promise
+of a particular download time/FPS on production or a physical phone. A targeted
+reverse test sampled actual rendered opacity **1 → .75 → .5 → .25 → 0** without
+an additional fracture; leaving above and entering forward again rearms once.
 
-The user supplied the shared InfinityFree 403 error-page URL and requested
-normal repository updates only: **no additional or nested deployment ZIP**.
-Consulted the host's 403 guide (`/docs?topic=58664`), browser-security guide
-(topic 49353), and published file-size limits (topic 49310). The shared error
-URL does not identify the denied original request. New automated probes of
-the public root/index/diagnostic returned tool errors or the host's 404 page;
-these are not a verified diagnosis of the user's browser 403 or a successful
-production deployment. The host documents mandatory JavaScript/cookie checks
-for browsers, including limitations for automated tools.
-
-Changes for this upload workflow:
-- The original scene now requests `/index.php?scene-asset=<fixed-key>` and the
-  diagnostic opens at `/index.php?scene-check=1`. These use the existing front
-  controller, with no dependency on an additional public script or pretty-URL
-  rewrite. Older scene endpoint URLs remain compatible; method/allowlist,
-  byte integrity, MIME and conditional responses retain their protections.
-- Removed inline comments from Apache RewriteRule directives for portable
-  configuration syntax. Private directory rules and disabled directory
-  listing remain intact. No host firewall or private-folder protection was
-  disabled, and this is not claimed to fix an account-level denial.
-- GitHub export attributes omit development tools/package manifests and live
-  `data/site.json`/`data/config.php` on normal Download ZIP. Production payloads,
-  folder-protection files and all three original horse videos stay included.
-  Source/build tools and data files remain in Git; no data was deleted/reset.
-- README now explains the exact domain directory, GitHub outer-folder trap,
-  correct root .htaccess versus intentionally private app/data rules, 755/644
-  permissions, full-download branch selection, and first-install versus
-  existing-site data handling. Node/npm are local development tools only.
-
-Verification:
-- **708 PHP/site checks passed**, including both URL forms for all eleven
-  assets, malformed array/path requests, HEAD/ETags/read-only behavior and
-  diagnostic access through index.php.
-- **154 actual-scene browser checks passed, errors []** at 390×844/1440×900,
-  retaining deliberate failures of direct WASM/KTX2/GLB URLs and the existing
-  movement/audio/preference checks.
-- Diagnostic: 15 positive checks pass. Simulated HTML-instead-of-WASM and
-  HTTP-403 responses each produce the expected named decoder failure and
-  preserve the original requested URL in the report.
-- `tools/tests/source-export.py` inspects a GitHub-equivalent tar stream in
-  memory: **142 files**, eleven byte-identical scene payloads, three original
-  horse clips, no nested ZIP, no data/password overwrite, no development tools,
-  every exported file within conservative published hosting-size limits.
-  This check creates no deployment archive on disk.
-
-No new upload ZIP was created, no production server was accessed, and no
-main-branch merge was performed. Actual production verification still requires
-the user's full upload and a real-browser check on the domain.
+Final regression results for this revision: **608 unit checks, zero failures**;
+**157 full-browser checks, zero page errors**, at 390×844 and 1440×900; fourteen
+atlas-island photo/text checks, three greyscale portrait checks and an unchanged
+original banknote SHA-256. The additional `tools/tests/story-smoothness.mjs`
+checks actual intermediate fade frames, no replay on small reverse/forward
+motions, one rearm on a fresh visit, and navigation returning only after the
+whole story exits the viewport. See `reference-story.mjs`'s header for optional
+Playwright/Chromium setup; run both scripts against `npm run preview`. Python
+atlas checks require Pillow. No physical-phone/hosted-production FPS claim is
+made from these local browser results.

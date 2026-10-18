@@ -34,31 +34,6 @@ if (PHP_SAPI === 'cli-server' && mt_is_static_file($route)) {
     return false;
 }
 
-/* Direct front-controller URLs do not depend on pretty-URL rewriting or
- * additional public PHP entry points. Keep the old scene URLs compatible. */
-if (in_array($route, ['home', 'index.php'], true)) {
-    if (array_key_exists('scene-asset', $_GET)) {
-        $_GET['asset'] = $_GET['scene-asset'];
-        $route = 'scene-assets.php';
-    } elseif (($_GET['scene-check'] ?? null) === '1') {
-        $route = 'scene-check.php';
-    }
-}
-
-/* Public scene delivery/check routes, also used by PHP shared hosting. */
-if ($route === 'scene-assets.php') {
-    require_once MT_APP . '/scene-assets.php';
-    mt_scene_asset_handle();
-    return;
-}
-if ($route === 'scene-check.php') {
-    mt_header('Content-Type', 'text/html; charset=utf-8');
-    mt_header('Cache-Control', 'no-store');
-    mt_header('X-Robots-Tag', 'noindex, nofollow');
-    require MT_VIEWS . '/public/scene-check.php';
-    return;
-}
-
 if (str_starts_with($route, 'api/')) {
     mt_api_handle($route);
     return;

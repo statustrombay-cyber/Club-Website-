@@ -7,5 +7,3 @@ await build({stdin:{contents,resolveDir:process.cwd(),sourcefile:'recovered-chap
 // Preserve GLSL newlines, but do not retain whitespace-only source lines.
 const bundle='assets/vendor/story-3d.js';
 fs.writeFileSync(bundle,fs.readFileSync(bundle,'utf8').split('\n').map(line=>line.replace(/[\t ]+$/,'')).join('\n'));
-// Keep hosting payloads byte-identical to the freshly built browser engine.
-await import('./build-scene-assets.mjs');

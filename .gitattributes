@@ -13,14 +13,3 @@ screen-*.mp4 export-ignore
 
 # Uploaded reference archives are never deployable runtime files.
 /*.zip export-ignore
-
-# GitHub Download ZIP is also the existing-site upload: keep dev tooling out.
-# Source/build tools remain in Git; production uses the prebuilt scene.
-/tools/ export-ignore
-/package.json export-ignore
-/package-lock.json export-ignore
-
-# Never overwrite live club records/settings when extracting a full GitHub ZIP.
-# Keep data/.htaccess in the archive so the private folder stays protected.
-/data/site.json export-ignore
-/data/config.php export-ignore

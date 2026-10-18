@@ -27,7 +27,7 @@ const OUT = path.resolve(ROOT, process.argv.slice(2).find(a => !a.startsWith('--
 const UNCHANGED_MEDIA = new Set(['assets/media/horses-running.mp4', 'assets/media/horses-desktop.mp4', 'assets/media/horses-mobile.mp4']);
 
 const DIRS = ['app', 'views', 'assets'];
-const FILES = ['index.php', '.htaccess', 'scene-assets.php', 'scene-check.php', 'uploads/.htaccess'];
+const FILES = ['index.php', '.htaccess', 'uploads/.htaccess'];
 const SKIP_DIRS = new Set(['.git', 'node_modules', '.arena', 'data', 'tools', 'data/logs', 'data/sessions', 'data/backups']);
 const SKIP_FILES = /^(\.DS_Store|Thumbs\.db)$|\.(swp|zip)$/i;
 
@@ -65,10 +65,9 @@ for (const file of FILES) {
 if (UPDATE) {
   entries.push({rel: 'UPDATE-INSTRUCTIONS.txt', dir: false, data: Buffer.from(
     'UPDATE PACKAGE — EXISTING CLUB WEBSITE ONLY\n\n' +
-    'Back up the existing live site first. Extract this ZIP on your computer, then upload its contents into the existing site folder containing index.php (usually htdocs), overwriting included files. Do not delete existing folders or leave the ZIP in the public site folder.\n' +
+    'Extract over the existing site; do not delete its folders first.\n' +
     'This package reuses the three unchanged horse MP4s already installed in assets/media/.\n' +
     'It does not remove or replace your data/, uploads/ or existing media.\n' +
-    'Open /scene-check.php on your own domain to verify engine, decoders, models and textures. No Node.js/JavaScript installation is required on the server.\n' +
     'After extraction, obsolete files may be removed individually: assets/audio/intro-gallop.mp3, assets/audio/chapter-foreboding.mp3, assets/story/hand-rig.glb, assets/story/hand-skin.webp and assets/story/HAND-LICENSE.txt.\n' +
     'Never delete whole data/, uploads/, assets/ or media folders.\n' +
     'For a fresh install use Club-Website-deploy.zip, which includes all required media.\n'

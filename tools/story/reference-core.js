@@ -15886,7 +15886,7 @@ var _g = class {
   constructor(e36) {
     this.renderer = e36;
     let t2 = window.innerWidth <= 768;
-    this.assets = { models: {}, textures: {}, animations: {}, meta: {} }, this.manager = new zc(), this.dracoLoader = new Vh(this.manager), this.dracoLoader.setDecoderPath(`/assets/reference/vendor/draco/`), this.gltfLoader = new Hm(this.manager), this.gltfLoader.setDRACOLoader(this.dracoLoader), this.ktx2Loader = new ig(this.manager), this.renderer && (this.ktx2Loader.setTranscoderPath(`/assets/reference/vendor/basis/`), this.ktx2Loader.detectSupport(this.renderer)), this.gltfLoader.setKTX2Loader(this.ktx2Loader), this.mandatoryAssets = [{ type: `texture`, key: `frosting`, path: `assets/textures/frost.webp`, mipmaps: false }, { type: `procedural`, kind: `radialColor`, key: `loaderGradient`, params: { center: [0.5, 1.3], radiusX: 1.267, radiusY: 1.434, stops: [{ offset: 0.15855, color: [212, 246, 235] }, { offset: 0.26169, color: [179, 222, 209] }, { offset: 0.36483, color: [145, 199, 183] }, { offset: 0.46797, color: [112, 175, 156] }, { offset: 0.57111, color: [78, 151, 130] }, { offset: 0.78555, color: [53, 111, 94] }, { offset: 1, color: [28, 72, 57] }], width: 384, height: 216 } }, { type: `procedural`, kind: `radialPull`, key: `stage1Foreground1`, params: { color: [150, 191, 174], topLeft: 0.03, topCenter: 0, topRight: 0.03, botLeft: 1, botCenter: 0.35, botRight: 1, centerAlpha: 0, centerSigma: 0.25 } }, { type: `procedural`, kind: `dualRadial`, key: `stage1Background1`, stretched: true, params: { baseColor: [110, 200, 230], glowColor: [170, 235, 215], topCenter: [0.5, 0], bottomCenter: [0.5, 1], topRadius: [0.85, 0.7], bottomRadius: [0.85, 0.7], width: 256, height: 144 } }], this.stageAssets = { initial: [{ type: `model`, key: `fancyHand1`, path: `assets/models/fancy_hand_2.glb` }, { type: `model`, key: `humanHand1`, path: `assets/models/human_hand_1.glb` }, { type: `model`, key: `cameraModel1`, path: `assets/models/camera_1.glb` }, { type: `texture`, key: `handMatcap`, path: `assets/textures/matcap-hand.webp`, mipmaps: false }, { type: `ktx2`, key: `humanHandsAtlas`, path: `assets/atlases/human_hands.ktx2` }, { type: `procedural`, kind: `solid`, key: `stage1Background2`, stretched: false, params: { color: [255, 255, 255], alpha: 1 } }, { type: `ktx2`, key: `spcAtlas`, path: `assets/atlases/shards-petals-coins.ktx2` }, { type: `ktx2`, key: `textsAtlas`, path: `assets/atlases/texts.ktx2` }], stage2: [{ type: `model`, key: `glassShatter`, path: `assets/models/stage2_glass-shatter.glb` }, { type: `model`, key: `allShards`, path: `assets/models/glass_shards.glb`, animated: false }, { type: `model`, key: `handsModel2`, path: `assets/models/human_hand_2.glb` }, { type: `model`, key: `cameraModel2`, path: `assets/models/camera_2.glb` }, { type: `procedural`, kind: `radialPull`, key: `stage2Foreground`, params: { color: [0, 0, 0], topLeft: 0.03, topCenter: 0, topRight: 0.03, botLeft: 1, botCenter: 0.35, botRight: 1, centerAlpha: 0, centerSigma: 0.25 } }, { type: `texture`, key: `stage2Background2`, path: `assets/textures/stage2_background2.webp`, mipmaps: false, wrap: true }], stage3: [{ type: `model`, key: `tunnelModel`, path: `assets/models/tunnel_new_new.glb`, animated: false }, { type: `texture`, key: `stage3Background1`, path: `assets/textures/stage3_background1.webp`, stretched: false, mipmaps: false }, { type: `ktx2`, key: `moneyShredsAtlas`, path: `assets/atlases/leather-money-shreds.ktx2` }, { type: `ktx2`, key: `certAtlas`, path: `assets/atlases/board-certificates.ktx2` }, { type: `texture`, key: `certMatcap`, path: `assets/textures/matcap-certificate.webp` }], stage4: [{ type: `ktx2`, key: `cloudsAtlas`, path: t2 ? `assets/atlases/clouds-mobile.ktx2` : `assets/atlases/clouds.ktx2` }], worldMap: [{ type: `ktx2`, key: `worldMap`, path: `assets/atlases/world.ktx2` }] }, this._stageLoadStatus = {}, this._stageLoadPromises = {}, this._uploadQueue = [], this._uploadIdleHandle = null, this.chunkedUploader = e36 ? new fg(e36) : null;
+    this.assets = { models: {}, textures: {}, animations: {}, meta: {} }, this.manager = new zc(), this.dracoLoader = new Vh(), this.dracoLoader.setDecoderPath(`/assets/reference/vendor/draco/`), this.gltfLoader = new Hm(this.manager), this.gltfLoader.setDRACOLoader(this.dracoLoader), this.ktx2Loader = new ig(this.manager), this.renderer && (this.ktx2Loader.setTranscoderPath(`/assets/reference/vendor/basis/`), this.ktx2Loader.detectSupport(this.renderer)), this.gltfLoader.setKTX2Loader(this.ktx2Loader), this.mandatoryAssets = [{ type: `texture`, key: `frosting`, path: `assets/textures/frost.webp`, mipmaps: false }, { type: `procedural`, kind: `radialColor`, key: `loaderGradient`, params: { center: [0.5, 1.3], radiusX: 1.267, radiusY: 1.434, stops: [{ offset: 0.15855, color: [212, 246, 235] }, { offset: 0.26169, color: [179, 222, 209] }, { offset: 0.36483, color: [145, 199, 183] }, { offset: 0.46797, color: [112, 175, 156] }, { offset: 0.57111, color: [78, 151, 130] }, { offset: 0.78555, color: [53, 111, 94] }, { offset: 1, color: [28, 72, 57] }], width: 384, height: 216 } }, { type: `procedural`, kind: `radialPull`, key: `stage1Foreground1`, params: { color: [150, 191, 174], topLeft: 0.03, topCenter: 0, topRight: 0.03, botLeft: 1, botCenter: 0.35, botRight: 1, centerAlpha: 0, centerSigma: 0.25 } }, { type: `procedural`, kind: `dualRadial`, key: `stage1Background1`, stretched: true, params: { baseColor: [110, 200, 230], glowColor: [170, 235, 215], topCenter: [0.5, 0], bottomCenter: [0.5, 1], topRadius: [0.85, 0.7], bottomRadius: [0.85, 0.7], width: 256, height: 144 } }], this.stageAssets = { initial: [{ type: `model`, key: `fancyHand1`, path: `assets/models/fancy_hand_2.glb` }, { type: `model`, key: `humanHand1`, path: `assets/models/human_hand_1.glb` }, { type: `model`, key: `cameraModel1`, path: `assets/models/camera_1.glb` }, { type: `texture`, key: `handMatcap`, path: `assets/textures/matcap-hand.webp`, mipmaps: false }, { type: `ktx2`, key: `humanHandsAtlas`, path: `assets/atlases/human_hands.ktx2` }, { type: `procedural`, kind: `solid`, key: `stage1Background2`, stretched: false, params: { color: [255, 255, 255], alpha: 1 } }, { type: `ktx2`, key: `spcAtlas`, path: `assets/atlases/shards-petals-coins.ktx2` }, { type: `ktx2`, key: `textsAtlas`, path: `assets/atlases/texts.ktx2` }], stage2: [{ type: `model`, key: `glassShatter`, path: `assets/models/stage2_glass-shatter.glb` }, { type: `model`, key: `allShards`, path: `assets/models/glass_shards.glb`, animated: false }, { type: `model`, key: `handsModel2`, path: `assets/models/human_hand_2.glb` }, { type: `model`, key: `cameraModel2`, path: `assets/models/camera_2.glb` }, { type: `procedural`, kind: `radialPull`, key: `stage2Foreground`, params: { color: [0, 0, 0], topLeft: 0.03, topCenter: 0, topRight: 0.03, botLeft: 1, botCenter: 0.35, botRight: 1, centerAlpha: 0, centerSigma: 0.25 } }, { type: `texture`, key: `stage2Background2`, path: `assets/textures/stage2_background2.webp`, mipmaps: false, wrap: true }], stage3: [{ type: `model`, key: `tunnelModel`, path: `assets/models/tunnel_new_new.glb`, animated: false }, { type: `texture`, key: `stage3Background1`, path: `assets/textures/stage3_background1.webp`, stretched: false, mipmaps: false }, { type: `ktx2`, key: `moneyShredsAtlas`, path: `assets/atlases/leather-money-shreds.ktx2` }, { type: `ktx2`, key: `certAtlas`, path: `assets/atlases/board-certificates.ktx2` }, { type: `texture`, key: `certMatcap`, path: `assets/textures/matcap-certificate.webp` }], stage4: [{ type: `ktx2`, key: `cloudsAtlas`, path: t2 ? `assets/atlases/clouds-mobile.ktx2` : `assets/atlases/clouds.ktx2` }], worldMap: [{ type: `ktx2`, key: `worldMap`, path: `assets/atlases/world.ktx2` }] }, this._stageLoadStatus = {}, this._stageLoadPromises = {}, this._uploadQueue = [], this._uploadIdleHandle = null, this.chunkedUploader = e36 ? new fg(e36) : null;
   }
   _scheduleIdleUpload(e36) {
     this.renderer && (this._uploadQueue.push(e36), this._uploadIdleHandle === null && this._scheduleNextIdleSlot());
@@ -18608,6 +18608,7 @@ var z_ = 0.5, B_ = `
   uniform sampler2D tDiffuse;
   uniform sampler2D uShatter;
   uniform sampler2D uHandMask;
+  uniform float uStoryGlassAlpha;
   varying vec2 vUv;
 
   vec3 linearToSRGB(vec3 c) {
@@ -18625,7 +18626,7 @@ var z_ = 0.5, B_ = `
     float handMask = texture2D(uHandMask, vUv).r;
 
 
-    float mask = shatter.a * (1.0 - handMask);
+    float mask = shatter.a * (1.0 - handMask) * uStoryGlassAlpha;
 
 
 
@@ -18635,7 +18636,7 @@ var z_ = 0.5, B_ = `
   constructor(e36, t2, n2) {
     super(), this.needsSwap = true, this.enabled = false, this._renderer = e36;
     let r2 = e36.getPixelRatio(), i2 = Math.floor(t2 * r2), a2 = Math.floor(n2 * r2), o2 = { minFilter: v, magFilter: v, format: E, depthBuffer: true, stencilBuffer: false }, s2 = Math.max(1, Math.floor(i2 * z_)), c2 = Math.max(1, Math.floor(a2 * z_));
-    this.shatterRT = new bt(s2, c2, o2), this.handMaskRT = new bt(s2, c2, o2), this._copyMaterial = new Pr({ vertexShader: B_, fragmentShader: V_, uniforms: { tDiffuse: { value: null } }, depthWrite: false, depthTest: false }), this._copyQuad = new n_(this._copyMaterial), this._compositeMaterial = new Pr({ vertexShader: B_, fragmentShader: W_, uniforms: { tDiffuse: { value: null }, uShatter: { value: null }, uHandMask: { value: null } }, depthWrite: false, depthTest: false }), this._compositeQuad = new n_(this._compositeMaterial), this._shardScene = new $o(), this._shardCamera = null, this._snapshotTexture = null, this._shardMaterial = null, this._handMaskScene = new $o(), this._handCamera = null, this._handMaskMaterial = new Gn({ color: 16777215 }), this._handMeshProxy = null, this._mixer = null, this._actions = [], this._duration = 0, this._model = null, this._onComplete = null, this._finished = false, this._scrubMode = false, this._clearColor = new q();
+    this.shatterRT = new bt(s2, c2, o2), this.handMaskRT = new bt(s2, c2, o2), this._copyMaterial = new Pr({ vertexShader: B_, fragmentShader: V_, uniforms: { tDiffuse: { value: null } }, depthWrite: false, depthTest: false }), this._copyQuad = new n_(this._copyMaterial), this._compositeMaterial = new Pr({ vertexShader: B_, fragmentShader: W_, uniforms: { tDiffuse: { value: null }, uShatter: { value: null }, uHandMask: { value: null }, uStoryGlassAlpha: { value: 1 } }, depthWrite: false, depthTest: false }), this._compositeQuad = new n_(this._compositeMaterial), this._shardScene = new $o(), this._shardCamera = null, this._snapshotTexture = null, this._shardMaterial = null, this._handMaskScene = new $o(), this._handCamera = null, this._handMaskMaterial = new Gn({ color: 16777215 }), this._handMeshProxy = null, this._mixer = null, this._actions = [], this._duration = 0, this._model = null, this._onComplete = null, this._finished = false, this._scrubMode = false, this._clearColor = new q();
   }
   setShatterTextures(e36, t2) {
     if (e36) {
@@ -18772,6 +18773,7 @@ var z_ = 0.5, B_ = `
   uniform float uFresnelPower;
   uniform vec2  uPixelSize;
   uniform float uEdgeHighlight;
+  uniform float uStoryGlassAlpha;
 
   varying vec2 vUv;
 
@@ -18825,7 +18827,7 @@ var z_ = 0.5, B_ = `
     }
 
 
-    gl_FragColor = vec4(mix(live.rgb, glass, 1.0), live.a);
+    gl_FragColor = vec4(mix(live.rgb, glass, uStoryGlassAlpha), live.a);
   }
 `, Y_ = class extends $g {
   constructor(e36, t2, n2) {
@@ -18833,7 +18835,7 @@ var z_ = 0.5, B_ = `
     let r2 = e36.getPixelRatio(), i2 = Math.floor(t2 * r2), a2 = Math.floor(n2 * r2);
     this._maskRT = new bt(i2, a2, { minFilter: v, magFilter: v, format: E, depthBuffer: true, stencilBuffer: false }), this._maskMaterial = new Pr({ vertexShader: K_, fragmentShader: q_, side: 2 }), this._maskScene = new $o(), this._bgMaskScene = new $o(), this._overlayScene = new $o(), this._camera = null, this._shardMeshes = [], this._overlayProxies = [], this._shardGroup = null, this._bgProxies = [], this._occluderScene = null, this._depthMaterial = new Gn({ colorWrite: false });
     let o2 = new Uint8Array([0, 0, 0, 0]);
-    this._fallbackTex = new As(o2, 1, 1, E), this._fallbackTex.needsUpdate = true, this._compositeMaterial = new Pr({ vertexShader: `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`, fragmentShader: J_, uniforms: { tDiffuse: { value: this._fallbackTex }, uNormalMask: { value: this._fallbackTex }, uRefractionMap: { value: this._fallbackTex }, uRefraction: { value: 0.25 }, uDispersion: { value: 0.15 }, uMapStrength: { value: 2 }, uMapScale: { value: new G(1, 1) }, uTintColor: { value: new K(1, 1, 1) }, uFresnelPower: { value: 10 }, uPixelSize: { value: new G(1 / i2, 1 / a2) }, uEdgeHighlight: { value: 0.15 } }, depthWrite: false, depthTest: false }), this._compositeQuad = new n_(this._compositeMaterial), this._proxies = [], this._clearColor = new q();
+    this._fallbackTex = new As(o2, 1, 1, E), this._fallbackTex.needsUpdate = true, this._compositeMaterial = new Pr({ vertexShader: `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`, fragmentShader: J_, uniforms: { tDiffuse: { value: this._fallbackTex }, uNormalMask: { value: this._fallbackTex }, uRefractionMap: { value: this._fallbackTex }, uRefraction: { value: 0.25 }, uDispersion: { value: 0.15 }, uMapStrength: { value: 2 }, uMapScale: { value: new G(1, 1) }, uTintColor: { value: new K(1, 1, 1) }, uFresnelPower: { value: 10 }, uPixelSize: { value: new G(1 / i2, 1 / a2) }, uEdgeHighlight: { value: 0.15 }, uStoryGlassAlpha: { value: 1 } }, depthWrite: false, depthTest: false }), this._compositeQuad = new n_(this._compositeMaterial), this._proxies = [], this._clearColor = new q();
   }
   get uniforms() {
     return this._compositeMaterial.uniforms;
@@ -20485,7 +20487,7 @@ var sx = { id: `gate1to2`, scrollVh: 50, autoScroll: true, autoScrollDuration: J
     n3 && r3 ? e36.shatterPass.startScrub(n3, r3) : (console.warn(`MasterTimeline: glassShatter model or animations not found`), e36.shatterPass.enabled = false, e36.shatterPass.renderToScreen = false, e36.textPass.renderToScreen = true);
   }
   let a2 = e36._gateElapsed - 3, o2 = Math.min(a2 / Jb, 1), s2 = Math.max(0, (o2 - Qb) / (1 - Qb));
-  !e36._gateShatterSfxFired && s2 > 0 && (e36._gateShatterSfxFired = true, e36._directNavActive || X.play(`glass-shatter`)), e36.shatterPass.scrub(Math.min(s2 * 1.2, 1)), e36.shatterPass.setShatterBlend(Math.min(s2 * 5, 1));
+  !e36._gateShatterSfxFired && s2 > 0 && (e36._gateShatterSfxFired = true, e36._directNavActive || (e36._storyBreakCount = (e36._storyBreakCount || 0) + 1, X.play(`glass-shatter`))), e36.shatterPass.scrub(Math.min(s2 * 1.2, 1)), e36.shatterPass.setShatterBlend(Math.min(s2 * 5, 1));
   let c2 = Math.max(0, 1 - o2 * 15);
   if (e36.fgPass?.uniforms && (e36.fgPass.uniforms.uExposure.value = 1 - 1 * c2, e36.fgPass.uniforms.uContrast.value = 1 + nx * c2, e36.fgPass.uniforms.uRedTint.value = rx * c2), e36.bgPass?.uniforms?.uZoom && (e36.bgPass.uniforms.uZoom.value = 1 - tx * c2), e36.components.handsModel) {
     let t3 = e36.components.handsModel.duration, r3 = t3 > 0 ? Yb / t3 : 0, i3 = t3 > 0 ? Xb / t3 : 1;
@@ -20805,13 +20807,9 @@ var wx = `
         vec3 lighting = mix(vec3(1.0), matcapColor, uMatcapStrength) * uBrightness;
 
 
-        if (!gl_FrontFacing) {
-            vec3 backBase = vec3(0.341, 0.333, 0.286);
-            gl_FragColor = vec4(backBase * lighting, uOpacity);
-            return;
-        }
-
-        vec2 atlasUv = vUv * uTexScale + uTexOffset;
+        // Both faces are printed. Mirror the reverse UV, not the lettering.
+        vec2 paperUv = gl_FrontFacing ? vUv : vec2(1.0 - vUv.x, vUv.y);
+        vec2 atlasUv = paperUv * uTexScale + uTexOffset;
         vec4 texColor = texture2D(uTexture, atlasUv);
         gl_FragColor = vec4(texColor.rgb * lighting, texColor.a * uOpacity);
     }
@@ -20917,13 +20915,9 @@ var Dx = `
         vec3 lighting = mix(vec3(1.0), matcapColor, uMatcapStrength) * uBrightness;
 
 
-        if (!gl_FrontFacing) {
-            vec3 backBase = vec3(0.341, 0.333, 0.286);
-            gl_FragColor = vec4(backBase * lighting, uOpacity);
-            return;
-        }
-
-        vec2 atlasUv = vUv * uTexScale + uTexOffset;
+        // Both faces are printed. Mirror the reverse UV, not the lettering.
+        vec2 paperUv = gl_FrontFacing ? vUv : vec2(1.0 - vUv.x, vUv.y);
+        vec2 atlasUv = paperUv * uTexScale + uTexOffset;
         vec4 texColor = texture2D(uTexture, atlasUv);
         gl_FragColor = vec4(texColor.rgb * lighting, texColor.a * uOpacity);
     }
