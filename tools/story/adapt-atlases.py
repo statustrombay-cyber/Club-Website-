@@ -35,54 +35,21 @@ for (x,y,w,h,rot),lines in zip(regions,copy):
  if rot:tile=tile.transpose(Image.Transpose.ROTATE_270)
  im.paste(tile,(x,y))
 im.save(out/'club-fragments.webp',lossless=True)
-# Preserve the supplied six newspaper islands and quote/photo/column layout.
-# These are editorial summaries, never invented quotations attributed as speech.
+# Keep the original atlas layout, newspaper stock and shred UVs. Replace the
+# promotional newspaper tiles with the club's existing psychology archive.
 im=Image.open(work/'moneyShredsAtlas.png').convert('RGBA')
-profiles=[
- ('Sigmund Freud','Psychoanalysis','Dreams open questions about the unconscious.','Dreams and unconscious processes were central to Freud’s psychoanalytic thought. His historical influence invites discussion, not unquestioning agreement with every theory. Psychology continues to examine how memories, feelings and experience shape a person.','freud'),
- ('Carl Rogers','Person-centred therapy','To understand a person, begin by listening.','Rogers placed the person’s experience and the therapeutic relationship at the centre of his approach. Empathy, congruence and unconditional positive regard became important ideas in person-centred therapy. Listening begins with curiosity and respect.','rogers'),
- ('William James','Attention and habit','Attention and habit shape our stream of thought.','The Principles of Psychology explored attention, habit, emotion and the flow of conscious experience. James helped shape early psychology by asking how thought changes from one moment to another. These questions still invite careful observation.','james'),
- ('Sigmund Freud','Dreams and meaning','A theory can open a question without being the final word.','The Interpretation of Dreams made the study of dreams a landmark in the history of psychoanalysis. A historical idea can shape a conversation while remaining open to criticism. Reflection is a starting point for inquiry rather than proof of a theory.','freud'),
- ('Carl Rogers','Empathy and experience','Empathy makes room for another person’s world.','A person is more than a label. Rogers emphasised the importance of understanding another person’s frame of reference. A student community can practise attentive listening and respectful conversation without confusing peer support with professional therapy.','rogers'),
- ('William James','The changing mind','What catches our attention? What becomes a habit?','The stream of consciousness describes experience as changing and continuous. Attention selects some things while others recede. Everyday habits show how repeated actions can become familiar patterns. Psychology keeps asking how experience and action connect.','james')]
-portraits={name:Image.open(root/'assets/story/portraits'/f'{name}.webp').convert('RGB') for name in ['freud','rogers','james']}
-ink='#20271f';stock=(192,192,169,255)
-def columns(d,text,x,y,w,h,size=20,count=2):
- gap=12;cw=(w-gap*(count-1))//count;ff=font(size);words=(text+' ')*16;words=words.split();pos=0
- for col in range(count):
-  yy=y
-  while yy+size*1.15<=y+h:
-   line=''
-   while pos<len(words) and d.textlength((line+' '+words[pos]).strip(),font=ff)<=cw:
-    line=(line+' '+words[pos]).strip();pos+=1
-   if not line:break
-   d.text((x+col*(cw+gap),yy),line,font=ff,fill=ink);yy+=round(size*1.16)
-def photo(tile,name,box):
- x,y,w,h=box;im=ImageOps.fit(portraits[name],(w,h),method=Image.Resampling.LANCZOS,centering=(.5,.32));tile.paste(im,(x,y));ImageDraw.Draw(tile).rectangle((x,y,x+w,y+h),outline=ink,width=2)
+papers=[('Sigmund Freud','Dreams and the unconscious','1900','Freud made dreams and unconscious processes central to psychoanalytic thought. His historical influence invites discussion, not unquestioning agreement with every theory.'),('Carl Rogers','Person-centred therapy','1951','Rogers emphasised empathy, congruence and unconditional positive regard in the therapeutic relationship. Listening carefully remains a starting point for understanding another person.'),('William James','The stream of consciousness','1890','James helped shape early psychology by describing the changing flow of conscious experience. Attention and habit remain enduring questions.'),('Gratitude research','Small practices, thoughtful questions','2023','Diniz and colleagues reviewed 64 randomised trials of gratitude practices. Findings differ across studies. Evidence asks for careful interpretation.'),('Across cultures','Many lives, many contexts','2025','A gratitude meta-analysis included 24,804 participants in 28 countries. The average wellbeing effect was small. Context and individual experience matter.'),('Mindful Tattva','Stay curious. Stay human.','THE CLUB','Listen. Notice. Make room. A psychology club is a place to explore ideas, share experiences and keep asking thoughtful questions together.')]
 boxes=[(0,0,492,912),(492,0,492,912),(982,0,492,912),(0,911,491,1137),(492,913,490,1135),(983,912,491,911)]
-for (x,y,w,h),(who,topic,headline,body,name) in zip(boxes,profiles):
- tile=Image.new('RGBA',(w,h),stock);d=ImageDraw.Draw(tile)
- # Same hierarchy as the supplied source: dense opening columns, oversized
- # editorial thought, a square B/W portrait and name row, then dense body ink.
- columns(d,body,8,0,w-16,210,19)
- d.text((20,221),'PSYCHOLOGY ARCHIVE · EDITORIAL SUMMARY',font=fit(d,'PSYCHOLOGY ARCHIVE · EDITORIAL SUMMARY',w-40,16),fill=ink)
- yy=para(d,headline,25,255,w-48,57,ink,leading=57)
- py=max(600,min(yy+20,650));photo(tile,name,(27,py,150,155))
- d.text((195,py+53),who,font=fit(d,who,w-210,28),fill=ink);para(d,topic,195,py+92,w-210,23,ink)
- columns(d,body,8,py+178,w-16,h-py-178,19)
- im.paste(tile,(x,y))
-# The source banknote island is unchanged; bills still use the original KTX2.
-im.save(out/'club-money-papers.webp',quality=88,method=6)
-# All eight landscape UV islands remain in their supplied positions. Each gets
-# photographed editorial content; do not replace them with blank certificates.
+for (x,y,w,h),(who,title,year,body) in zip(boxes,papers):
+ tile=Image.new('RGBA',(w,h),(213,208,181,255));d=ImageDraw.Draw(tile);d.rectangle((12,12,w-13,h-13),outline='#4c5144',width=2);d.text((25,25),'THE MINDFUL CHRONICLE',font=fit(d,'THE MINDFUL CHRONICLE',w-50,35),fill='#272e25');d.line((25,75,w-25,75),fill='#4c5144',width=2);d.text((25,90),year,font=font(20),fill='#394235');yy=para(d,who,25,130,w-50,49,'#1e261e');yy=para(d,title,25,yy+18,w-50,38,'#293329');d.line((25,yy+15,w-25,yy+15),fill='#4c5144');yy+=36
+ para(d,body+' Psychology keeps asking new questions. A theory can shape a conversation without being the final word. '+body,25,yy,w-50,24,'#343d30',maxy=h-90)
+ d.text((25,h-55),'Mindful Tattva · psychology archive',font=font(19),fill='#47503f');im.paste(tile,(x,y))
+# Keep the supplied banknote island unchanged. Runtime bills use the original
+# compressed KTX2, not this derived newspaper-only atlas.
+im.save(out/'club-money-papers.webp',lossless=True)
+# Replace fictional university credentials with real club archive articles;
+# keep every original paper tile boundary, deformation, strip and camera path.
 im=Image.open(work/'certAtlas.png').convert('RGBA');boxes=[(0,0),(658,0),(1316,0),(0,512),(0,1024),(0,1536),(658,1536),(1316,1536)]
 for idx,(x,y) in enumerate(boxes):
- who,topic,headline,body,name=profiles[idx%len(profiles)];tile=Image.new('RGBA',(658,512),stock);d=ImageDraw.Draw(tile)
- d.text((16,8),'THE PSYCHOLOGY ARCHIVE',font=font(22),fill=ink);d.text((460,13),'READ · THINK · DISCUSS',font=font(13),fill=ink);d.line((12,40,646,40),fill=ink,width=2)
- yy=para(d,headline,17,52,622,39,ink,leading=40)
- py=max(151,yy+13);photo(tile,name,(18,py,157,179))
- d.text((18,py+188),who,font=fit(d,who,164,24),fill=ink);para(d,topic,18,py+220,165,19,ink)
- columns(d,body,195,py,446,450-py,17,2)
- d.line((12,474,646,474),fill=ink);d.text((18,482),'MINDFUL TATTVA · HISTORY, IDEAS AND HUMAN EXPERIENCE',font=font(14),fill=ink)
- im.paste(tile,(x,y))
-im.save(out/'club-archive.webp',quality=88,method=6)
+ who,title,year,body=papers[idx%len(papers)];tile=Image.new('RGBA',(658,512),(224,219,195,255));d=ImageDraw.Draw(tile);d.rectangle((12,12,645,499),outline='#4c5144',width=2);d.text((28,23),'THE MINDFUL CHRONICLE',font=fit(d,'THE MINDFUL CHRONICLE',600,36),fill='#242d21');d.line((28,70,628,70),fill='#4c5144',width=2);d.text((28,84),year,font=font(19),fill='#394235');yy=para(d,who,28,120,600,43,'#293329');yy=para(d,title,28,yy+8,600,30,'#293329');para(d,body,28,yy+20,600,22,'#343d30',maxy=440);d.text((28,470),'Mindful Tattva · psychology archive',font=font(18),fill='#47503f');im.paste(tile,(x,y))
+im.save(out/'club-archive.webp',lossless=True)

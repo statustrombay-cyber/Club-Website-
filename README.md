@@ -9,6 +9,10 @@ photo album with a full-frame viewer, event registration with UPI payment and a
 downloadable event pass, and a password-protected club dashboard where the team
 edits everything — no build step, no database server, no framework.
 
+For **InfinityFree uploads**, follow [Full GitHub ZIP upload](#full-github-zip-upload--existing-infinityfree-website)
+below. The `npm` commands in the local-development section are **not** hosting
+installation steps.
+
 ---
 
 ## Running it
@@ -53,28 +57,95 @@ password from the settings panel (or set the environment variable
 
 ## Deployment (uploading to the live server)
 
-The site is plain files. Upload them into the site folder (`htdocs` on
-InfinityFree and similar hosts) and it runs — no build step, no database, no
-Composer.
+### Full GitHub ZIP upload — existing InfinityFree website
 
-1. Build the bundle (optional, but it keeps a deploy tidy):
+**No server JavaScript, Node.js, Java, Composer or Three.js installation is
+needed.** PHP serves the prebuilt files; the visitor's browser runs the animation.
+Use the normal GitHub **Code → Download ZIP** workflow; no second/nested ZIP is
+needed. The current fixes are on branch **`arena/24a1daf8-club-website`** (PR #5,
+not merged into `main`). Select that branch before downloading.
 
-   ```bash
-   node tools/make-deploy-bundle.mjs      # → deploy-bundle.zip
+1. Back up the existing website through your hosting file manager first.
+2. In InfinityFree, check **Accounts → your account → Domains → your domain →
+   Manage → Directory Status**. Use the exact directory shown there; it may be
+   `htdocs` or a domain-specific `your-domain/htdocs`.
+3. Extract/upload the **contents inside GitHub's outer repository folder** into
+   that directory. `index.php` and the **root** `.htaccess` must be directly in
+   the domain's website directory, alongside `app/`, `views/` and `assets/`:
+
+   ```text
+   htdocs/
+     index.php
+     .htaccess          ← root website rules, NOT app/.htaccess
+     scene-check.php
+     scene-assets.php
+     app/
+     assets/
+     views/
+     data/              ← keep the existing live folder and its files
+     uploads/           ← keep the existing live folder and its files
    ```
 
-   It packs `index.php`, `.htaccess`, `app/`, `views/`, `assets/` and
-   `uploads/.htaccess`, with folders `755` and files `644`. It deliberately
-   leaves out `data/` (site content and club password) and `uploads/` (uploaded
-   photos) — those only live on the server, so re-deploying can never wipe the
-   club's own work.
-2. Upload that ZIP into the site folder and extract it there.
-3. Open **`/health`** on the live site. It checks every design file directly on
-   the server and says, file by file, whether it arrived.
+   Do **not** leave everything one level deeper in
+   `htdocs/Club-Website--arena-…/`. Do not delete the existing site folders before
+   uploading. Show hidden files so the correct `.htaccess` is included. Remove
+   the uploaded ZIP after extraction; don't leave a source archive public.
+4. Overwrite the supplied code/assets, but keep live `data/` and `uploads/`.
+   GitHub archives now omit `data/site.json` and `data/config.php`, so a normal
+   full re-upload cannot replace the saved records or club password. They also
+   omit development tooling (including the >1 MB development-only scene source)
+   and package manifests; these remain in the Git repository. All required
+   production scene payloads and **all three horse MP4s remain included**.
+5. Open **`/index.php?scene-check=1`** on your domain. This uses the existing PHP
+   entry point without depending on rewritten URLs. It checks browser WebGL2,
+   WebAssembly/workers and the actual scene downloads against byte counts and
+   SHA-256 hashes. Then open **`/#human-story`** to check the animation itself.
+   The older `/scene-check.php` address remains supported too.
+
+For a **fresh installation**, the archive intentionally has no saved club data
+or password settings: additionally copy `data/site.json` and `data/config.php`
+from the repository into the new private `data/` folder **once**. Never do this
+when updating an existing live site. No installation script resets live data.
+
+### InfinityFree 403 Forbidden
+
+`https://errors.infinityfree.net/errors/403/` is a shared hosting error page,
+not the address of the file that failed. It does **not** mean JavaScript needs
+installing. Save the original URL you entered/requested before the redirect.
+
+- If **`/index.php` itself** is denied, check the exact domain directory and
+  file placement above, lowercase `index.php`, folder permissions **755** and
+  file permissions **644**, and any root/account-level access restrictions.
+  Do not use 777. An access denial before PHP runs cannot be fixed by changing
+  the animation code or installing browser libraries on the server.
+- Use the repository's **root** `.htaccess` in the website root. The
+  `app/.htaccess` and `data/.htaccess` files deliberately deny direct access;
+  do not copy them into the website root or remove their private protections.
+  Do not enable directory listing as a workaround.
+- If the page opens but the **scene** fails, run
+  `/index.php?scene-check=1`. All eleven packaged scene assets now use
+  `/index.php?scene-asset=…`, on the same domain. Nothing calls an external
+  asset server or requires direct WASM/KTX2/GLB delivery.
+- Allow this website's JavaScript and cookies in the browser. InfinityFree's
+  mandatory browser security can reject automated/cross-domain tools, so a
+  failing external fetch alone is not proof that a normal browser is blocked.
+- If `/index.php` still redirects to 403 with the correct files, directory and
+  permissions, ask InfinityFree support to identify the rule denying that
+  **original URL**. No repository change can turn off their account-level
+  firewall; do not disable security protections or expose private folders.
+
+Host documentation:
+- [403 causes and website directory checks](https://forum.infinityfree.com/docs?topic=58664)
+- [Browser security and same-domain requests](https://forum.infinityfree.com/t/browser-security-system-features-and-limitations/49353)
+- [File-size limits](https://forum.infinityfree.com/t/why-are-my-files-deleted-after-uploading-them/49310)
+
+The prebuilt engine and PHP payload chunks stay below the published 1 MB
+PHP/JS file limit; the `.htaccess` files stay below 10 kB. No new deployment ZIP
+is generated or committed for this upload workflow.
 
 ### If the site ever looks blank or colourless
 
-It is always the same cause: **`assets/app.css` is not on the server**, so the
+One possible cause is that **`assets/app.css` is not on the server**, so the
 browser receives raw HTML with no styling — and the pictures in `assets/` are
 missing for the same reason. The `assets` folder itself often exists but is
 empty, because the upload of its *contents* never finished (slow image

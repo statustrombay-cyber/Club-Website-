@@ -20,7 +20,7 @@
   function engine(){
    if(window.MTStory3D)return Promise.resolve();if(enginePromise)return enginePromise;
    enginePromise=new Promise((resolve,reject)=>{
-    const script=document.createElement('script');script.src='/assets/vendor/story-3d.js';script.async=true;
+    const script=document.createElement('script');script.src='/index.php?scene-asset=engine';script.async=true;
     // Mobile downloads are allowed to finish. The former 12s timeout reproduced
     // a permanent HTML-only scene even when the script arrived two seconds later.
     const timer=setTimeout(()=>{script.remove();reject(Error('3D engine timed out after 60 seconds'));},60000);
@@ -34,26 +34,20 @@
    // A transient download failure gets one bounded retry without collapsing
    // and expanding the chapter's reserved scroll space underneath the reader.
    if(!reason.includes('WebGL context lost')&&retries++<1){
-    generation++;instance?.dispose();instance=null;root.classList.remove('story-enhanced','story-reference');root.classList.add('story-pending');root.dataset.storyState='retrying';root.dataset.storyRenderer='loading';announce('');
+    generation++;instance?.dispose();instance=null;root.classList.remove('story-enhanced','story-reference');root.classList.add('story-pending');root.dataset.storyState='retrying';root.dataset.storyRenderer='loading';announce('Reconnecting the animated scene…');
     retryTimer=setTimeout(()=>{failed=false;near();},2000);
    }else staticStory(reason);
   }
   async function prepare(){
    if(loading||instance||failed)return;loading=true;const ticket=generation;
-   root.classList.add('story-pending');root.dataset.storyState='loading';announce('');
+   root.classList.add('story-pending');root.dataset.storyState='loading';announce('Loading the animated scene…');
    try{
     await engine();if(ticket!==generation)return;
     const scene=await window.MTStory3D.create(root);
     if(ticket!==generation){scene.dispose();return;}instance=scene;root.dataset.storyState='ready';delete root.dataset.storyError;announce('');
    }catch(error){failure(error);}finally{loading=false;}
   }
-  const header=document.querySelector('.nav-wrap');
-  function immersion(){
-   const r=track.getBoundingClientRect(),active=r.top<=72&&r.bottom>0;
-   document.body.classList.toggle('story-immersive',active);
-   if(header){header.inert=active;if(active)header.setAttribute('aria-hidden','true');else header.removeAttribute('aria-hidden');}
-  }
-  function near(){immersion();const r=track.getBoundingClientRect();if(r.top<innerHeight+2800&&r.bottom>-2800)prepare();}
+  function near(){const r=track.getBoundingClientRect();if(r.top<innerHeight+2800&&r.bottom>-2800)prepare();}
   function configure(){root.dataset.storyReducedMotion=String(motion.matches);root.dataset.storySaveData=String(!!connection?.saveData);instance?.resize();near();}
   root.addEventListener('mt:story-fallback',event=>failure(event.detail?.error||Error('WebGL scene stopped')));
   addEventListener('scroll',near,{passive:true});addEventListener('resize',near,{passive:true});
@@ -63,12 +57,6 @@
   if(connection?.addEventListener)connection.addEventListener('change',configure);
   if('IntersectionObserver'in window){const observer=new IntersectionObserver(entries=>{if(entries.some(entry=>entry.isIntersecting))prepare();},{rootMargin:'2800px'});observer.observe(track);}
   root.classList.add('story-pending');configure();
-  // Fetch the engine immediately, then warm models/shaders while the visitor
-  // reads the opening. Offscreen scenes do not run an animation loop.
-  engine().then(()=>{
-   if('requestIdleCallback'in window)requestIdleCallback(()=>prepare(),{timeout:1600});
-   else setTimeout(prepare,500);
-  }).catch(()=>{});
   const brand=document.querySelector('.brand-chapter');
   if(brand&&'IntersectionObserver'in window){const warm=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){prepare();warm.disconnect();}},{rootMargin:'600px'});warm.observe(brand);}
  }

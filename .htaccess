@@ -12,10 +12,13 @@ DirectoryIndex index.php index.html
   # Private things first. These rules must sit above the "existing file"
   # pass-through below, otherwise a real file on disk would be served before
   # they are ever reached.
-  RewriteRule (^|/)\. - [F,L]                                # dot files (.gitignore, .htaccess, .git)
-  RewriteRule ^(app|views|data|tools)/ - [F,L]               # backend code, templates, content, tooling
+  # dot files (.gitignore, .htaccess, .git)
+  RewriteRule (^|/)\. - [F,L]
+  # backend code, templates, content, tooling
+  RewriteRule ^(app|views|data|tools)/ - [F,L]
   RewriteRule ^(README|package(-lock)?\.json|composer\.(json|lock)) - [F,L]
-  RewriteRule \.(md|mjs|log|lock|tmp|sql|bak|example)$ - [F,L]  # notes, dev scripts, backups
+  # notes, dev scripts, backups
+  RewriteRule \.(md|mjs|log|lock|tmp|sql|bak|example)$ - [F,L]
 
   # Never execute scripts that arrive through the uploads folder: they are only
   # ever served as images or PDFs. (See uploads/.htaccess for the same rule.)

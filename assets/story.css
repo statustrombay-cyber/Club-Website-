@@ -79,9 +79,3 @@
 .story-status { position:relative; margin:0; padding:20px; color:#fff8ee; font:400 .85rem/1.5 var(--font-body,sans-serif); background:#270604; }
 .story-status[hidden] { display:none; }
 .story-pending .story-status { position:absolute; inset:auto 16px 24px; width:fit-content; max-width:calc(100% - 32px); padding:10px 14px; border-radius:8px; background:#160806b3; }
-
-/* The story gets the whole viewport; restore the unchanged navigation outside. */
-body.story-immersive .nav-wrap,
-body.story-immersive .nav-butterfly,
-body.story-immersive .to-top { opacity:0 !important; visibility:hidden !important; pointer-events:none !important; }
-.nav-wrap { transition:opacity .24s ease,visibility .24s ease; }
