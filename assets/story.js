@@ -48,12 +48,23 @@
    }catch(error){failure(error);}finally{loading=false;}
   }
   const header=document.querySelector('.nav-wrap');
+  let viewportWidth=0,viewportHeight=0;
+  function lockViewport(){
+   const width=document.documentElement.clientWidth;
+   if(width!==viewportWidth){
+    root.style.removeProperty('--story-viewport-height');
+    viewportHeight=Math.ceil(Math.max(innerHeight,visualViewport?.height||0,root.querySelector('.story-stage').clientHeight));
+    viewportWidth=width;
+   }else viewportHeight=Math.max(viewportHeight,Math.ceil(innerHeight));
+   root.style.setProperty('--story-viewport-height',viewportHeight+'px');
+  }
   function immersion(){
    const r=track.getBoundingClientRect(),active=r.top<=72&&r.bottom>0;
    document.body.classList.toggle('story-immersive',active);
+   root.dataset.storyCovered=String(active&&(-r.top/Math.max(1,track.offsetHeight-root.querySelector('.story-stage').clientHeight))<.94);
    if(header){header.inert=active;if(active)header.setAttribute('aria-hidden','true');else header.removeAttribute('aria-hidden');}
   }
-  function near(){immersion();const r=track.getBoundingClientRect();if(r.top<innerHeight+2800&&r.bottom>-2800)prepare();}
+  function near(){lockViewport();immersion();const r=track.getBoundingClientRect();if(r.top<innerHeight+2800&&r.bottom>-2800)prepare();}
   function configure(){root.dataset.storyReducedMotion=String(motion.matches);root.dataset.storySaveData=String(!!connection?.saveData);instance?.resize();near();}
   root.addEventListener('mt:story-fallback',event=>failure(event.detail?.error||Error('WebGL scene stopped')));
   addEventListener('scroll',near,{passive:true});addEventListener('resize',near,{passive:true});

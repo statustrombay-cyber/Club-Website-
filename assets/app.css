@@ -1953,3 +1953,18 @@ form.club-form .form-row { column-gap: 40px; }
 @media (prefers-reduced-motion: reduce) {
   .nav-butterfly.butterfly-typing .wing-left, .nav-butterfly.butterfly-typing .wing-right { animation: none; }
 }
+
+/* Fixed background media lives inside an explicit stacking context, so a
+   transparent scene exit reveals the herd, never the body's cream paint. */
+body { isolation:isolate; }
+@supports (overflow:clip) { body { overflow-x:clip; } }
+.hero-media { position:fixed; inset:0; z-index:-1; pointer-events:none; }
+.hero-media .hero-still, .hero-media .hero-video { position:absolute; }
+.hero-media .hero-still { z-index:0; }
+.hero-media .hero-video { z-index:1; }
+/* Cover the largest mobile viewport even while browser bars animate. */
+.splash { height:100vh; height:100lvh; min-height:100dvh; transform:translateZ(0); }
+.page-home .hero-with-video { min-height:100svh; }
+/* Reading and form access never depend on a delayed intersection animation. */
+.page-home #about .scroll-reveal, .page-home #join .scroll-reveal,
+.page-home .section-head .scroll-reveal { opacity:1; transform:none; transition:none; }

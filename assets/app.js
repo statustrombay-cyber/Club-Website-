@@ -28,7 +28,7 @@
 
   function setupReveal() {
     // Reveal words and tiles, not their entire containing section twice.
-    const targets = $$('.section-head > *, .section > .container > h2, .section > .container > p, .detail-card, .event-card, .gallery-item, .team-card, .calendar-item, .member-card, .gallery-stage, .calendar-month, .calendar-card, .timeline-item, .gallery-side-note, .club-form');
+    const targets = $$('.detail-card, .event-card, .gallery-item, .team-card, .calendar-item, .member-card, .gallery-stage, .calendar-month, .calendar-card, .timeline-item, .gallery-side-note');
     if (!('IntersectionObserver' in window) || reduced()) {
       targets.forEach(function (node) { node.classList.add('is-visible'); });
       return;
@@ -996,10 +996,14 @@
     let lastClock = -1;
     let lastAdvance = Date.now();
     let waitingTimer = 0;
+    function coveredByStory() {
+      const story = $('.mind-story');
+      return document.body.classList.contains('story-immersive') && story?.dataset.storyCovered !== 'false';
+    }
     function drop() { video.hidden = true; }
     function pause() { try { video.pause(); } catch (error) { /* already stopped */ } }
     function play() {
-      if (!allowed || document.hidden || video.hidden) return;
+      if (!allowed || document.hidden || video.hidden || coveredByStory()) return;
       const attempt = video.play();
       if (attempt && attempt.catch) attempt.catch(function () { /* retry on a gesture */ });
     }
@@ -1029,6 +1033,7 @@
     video.addEventListener('stalled', function () { /* let the browser buffer */ });
     window.setInterval(function () {
       if (document.hidden || video.hidden || video.error) return;
+      if (coveredByStory()) { pause(); lastAdvance = Date.now(); return; }
       const clock = video.currentTime;
       if (Math.abs(clock - lastClock) > 0.02) {
         lastClock = clock; lastAdvance = Date.now();
@@ -1051,6 +1056,10 @@
     ['pointerdown', 'touchstart', 'keydown'].forEach(function (name) {
       window.addEventListener(name, play, { once: true, passive: true });
     });
+    window.addEventListener('scroll', function () {
+      if (coveredByStory()) { pause(); lastAdvance = Date.now(); }
+      else if (video.paused) play();
+    }, { passive: true });
     document.addEventListener('visibilitychange', function () {
       if (document.hidden) pause(); else { lastAdvance = Date.now(); play(); }
     });

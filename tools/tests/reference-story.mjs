@@ -33,7 +33,7 @@ try{
   await page.locator('.story-track').evaluate(e=>scrollTo({top:e.getBoundingClientRect().top+scrollY,behavior:'instant'}));
   await page.waitForFunction(()=>document.querySelector('.mind-story')?.dataset.storySource==='recovered-original',null,{timeout:60000});
   const jump=async progress=>{
-   await page.locator('.story-track').evaluate((e,p)=>scrollTo({top:e.getBoundingClientRect().top+scrollY+(e.offsetHeight-innerHeight)*p,behavior:'instant'}),progress);
+   await page.locator('.story-track').evaluate((e,p)=>scrollTo({top:e.getBoundingClientRect().top+scrollY+(e.offsetHeight-e.querySelector('.story-stage').clientHeight)*p,behavior:'instant'}),progress);
    await page.waitForFunction(p=>{const e=document.querySelector('.mind-story');return Math.abs(Number(e.dataset.storyProgress)-p)<.005;},progress,{timeout:30000});
    await page.waitForTimeout(350);
    return page.locator('.mind-story').evaluate(e=>JSON.parse(e.dataset.storyNative));

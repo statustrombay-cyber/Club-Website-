@@ -2006,18 +2006,18 @@ ok('the splash brush paints filled contours, with a violet lead rather than stri
   const { runInNewContext } = await import('node:vm');
   const startVideo = appJs.indexOf('function setupHeroVideo()');
   const endVideo = appJs.indexOf('function setupPortraits()', startVideo);
-  let now = 0, loads = 0, interval;
+  let now = 0, loads = 0, interval, storyCovered = false, storyProgress = .2, plays = 0, pauses = 0;
   const events = {}, classes = new Set();
   const videoStub = {
     dataset: { mobileSrc: '/mobile.mp4', desktopSrc: '/desktop.mp4' },
     currentTime: 0, readyState: 1, paused: false, hidden: false,
     addEventListener: (name, fn) => { events[name] = fn; },
-    play: () => ({ catch: () => {} }), pause: () => {}, load: () => { loads++; },
+    play: () => { plays++; videoStub.paused = false; return { catch: () => {} }; }, pause: () => { pauses++; videoStub.paused = true; }, load: () => { loads++; },
     classList: { add: name => classes.add(name), remove: name => classes.delete(name) }
   };
   runInNewContext(appJs.slice(startVideo, endVideo) + '\nsetupHeroVideo();', {
-    $: () => videoStub, reduced: () => false, navigator: { connection: { effectiveType: '4g' } },
-    Date: { now: () => now }, document: { hidden: false, addEventListener: () => {} },
+    $: selector => selector === '#heroVideo' ? videoStub : {dataset:{storyCovered:String(storyProgress<.94)}}, reduced: () => false, navigator: { connection: { effectiveType: '4g' } },
+    Date: { now: () => now }, document: { hidden: false, body:{classList:{contains:()=>storyCovered}}, addEventListener: () => {} },
     window: { matchMedia: () => ({ matches: true }), clearTimeout: () => {}, setTimeout: () => 1,
       setInterval: fn => { interval = fn; }, addEventListener: () => {} }
   });
@@ -2030,6 +2030,11 @@ ok('the splash brush paints filled contours, with a violet lead rather than stri
   ok('recovery cannot reload repeatedly', loads === 1);
   videoStub.currentTime = 1; interval();
   ok('moving frames restore the video over the poster', !classes.has('is-buffering'));
+  storyCovered = true; const before = plays; interval();
+  ok('opaque story pauses the unseen horse decoder without reloading', pauses>0&&plays===before&&loads===1);
+  storyProgress = .95; interval();
+  ok('horse video resumes ahead of the story crossfade', plays>before&&!videoStub.paused);
+
 }
 
 
@@ -2212,6 +2217,15 @@ ok('upward scroll dismisses actual glass passes without replaying the fracture',
 
 ok('cold fast-scroll entry skips the opening black grade and cleans up skipped hand phases',
   ['measure();await change(p<.18?0:p<.49?1:2)', 'fg.uniforms.uExposure.value=1;fg.uniforms.uContrast.value=1;fg.uniforms.uRedTint.value=0;bg.uniforms.uZoom.value=1', 'if(next===2)Wb.teardown(ctx)'].every(text=>fs.readFileSync(path.join(ROOT,'tools/story/reference-bridge.js'),'utf8').includes(text)));
+ok('story viewport stays locked through browser-toolbar resizes with opaque underpaint',
+  storySource.includes('function lockViewport()') && storySource.includes('Math.max(viewportHeight,Math.ceil(innerHeight))') && storyCss.includes('var(--story-viewport-height, 100lvh)') && storyCss.includes('background:#230706'));
+const blankIdentityHtml=String(await php.x(["(function(){ $db=mt_db(); foreach(['department','universityName','intro','aboutHeading','aboutBody','joiningIntro'] as $key) $db['site'][$key]=''; ob_start(); require MT_ROOT . '/views/public/home.php'; return ob_get_clean(); })()"]));
+ok('older blank live identity fields still render the real department, university and joining form',
+  blankIdentityHtml.includes('Department of Applied Social Science') && blankIdentityHtml.includes('Chhatrapati Shivaji Maharaj University') && blankIdentityHtml.includes('id="membershipForm"'));
+ok('core identity and membership form are not dependent on intersection reveals',
+  fs.readFileSync(path.join(ROOT,'views/public/home.php'),'utf8').includes('$identityDefaults') && !appJs.slice(appJs.indexOf('function setupReveal()'),appJs.indexOf('function setupPhotoFrame()')).includes('.club-form'));
+ok('music begins with glass fracture, while paper motion uses a local bounded clock',
+  fs.readFileSync(path.join(ROOT,'tools/story/reference-core.js'),'utf8').includes('X.play(`glass-shatter`), X.play(`stage2-ambient`, { fadeIn: 0.12 })') && fs.readFileSync(path.join(ROOT,'tools/story/reference-bridge.js'),'utf8').includes('Xx.update(ctx,paperTime,dt)'));
 ok('the chapter has native-scroll, motion-preference and missing-asset fallbacks',
   storySource.includes('function staticStory(reason)') && storySource.includes('3D engine timed out') && storySource.includes("motion.addEventListener('change',configure)") && !storySource.includes("addEventListener('wheel'"));
 ok('the decorative canvas stays out of the accessible tree but the actual facts do not',
@@ -2233,7 +2247,7 @@ ok('original paper and individual-strip shaders are constructed synchronously fo
 ok('no sound/tilt controls or gyro permission request are installed',
   !storyView.includes('data-enable-tilt') && !fs.readFileSync(path.join(ROOT,'views/layout.php'),'utf8').includes('soundButton') && !referenceCore.includes('requestPermission(') && referenceBridge.includes("addEventListener('deviceorientation',rig._handleGyro,{passive:true})"));
 ok('native viewport rendering preserves document height and handles context loss',
-  storyCss.includes('height: 100dvh') && storyCss.includes('background: none !important') && storySource.includes('innerHeight*6.6') && referenceBridge.includes("canvas.addEventListener('webglcontextlost',contextLost)"));
+  storyCss.includes('var(--story-viewport-height, 100lvh)') && storyCss.includes('background: none !important') && storySource.includes('innerHeight*6.6') && referenceBridge.includes("canvas.addEventListener('webglcontextlost',contextLost)"));
 ok('only the requested chapter audio is eligible; leaving it stops every sound',
   referenceBridge.includes("['glass-shatter','stage2-ambient','money-burn'].includes(key)") && /if\(!visible\)\{[^}]*stopAudio\(\)/.test(referenceBridge) && referenceBridge.includes('function gesture(e){if(e.isTrusted)X.unlockNow();}') && referenceBridge.includes('X.setEnabled(false)') && !audioSource.includes('localStorage'));
 ok('missing-texture white portal and original HUD/text are not rendered',

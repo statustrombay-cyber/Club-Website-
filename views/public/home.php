@@ -7,6 +7,19 @@
  * @var array $site  Club copy.
  */
 $site       = $db['site'];
+/* Keep essential club identity readable even when an older live content file
+   has blank fields. This does not overwrite the stored club settings. */
+$identityDefaults = [
+    'department' => 'Department of Applied Social Science',
+    'universityName' => 'Chhatrapati Shivaji Maharaj University',
+    'intro' => 'Mindful Tattva is a student-led psychology club under the Department of Applied Social Science at Chhatrapati Shivaji Maharaj University.',
+    'aboutHeading' => 'We make room for curiosity, care and community.',
+    'aboutBody' => 'Our club brings psychology out of the textbook and into everyday life through conversations, workshops, activities and shared experiences.',
+    'joiningIntro' => 'Join a thoughtful student community and help shape the next chapter of Mindful Tattva.',
+];
+foreach ($identityDefaults as $field => $fallback) {
+    if (trim((string) ($site[$field] ?? '')) === '') $site[$field] = $fallback;
+}
 $events     = array_values(array_filter(mt_events_numbered($db['events'] ?? []), static fn($event) => !empty($event['published'])));
 $openEvents = mt_open_events($db);
 $history    = mt_sorted($db['history'] ?? []);

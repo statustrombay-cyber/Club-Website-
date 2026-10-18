@@ -310,3 +310,51 @@ scene URLs forbidden. The cold offscreen opening prepared at ~1.3 s in one local
 run; first paper frames on a direct jump took ~2.6 s mobile / ~3.5 s desktop on
 the software GPU. These are measured local observations, not promised hosted
 load times or physical-device frame rates.
+
+## Viewport, visible content and paper readability repair (2026-10-18)
+
+Backup before this revision:
+`/home/user/reference-study/before-gap-content-repair.tar.gz`.
+The user's physical-browser report remains authoritative; stable scroll jumps
+alone had not reproduced the expanding white band. A baseline local render did
+show the membership form at opacity zero. Essential headings, affiliation and
+the membership form no longer depend on intersection-reveal callbacks. Empty
+legacy identity fields receive display-only defaults, without modifying stored
+club settings, records or uploaded files.
+
+The sticky stage now locks to the largest viewport height at the current width,
+with a dynamic-viewport CSS safety minimum and matching opaque scene underpaint.
+Browser-toolbar height changes do not continuously reallocate the WebGL backing
+or change the reserved story scroll distance. The splash covers the largest
+viewport too. The fixed herd media has an explicit stacking context, so the
+transparent ending reveals that same herd and the adjacent section. Background
+horse decoding and unseen CSS decoration pause behind the opaque chapter; the
+horse resumes before the closing crossfade using actual scroll coverage rather
+than stale renderer progress. Fully transparent tail frames stop WebGL and audio
+instead of drawing invisibly over the next section.
+
+The original glass audio file/playback remains; ambient starts in the same
+fracture event with a 0.12-second fade, not at the next phase. Newspapers reuse
+actual Freud/Rogers/James photographs: portrait prints increase from 150×155 to
+282×320 and landscape prints from 157×179 to 242×278 source pixels. These are
+historical photographs, not AI-invented faces. A stage-local clock, bounded
+paper rotation, gentler convergence and later shredding give the photographs
+more readable time. Original geometry, hand, camera, fact atlas, banknote,
+shaders, PHP asset loader and all three horse MP4s are preserved.
+
+`story-viewport.mjs` checks actual screenshot pixels during 928/844/754px
+viewport changes and a CDP touch fling with 2× CPU throttling. It also checks
+splash coverage, stable canvas backing/scroll reservation, ambient during the
+opening break, a zero inter-section gap, silent transparent tail, and visible
+institution text/editable membership form. Screenshots/logs remain outside the
+repository. This is headless Chromium/software-GPU evidence, not a physical
+Safari, production-network or constant-frame-rate guarantee.
+
+Final verification of this repair: **719 unit/PHP checks, 157 desktop/mobile
+scene checks, zero failures/page errors**; resized-viewport/touch-fling,
+cold fast-entry/repeated jumps and upward-fade/new-visit regressions pass.
+All 14 printed-photo islands and the original banknote checksum pass.
+Normal scene delivery passes all 15 checks; simulated HTML/403 decoder replies
+are correctly rejected. Lint and the staged GitHub-equivalent source export
+pass (146 runtime files, all 11 exact payloads and three original horse clips,
+no nested ZIP or live-settings overwrite). No production upload was performed.

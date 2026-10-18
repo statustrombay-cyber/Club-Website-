@@ -46,7 +46,7 @@ profiles=[
  ('Carl Rogers','Empathy and experience','Empathy makes room for another person’s world.','A person is more than a label. Rogers emphasised the importance of understanding another person’s frame of reference. A student community can practise attentive listening and respectful conversation without confusing peer support with professional therapy.','rogers'),
  ('William James','The changing mind','What catches our attention? What becomes a habit?','The stream of consciousness describes experience as changing and continuous. Attention selects some things while others recede. Everyday habits show how repeated actions can become familiar patterns. Psychology keeps asking how experience and action connect.','james')]
 portraits={name:Image.open(root/'assets/story/portraits'/f'{name}.webp').convert('RGB') for name in ['freud','rogers','james']}
-ink='#20271f';stock=(192,192,169,255)
+ink='#20271f';stock=(216,214,194,255)
 def columns(d,text,x,y,w,h,size=20,count=2):
  gap=12;cw=(w-gap*(count-1))//count;ff=font(size);words=(text+' ')*16;words=words.split();pos=0
  for col in range(count):
@@ -64,12 +64,12 @@ for (x,y,w,h),(who,topic,headline,body,name) in zip(boxes,profiles):
  tile=Image.new('RGBA',(w,h),stock);d=ImageDraw.Draw(tile)
  # Same hierarchy as the supplied source: dense opening columns, oversized
  # editorial thought, a square B/W portrait and name row, then dense body ink.
- columns(d,body,8,0,w-16,210,19)
- d.text((20,221),'PSYCHOLOGY ARCHIVE · EDITORIAL SUMMARY',font=fit(d,'PSYCHOLOGY ARCHIVE · EDITORIAL SUMMARY',w-40,16),fill=ink)
- yy=para(d,headline,25,255,w-48,57,ink,leading=57)
- py=max(600,min(yy+20,650));photo(tile,name,(27,py,150,155))
- d.text((195,py+53),who,font=fit(d,who,w-210,28),fill=ink);para(d,topic,195,py+92,w-210,23,ink)
- columns(d,body,8,py+178,w-16,h-py-178,19)
+ columns(d,body,8,0,w-16,135,18)
+ d.text((20,145),'PSYCHOLOGY ARCHIVE · EDITORIAL SUMMARY',font=fit(d,'PSYCHOLOGY ARCHIVE · EDITORIAL SUMMARY',w-40,16),fill=ink)
+ yy=para(d,headline,25,178,w-48,42,ink,leading=43)
+ py=max(355,min(yy+18,420));photo(tile,name,(24,py,282,320))
+ d.text((320,py+90),who,font=fit(d,who,w-330,25),fill=ink);para(d,topic,320,py+140,w-330,20,ink)
+ columns(d,body,8,py+338,w-16,h-py-338,18)
  im.paste(tile,(x,y))
 # The source banknote island is unchanged; bills still use the original KTX2.
 im.save(out/'club-money-papers.webp',quality=88,method=6)
@@ -79,10 +79,10 @@ im=Image.open(work/'certAtlas.png').convert('RGBA');boxes=[(0,0),(658,0),(1316,0
 for idx,(x,y) in enumerate(boxes):
  who,topic,headline,body,name=profiles[idx%len(profiles)];tile=Image.new('RGBA',(658,512),stock);d=ImageDraw.Draw(tile)
  d.text((16,8),'THE PSYCHOLOGY ARCHIVE',font=font(22),fill=ink);d.text((460,13),'READ · THINK · DISCUSS',font=font(13),fill=ink);d.line((12,40,646,40),fill=ink,width=2)
- yy=para(d,headline,17,52,622,39,ink,leading=40)
- py=max(151,yy+13);photo(tile,name,(18,py,157,179))
- d.text((18,py+188),who,font=fit(d,who,164,24),fill=ink);para(d,topic,18,py+220,165,19,ink)
- columns(d,body,195,py,446,450-py,17,2)
+ yy=para(d,headline,17,52,622,32,ink,leading=33)
+ py=max(135,yy+10);photo(tile,name,(18,py,242,278))
+ d.text((18,py+285),who,font=fit(d,who,245,23),fill=ink);para(d,topic,282,445,355,17,ink)
+ columns(d,body,282,py,355,302,16,2)
  d.line((12,474,646,474),fill=ink);d.text((18,482),'MINDFUL TATTVA · HISTORY, IDEAS AND HUMAN EXPERIENCE',font=font(14),fill=ink)
  im.paste(tile,(x,y))
 im.save(out/'club-archive.webp',quality=88,method=6)

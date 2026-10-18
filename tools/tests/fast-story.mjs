@@ -17,7 +17,7 @@ try{
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>requests.push(r.url()));
   await page.goto(base+'/#human-story',{waitUntil:'domcontentloaded'});
   // Jump straight past both opening phases before waiting for the engine.
-  await page.locator('.story-track').evaluate(e=>scrollTo({top:e.getBoundingClientRect().top+scrollY+(e.offsetHeight-innerHeight)*.79,behavior:'instant'}));
+  await page.locator('.story-track').evaluate(e=>scrollTo({top:e.getBoundingClientRect().top+scrollY+(e.offsetHeight-e.querySelector('.story-stage').clientHeight)*.79,behavior:'instant'}));
   assert.ok(await page.locator('.story-status').isHidden(),'no loading banner on a fast entry');
   await page.waitForFunction(()=>{const e=document.querySelector('.mind-story'),s=JSON.parse(e?.dataset.storyNative||'{}');return e?.dataset.storyState==='ready'&&s.phase===2&&s.papers===16&&s.shreds===6;},null,{timeout:60000});
   const timings=await page.evaluate(()=>({readyMs:Math.round(performance.now()),requests:performance.getEntriesByType('resource').filter(e=>e.name.includes('scene-asset=')).map(e=>({file:new URL(e.name).searchParams.get('scene-asset'),startMs:Math.round(e.startTime),endMs:Math.round(e.responseEnd)}))}));
@@ -33,7 +33,7 @@ try{
   if(process.env.TEST_ARTIFACTS){fs.mkdirSync(process.env.TEST_ARTIFACTS,{recursive:true});fs.writeFileSync(`${process.env.TEST_ARTIFACTS}/fast-entry-${viewport.width}.png`,shot);}
   // Also jump rapidly between phases rather than testing only ordered scrolling.
   for(const progress of [.04,.8,.25,.79]){
-   await page.locator('.story-track').evaluate((e,p)=>scrollTo({top:e.getBoundingClientRect().top+scrollY+(e.offsetHeight-innerHeight)*p,behavior:'instant'}),progress);
+   await page.locator('.story-track').evaluate((e,p)=>scrollTo({top:e.getBoundingClientRect().top+scrollY+(e.offsetHeight-e.querySelector('.story-stage').clientHeight)*p,behavior:'instant'}),progress);
    await page.waitForFunction(p=>Math.abs(+document.querySelector('.mind-story').dataset.storyProgress-p)<.005,progress);
    if(progress>.49)assert.ok(screenshotPixels(await page.screenshot()).signature>pixels.samples*100,'paper stage remains painted after a direct jump from the opening');
   }

@@ -20487,7 +20487,7 @@ var sx = { id: `gate1to2`, scrollVh: 50, autoScroll: true, autoScrollDuration: J
     n3 && r3 ? e36.shatterPass.startScrub(n3, r3) : (console.warn(`MasterTimeline: glassShatter model or animations not found`), e36.shatterPass.enabled = false, e36.shatterPass.renderToScreen = false, e36.textPass.renderToScreen = true);
   }
   let a2 = e36._gateElapsed - 3, o2 = Math.min(a2 / Jb, 1), s2 = Math.max(0, (o2 - Qb) / (1 - Qb));
-  !e36._gateShatterSfxFired && s2 > 0 && (e36._gateShatterSfxFired = true, e36._directNavActive || (e36._storyBreakCount = (e36._storyBreakCount || 0) + 1, X.play(`glass-shatter`))), e36.shatterPass.scrub(Math.min(s2 * 1.2, 1)), e36.shatterPass.setShatterBlend(Math.min(s2 * 5, 1));
+  !e36._gateShatterSfxFired && s2 > 0 && (e36._gateShatterSfxFired = true, e36._directNavActive || (e36._storyBreakCount = (e36._storyBreakCount || 0) + 1, X.play(`glass-shatter`), X.play(`stage2-ambient`, { fadeIn: 0.12 }))), e36.shatterPass.scrub(Math.min(s2 * 1.2, 1)), e36.shatterPass.setShatterBlend(Math.min(s2 * 5, 1));
   let c2 = Math.max(0, 1 - o2 * 15);
   if (e36.fgPass?.uniforms && (e36.fgPass.uniforms.uExposure.value = 1 - 1 * c2, e36.fgPass.uniforms.uContrast.value = 1 + nx * c2, e36.fgPass.uniforms.uRedTint.value = rx * c2), e36.bgPass?.uniforms?.uZoom && (e36.bgPass.uniforms.uZoom.value = 1 - tx * c2), e36.components.handsModel) {
     let t3 = e36.components.handsModel.duration, r3 = t3 > 0 ? Yb / t3 : 0, i3 = t3 > 0 ? Xb / t3 : 1;
@@ -21097,7 +21097,7 @@ var Lx = [{ position: [0.022, 0, 0], rotation: [0, 0, 0], scale: 1, burnStart: 0
     for (let e37 = 0; e37 < n2.certMeshes.length; e37++) {
       let t3 = n2.certMeshes[e37], r3 = n2.certSpreadPositions[e37], i3 = n2.certTunnelPositions[e37];
       t3.position.x = r3[0] + (i3.position[0] - r3[0]) * c2, t3.position.y = r3[1] + (i3.position[1] - r3[1]) * c2, t3.position.z = r3[2] + (i3.position[2] - r3[2]) * c2 + o2;
-      let a3 = n2.certSeeds[e37], s3 = c2 * 2;
+      let a3 = n2.certSeeds[e37], s3 = c2 * 0.75;
       n2.certConvergeRotOffsets[e37] = [Math.sin(a3 * 6.283 + c2 * 4) * s3, Math.cos(a3 * 4.1 + c2 * 3.5) * s3, Math.sin(a3 * 3.7 + c2 * 5) * s3 * 0.6];
     }
   }
@@ -21124,7 +21124,7 @@ var Lx = [{ position: [0.022, 0, 0], rotation: [0, 0, 0], scale: 1, burnStart: 0
       e36.bgPass.uniforms.uOpacity.value = n3;
     }
     if (n2.certMaterials) {
-      let e37 = hv(t2, 0.45, 0.9) * 2.5;
+      let e37 = hv(t2, 0.52, 0.9) * 2.5;
       for (let t3 of n2.certMaterials) t3.uniforms.uShredProgress.value = e37;
     }
   }
@@ -21146,7 +21146,7 @@ var Lx = [{ position: [0.022, 0, 0], rotation: [0, 0, 0], scale: 1, burnStart: 0
     let i2 = r2.certMeshes[e37], a2 = r2.certMaterials[e37];
     a2.uniforms.uTime.value += n2;
     let o2 = r2.certSeeds[e37], s2 = r2.certBaseRotations[e37], c2 = (o2 * 2 - 1) * 0.15, l2 = (o2 * 3.7 % 1 * 2 - 1) * 0.15, u2 = (o2 * 7.3 % 1 * 2 - 1) * 0.1, d2 = r2.certConvergeRotOffsets ? r2.certConvergeRotOffsets[e37] : null;
-    i2.rotation.x = s2[0] + t2 * c2 + Math.sin(t2 * 0.4 + o2 * 6.283) * 0.08 + (d2 ? d2[0] : 0), i2.rotation.y = s2[1] + t2 * l2 + Math.sin(t2 * 0.3 + o2 * 4.1) * 0.1 + (d2 ? d2[1] : 0), i2.rotation.z = s2[2] + t2 * u2 + Math.sin(t2 * 0.25 + o2 * 3.7) * 0.05 + (d2 ? d2[2] : 0);
+    i2.rotation.x = s2[0] + Math.sin(t2 * c2) * 0.35 + Math.sin(t2 * 0.4 + o2 * 6.283) * 0.08 + (d2 ? d2[0] : 0), i2.rotation.y = s2[1] + Math.sin(t2 * l2) * 0.35 + Math.sin(t2 * 0.3 + o2 * 4.1) * 0.1 + (d2 ? d2[1] : 0), i2.rotation.z = s2[2] + Math.sin(t2 * u2) * 0.25 + Math.sin(t2 * 0.25 + o2 * 3.7) * 0.05 + (d2 ? d2[2] : 0);
   }
   if (r2.dustMat && (r2.dustMat.uniforms.uTime.value = t2), r2.emberMat && (r2.emberMat.uniforms.uTime.value = t2), r2.shredMeshes) for (let e37 = 0; e37 < r2.shredMeshes.length; e37++) {
     let i2 = r2.shredMeshes[e37], a2 = r2.shredMaterials[e37];

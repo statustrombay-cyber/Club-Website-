@@ -15,11 +15,11 @@ for name,boxes in [('club-money-papers.webp',portrait_boxes),('club-archive.webp
         tile=im.crop((x,y,x+w,y+h))
         assert ImageStat.Stat(tile.convert('L')).stddev[0]>25,(name,index,'blank sheet')
         if h>600:
-            photograph=tile.crop((30,630,175,750))
+            photograph=tile.crop((30,430,285,655))
             text=tile.crop((10,0,w-10,200))
         else:
-            photograph=tile.crop((23,210,170,325))
-            text=tile.crop((200,170,630,430))
+            photograph=tile.crop((25,155,245,400))
+            text=tile.crop((285,170,630,430))
         assert ImageStat.Stat(photograph.convert('L')).stddev[0]>30,(name,index,'missing photo')
         assert ImageStat.Stat(text.convert('L')).stddev[0]>20,(name,index,'missing text')
     print(name,': all',len(boxes),'UV islands have photographic and printed detail')

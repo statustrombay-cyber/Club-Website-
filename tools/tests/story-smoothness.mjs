@@ -14,13 +14,13 @@ try{
  const warm=await page.evaluate(()=>({timeMs:Math.round(performance.now()),scrollY,top:document.querySelector('.story-track').getBoundingClientRect().top,hidden:document.querySelector('.story-status').hidden,warm:document.querySelector('.mind-story').dataset.storyWarm}));
  assert.equal(warm.scrollY,0);assert.ok(warm.top>844);assert.ok(warm.hidden);assert.equal(warm.warm,'true');
  async function jump(progress){
-  await page.locator('.story-track').evaluate((e,p)=>scrollTo({top:e.getBoundingClientRect().top+scrollY+(e.offsetHeight-innerHeight)*p,behavior:'instant'}),progress);
+  await page.locator('.story-track').evaluate((e,p)=>scrollTo({top:e.getBoundingClientRect().top+scrollY+(e.offsetHeight-e.querySelector('.story-stage').clientHeight)*p,behavior:'instant'}),progress);
   await page.waitForFunction(p=>Math.abs(+document.querySelector('.mind-story').dataset.storyProgress-p)<.005,progress,{timeout:30000});
  }
  await jump(.13);await jump(.3);await page.waitForTimeout(300);
  const samples=await page.evaluate(()=>new Promise(resolve=>{
   const frames=[],start=performance.now(),root=document.querySelector('.mind-story'),track=root.querySelector('.story-track');
-  scrollTo({top:track.getBoundingClientRect().top+scrollY+(track.offsetHeight-innerHeight)*.28,behavior:'instant'});
+  scrollTo({top:track.getBoundingClientRect().top+scrollY+(track.offsetHeight-root.querySelector('.story-stage').clientHeight)*.28,behavior:'instant'});
   function tick(){const s=JSON.parse(root.dataset.storyNative);frames.push({opacity:s.glassOpacity,breaks:s.breakCount});if(performance.now()-start<1500)requestAnimationFrame(tick);else resolve(frames);}requestAnimationFrame(tick);
  }));
  const opacity=[...new Set(samples.map(s=>s.opacity))];

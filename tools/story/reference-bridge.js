@@ -53,7 +53,7 @@ window.MTStory3D={async create(root){
  // Only these recovered tracks are eligible, and only inside this chapter.
  for(const key of Object.keys(wg))if(!['glass-shatter','stage2-ambient','money-burn'].includes(key))delete wg[key];
  X.setEnabled(false);X.preload();
- let gateAuto=false,gateClock=0,gateLastTime=null,lastRenderedProgress=null,gateMax=0,glassDismissed=false,glassOpacity=1,glassDismissTime=null;
+ let paperTime=0,gateAuto=false,gateClock=0,gateLastTime=null,lastRenderedProgress=null,gateMax=0,glassDismissed=false,glassOpacity=1,glassDismissTime=null;
  let alive=true,phase=-1,busy=false,raf=0,prevTime=0,lastDraw=0,p=0,chapterTop=Infinity,visible=false,width=0,height=0,resizeNeeded=true;
  const reduced=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
  const constrained=()=>reduced()||!!navigator.connection?.saveData;
@@ -98,7 +98,7 @@ window.MTStory3D={async create(root){
     // Never carry its pre-fracture black exposure/zoom into the paper stage.
     fg.uniforms.uExposure.value=1;fg.uniforms.uContrast.value=1;fg.uniforms.uRedTint.value=0;bg.uniforms.uZoom.value=1;
     await stage3Ready;required(['moneyShredsAtlas','certAtlas','clubPaperAtlas','tunnelModel']);
-    ctx._stage3DeferredStarted=false;await Xx.enter(ctx);
+    paperTime=0;ctx._stage3DeferredStarted=false;await Xx.enter(ctx);
     if(ctx.components.portalCircle)ctx.components.portalCircle.visible=false;
     // Build the original paper/shred objects once, not in an uncancellable
     // deferred callback that can attach objects to the wrong phase on reversal.
@@ -111,12 +111,14 @@ window.MTStory3D={async create(root){
  function frame(now){
   raf=0;if(!alive)return;const dt=reduced()?0:Math.min(.05,Math.max(0,(now-prevTime)/1000));prevTime=now;
   measure();if(!visible){gateLastTime=null;stopAudio();ctx._stage2Video?.pause();return;}
+  // Do not keep rendering a fully transparent WebGL tail over the next page.
+  if(p>=1){stopAudio();ctx._stage2Video?.pause();canvas.style.opacity='0';root.style.setProperty('--reference-end','0');root.dataset.storyPhase='herd';root.dataset.storyProgress='1.0000';lastRenderedProgress=p;return;}
   if(software&&now-lastDraw<48&&!resizeNeeded){schedule();return;}lastDraw=now;
   if(resizeNeeded)applySize();
   const next=p<.18?0:p<.49?1:2;
   if(next!==phase){change(next).catch(fail);return;}
   if(busy){schedule();return;}
-  X.setEnabled(true);root.dataset.storyAudio='chapter-only';if(phase>0&&!X._ambientActive.has('stage2-ambient'))X.play('stage2-ambient');if(ctx._stage2Video){if(reduced())ctx._stage2Video.pause();else Ov(ctx._stage2Video);}
+  X.setEnabled(true);root.dataset.storyAudio='chapter-only';if((phase>0||ctx._gateShatterSfxFired)&&!glassDismissed&&!X._ambientActive.has('stage2-ambient'))X.play('stage2-ambient');if(ctx._stage2Video){if(reduced())ctx._stage2Video.pause();else Ov(ctx._stage2Video);}
   const local=phase===0?clamp(p/.18):phase===1?clamp((p-.18)/.31):clamp((p-.49)/.51)*.84;
   if(phase===0){
    // The supplied gate is a three-second automatic fracture, not a frozen
@@ -128,7 +130,7 @@ window.MTStory3D={async create(root){
    ctx._gateElapsed=3+gateProgress*Jb;ctx._gateHandElapsed=gateProgress*Jb*Zb;sx.update(ctx,now/1000,0);rig.update(dt);
   }
   else if(phase===1){Wb.scrub(ctx,local);Wb.update(ctx,now/1000,dt);}
-  else{Xx.scrub(ctx,local);Xx.update(ctx,now/1000,dt);if(ctx.components.portalCircle)ctx.components.portalCircle.visible=false;}
+  else{paperTime+=dt;Xx.scrub(ctx,local);Xx.update(ctx,paperTime,dt);if(ctx.components.portalCircle)ctx.components.portalCircle.visible=false;}
   if(ctx.components.glassShards)ctx.components.glassShards._reducedMotion=reduced();
   ctx.components.textLayout?.update?.(ctx._scrollProgress||0,dt);text.textScene.visible=false;
   fg.uniforms.uTime.value=reduced()?0:now/1000;fg.uniforms.uEnableNoise.value=reduced()?0:2;fg.uniforms.uNoiseOffset.value.set(0,0);
