@@ -35,7 +35,7 @@ window.MTStory3D={async create(root){
  const on=(target,name,fn,options)=>{target.addEventListener(name,fn,options);cleanup.push(()=>target.removeEventListener(name,fn,options));};
  const objects={glass:new T.Group(),money:new T.Group(),paper:new T.Group(),hand:new T.Group()};Object.values(objects).forEach(g=>scene.add(g));
  
- const [noteImage,curtainImage,rogers,james,handImage]=await Promise.all(['/assets/story/freud-note.webp','/assets/story/velvet-curtain.webp','/assets/story/rogers-engraving.webp','/assets/story/james-engraving.webp','/assets/story/hand-painted-poses.webp'].map(loadImage)).catch(e=>{composer.dispose();renderer.dispose();throw e;});
+ const [noteImage,curtainImage,rogers,james,handImage]=await Promise.all(['/assets/reference/assets/textures/original-banknote.webp','/assets/story/velvet-curtain.webp','/assets/story/rogers-engraving.webp','/assets/story/james-engraving.webp','/assets/story/hand-painted-poses.webp'].map(loadImage)).catch(e=>{composer.dispose();renderer.dispose();throw e;});
  if(disposed)throw Error('Scene was disposed while loading');
  const curtains=canvasTexture(curtainImage),green=textureCanvas(32,64),gg=green.getContext('2d'),gradient=gg.createRadialGradient(16,27,2,16,32,38);gradient.addColorStop(0,'#183d2c');gradient.addColorStop(.5,'#071e14');gradient.addColorStop(1,'#010503');gg.fillStyle=gradient;gg.fillRect(0,0,32,64);
  const greenTexture=canvasTexture(green);scene.background=curtains;

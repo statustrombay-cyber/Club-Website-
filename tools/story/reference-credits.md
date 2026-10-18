@@ -38,7 +38,7 @@ No new licence is asserted for the captured artwork.
 - Skip unrelated first-stage garden/coins/world-map/later stages. Use the actual
   second hand (`Lb`), glass gate (`sx`), glass stage (`Wb`) and money/paper stage
   (`Xx`) in the existing club chapter. Native progress drives the original
-  gate clock and scrub functions rather than hijacking wheel/touch input.
+  three-second automatic gate clock (once the chapter is substantially on screen) and scrub functions rather than hijacking wheel/touch input. Scroll can fast-forward it; reverse entry stays scrubbable.
 - The absent `stage3_money-hand.webp` otherwise leaves a solid white portal.
   Do not request that missing file, and keep its portal mesh invisible.
 - The captured shatter fragment shader was an opaque black constant. Keep the
@@ -49,8 +49,9 @@ No new licence is asserted for the captured artwork.
   original camera/bill/paper animation. No generic floating glass reconstruction.
 - Keep club/research text rather than source job-market advertising; retain the
   accessible HTML and cited research. Bake club glyphs into the six original
-  atlas islands, Freud currency into the original rotated bill island, and
-  psychology archive pages into the original newspaper/certificate UV islands.
+  atlas islands and psychology archive pages into the original newspaper/certificate UV islands. Following the user's correction, bills use the original `leather-money-shreds.ktx2` unchanged;
+  the Freud-note substitution has been deleted. The derived paper-only atlas
+  is a separate texture and can no longer replace the original banknote sampler.
   The original unmodified KTX2 files are retained alongside the derived WebPs.
 - `adapt-atlases.py` creates the derived WebPs offline from GPU-exported
   `spcAtlas.png`, `moneyShredsAtlas.png`, `certAtlas.png`; dependencies: Pillow,
@@ -71,8 +72,7 @@ No new licence is asserted for the captured artwork.
   for orientation events already allowed by the browser. Without access, no
   sensor events means no gyro. Do not add a prompt, permission UI or workaround.
 - Reserve native chapter height once; resize only the drawing surface with the
-  dynamic viewport. Release the scene/audio on reduced motion, data-saving
-  fallback, render failure or context loss. Rebuild original objects on reverse
+  dynamic viewport. Reduced motion stops idle movement/video/noise; Data Saver caps resolution. Neither silently disables the user-controlled WebGL scene. Release scene/audio on render failure or context loss. Rebuild original objects on reverse
   phase transitions; don't let deferred paper callbacks attach to a later phase.
 
 These adaptations are intentional. Reusing the actual source animation is not
@@ -81,18 +81,20 @@ unrelated parts of the source site.
 
 ## Verification
 
-- `npm test`: **600 passed, 0 failed** (PHP/backend/data and public-site checks,
+- `npm test`: **604 passed, 0 failed** (PHP/backend/data and public-site checks,
   plus source-integration assertions).
 - `npm run lint`: pass (`app/passes.php`). JS syntax/build and Git whitespace
   checks pass.
-- `tools/tests/reference-story.mjs`: **138 checks passed, zero errors** in real Chromium WebGL using SwiftShader at
+- `tools/tests/reference-story.mjs`: **154 checks passed, zero browser errors** in real Chromium WebGL using SwiftShader at
   **390 × 844** (mobile/touch) and **1440 × 900**; forward/reverse hand, glass,
   bill, paper and shred phases, no visible fallback portal/source-text overlays,
   downward glass, viewport-height coverage, stable reserved scroll height,
   no horizontal overflow, no gyro permission call, no source HUD/buttons,
   no outside-origin requests, no 404/JS/shader errors, chapter exit stops live
-  WebAudio sources, context loss restores HTML, reduced motion avoids the
-  renderer download. Screenshots/reports stay outside the checkout.
+  WebAudio sources, context loss restores HTML, source fracture/hand animation
+  advances, synthetic orientation input changes the actual rendered camera
+  without a permission call, and Data Saver/reduced motion/a delayed engine
+  download still render WebGL. Screenshots/reports stay outside the checkout.
 - Compared stills decoded from the earlier HD `video_part_01.mp4` and
   `video_part_02.mp4` (Git source commit recorded in the HD manifest) against
   native hand/glass renders. These confirm the recovered hand/geometry rather
@@ -102,6 +104,46 @@ unrelated parts of the source site.
   when previously allowed events are not delivered.
 
 The classic hero, rings/wires, butterfly/navigation implementation, other
-sections, PHP backend, payment/pass logic, stored club data and uploads are
-not edited by this integration. Tests are run against the existing backend;
+sections, payment/pass logic, stored club data and uploads are unchanged.
+The render repair adds `.glb`, `.ktx2`, `.wasm` and `.mp3` pass-through inside
+`assets/` in the PHP built-in-server router, plus explicit Apache/preview MIME
+types; financial/authentication code is not modified. Tests are run against the existing backend;
 all three horse files remain byte-for-byte unchanged.
+
+
+## Render-failure investigation after user report
+
+Backup: `/home/user/reference-study/before-render-repair-72c3cb7.tar.gz`.
+Opening the ordinary home page in Chromium, not only a hash-linked test, showed
+working WebGL with normal preferences. Three reproduced **silent sheet-only**
+cases before the repair were Data Saver, reduced motion, and a 14-second engine
+response (the loader previously abandoned it after 12 seconds). After repair,
+all three reached `data-story-state="ready"`, with canvas visible, actual hand
+and glass objects, and no browser console errors. This does not identify which
+one occurred on the user's physical browser, but all were real defects.
+
+A separate hosting defect was found: `npm start` routes static binaries through
+`mt_is_static_file`, which did not permit GLB, KTX2, WASM or MP3. The Node preview
+served those files independently and therefore masked that defect. PHP-runtime
+tests now exercise the **actual helper**, including refusal of a model outside
+assets, rather than merely asserting that those files exist. Apache/preview
+responses explicitly identify WebAssembly, KTX2, GLB and MP3 MIME types.
+
+Script loading now allows 60 seconds, reports failure reasons, retries a
+transient failure once without collapsing the chapter height, and can recover
+on network/context restoration. Hand/glass can start rendering before the
+later paper textures finish. The opening gate uses wall-clock time while
+visible, not the physics delta cap (otherwise software/slow renderers stretch
+the original three-second break into a long apparent freeze). The first-hand
+camera now applies and restores the original passive-input rig correctly;
+previously it was deliberately disabled to avoid a camera-reset bug.
+
+Original banknote atlas SHA-256 (identical to the user's capture):
+`f39a1df7fcdcca5b512a327ff78cf118bcd96be27c1dbad845e71b4efeb54f5e`.
+`original-banknote.webp` is an offline crop for the HTML/no-WebGL fallback only;
+the animated bills sample the supplied compressed atlas, with the original
+burn shader, UV rotation, geometry and camera animation.
+
+A source-canvas WebM recording and inspected stills are kept outside the public
+checkout. A recording of this implementation is evidence of actual rendering,
+not a replacement footage layer or a pixel-identical/physical-device claim.

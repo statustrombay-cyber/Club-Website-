@@ -52,7 +52,7 @@ const files = collect(ROOT);
 for (const [rel, absSource] of files) {
   const target = '/site/' + rel;
   await ensureDir(target.slice(0, target.lastIndexOf('/')));
-  if (/\.(png|jpe?g|webp|gif|ico|pdf|mp4|m4v|mov|webm|mp3|glb|woff2)$/i.test(rel)) {
+  if (/\.(png|jpe?g|webp|gif|ico|pdf|mp4|m4v|mov|webm|mp3|glb|ktx2|wasm|woff2)$/i.test(rel)) {
     await php.writeFile(target, new Uint8Array(fs.readFileSync(absSource)));
   } else {
     await php.writeFile(target, fs.readFileSync(absSource, 'utf8'));
@@ -2200,7 +2200,7 @@ ok('the glass keeps its qualifier and primary-source citations',
 ok('newspapers carry historical profiles and a dated research reading, not invented quotations',
   ['Sigmund Freud', 'Carl Rogers', 'William James', 'Research reading · 2025', 'not historical newspaper facsimiles'].every(text => storyView.includes(text)));
 ok('the chapter has native-scroll, motion-preference and missing-asset fallbacks',
-  storySource.includes('staticStory()') && storySource.includes('3D engine timed out') && storySource.includes("motion.addEventListener('change',configure)") && !storySource.includes("addEventListener('wheel'"));
+  storySource.includes('function staticStory(reason)') && storySource.includes('3D engine timed out') && storySource.includes("motion.addEventListener('change',configure)") && !storySource.includes("addEventListener('wheel'"));
 ok('the decorative canvas stays out of the accessible tree but the actual facts do not',
   storyView.includes('class="story-canvas" aria-hidden="true"') && storyView.includes('<article class="story-shard">') && !storySource.includes("shard.style.visibility"));
 const referenceCore=fs.readFileSync(path.join(ROOT,'tools/story/reference-core.js'),'utf8');
@@ -2222,11 +2222,20 @@ ok('no sound/tilt controls or gyro permission request are installed',
 ok('native viewport rendering preserves document height and handles context loss',
   storyCss.includes('height: 100dvh') && storyCss.includes('background: none !important') && storySource.includes('innerHeight*6.6') && referenceBridge.includes("canvas.addEventListener('webglcontextlost',contextLost)"));
 ok('only the requested chapter audio is eligible; leaving it stops every sound',
-  referenceBridge.includes("['glass-shatter','stage2-ambient','money-burn'].includes(key)") && referenceBridge.includes('if(!visible){stopAudio()') && referenceBridge.includes('function gesture(e){if(e.isTrusted)X.unlockNow();}') && referenceBridge.includes('X.setEnabled(false)') && !audioSource.includes('localStorage'));
+  referenceBridge.includes("['glass-shatter','stage2-ambient','money-burn'].includes(key)") && /if\(!visible\)\{[^}]*stopAudio\(\)/.test(referenceBridge) && referenceBridge.includes('function gesture(e){if(e.isTrusted)X.unlockNow();}') && referenceBridge.includes('X.setEnabled(false)') && !audioSource.includes('localStorage'));
 ok('missing-texture white portal and original HUD/text are not rendered',
   referenceBridge.includes('ctx.components.portalCircle.visible=false') && referenceBridge.includes('text.textScene.visible=false') && referenceBridge.includes('_xpReplaySkip:true') && !referenceCore.includes('var WO = window.location.hash'));
 ok('club-specific atlases retain the original UV layout without source advertisements',
   ['club-fragments.webp','club-money-papers.webp','club-archive.webp'].every(name=>fs.existsSync(path.join(ROOT,'assets/reference/assets/atlases',name)) && referenceBridge.includes(name)));
+ok('the banknote comes from the unmodified captured compressed atlas, not a Freud substitution',
+  !referenceBridge.includes("moneyShredsAtlas:'club-money-papers.webp'") && referenceBridge.includes("key:'clubPaperAtlas'") && !fs.existsSync(path.join(ROOT,'assets/story/freud-note.webp')) && !storyView.includes('freud-note.webp'));
+ok('slow downloads and Data Saver no longer silently switch off the 3D chapter',
+  storySource.includes('60000') && !storySource.includes('connection&&connection.saveData') && !storySource.includes('if(low()') && storySource.includes('root.dataset.storyError=reason'));
+const binaryRoutes=['assets/reference/assets/models/human_hand_2.glb','assets/reference/assets/atlases/human_hands.ktx2','assets/reference/vendor/basis/basis_transcoder.wasm','assets/reference/assets/audio/fx_glass-shatter.mp3'];
+const binaryAllowed=JSON.parse(String(await php.x(['json_encode(array_map("mt_is_static_file",json_decode(base64_decode("'+Buffer.from(JSON.stringify(binaryRoutes)).toString('base64')+'"),true)))'])));
+ok('the actual PHP built-in-server asset gate permits all four original-scene binary types',binaryAllowed.every(Boolean),JSON.stringify(binaryAllowed));
+await php.writeFile('/site/data/not-public.glb',new Uint8Array([0,1,2]));
+ok('the binary-type allowance does not expose a private-data model',String(await php.x(['mt_is_static_file("data/not-public.glb") ? "leak" : "private"']))==='private');
 ok('the full-resolution reference manifest preserves all eleven recoverable clips',
   hdReference.parts.length === 11 && hdReference.parts.every((part, i) => part.width === 1080 && part.height === 2400 && part.gitPath === `video_part_${String(i).padStart(2, '0')}.mp4` && /^[a-f0-9]{40}$/.test(part.gitBlob) && /^[a-f0-9]{64}$/.test(part.sha256)));
 ok('root reference MP4s are no longer in the live tree', !fs.readdirSync(ROOT).some(name => /\.mp4$/i.test(name)));

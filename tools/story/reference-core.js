@@ -17351,7 +17351,7 @@ var yg = 22050, bg = 750, xg = 350, Sg = `/assets/reference/`, Cg = 0.4, wg = { 
 }, zg = new K(), Bg = new K(), Vg = new K(), Hg = new K(), Ug = new $t(), Wg = class {
   constructor(e36) {
     this.camera = e36, this.enabled = true, this.influence = 1, this.config = Pg.CAMERA_RIG, this._inputX = 0, this._inputY = 0, this._currentX = 0, this._currentY = 0, this._savedPos = new K(), this._savedQuat = new Ct(), this._isDesktop = window.matchMedia(`(pointer: fine)`).matches || !window.matchMedia(`(pointer: coarse)`).matches, this._gyroActive = false, this._gyroAttempt = `idle`, this._gyroBetaRef = null, this._gyroGammaRef = null, this._handleGyro = (e37) => {
-      if (e37.gamma === null || e37.beta === null) return;
+      if (!Number.isFinite(e37.gamma) || !Number.isFinite(e37.beta)) return;
       this._gyroActive || (this._gyroActive = true, console.log(`[CameraRig] First deviceorientation event received`, { beta: e37.beta, gamma: e37.gamma, absolute: e37.absolute }));
       let t2 = e37.beta, n2 = e37.gamma, r2 = screen.orientation?.angle ?? (typeof window.orientation == `number` ? window.orientation : 0);
       if (r2 === 90 ? (t2 = e37.gamma, n2 = -e37.beta) : r2 === 270 ? (t2 = -e37.gamma, n2 = e37.beta) : r2 === 180 && (t2 = -e37.beta, n2 = -e37.gamma), this._gyroBetaRef === null) {
@@ -20357,7 +20357,7 @@ var Lb = class extends Kv {
     this._applyTransforms();
   }
   _applyTransforms() {
-    let e36 = this._scrollProgress ?? 0, t2 = (performance.now() - this._t0) * 1e-3;
+    let e36 = this._scrollProgress ?? 0, t2 = this._reducedMotion ? 0 : (performance.now() - this._t0) * 1e-3;
     for (let n2 of this.shards) {
       let r2 = n2.userData;
       n2.position.lerpVectors(r2.startPos, r2.endPos, e36), Rb.slerpQuaternions(r2.startQuat, r2.endQuat, e36);
@@ -21207,7 +21207,7 @@ function eS(e36) {
 }
 var tS = [{ position: [0.25, -0.15, 12], rotation: [3.3, 0.1, 3.19], scale: 0.3 }, { position: [-0.2, 0.25, 13.5], rotation: [3, -0.3, 3.34], scale: 0.28 }, { position: [0.3, -0.2, 15], rotation: [3.5, 0.4, 2.99], scale: 0.25 }, { position: [-0.3, 0.35, 16.5], rotation: [2.9, -0.2, 3.44], scale: 0.3 }, { position: [0.2, -0.25, 18], rotation: [3.4, 0.3, 3.04], scale: 0.26 }, { position: [-0.2, 0.1, 19.5], rotation: [3.1, -0.5, 3.39], scale: 0.28 }];
 function nS(e36) {
-  let t2 = e36.assetLoader.getAsset(`certMatcap`) || wv(`assets/textures/matcap-certificate.webp`, { assetLoader: e36.assetLoader }), n2 = new Zr(1, 1.8, 16, 16), r2 = 2048, i2 = [[0, 0, 492, 912], [492, 0, 492, 912], [982, 0, 492, 912], [0, 911, 491, 1137], [492, 913, 490, 1135], [983, 912, 491, 911]], a2 = e36.assetLoader.getAsset(`moneyShredsAtlas`), o2 = i2.map(([e37, t3, n3, i3]) => ({ offset: [e37 / r2, 1 - (t3 + i3) / r2], scale: [n3 / r2, i3 / r2] })), s2 = i2.map(([, , e37, t3]) => e37 / t3), c2 = [], l2 = [], u2 = [], d2 = [];
+  let t2 = e36.assetLoader.getAsset(`certMatcap`) || wv(`assets/textures/matcap-certificate.webp`, { assetLoader: e36.assetLoader }), n2 = new Zr(1, 1.8, 16, 16), r2 = 2048, i2 = [[0, 0, 492, 912], [492, 0, 492, 912], [982, 0, 492, 912], [0, 911, 491, 1137], [492, 913, 490, 1135], [983, 912, 491, 911]], a2 = e36.assetLoader.getAsset(`clubPaperAtlas`) || e36.assetLoader.getAsset(`moneyShredsAtlas`), o2 = i2.map(([e37, t3, n3, i3]) => ({ offset: [e37 / r2, 1 - (t3 + i3) / r2], scale: [n3 / r2, i3 / r2] })), s2 = i2.map(([, , e37, t3]) => e37 / t3), c2 = [], l2 = [], u2 = [], d2 = [];
   for (let r3 = 0; r3 < o2.length; r3++) {
     let i3 = o2[r3], f2 = Math.random(), p2 = kx(a2, { waviness: 0.012 + Math.random() * 8e-3, seed: f2, matcap: t2, opacity: 0, texOffset: i3.offset, texScale: i3.scale }), m2 = new Cr(n2, p2), h2 = tS[r3], g2 = s2[r3];
     m2.position.set(...h2.position), m2.rotation.set(...h2.rotation), m2.scale.set(h2.scale, h2.scale * 0.5555555555555556 / g2, h2.scale), e36.scene.add(m2), c2.push(m2), l2.push(p2), u2.push(f2), d2.push([...h2.rotation]);

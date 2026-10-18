@@ -44,7 +44,9 @@ for (x,y,w,h),(who,title,year,body) in zip(boxes,papers):
  tile=Image.new('RGBA',(w,h),(213,208,181,255));d=ImageDraw.Draw(tile);d.rectangle((12,12,w-13,h-13),outline='#4c5144',width=2);d.text((25,25),'THE MINDFUL CHRONICLE',font=fit(d,'THE MINDFUL CHRONICLE',w-50,35),fill='#272e25');d.line((25,75,w-25,75),fill='#4c5144',width=2);d.text((25,90),year,font=font(20),fill='#394235');yy=para(d,who,25,130,w-50,49,'#1e261e');yy=para(d,title,25,yy+18,w-50,38,'#293329');d.line((25,yy+15,w-25,yy+15),fill='#4c5144');yy+=36
  para(d,body+' Psychology keeps asking new questions. A theory can shape a conversation without being the final word. '+body,25,yy,w-50,24,'#343d30',maxy=h-90)
  d.text((25,h-55),'Mindful Tattva · psychology archive',font=font(19),fill='#47503f');im.paste(tile,(x,y))
-note=Image.open(root/'assets/story/freud-note.webp').convert('RGBA').transpose(Image.Transpose.ROTATE_270).resize((574,1284),Image.Resampling.LANCZOS);im.paste(note,(1474,0));im.save(out/'club-money-papers.webp',lossless=True)
+# Keep the supplied banknote island unchanged. Runtime bills use the original
+# compressed KTX2, not this derived newspaper-only atlas.
+im.save(out/'club-money-papers.webp',lossless=True)
 # Replace fictional university credentials with real club archive articles;
 # keep every original paper tile boundary, deformation, strip and camera path.
 im=Image.open(work/'certAtlas.png').convert('RGBA');boxes=[(0,0),(658,0),(1316,0),(0,512),(0,1024),(0,1536),(658,1536),(1316,1536)]

@@ -58,11 +58,8 @@
   .story-research summary span { display: block; margin: 6px 0 0 18px; }
   .story-archive { grid-template-columns: minmax(0, 1fr); gap: 20px; }
 }
-@media (prefers-reduced-motion: reduce) {
-  .story-pending .story-track, .story-enhanced .story-track { height: auto; }
-  .story-enhanced .story-stage { position: relative; height: auto; }
-  .story-enhanced .story-canvas { display: none; }
-}
+/* Reduced motion keeps the user-controlled WebGL scene; the bridge stops
+   video playback, shader noise and idle animation instead of hiding canvas. */
 @media print {
   .story-track, .story-pending .story-track, .story-enhanced .story-track { height: auto; }
   .story-enhanced .story-stage { position: relative; height: auto; }
@@ -78,3 +75,7 @@
 .mind-story.story-reference .story-type{opacity:var(--reference-end,0);pointer-events:none}
 .mind-story.story-reference .story-type > span{opacity:1!important;transform:none!important}
 .mind-story.story-reference .story-static-art{display:none}
+
+.story-status { position:relative; margin:0; padding:20px; color:#fff8ee; font:400 .85rem/1.5 var(--font-body,sans-serif); background:#270604; }
+.story-status[hidden] { display:none; }
+.story-pending .story-status { position:absolute; inset:auto 16px 24px; width:fit-content; max-width:calc(100% - 32px); padding:10px 14px; border-radius:8px; background:#160806b3; }

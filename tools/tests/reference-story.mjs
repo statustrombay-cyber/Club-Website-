@@ -26,7 +26,9 @@ try{
   page.on('console',m=>{if(m.type()==='error')issues.push(m.text());});
   page.on('response',r=>{if(r.status()>=400)issues.push(`${r.status()} ${r.url()}`);});
   page.on('request',r=>{if(!r.url().startsWith(base)&&!r.url().startsWith('data:')&&!r.url().startsWith('blob:'))issues.push('External request '+r.url());});
-  await page.goto(base+'/#human-story',{waitUntil:'domcontentloaded'});
+  await page.goto(base+'/',{waitUntil:'domcontentloaded'});
+  await page.waitForTimeout(6500);
+  await page.locator('.story-track').evaluate(e=>scrollTo({top:e.getBoundingClientRect().top+scrollY,behavior:'instant'}));
   await page.waitForFunction(()=>document.querySelector('.mind-story')?.dataset.storySource==='recovered-original',null,{timeout:60000});
   const jump=async progress=>{
    await page.locator('.story-track').evaluate((e,p)=>scrollTo({top:e.getBoundingClientRect().top+scrollY+(e.offsetHeight-innerHeight)*p,behavior:'instant'}),progress);
@@ -34,6 +36,21 @@ try{
    await page.waitForTimeout(350);
    return page.locator('.mind-story').evaluate(e=>JSON.parse(e.dataset.storyNative));
   };
+  const still=await jump(0);await page.waitForTimeout(900);
+  const idle=await page.locator('.mind-story').evaluate(e=>JSON.parse(e.dataset.storyNative));
+  check(idle.gateAuto&&idle.gateClock>still.gateClock&&(idle.handTime>still.handTime||still.gateClock>=3&&idle.shatterTime>0),'the original automatic fracture runs/completes while scroll is held still');
+  await jump(.24); // Rewind to test the source fracture scrub independently of autoplay.
+  const intact=await jump(.03),broken=await jump(.13);
+  check(intact.shatterEnabled&&broken.shatterEnabled,'the actual shatter render pass is enabled, not just text');
+  check(broken.shatterTime>intact.shatterTime,'the original fracture animation advances');
+  check(broken.handTime!==intact.handTime,'the original animated hand moves');
+  // Exercise the application's passive sensor-input path. Synthetic input is
+  // not a claim that this desktop runner has a physical phone gyroscope.
+  await page.evaluate(()=>dispatchEvent(new DeviceOrientationEvent('deviceorientation',{alpha:0,beta:10,gamma:0})));await page.waitForTimeout(180);
+  await page.evaluate(()=>dispatchEvent(new DeviceOrientationEvent('deviceorientation',{alpha:0,beta:25,gamma:18})));await page.waitForTimeout(800);
+  const tilt=await page.locator('.mind-story').evaluate(e=>JSON.parse(e.dataset.storyNative));
+  check(tilt.gyro,'allowed sensor-shaped input reaches the original camera rig');
+  check(tilt.renderCamera.some((v,i)=>Math.abs(v-tilt.camera[i])>.00001),'gyro input changes the rendered camera even during the first hand/glass phase');
   await jump(.24);await page.mouse.click(4,200);await page.waitForTimeout(200);
   let prevY=Infinity,prevP=0;
   for(const [p,phase]of [[.03,0],[.08,0],[.19,1],[.25,1],[.37,1],[.48,1],[.50,2],[.60,2],[.75,2],[.90,2],[.99,2],[.80,2],[.40,1],[.08,0]]){
@@ -62,9 +79,17 @@ try{
   report.errors.push(...unexpected);check(unexpected.length===0,'no asset, JS, shader or external-network errors: '+unexpected.join('\n'));
   report.viewports.push({viewport,trackHeight});await context.close();
  }
- // Reduced-motion users must retain HTML, not download the heavy renderer.
- const reduced=await browser.newContext({reducedMotion:'reduce'}),page=await reduced.newPage();let engine=false;
- page.on('request',r=>{if(r.url().includes('/assets/vendor/story-3d.js'))engine=true;});await page.goto(base+'/#human-story');await page.waitForTimeout(800);
- check(!engine,'reduced motion avoids engine download');check(await page.locator('.story-shard').first().isVisible(),'reduced-motion facts remain accessible');await reduced.close();
+ // Preferences reduce idle work, but do not replace the requested scroll
+ // animation with sheets. Delayed script reproduces the old 12-second failure.
+ for(const mode of ['reduced-motion','save-data','slow-engine']){
+  const c=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,reducedMotion:mode==='reduced-motion'?'reduce':'no-preference'});
+  if(mode==='save-data')await c.addInitScript(()=>Object.defineProperty(navigator,'connection',{value:{saveData:true,addEventListener(){}}}));
+  const p=await c.newPage();if(mode==='slow-engine')await p.route('**/assets/vendor/story-3d.js',async r=>{await new Promise(resolve=>setTimeout(resolve,14000));await r.continue();});
+  await p.goto(base+'/#human-story');
+  await p.waitForFunction(()=>document.querySelector('.mind-story')?.dataset.storyState==='ready',null,{timeout:70000});
+  check(await p.locator('.story-canvas').isVisible(),mode+' retains visible WebGL');
+  check(await p.locator('.mind-story').getAttribute('data-story-renderer')==='webgl',mode+' does not silently fall back');
+  await c.close();
+ }
  console.log(JSON.stringify(report,null,2));
 }finally{await browser.close();}

@@ -314,6 +314,12 @@ function mt_is_static_file(string $route): bool
     if (!str_starts_with($candidate, MT_ROOT . DIRECTORY_SEPARATOR)) {
         return false;
     }
+    // The scene's models, compressed atlases, decoders and audio are fetched
+    // binaries, not PHP routes. Keep this extra allowance inside assets only.
+    if (preg_match('#\.(glb|ktx2|wasm|mp3)$#i', $candidate)) {
+        $assetRoot = realpath(MT_ROOT . '/assets');
+        return $assetRoot !== false && str_starts_with($candidate, $assetRoot . DIRECTORY_SEPARATOR);
+    }
     return (bool) preg_match('#\.(css|js|mjs|png|jpe?g|webp|gif|svg|ico|pdf|woff2?|ttf|txt|map|json|mp4|m4v|mov|webm)$#i', $candidate);
 }
 
