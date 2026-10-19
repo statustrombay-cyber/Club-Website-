@@ -10,6 +10,7 @@ const entries={
  'draco-wasm':['assets/reference/vendor/draco/draco_decoder.wasm','application/wasm'],
  'hand-atlas':['assets/reference/assets/atlases/human_hands.ktx2','image/ktx2'],
  'texts-atlas':['assets/reference/assets/atlases/texts.ktx2','image/ktx2'],
+ 'certificate-atlas':['assets/reference/assets/atlases/board-certificates.ktx2','image/ktx2'],
  'money-atlas':['assets/reference/assets/atlases/leather-money-shreds.ktx2','image/ktx2'],
  'hand-model':['assets/reference/assets/models/human_hand_2.glb','model/gltf-binary'],
  'camera-model':['assets/reference/assets/models/camera_2.glb','model/gltf-binary'],

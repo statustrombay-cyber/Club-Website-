@@ -20476,9 +20476,9 @@ var sx = { id: `gate1to2`, scrollVh: 50, autoScroll: true, autoScrollDuration: J
       let t4 = e36._stage2VideoPrefetch;
       t4 ? e36._stage2VideoPrefetch = null : t4 = Dv(`/`);
       let n4 = e36._stage2VideoTexPrewarmed || null;
-      n4 ? (e36._stage2VideoTexPrewarmed = null, t4 = n4.image) : (n4 = new sc(t4), n4.colorSpace = W), kv(t4, () => {
-        e36.bgPass && (Jg(e36.bgPass, `A`, n4, true, true), e36.bgPass.uniforms.uLinearizeA.value = 1, e36.bgPass.uniforms.uProgress.value = 0);
-      }), Ov(t4), e36._stage2Video = t4, e36._stage2VideoTex = n4;
+      n4 ? (e36._stage2VideoTexPrewarmed = null, t4 = n4.image) : (n4 = new sc(t4), n4.colorSpace = W), e36._stage2Video = t4, e36._stage2VideoTex = n4, kv(t4, () => {
+        e36._stage2Video === t4 && e36.bgPass && (Jg(e36.bgPass, `A`, n4, true, true), e36.bgPass.uniforms.uLinearizeA.value = 1, e36.bgPass.uniforms.uProgress.value = 0);
+      }), Ov(t4);
     }
     e36.fgPass && (Yg(e36.fgPass, `B`, `stage2Foreground`, e36.assetLoader, false), e36.fgPass.uniforms.uProgress.value = 1), Kb(e36);
     let t3 = e36.components;
@@ -20807,9 +20807,13 @@ var wx = `
         vec3 lighting = mix(vec3(1.0), matcapColor, uMatcapStrength) * uBrightness;
 
 
-        // Both faces are printed. Mirror the reverse UV, not the lettering.
-        vec2 paperUv = gl_FrontFacing ? vUv : vec2(1.0 - vUv.x, vUv.y);
-        vec2 atlasUv = paperUv * uTexScale + uTexOffset;
+        if (!gl_FrontFacing) {
+            vec3 backBase = vec3(0.341, 0.333, 0.286);
+            gl_FragColor = vec4(backBase * lighting, uOpacity);
+            return;
+        }
+
+        vec2 atlasUv = vUv * uTexScale + uTexOffset;
         vec4 texColor = texture2D(uTexture, atlasUv);
         gl_FragColor = vec4(texColor.rgb * lighting, texColor.a * uOpacity);
     }
@@ -21097,7 +21101,7 @@ var Lx = [{ position: [0.022, 0, 0], rotation: [0, 0, 0], scale: 1, burnStart: 0
     for (let e37 = 0; e37 < n2.certMeshes.length; e37++) {
       let t3 = n2.certMeshes[e37], r3 = n2.certSpreadPositions[e37], i3 = n2.certTunnelPositions[e37];
       t3.position.x = r3[0] + (i3.position[0] - r3[0]) * c2, t3.position.y = r3[1] + (i3.position[1] - r3[1]) * c2, t3.position.z = r3[2] + (i3.position[2] - r3[2]) * c2 + o2;
-      let a3 = n2.certSeeds[e37], s3 = c2 * 0.75;
+      let a3 = n2.certSeeds[e37], s3 = c2 * 2;
       n2.certConvergeRotOffsets[e37] = [Math.sin(a3 * 6.283 + c2 * 4) * s3, Math.cos(a3 * 4.1 + c2 * 3.5) * s3, Math.sin(a3 * 3.7 + c2 * 5) * s3 * 0.6];
     }
   }
@@ -21123,11 +21127,16 @@ var Lx = [{ position: [0.022, 0, 0], rotation: [0, 0, 0], scale: 1, burnStart: 0
       let n3 = 1 - hv(t2, 0.55, 0.7);
       e36.bgPass.uniforms.uOpacity.value = n3;
     }
-    if (n2.certMaterials) {
-      let e37 = hv(t2, 0.52, 0.9) * 2.5;
-      for (let t3 of n2.certMaterials) t3.uniforms.uShredProgress.value = e37;
-    }
   }
+  // Restore every paper state on reverse too. Previously these uniforms stayed
+  // shredded/opaque after crossing back into the earlier burn/identity beat.
+  const paperOpacity = hv(t2, 0.385, 0.455);
+  if (n2.certMaterials) for (const material of n2.certMaterials) {
+    material.uniforms.uOpacity.value = paperOpacity;
+    material.uniforms.uShredProgress.value = hv(t2, 0.45, 0.9) * 2.5;
+  }
+  if (n2.shredMaterials) for (const material of n2.shredMaterials) material.uniforms.uOpacity.value = paperOpacity;
+  if (n2.dustMat) n2.dustMat.uniforms.uOpacity.value = paperOpacity;
 }, update(e36, t2, n2) {
   e36.cameraRig.update(n2), e36.bgPass && e36.bgPass.uniforms.uBgParallaxAmp?.value > 0 && e36.bgPass.uniforms.uBgParallax.value.set(e36.cameraRig.cursorX, e36.cameraRig.cursorY);
   let r2 = e36.components;
@@ -21146,7 +21155,7 @@ var Lx = [{ position: [0.022, 0, 0], rotation: [0, 0, 0], scale: 1, burnStart: 0
     let i2 = r2.certMeshes[e37], a2 = r2.certMaterials[e37];
     a2.uniforms.uTime.value += n2;
     let o2 = r2.certSeeds[e37], s2 = r2.certBaseRotations[e37], c2 = (o2 * 2 - 1) * 0.15, l2 = (o2 * 3.7 % 1 * 2 - 1) * 0.15, u2 = (o2 * 7.3 % 1 * 2 - 1) * 0.1, d2 = r2.certConvergeRotOffsets ? r2.certConvergeRotOffsets[e37] : null;
-    i2.rotation.x = s2[0] + Math.sin(t2 * c2) * 0.35 + Math.sin(t2 * 0.4 + o2 * 6.283) * 0.08 + (d2 ? d2[0] : 0), i2.rotation.y = s2[1] + Math.sin(t2 * l2) * 0.35 + Math.sin(t2 * 0.3 + o2 * 4.1) * 0.1 + (d2 ? d2[1] : 0), i2.rotation.z = s2[2] + Math.sin(t2 * u2) * 0.25 + Math.sin(t2 * 0.25 + o2 * 3.7) * 0.05 + (d2 ? d2[2] : 0);
+    i2.rotation.x = s2[0] + t2 * c2 + Math.sin(t2 * 0.4 + o2 * 6.283) * 0.08 + (d2 ? d2[0] : 0), i2.rotation.y = s2[1] + t2 * l2 + Math.sin(t2 * 0.3 + o2 * 4.1) * 0.1 + (d2 ? d2[1] : 0), i2.rotation.z = s2[2] + t2 * u2 + Math.sin(t2 * 0.25 + o2 * 3.7) * 0.05 + (d2 ? d2[2] : 0);
   }
   if (r2.dustMat && (r2.dustMat.uniforms.uTime.value = t2), r2.emberMat && (r2.emberMat.uniforms.uTime.value = t2), r2.shredMeshes) for (let e37 = 0; e37 < r2.shredMeshes.length; e37++) {
     let i2 = r2.shredMeshes[e37], a2 = r2.shredMaterials[e37];
@@ -21192,7 +21201,7 @@ HOLD`, onHoldStart: (e36, { resumeT: t2 } = {}) => {
 function eS(e36) {
   let t2 = Zx.length, n2 = Cx(1.4, 1, 10, 32), r2 = 2048, i2 = [[0, 0, 658, 512], [658, 0, 658, 512], [1316, 0, 658, 512], [0, 512, 658, 512], [0, 1024, 658, 512], [0, 1536, 658, 512], [658, 1536, 658, 512], [1316, 1536, 658, 512]], a2 = i2.length, o2 = e36.assetLoader.getAsset(`certAtlas`), s2 = i2.map(([e37, t3, n3, i3]) => ({ offset: [e37 / r2, 1 - (t3 + i3) / r2], scale: [n3 / r2, i3 / r2] })), c2 = e36.assetLoader.getAsset(`certMatcap`) || wv(`assets/textures/matcap-certificate.webp`, { assetLoader: e36.assetLoader }), l2 = [], u2 = [], d2 = [], f2 = [], p2 = [];
   for (let r3 = 0; r3 < t2; r3++) {
-    let t3 = Math.random(), i3 = s2[r3 % a2], m2 = Ex(o2, { numStrips: 10, matcapStrength: 0.35, waviness: 0.01 + Math.random() * 0.005, seed: t3, matcap: c2, opacity: 0, texOffset: i3.offset, texScale: i3.scale }), h2 = new Cr(n2, m2), g2 = Zx[r3], _2 = [g2.position[0] * Qx, g2.position[1] * Qx, g2.position[2]];
+    let t3 = Math.random(), i3 = s2[r3 % a2], m2 = Ex(o2, { numStrips: 10, waviness: 0.015 + Math.random() * 0.01, seed: t3, matcap: c2, opacity: 0, texOffset: i3.offset, texScale: i3.scale }), h2 = new Cr(n2, m2), g2 = Zx[r3], _2 = [g2.position[0] * Qx, g2.position[1] * Qx, g2.position[2]];
     h2.position.set(..._2), h2.rotation.set(...g2.rotation), h2.scale.setScalar(g2.scale);
     let v2 = [...g2.rotation];
     e36.scene.add(h2), l2.push(h2), u2.push(m2), d2.push(t3), f2.push(v2), p2.push(_2);
@@ -21203,7 +21212,7 @@ var tS = [{ position: [0.25, -0.15, 12], rotation: [3.3, 0.1, 3.19], scale: 0.3 
 function nS(e36) {
   let t2 = e36.assetLoader.getAsset(`certMatcap`) || wv(`assets/textures/matcap-certificate.webp`, { assetLoader: e36.assetLoader }), n2 = new Zr(1, 1.8, 16, 16), r2 = 2048, i2 = [[0, 0, 492, 912], [492, 0, 492, 912], [982, 0, 492, 912], [0, 911, 491, 1137], [492, 913, 490, 1135], [983, 912, 491, 911]], a2 = e36.assetLoader.getAsset(`clubPaperAtlas`) || e36.assetLoader.getAsset(`moneyShredsAtlas`), o2 = i2.map(([e37, t3, n3, i3]) => ({ offset: [e37 / r2, 1 - (t3 + i3) / r2], scale: [n3 / r2, i3 / r2] })), s2 = i2.map(([, , e37, t3]) => e37 / t3), c2 = [], l2 = [], u2 = [], d2 = [];
   for (let r3 = 0; r3 < o2.length; r3++) {
-    let i3 = o2[r3], f2 = Math.random(), p2 = kx(a2, { matcapStrength: 0.35, waviness: 0.01 + Math.random() * 0.005, seed: f2, matcap: t2, opacity: 0, texOffset: i3.offset, texScale: i3.scale }), m2 = new Cr(n2, p2), h2 = tS[r3], g2 = s2[r3];
+    let i3 = o2[r3], f2 = Math.random(), p2 = kx(a2, { matcapStrength: 0.35, waviness: 0.012 + Math.random() * 8e-3, seed: f2, matcap: t2, opacity: 0, texOffset: i3.offset, texScale: i3.scale }), m2 = new Cr(n2, p2), h2 = tS[r3], g2 = s2[r3];
     m2.position.set(...h2.position), m2.rotation.set(...h2.rotation), m2.scale.set(h2.scale, h2.scale * 0.5555555555555556 / g2, h2.scale), e36.scene.add(m2), c2.push(m2), l2.push(p2), u2.push(f2), d2.push([...h2.rotation]);
   }
   e36.components.shredMeshes = c2, e36.components.shredMaterials = l2, e36.components.shredSeeds = u2, e36.components.shredBaseRotations = d2, e36.components.shredGeo = n2;

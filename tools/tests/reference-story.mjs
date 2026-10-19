@@ -61,7 +61,7 @@ try{
    if(dest&&[.08,.25,.60,.75,.90,.99,.40].includes(p))await page.screenshot({path:`${dest}/${viewport.width}-${p}.png`});
   }
   const reversed=await page.locator('.mind-story').evaluate(e=>JSON.parse(e.dataset.storyNative));
-  check(reversed.glassDismissed&&reversed.glassOpacity===0&&!reversed.shatterEnabled,'upward return fades glass away without another break');
+  check(reversed.fractureSpent&&reversed.glassOpacity===1&&reversed.glassEnabled&&reversed.visibleFactOverlays===6&&!reversed.shatterEnabled,'upward return retains all six printed fact overlays and glass, without another break');
   const breaks=reversed.breakCount;await jump(.14);const returning=await jump(.09);
   check(returning.breakCount===breaks&&!returning.shatterEnabled,'small reverse/down gestures cannot re-trigger the glass sound or fracture');
   check(await page.locator('.nav-wrap').evaluate(e=>getComputedStyle(e).visibility==='hidden'&&e.inert),'header is hidden and unfocusable through story');

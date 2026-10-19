@@ -358,3 +358,42 @@ Normal scene delivery passes all 15 checks; simulated HTML/403 decoder replies
 are correctly rejected. Lint and the staged GitHub-equivalent source export
 pass (146 runtime files, all 11 exact payloads and three original horse clips,
 no nested ZIP or live-settings overwrite). No production upload was performed.
+
+## Reverse facts / original degrees / intact editorials (2026-10-19)
+
+This revision supersedes the earlier reverse-disappearance behavior and the
+replacement of fourteen paper islands with portraits. The new scope is **six
+intact editorial sheets only**, not the eight degree texture islands.
+
+- `fractureSpent` suppresses the break pass and stops its FX on upward motion;
+  it does **not** hide the separate glass pass or its six fact-print proxies.
+  A completely new visit from above the chapter can run the opening once again.
+- Degree meshes load the supplied `board-certificates.ktx2` unchanged via the
+  existing PHP allowlist, extended with `certificate-atlas`. Its SHA-256 is
+  `c9630e784f1473f8cdeac2cde4c331723d08d68a324b688d938395fc30e804a2`.
+  Original strip geometry/shaders, degree factory, spread/tunnel poses,
+  convergence amplitude, spin and shredding schedule are restored. The six
+  intact sheets retain the supplied poses, UVs, sizes and wave parameters.
+- `club-editorials.webp` pastes the local Freud/Rogers/James photographs and
+  editorial writing into the six original magazine rectangles: opening small
+  print, large thought, portrait/name row, closing columns. The 250×284 photos
+  are pixel-compared with their real source photographs. Thoughts are labelled
+  editorial perspectives, not fabricated quotations. Both visible faces of
+  these intact editorials print correctly. Degrees keep their original backs.
+  The burning banknote still samples the untouched original compressed atlas.
+- The previous generator's two obsolete portrait atlases are removed. The
+  rebuild embeds the editorial artwork's content digest into its texture URL.
+- The source originally assumed forward-only traversal: its paper opacity and
+  shred uniforms were not reset below the paper beat on reverse. Those same
+  forward curves are now evaluated for both directions. A stale video-ready
+  callback cannot replace a later paper background after its video is retired.
+- Native scrolling now owns canvas opacity and phase underpaint, independent
+  of GPU frame latency. Both the sticky viewport **and the reserved track** are
+  painted. Toolbar/visual-viewport events update coverage without changing the
+  reserved scroll distance. The same herd remains visible in the closing fade.
+
+Validation includes actual desktop/mobile renders and screenshots, plus
+in-flight CDP touch/wheel captures in both directions, not just diagnostic
+attributes. Artifacts stay under `/home/user/reference-study/`, outside the
+repository/export. Browser validation is headless Chromium with software WebGL;
+it is not a claim of physical Safari/phone or production-host verification.

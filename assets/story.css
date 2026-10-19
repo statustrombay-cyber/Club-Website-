@@ -88,9 +88,15 @@ body.story-immersive .to-top { opacity:0 !important; visibility:hidden !importan
 
 /* Stable largest-viewport backing avoids reallocation on every toolbar pixel.
    The opaque underpaint also covers a GPU upload/resize frame, never white. */
-.story-enhanced .story-stage { background:#230706; transform:translateZ(0); }
-.mind-story[data-story-phase="money-paper"] .story-stage { background:#09251b; }
-.mind-story[data-story-phase="herd"] .story-stage { background:transparent; }
+/* Paint the whole reserved track as well as the sticky viewport: upward
+   compositor scrolling must never uncover the light page between GPU frames. */
+.story-enhanced .story-track, .story-enhanced .story-stage { background:#230706; }
+.story-enhanced .story-stage { transform:translateZ(0); }
+.story-enhanced .story-canvas { opacity:var(--story-canvas-opacity,1); }
+.mind-story[data-story-paint="money-paper"] .story-track,
+.mind-story[data-story-paint="money-paper"] .story-stage { background:#09251b; }
+.mind-story[data-story-paint="herd"] .story-track,
+.mind-story[data-story-paint="herd"] .story-stage { background:transparent; }
 .story-pending .story-track, .story-enhanced .story-track { overflow:visible; }
 .story-stage { isolation:isolate; }
 /* This underlay is the same running herd, not another decoder/video copy. */

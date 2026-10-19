@@ -2207,12 +2207,12 @@ ok('photographed psychology papers use the supplied UV islands without the remov
   ['Sigmund Freud','Carl Rogers','William James'].every(text=>atlasBaker.includes(text)) && !storyView.includes('story-research') && !storyView.includes('Behind the fragments'));
 ok('every psychologist photograph is local and available to the atlas baker',
   ['freud','rogers','james'].every(name=>fs.statSync(path.join(ROOT,'assets/story/portraits',name+'.webp')).size>1000));
-ok('both paper shaders print their reverse faces instead of blank stock',
-  (fs.readFileSync(path.join(ROOT,'tools/story/reference-core.js'),'utf8').match(/vec2 paperUv = gl_FrontFacing/g)||[]).length===2 && !fs.readFileSync(path.join(ROOT,'tools/story/reference-core.js'),'utf8').includes('vec3 backBase = vec3(0.341'));
+ok('intact editorial reverse faces stay printed while degrees retain the original backing',
+  (fs.readFileSync(path.join(ROOT,'tools/story/reference-core.js'),'utf8').match(/vec2 paperUv = gl_FrontFacing/g)||[]).length===1 && fs.readFileSync(path.join(ROOT,'tools/story/reference-core.js'),'utf8').includes('vec3 backBase = vec3(0.341'));
 ok('scene warms early without a loading banner and hides the header only within its chapter',
   storySource.includes('engine().then(') && storySource.includes('requestIdleCallback') && !storySource.includes("announce('Loading the animated scene") && storySource.includes("classList.toggle('story-immersive',active)") && storySource.includes('header.inert=active'));
-ok('upward scroll dismisses actual glass passes without replaying the fracture',
-  ['glassDismissed=true','gateMax=gateProgress','uStoryGlassAlpha.value=glassOpacity','shatter.enabled=false;glass.enabled=false'].every(t=>fs.readFileSync(path.join(ROOT,'tools/story/reference-bridge.js'),'utf8').includes(t)));
+ok('upward scrolling preserves fact fragments while disabling only the fracture',
+  ['fractureSpent=true','gateMax=gateProgress','glass.uniforms.uStoryGlassAlpha.value=1','glass.enabled=phase===1||(phase===0&&fractureSpent)','shards.group.visible=true'].every(t=>fs.readFileSync(path.join(ROOT,'tools/story/reference-bridge.js'),'utf8').includes(t)));
 
 
 ok('cold fast-scroll entry skips the opening black grade and cleans up skipped hand phases',
@@ -2243,7 +2243,7 @@ ok('the decorative canvas stays out of the accessible tree but the actual facts 
 const referenceCore=fs.readFileSync(path.join(ROOT,'tools/story/reference-core.js'),'utf8');
 const referenceBridge=fs.readFileSync(path.join(ROOT,'tools/story/reference-bridge.js'),'utf8');
 ok('the recovered engine returns transparently to the existing herd',
-  referenceBridge.includes("canvas.style.opacity=String(1-clamp((p-.97)/.03))") && referenceBridge.includes("p>.975?'herd'") && !/<video|\.mp4/i.test(storyView + storySource));
+  storySource.includes("(progress-.97)/.03") && storyCss.includes("opacity:var(--story-canvas-opacity,1)") && referenceBridge.includes("p>.975?'herd'") && !/<video|\.mp4/i.test(storyView + storySource));
 ok('both story typefaces are self-hosted with their OFL notices',
   ['bodoni-moda-latin.woff2', 'pinyon-script-latin.woff2', 'BodoniModa-OFL.txt', 'PinyonScript-OFL.txt'].every(name => fs.existsSync(path.join(ROOT, 'assets/fonts', name))) && !/https?:/.test(storyCss));
 ok('original hand, camera, glass and paper assets replace the rejected reconstruction',
@@ -2263,9 +2263,9 @@ ok('only the requested chapter audio is eligible; leaving it stops every sound',
 ok('missing-texture white portal and original HUD/text are not rendered',
   referenceBridge.includes('ctx.components.portalCircle.visible=false') && referenceBridge.includes('text.textScene.visible=false') && referenceBridge.includes('_xpReplaySkip:true') && !referenceCore.includes('var WO = window.location.hash'));
 ok('club-specific atlases retain the original UV layout without source advertisements',
-  ['club-fragments.webp','club-money-papers.webp','club-archive.webp'].every(name=>fs.existsSync(path.join(ROOT,'assets/reference/assets/atlases',name)) && referenceBridge.includes(name)));
+  ['club-fragments.webp','club-editorials.webp'].every(name=>fs.existsSync(path.join(ROOT,'assets/reference/assets/atlases',name)) && referenceBridge.includes(name)));
 ok('the banknote comes from the unmodified captured compressed atlas, not a Freud substitution',
-  !referenceBridge.includes("moneyShredsAtlas:'club-money-papers.webp'") && referenceBridge.includes("key:'clubPaperAtlas'") && !fs.existsSync(path.join(ROOT,'assets/story/freud-note.webp')) && !storyView.includes('freud-note.webp'));
+  !referenceBridge.includes("moneyShredsAtlas:'club-editorials.webp'") && referenceBridge.includes("key:'clubPaperAtlas'") && !fs.existsSync(path.join(ROOT,'assets/story/freud-note.webp')) && !storyView.includes('freud-note.webp'));
 ok('slow downloads and Data Saver no longer silently switch off the 3D chapter',
   storySource.includes('60000') && !storySource.includes('connection&&connection.saveData') && !storySource.includes('if(low()') && storySource.includes('root.dataset.storyError=reason'));
 const binaryRoutes=['assets/reference/assets/models/human_hand_2.glb','assets/reference/assets/atlases/human_hands.ktx2','assets/reference/vendor/basis/basis_transcoder.wasm','assets/reference/assets/audio/fx_glass-shatter.mp3'];

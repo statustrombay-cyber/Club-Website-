@@ -12,7 +12,7 @@ window.MTStory3D={async create(root){
  // only these known public files through PHP; no arbitrary-path/file proxy.
  const hosted={
   'vendor/basis/basis_transcoder.wasm':'basis-wasm','vendor/draco/draco_decoder.wasm':'draco-wasm',
-  'assets/atlases/human_hands.ktx2':'hand-atlas','assets/atlases/texts.ktx2':'texts-atlas','assets/atlases/leather-money-shreds.ktx2':'money-atlas',
+  'assets/atlases/human_hands.ktx2':'hand-atlas','assets/atlases/texts.ktx2':'texts-atlas','assets/atlases/leather-money-shreds.ktx2':'money-atlas','assets/atlases/board-certificates.ktx2':'certificate-atlas',
   'assets/models/human_hand_2.glb':'hand-model','assets/models/camera_2.glb':'camera-model',
   'assets/models/stage2_glass-shatter.glb':'fracture-model','assets/models/glass_shards.glb':'shard-model','assets/models/tunnel_new_new.glb':'tunnel-model'
  };
@@ -25,8 +25,8 @@ window.MTStory3D={async create(root){
  loader.stageAssets.initial=loader.stageAssets.initial.filter(a=>['humanHandsAtlas','spcAtlas','handMatcap'].includes(a.key));
  loader.mandatoryAssets=loader.mandatoryAssets.filter(a=>a.key==='frosting');
  loader.stageAssets.stage4=[];loader.stageAssets.worldMap=[];
- loader.stageAssets.stage3.push({type:'texture',key:'clubPaperAtlas',path:'assets/atlases/club-money-papers.webp',mipmaps:true});
- const clubAtlases={spcAtlas:'club-fragments.webp',certAtlas:'club-archive.webp'};
+ loader.stageAssets.stage3.push({type:'texture',key:'clubPaperAtlas',path:'assets/atlases/club-editorials.webp?v=__CLUB_EDITORIAL_REVISION__',mipmaps:true});
+ const clubAtlases={spcAtlas:'club-fragments.webp'}; // Degrees keep the supplied compressed atlas.
  for(const asset of Object.values(loader.stageAssets).flat())if(clubAtlases[asset.key]){asset.type='texture';asset.path='assets/atlases/'+clubAtlases[asset.key];asset.mipmaps=asset.key==='certAtlas';}
  for(const asset of [...loader.mandatoryAssets,...Object.values(loader.stageAssets).flat()])if(asset.path)asset.path='/assets/reference/'+asset.path.replace(/^\//,'');
  const required=keys=>{for(const key of keys)if(!loader.getAsset(key))throw Error('Missing original scene asset: '+key);};
@@ -53,7 +53,7 @@ window.MTStory3D={async create(root){
  // Only these recovered tracks are eligible, and only inside this chapter.
  for(const key of Object.keys(wg))if(!['glass-shatter','stage2-ambient','money-burn'].includes(key))delete wg[key];
  X.setEnabled(false);X.preload();
- let paperTime=0,gateAuto=false,gateClock=0,gateLastTime=null,lastRenderedProgress=null,gateMax=0,glassDismissed=false,glassOpacity=1,glassDismissTime=null;
+ let paperTime=0,gateAuto=false,gateClock=0,gateLastTime=null,lastRenderedProgress=null,gateMax=0,fractureSpent=false,glassOpacity=1;
  let alive=true,phase=-1,busy=false,raf=0,prevTime=0,lastDraw=0,p=0,chapterTop=Infinity,visible=false,width=0,height=0,resizeNeeded=true;
  const reduced=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
  const constrained=()=>reduced()||!!navigator.connection?.saveData;
@@ -71,12 +71,12 @@ window.MTStory3D={async create(root){
  ctx.applyPixelRatioOverride=()=>{}; // The original gate must not clear the backing store asynchronously.
  function schedule(){if(alive&&!raf)raf=requestAnimationFrame(frame);}
  function measure(){const r=track.getBoundingClientRect();chapterTop=r.top;visible=r.top<innerHeight&&r.bottom>0;p=clamp(-r.top/Math.max(1,track.offsetHeight-stage.clientHeight));
-  if(r.top>=innerHeight&&glassDismissed){glassDismissed=false;glassOpacity=1;glassDismissTime=null;if(ctx.components.glassShards)ctx.components.glassShards.group.visible=true;gateMax=0;gateClock=0;gateAuto=true;lastRenderedProgress=null;ctx._gateShatterStarted=false;ctx._gateShatterSfxFired=false;if(ctx.components.handsModel)ctx.preWarmed.handsModel2=ctx.components.handsModel;if(ctx.components.glassShards)ctx.preWarmed.glassShards=ctx.components.glassShards;}
-  if(lastRenderedProgress!==null&&p<lastRenderedProgress-.0003){if(!glassDismissed)glassDismissTime=performance.now();glassDismissed=true;gateAuto=false;gateLastTime=null;}
+  if(r.top>=innerHeight&&fractureSpent){fractureSpent=false;glassOpacity=1;if(ctx.components.glassShards)ctx.components.glassShards.group.visible=true;gateMax=0;gateClock=0;gateAuto=true;lastRenderedProgress=null;ctx._gateShatterStarted=false;ctx._gateShatterSfxFired=false;if(ctx.components.handsModel)ctx.preWarmed.handsModel2=ctx.components.handsModel;if(ctx.components.glassShards)ctx.preWarmed.glassShards=ctx.components.glassShards;}
+  if(lastRenderedProgress!==null&&p<lastRenderedProgress-.0003){fractureSpent=true;gateAuto=false;gateLastTime=null;}
  }
  async function change(next){
   if(busy||phase===next)return;busy=true;
-  if(next===0){gateAuto=phase<0&&!glassDismissed;gateClock=0;gateLastTime=null;if(glassDismissed)gateMax=1;}
+  if(next===0){gateAuto=phase<0&&!fractureSpent;gateClock=0;gateLastTime=null;if(fractureSpent)gateMax=1;}
   try{
    if(phase===0){sx.teardown(ctx);if(next===2)Wb.teardown(ctx);}
    if(phase===1&&next!==0)Wb.teardown(ctx);
@@ -86,8 +86,7 @@ window.MTStory3D={async create(root){
     if(next===0){
      rig.setEnabled(true);rig.influence=1;
      ctx._gateElapsed=3;await sx.enter(ctx);ctx._gateElapsed=3;
-     if(glassDismissed){ctx._gateShatterStarted=true;ctx._gateShatterSfxFired=true;if(!ctx.components.handsModel)Kb(ctx);ctx.components.handsModel.group.visible=true;shatter.enabled=false;}
-     sx.update(ctx,0,0);
+     if(fractureSpent){ctx._gateShatterStarted=true;ctx._gateShatterSfxFired=true;if(!ctx.components.handsModel)Kb(ctx);ctx.components.handsModel.group.visible=true;ctx._gateHandProgress=Xb/ctx.components.handsModel.duration;Yg(bg,'A','stage2Background2',loader,true);Yg(fg,'B','stage2Foreground',loader,false);fg.uniforms.uProgress.value=1;fg.uniforms.uExposure.value=1;fg.uniforms.uContrast.value=1;fg.uniforms.uRedTint.value=0;bg.uniforms.uZoom.value=1;bg.uniforms.uOpacity.value=1;bg.uniforms.uProgress.value=0;shatter.enabled=false;Wb.scrub(ctx,0);Wb.update(ctx,0,0);}else sx.update(ctx,0,0);
      const hand=ctx.components.handsModel;if(hand?.cameraRef){hand.cameraRef.updateWorldMatrix(true,false);hand.cameraRef.getWorldPosition(camera.position);hand.cameraRef.getWorldQuaternion(camera.quaternion);}
     }else{
      if(!ctx.components.handsModel){Kb(ctx);Yg(bg,'A','stage2Background2',loader,true);Yg(fg,'B','stage2Foreground',loader,false);fg.uniforms.uProgress.value=1;const video=Dv();ctx._stage2Video=video;ctx._stage2VideoTex=new sc(video);ctx._stage2VideoTex.colorSpace=W;kv(video,()=>{if(phase===1){Jg(bg,'A',ctx._stage2VideoTex,true,true);bg.uniforms.uLinearizeA.value=1;}});const hand=ctx.components.handsModel;hand.group.visible=true;hand.scrub(Xb/hand.duration);hand.update(0);}
@@ -112,44 +111,45 @@ window.MTStory3D={async create(root){
   raf=0;if(!alive)return;const dt=reduced()?0:Math.min(.05,Math.max(0,(now-prevTime)/1000));prevTime=now;
   measure();if(!visible){gateLastTime=null;stopAudio();ctx._stage2Video?.pause();return;}
   // Do not keep rendering a fully transparent WebGL tail over the next page.
-  if(p>=1){stopAudio();ctx._stage2Video?.pause();canvas.style.opacity='0';root.style.setProperty('--reference-end','0');root.style.setProperty('--burn-title','0');root.dataset.storyPhase='herd';root.dataset.storyProgress='1.0000';lastRenderedProgress=p;return;}
+  if(p>=1){stopAudio();ctx._stage2Video?.pause();root.style.setProperty('--reference-end','0');root.style.setProperty('--burn-title','0');root.dataset.storyPhase='herd';root.dataset.storyProgress='1.0000';lastRenderedProgress=p;return;}
   if(software&&now-lastDraw<48&&!resizeNeeded){schedule();return;}lastDraw=now;
   if(resizeNeeded)applySize();
   const next=p<.18?0:p<.49?1:2;
   if(next!==phase){change(next).catch(fail);return;}
   if(busy){schedule();return;}
-  X.setEnabled(true);root.dataset.storyAudio='chapter-only';if((phase>0||ctx._gateShatterSfxFired)&&!glassDismissed&&!X._ambientActive.has('stage2-ambient'))X.play('stage2-ambient');if(ctx._stage2Video){if(reduced())ctx._stage2Video.pause();else Ov(ctx._stage2Video);}
+  X.setEnabled(true);root.dataset.storyAudio='chapter-only';if((phase>0||ctx._gateShatterSfxFired)&&!fractureSpent&&!X._ambientActive.has('stage2-ambient'))X.play('stage2-ambient');if(ctx._stage2Video){if(reduced())ctx._stage2Video.pause();else Ov(ctx._stage2Video);}
   const local=phase===0?clamp(p/.18):phase===1?clamp((p-.18)/.31):clamp((p-.49)/.51);
   if(phase===0){
    // The supplied gate is a three-second automatic fracture, not a frozen
    // frame waiting for another scroll. Scroll can still fast-forward it, and
-   // backwards navigation fades the spent glass out instead of replaying it.
-   if(glassDismissed)gateAuto=false;
+   // backwards navigation keeps the fact fragments, never another fracture.
+   if(fractureSpent)gateAuto=false;
    if(gateAuto&&!reduced()&&chapterTop<=Math.min(100,height*.12)){if(gateLastTime!==null)gateClock+=(now-gateLastTime)/1000;gateLastTime=now;}else gateLastTime=null;
    const gateProgress=Math.max(gateMax,gateAuto&&!reduced()?Math.max(local,clamp(gateClock/Jb)):local);gateMax=gateProgress;
-   ctx._gateElapsed=3+gateProgress*Jb;ctx._gateHandElapsed=gateProgress*Jb*Zb;sx.update(ctx,now/1000,0);rig.update(dt);
+   if(fractureSpent){Wb.scrub(ctx,0);Wb.update(ctx,now/1000,dt);}else{ctx._gateElapsed=3+gateProgress*Jb;ctx._gateHandElapsed=gateProgress*Jb*Zb;sx.update(ctx,now/1000,0);rig.update(dt);}
   }
   else if(phase===1){Wb.scrub(ctx,local);Wb.update(ctx,now/1000,dt);}
   else{paperTime+=dt;Xx.scrub(ctx,local);Xx.update(ctx,paperTime,dt);if(ctx.components.portalCircle)ctx.components.portalCircle.visible=false;}
   if(ctx.components.glassShards)ctx.components.glassShards._reducedMotion=reduced();
   ctx.components.textLayout?.update?.(ctx._scrollProgress||0,dt);text.textScene.visible=false;
   fg.uniforms.uTime.value=reduced()?0:now/1000;fg.uniforms.uEnableNoise.value=reduced()?0:2;fg.uniforms.uNoiseOffset.value.set(0,0);
-  // A backwards gesture dismisses glass once. Do not rewind/re-trigger the
-  // fracture or its sound when returning from the later paper section.
-  // Preserve intermediate frames even if a slow GPU misses most of 240 ms.
-  glassOpacity=glassDismissed?(reduced()?0:Math.max(0,glassOpacity-.25,1-clamp((now-glassDismissTime)/240))):1;
-  shatter._compositeMaterial.uniforms.uStoryGlassAlpha.value=glassOpacity;
-  glass.uniforms.uStoryGlassAlpha.value=glassOpacity;
-  const shards=ctx.components.glassShards;if(shards?._overlayMaterial)shards._overlayMaterial.opacity=glassOpacity;
-  if(glassDismissed&&glassOpacity===0){shatter.enabled=false;glass.enabled=false;if(shards)shards.group.visible=false;}
+  // The break and its sound are one-shot on reverse. The independent glass
+  // pass, shard geometry and printed fact overlays remain fully visible.
+  glassOpacity=1;
+  shatter._compositeMaterial.uniforms.uStoryGlassAlpha.value=fractureSpent?0:1;
+  glass.uniforms.uStoryGlassAlpha.value=1;
+  const shards=ctx.components.glassShards;
+  if(shards){shards.group.visible=true;if(shards._overlayMaterial)shards._overlayMaterial.opacity=1;}
+  if(fractureSpent){shatter.enabled=false;X.stop('glass-shatter',{fadeOut:0});}
+  glass.enabled=phase===1||(phase===0&&fractureSpent);
   loader.chunkedUploader?.tick();text.enabled=false;
   lastRenderedProgress=p;const renderCamera=camera.position.toArray();composer.render(dt);rig.restore();
   root.dataset.storyProgress=p.toFixed(4);
-  root.dataset.storyNative=JSON.stringify({phase,gateAuto,gateClock,glassDismissed,glassOpacity,gateMax,breakCount:ctx._storyBreakCount||0,renderCamera,shatterEnabled:shatter.enabled,shatterTime:shatter._actions[0]?.time,handTime:ctx.components.handsModel?._scrubProgress,hand:!!ctx.components.handsModel,camera:camera.position.toArray(),paperProgress:phase===2?local:0,paperClearance:phase===2?camera.position.z-Math.max(...[...(ctx.components.certMeshes||[]),...(ctx.components.shredMeshes||[])].map(m=>m.position.z)):null,papers:ctx.components.certMeshes?.length||0,shreds:ctx.components.shredMeshes?.length||0,gyro:rig.gyroActive,portalVisible:!!ctx.components.portalCircle?.visible,sourceTextVisible:text.textScene.visible,audioEnabled:X.isEnabled(),playing:[...X._howls].filter(([,h])=>h.playing()).map(([k])=>k),glassY:ctx.components.glassShards?.shards[0]?.position.y});
+  root.dataset.storyNative=JSON.stringify({phase,gateAuto,gateClock,fractureSpent,glassOpacity,glassEnabled:glass.enabled,visibleFactOverlays:glass.enabled&&shards?.group.visible?glass._overlayProxies.filter(({proxy})=>proxy.visible&&proxy.material.opacity>0).length:0,degreeShred:ctx.components.certMaterials?.[0]?.uniforms.uShredProgress.value,degreeOpacity:ctx.components.certMaterials?.[0]?.uniforms.uOpacity.value,editorialOpacity:ctx.components.shredMaterials?.[0]?.uniforms.uOpacity.value,gateMax,breakCount:ctx._storyBreakCount||0,renderCamera,shatterEnabled:shatter.enabled,shatterTime:shatter._actions[0]?.time,handTime:ctx.components.handsModel?._scrubProgress,hand:!!ctx.components.handsModel,camera:camera.position.toArray(),paperProgress:phase===2?local:0,paperClearance:phase===2?camera.position.z-Math.max(...[...(ctx.components.certMeshes||[]),...(ctx.components.shredMeshes||[])].map(m=>m.position.z)):null,papers:ctx.components.certMeshes?.length||0,shreds:ctx.components.shredMeshes?.length||0,gyro:rig.gyroActive,portalVisible:!!ctx.components.portalCircle?.visible,sourceTextVisible:text.textScene.visible,audioEnabled:X.isEnabled(),playing:[...X._howls].filter(([,h])=>h.playing()).map(([k])=>k),glassY:ctx.components.glassShards?.shards[0]?.position.y});
   root.style.setProperty('--burn-title',String(phase===2?clamp((local-.28)/.04)*(1-clamp((local-.38)/.05)):0));
   root.style.setProperty('--burn-title-scale',String(1+(phase===2?clamp((local-.28)/.15)*.12:0)));
   root.style.setProperty('--reference-end',String(clamp((p-.90)/.04)*(1-clamp((p-.97)/.03))));
-  canvas.style.opacity=String(1-clamp((p-.97)/.03));root.dataset.storyPhase=p>.975?'herd':['hand-glass','glass-facts','money-paper'][phase];
+  root.dataset.storyPhase=p>.975?'herd':['hand-glass','glass-facts','money-paper'][phase];
   schedule();
  }
  function gesture(e){if(e.isTrusted)X.unlockNow();}

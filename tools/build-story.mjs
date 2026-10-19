@@ -1,7 +1,9 @@
 /** Rebuild the adapted original scene without its source-site startup or HUD. */
 import {build} from 'esbuild';
 import fs from 'node:fs';
-const contents=fs.readFileSync('tools/story/reference-core.js','utf8')+'\n'+fs.readFileSync('tools/story/reference-bridge.js','utf8');
+import {createHash} from 'node:crypto';
+const editorialRevision=createHash('sha256').update(fs.readFileSync('assets/reference/assets/atlases/club-editorials.webp')).digest('hex').slice(0,12);
+const contents=fs.readFileSync('tools/story/reference-core.js','utf8')+'\n'+fs.readFileSync('tools/story/reference-bridge.js','utf8').replaceAll('__CLUB_EDITORIAL_REVISION__',editorialRevision);
 await build({stdin:{contents,resolveDir:process.cwd(),sourcefile:'recovered-chapter.js'},bundle:true,format:'iife',target:['es2020'],minify:true,outfile:'assets/vendor/story-3d.js',legalComments:'eof'});
 
 // Preserve GLSL newlines, but do not retain whitespace-only source lines.

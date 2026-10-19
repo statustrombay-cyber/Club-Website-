@@ -12,7 +12,7 @@ try{
   const page=await context.newPage();await page.goto(base+'/index.php?scene-check=1');
   await page.waitForFunction(()=>document.body.dataset.checkComplete==='true',null,{timeout:90000});
   const report=JSON.parse(await page.locator('#report').textContent());
-  assert.equal(report.checks.length,15);
+  assert.equal(report.checks.length,16);
   assert.equal(report.failures,broken?1:0,JSON.stringify(report));
   if(broken){const failure=report.checks.find(c=>!c.ok);assert.equal(failure.name,'basis-wasm');assert.match(failure.detail,mode==='forbidden'?/HTTP 403: the host denied/:/Wrong response size/);assert.match(failure.detail,/requested \/index\.php\?scene-asset=basis-wasm/);}
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));

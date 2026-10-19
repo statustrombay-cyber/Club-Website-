@@ -33,15 +33,22 @@ try{
   const shot=await page.screenshot();noWhiteBand(shot);if(dest)fs.writeFileSync(`${dest}/story-${progress}-${height}.png`,shot);
   report.frames.push({progress,...geometry});
  }
- // Exercise real compositor-driven touch scrolling, not only scrollTo jumps.
+ // Both directions, including paper -> facts and the transparent herd tail.
+ // Capture during native touch gestures, while a slower main thread is busy.
  const cdp=await context.newCDPSession(page);
- await page.locator('.story-track').evaluate(e=>scrollTo({top:e.getBoundingClientRect().top+scrollY+(e.offsetHeight-e.querySelector('.story-stage').clientHeight)*.3,behavior:'instant'}));
  await cdp.send('Emulation.setCPUThrottlingRate',{rate:2});
- const fling=cdp.send('Input.synthesizeScrollGesture',{x:190,y:650,yDistance:-1100,speed:6500,gestureSourceType:'touch'});
- await page.waitForTimeout(80);
- const flingShot=await page.screenshot();noWhiteBand(flingShot);if(dest)fs.writeFileSync(`${dest}/during-touch-fling.png`,flingShot);
- await fling;await cdp.send('Emulation.setCPUThrottlingRate',{rate:1});
- report.touchFling=true;
+ report.touchGestures=[];
+ for(const [start,distance,label] of [[.3,-1100,'down-facts-to-papers'],[.94,1500,'up-papers'],[.65,1700,'up-papers-to-facts'],[.4,1400,'up-facts-to-opening'],[.994,650,'up-from-herd']]){
+  await page.locator('.story-track').evaluate((e,p)=>scrollTo({top:e.getBoundingClientRect().top+scrollY+(e.offsetHeight-e.querySelector('.story-stage').clientHeight)*p,behavior:'instant'}),start);
+  await page.waitForFunction(p=>Math.abs(+document.querySelector('.mind-story').dataset.storyProgress-p)<.005,start);
+  const gesture=cdp.send('Input.synthesizeScrollGesture',{x:190,y:distance>0?180:650,yDistance:distance,speed:2600,gestureSourceType:'touch'});
+  for(let frame=0;frame<3;frame++){
+   await page.waitForTimeout(60);const shot=await page.screenshot();noWhiteBand(shot);
+   if(dest)fs.writeFileSync(`${dest}/${label}-${frame}.png`,shot);
+  }
+  await gesture;report.touchGestures.push(label);
+ }
+ await cdp.send('Emulation.setCPUThrottlingRate',{rate:1});
  // Ordinary trusted interaction unlocks existing audio; no Sound/permission UI.
  await page.evaluate(()=>scrollTo({top:0,behavior:'instant'}));await page.waitForTimeout(250);
  await page.mouse.click(5,200);
@@ -62,5 +69,21 @@ try{
   else{assert.ok(await page.locator('#membershipForm input[name=name]').isEditable());assert.ok(await page.locator('#membershipForm button[type=submit]').isVisible());}
   if(dest)await page.screenshot({path:`${dest}/${selector.slice(1)}.png`});
  }
+ const desktop=await browser.newContext({viewport:{width:1440,height:900}}),wide=await desktop.newPage();
+ wide.on('pageerror',e=>report.errors.push(e.message));await wide.goto(base+'/');
+ await wide.waitForFunction(()=>document.body.classList.contains('intro-revealed')&&document.querySelector('.mind-story')?.dataset.storyState==='ready',null,{timeout:60000});
+ report.desktopWheel=[];
+ for(const [start,delta] of [[.3,1500],[.94,-1500],[.65,-1700],[.4,-1400],[.994,-650]]){
+  await wide.locator('.story-track').evaluate((e,p)=>scrollTo({top:e.getBoundingClientRect().top+scrollY+(e.offsetHeight-e.querySelector('.story-stage').clientHeight)*p,behavior:'instant'}),start);
+  await wide.waitForFunction(p=>Math.abs(+document.querySelector('.mind-story').dataset.storyProgress-p)<.005,start);
+  await wide.mouse.move(720,450);await wide.mouse.wheel(0,delta);
+  for(let frame=0;frame<3;frame++){
+   await wide.waitForTimeout(60);const shot=await wide.screenshot();noWhiteBand(shot);
+   if(dest)fs.writeFileSync(`${dest}/desktop-wheel-${start}-${frame}.png`,shot);
+  }
+  assert.ok(await wide.locator('.story-stage').evaluate(e=>e.getBoundingClientRect().bottom>=innerHeight-1),'desktop viewport stays covered after upward wheel');
+  report.desktopWheel.push({start,delta});
+ }
+ await desktop.close();
  assert.deepEqual(report.errors,[]);console.log(JSON.stringify(report,null,2));await context.close();
 }finally{await browser.close();}
