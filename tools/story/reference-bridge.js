@@ -55,7 +55,7 @@ window.MTStory3D={async create(root){
  const ctx={scene,camera,renderer,assetLoader:loader,ui,bgPass:bg,fgPass:fg,lensBlurPass:lens,frostingPass:{enabled:false,active:false},glassShardPass:glass,shatterPass:shatter,textPass:text,textScene:text.textScene,whiteTex:white,renderPass,_composer:composer,cameraRig:rig,components:{},preWarmed:{},_xpReplaySkip:true,_frameProf:{update:0,render:0},_tempVec3:new K(),_tempQuat:new Ct(),_ethHandWorldPos:new K(),godRaysState:{rects:null},scrollManager:{setHeld:noop},_onMouseMove:e=>rig.onMouseMove(e.clientX/innerWidth*2-1,1-e.clientY/innerHeight*2)};
  // No initial loader, HUD, progress/XP, logo, cookie store, forms or original UI.
  // Only these recovered tracks are eligible, and only inside this chapter.
- for(const key of Object.keys(wg))if(!['glass-shatter','stage2-ambient','money-burn'].includes(key))delete wg[key];
+ for(const key of Object.keys(wg))if(!['stage1-ambient','glass-shatter','stage2-ambient','money-burn'].includes(key))delete wg[key];
  X.setEnabled(false);X.preload();
  let paperTime=0,gateAuto=false,gateClock=0,gateLastTime=null,lastRenderedProgress=null,gateMax=0,fractureSpent=false,glassOpacity=1;
  let alive=true,phase=-1,busy=false,raf=0,prevTime=0,lastDraw=0,p=0,chapterTop=Infinity,visible=false,width=0,height=0,resizeNeeded=true;
@@ -65,13 +65,16 @@ window.MTStory3D={async create(root){
  const nativeDispose=loader.dispose.bind(loader);
  function resize(){resizeNeeded=true;schedule();}
  function applySize(){
-  resizeNeeded=false;const w=stage.clientWidth,h=stage.clientHeight,dpr=software?(w<600?.65:.5):Math.min(devicePixelRatio||1,constrained()?1:2);
+  resizeNeeded=false;const w=stage.clientWidth,h=stage.clientHeight,dpr=software?(w<600?.65:.5):Math.min(devicePixelRatio||1,constrained()?1:(w<768?1.35:1.75));
   if(w===width&&h===height&&renderer.getPixelRatio()===dpr)return;
   width=w;height=h;ctx._vw=w;ctx._vh=h;camera.fov=w<768?40:30;camera.aspect=w/h;camera.updateProjectionMatrix();
   renderer.setPixelRatio(dpr);renderer.setSize(w,h,false);composer.setPixelRatio(dpr);composer.setSize(w,h);glass.setSize(w,h);shatter.setSize(w,h);text.setSize(w,h);lens.setSize(w*dpr,h*dpr);
   bg.uniforms.uViewportAspect.value=w/h;fg.uniforms.uViewportAspect.value=w/h;Zg(bg,w/h);Zg(fg,w/h);
+  ctx.components.textLayout?.resize(w,h);
+  const welcome=ctx.components.textLayout?.sprites?.[0];if(welcome)welcome.userData.storyBaseY=welcome.position.y;
   if(phase===1)Wb.resize(ctx,w,h);
  }
+ function placeWelcome(){const welcome=ctx.components.textLayout?.sprites?.[0];if(!welcome)return;if(!Number.isFinite(welcome.userData.storyBaseY))welcome.userData.storyBaseY=welcome.position.y;welcome.position.y=welcome.userData.storyBaseY+height*(width<768?.22:.48);}
  ctx.applyPixelRatioOverride=()=>{}; // The original gate must not clear the backing store asynchronously.
  function schedule(){if(alive&&!raf)raf=requestAnimationFrame(frame);}
  function measure(){const r=track.getBoundingClientRect();chapterTop=r.top;visible=r.top<innerHeight&&r.bottom>0;p=clamp(-r.top/Math.max(1,track.offsetHeight-stage.clientHeight));
@@ -141,6 +144,7 @@ window.MTStory3D={async create(root){
    ctx.components.glassShards.group.position.z=0;
   }
   if(phase===0)ctx.components.textLayout?.update?.(0,dt);
+  placeWelcome();
   text.textScene.visible=!!ctx.components.textLayout?.hasVisibleSprites&&(phase===1||phase===0&&gateMax>.3);
   fg.uniforms.uTime.value=reduced()?0:now/1000;fg.uniforms.uEnableNoise.value=reduced()?0:2;fg.uniforms.uNoiseOffset.value.set(0,0);
   // The break and its sound are one-shot on reverse. The independent glass
@@ -155,14 +159,14 @@ window.MTStory3D={async create(root){
   loader.chunkedUploader?.tick();text.enabled=text.textScene.visible;
   lastRenderedProgress=p;const renderCamera=camera.position.toArray();composer.render(dt);rig.restore();
   root.dataset.storyProgress=p.toFixed(4);
-  root.dataset.storyNative=JSON.stringify({phase,gateAuto,gateClock,fractureSpent,glassOpacity,glassEnabled:glass.enabled,visibleFactOverlays:glass.enabled&&shards?.group.visible?glass._overlayProxies.filter(({proxy})=>proxy.visible&&proxy.material.opacity>0).length:0,degreeShred:ctx.components.certMaterials?.[0]?.uniforms.uShredProgress.value,degreeOpacity:ctx.components.certMaterials?.[0]?.uniforms.uOpacity.value,editorialOpacity:ctx.components.shredMaterials?.[0]?.uniforms.uOpacity.value,gateMax,breakCount:ctx._storyBreakCount||0,renderCamera,shatterEnabled:shatter.enabled,shatterTime:shatter._actions[0]?.time,handTime:ctx.components.handsModel?._scrubProgress,hand:!!ctx.components.handsModel,camera:camera.position.toArray(),paperProgress:phase===2?local:0,paperClearance:phase===2?camera.position.z-Math.max(...[...(ctx.components.certMeshes||[]),...(ctx.components.shredMeshes||[])].map(m=>m.position.z)):null,papers:ctx.components.certMeshes?.length||0,shreds:ctx.components.shredMeshes?.length||0,gyro:rig.gyroActive,portalVisible:!!ctx.components.portalCircle?.visible,sourceTextVisible:text.textScene.visible,welcomeVisible:text.textScene.visible,welcomeText:text.textScene.visible?'we are here':'',welcomeWidth:ctx.components.textLayout?.sprites?.[0]?.scale.x||0,welcomeX:ctx.components.textLayout?.sprites?.[0]?.position.x||0,pixelRatio:renderer.getPixelRatio(),shardDepth:shards?.group.position.z,audioEnabled:X.isEnabled(),playing:[...X._howls].filter(([,h])=>h.playing()).map(([k])=>k),glassY:ctx.components.glassShards?.shards[0]?.position.y});
+  root.dataset.storyNative=JSON.stringify({phase,gateAuto,gateClock,fractureSpent,glassOpacity,glassEnabled:glass.enabled,visibleFactOverlays:glass.enabled&&shards?.group.visible?glass._overlayProxies.filter(({proxy})=>proxy.visible&&proxy.material.opacity>0).length:0,degreeShred:ctx.components.certMaterials?.[0]?.uniforms.uShredProgress.value,degreeOpacity:ctx.components.certMaterials?.[0]?.uniforms.uOpacity.value,editorialOpacity:ctx.components.shredMaterials?.[0]?.uniforms.uOpacity.value,gateMax,breakCount:ctx._storyBreakCount||0,renderCamera,shatterEnabled:shatter.enabled,shatterTime:shatter._actions[0]?.time,handTime:ctx.components.handsModel?._scrubProgress,hand:!!ctx.components.handsModel,camera:camera.position.toArray(),paperProgress:phase===2?local:0,paperClearance:phase===2?camera.position.z-Math.max(...[...(ctx.components.certMeshes||[]),...(ctx.components.shredMeshes||[])].map(m=>m.position.z)):null,papers:ctx.components.certMeshes?.length||0,shreds:ctx.components.shredMeshes?.length||0,gyro:rig.gyroActive,portalVisible:!!ctx.components.portalCircle?.visible,sourceTextVisible:text.textScene.visible,welcomeVisible:text.textScene.visible,welcomeText:text.textScene.visible?'we are here':'',welcomeWidth:ctx.components.textLayout?.sprites?.[0]?.scale.x||0,welcomeX:ctx.components.textLayout?.sprites?.[0]?.position.x||0,welcomeY:ctx.components.textLayout?.sprites?.[0]?.position.y||0,pixelRatio:renderer.getPixelRatio(),shardDepth:shards?.group.position.z,audioEnabled:X.isEnabled(),playing:[...X._howls].filter(([,h])=>h.playing()).map(([k])=>k),glassY:ctx.components.glassShards?.shards[0]?.position.y});
   root.style.setProperty('--burn-title',String(phase===2?clamp((local-.28)/.04)*(1-clamp((local-.38)/.05)):0));
   root.style.setProperty('--burn-title-scale',String(1+(phase===2?clamp((local-.28)/.15)*.12:0)));
   root.style.setProperty('--reference-end',String(clamp((p-.90)/.04)*(1-clamp((p-.97)/.03))));
   root.dataset.storyPhase=p>.975?'herd':['hand-glass','glass-facts','money-paper'][phase];
   schedule();
  }
- function gesture(e){if(e.isTrusted)X.unlockNow();}
+ function gesture(e){if(!e.isTrusted)return;X.unlockNow();if(!rig._isDesktop&&!ctx._gyroPermissionAttempted){ctx._gyroPermissionAttempted=true;rig.enableGyro().catch(()=>{});}}
  function pointer(e){if(visible)rig.onMouseMove(e.clientX/innerWidth*2-1,1-e.clientY/innerHeight*2);}
  function scroll(){schedule();}
  function visibility(){if(document.hidden){gateLastTime=null;stopAudio();if(raf)cancelAnimationFrame(raf);raf=0;}else schedule();}

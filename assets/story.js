@@ -67,7 +67,7 @@
    root.style.setProperty('--story-viewport-height',viewportHeight+'px');
   }
   function immersion(){
-   const r=track.getBoundingClientRect(),active=r.top<=72&&r.bottom>0;
+   const r=track.getBoundingClientRect(),bounds=root.getBoundingClientRect(),active=bounds.top<=72&&bounds.bottom>0;
    document.body.classList.toggle('story-immersive',active);
    document.documentElement.classList.toggle('story-immersive',active);
    root.dataset.storyPinned=String(r.top<=0&&r.bottom>root.querySelector('.story-stage').clientHeight);
@@ -75,7 +75,7 @@
    // Paint belongs to native scrolling, not the slower asynchronous GPU loop.
    root.dataset.storyPaint=progress>.975?'herd':progress>=.49?'money-paper':'hand-glass';
    root.style.setProperty('--story-canvas-opacity',String(1-Math.max(0,Math.min(1,(progress-.97)/.03))));
-   root.dataset.storyCovered=String(active&&progress<.94);
+   root.dataset.storyCovered=String(active);
    if(header){header.inert=active;if(active)header.setAttribute('aria-hidden','true');else header.removeAttribute('aria-hidden');}
   }
   function near(){lockViewport();immersion();const r=track.getBoundingClientRect();if(r.top<innerHeight+2800&&r.bottom>-2800)prepare();}

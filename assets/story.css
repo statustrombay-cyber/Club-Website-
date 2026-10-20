@@ -62,6 +62,7 @@
    video playback, shader noise and idle animation instead of hiding canvas. */
 @media print {
   .story-track, .story-pending .story-track, .story-enhanced .story-track { height: auto; }
+  .mind-story.story-enhanced::after { display:none; }
   .story-enhanced .story-stage { position: relative; height: auto; }
   .story-canvas, .story-enhanced .story-canvas, .story-enhanced .story-glass, .story-enhanced .story-type { display: none; }
   .story-pending .story-glass, .story-enhanced .story-glass { display: grid; position: relative; width: auto; height: auto; margin: auto; overflow: visible; clip-path: none; }
@@ -97,10 +98,13 @@ body.story-immersive .to-top { opacity:0 !important; visibility:hidden !importan
 html.story-immersive, body.story-immersive { background-color:#090b0a; overscroll-behavior-y:none; }
 .mind-story { background-color:#090b0a !important; }
 .story-enhanced .story-canvas { opacity:var(--story-canvas-opacity,1); }
-.mind-story[data-story-paint="money-paper"] .story-track,
-.mind-story[data-story-paint="money-paper"] .story-stage { background:#09251b; }
+/* Keep a red underpaint behind the alpha canvas in every scene. A momentary
+   render skip during reverse scroll cannot uncover the page or flash white. */
 .mind-story[data-story-paint="herd"] .story-track,
-.mind-story[data-story-paint="herd"] .story-stage { background:#09251b; }
+.mind-story[data-story-paint="herd"] .story-stage { background:#090b0a; }
+/* The exit beat is a deliberate full-screen black hold before the next section,
+   so the sticky stage never releases directly into page content. */
+.mind-story.story-enhanced::after { content:""; display:block; height:var(--story-exit-height,var(--story-viewport-height,100lvh)); background:#090b0a; }
 .story-pending .story-track, .story-enhanced .story-track { overflow:visible; }
 .story-stage { isolation:isolate; }
 /* This underlay is the same running herd, not another decoder/video copy. */

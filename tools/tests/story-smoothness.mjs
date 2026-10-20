@@ -38,7 +38,7 @@ try{
  assert.ok(!reentry.fractureSpent&&reentry.shatterEnabled);assert.equal(reentry.breakCount,count+1);
  await page.locator('.story-track').evaluate(e=>scrollTo({top:e.getBoundingClientRect().bottom+scrollY-innerHeight*.25,behavior:'instant'}));await page.waitForTimeout(250);
  assert.ok(await page.locator('.nav-wrap').evaluate(e=>e.inert&&getComputedStyle(e).visibility==='hidden'));
- await page.locator('.story-track').evaluate(e=>scrollTo({top:e.getBoundingClientRect().bottom+scrollY+10,behavior:'instant'}));await page.waitForTimeout(250);
+ await page.locator('.mind-story').evaluate(e=>scrollTo({top:e.getBoundingClientRect().bottom+scrollY+10,behavior:'instant'}));await page.waitForTimeout(250);
  assert.ok(await page.locator('.nav-wrap').evaluate(e=>!e.inert&&getComputedStyle(e).visibility==='visible'));
  assert.deepEqual(errors,[]);console.log(JSON.stringify({width,warm,reverseFrames:samples.length,reverseBreaks:count,newVisitBreaks:reentry.breakCount,errors}));await page.close();
  }

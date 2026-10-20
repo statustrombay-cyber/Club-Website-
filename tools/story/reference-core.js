@@ -17390,7 +17390,24 @@ var yg = 22050, bg = 750, xg = 350, Sg = `/assets/reference/`, Cg = 0.4, wg = { 
     return this._inputY;
   }
   // Never requests permission. Existing browser grants deliver passive events.
-  async enableGyro() { return this._gyroActive; }
+  async enableGyro() {
+    let request = window.DeviceOrientationEvent && window.DeviceOrientationEvent.requestPermission;
+    if (typeof request !== `function`) {
+      this._gyroAttempt = `granted`;
+      return true;
+    }
+    if (this._gyroAttempt === `granted`) return true;
+    if (this._gyroAttempt === `requesting`) return false;
+    this._gyroAttempt = `requesting`;
+    try {
+      let result = await request.call(window.DeviceOrientationEvent);
+      this._gyroAttempt = result === `granted` ? `granted` : `denied`;
+      return this._gyroAttempt === `granted`;
+    } catch {
+      this._gyroAttempt = `denied`;
+      return false;
+    }
+  }
   setEnabled(e36) {
     this.enabled = e36, e36 || (this._inputX = 0, this._inputY = 0, this._currentX = 0, this._currentY = 0);
   }
@@ -20431,7 +20448,7 @@ function Kb(e36) {
     i3 && e36.glassShardPass.setRefractionMap(i3, 0.3, 3, 3);
   }
   let s2 = null, c2 = r2.getAsset(`clubWelcomeAtlas`);
-  c2 && (e36.renderer && (c2.anisotropy = e36.renderer.capabilities.getMaxAnisotropy()), s2 = new vb(i2, [{ texture: c2, atlasUV: Nv(1092.93, 558.45, 945.23, 371.64), aspect: Pv(945.23, 371.64), baseScale: 0.4, maxWidth: 0.9, anchor: `center-center`, appearAt: 0, disappearAt: 0.2 }]), s2.resize(e36._vw, e36._vh)), e36.components = { handsModel: a2, glassShards: o2, textLayout: s2 };
+  c2 && (e36.renderer && (c2.anisotropy = e36.renderer.capabilities.getMaxAnisotropy()), s2 = new vb(i2, [{ texture: c2, atlasUV: Nv(1092.93, 558.45, 945.23, 371.64), aspect: Pv(945.23, 371.64), baseScale: 0.28, maxWidth: 0.78, anchor: `top-center`, offset: 8, appearAt: 0, disappearAt: 0.2 }]), s2.sprites[0].userData.material.depthTest = false, s2.resize(e36._vw, e36._vh)), e36.components = { handsModel: a2, glassShards: o2, textLayout: s2 };
 }
 var qb = new As(new Uint8Array([0, 0, 0, 255]), 1, 1, E);
 qb.needsUpdate = true;

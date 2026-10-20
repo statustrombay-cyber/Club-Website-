@@ -55,12 +55,14 @@ try{
  await page.locator('.story-track').evaluate(e=>scrollTo({top:e.getBoundingClientRect().top+scrollY+(e.offsetHeight-e.querySelector('.story-stage').clientHeight)*.13,behavior:'instant'}));
  await page.waitForFunction(()=>{const s=JSON.parse(document.querySelector('.mind-story').dataset.storyNative||'{}');return s.phase===0&&s.breakCount>0&&s.playing?.includes('stage2-ambient');});
  report.musicWithBreak=true;
- await page.locator('.mind-story').evaluate(e=>scrollTo({top:e.getBoundingClientRect().bottom+scrollY-innerHeight*.35,behavior:'instant'}));
+ await page.locator('.mind-story').evaluate(e=>scrollTo({top:e.getBoundingClientRect().bottom+scrollY-innerHeight,behavior:'instant'}));
  await page.waitForTimeout(300);
  const gap=await page.locator('.mind-story').evaluate(e=>e.nextElementSibling.getBoundingClientRect().top-e.getBoundingClientRect().bottom);
  assert.ok(Math.abs(gap)<1,'next section starts exactly at story boundary');
  assert.equal(await page.locator('.mind-story').getAttribute('data-story-audio'),'silent','the transparent tail cannot play music over the next section');
- if(dest)await page.screenshot({path:`${dest}/horse-exit.png`});
+ assert.equal(await page.locator('.mind-story').getAttribute('data-story-covered'),'true','the black exit hold remains an immersive full-screen story beat');
+ const exitShot=await page.screenshot(),exitPixels=screenshotPixels(exitShot);for(const [x,y]of [[.1,.1],[.5,.5],[.9,.9]]){const i=(Math.floor(y*exitPixels.height)*exitPixels.width+Math.floor(x*exitPixels.width))*exitPixels.channels;assert.ok(exitPixels.pixels[i]<20&&exitPixels.pixels[i+1]<20&&exitPixels.pixels[i+2]<20,'the next section stays below the full-screen black exit hold');}
+ if(dest)fs.writeFileSync(`${dest}/story-exit-hold.png`,exitShot);
  for(const selector of ['#about','#membershipForm']){
   await page.locator(selector).evaluate(e=>scrollTo({top:e.getBoundingClientRect().top+scrollY-80,behavior:'instant'}));
   const content=await page.locator(selector).evaluate(e=>({opacity:getComputedStyle(e).opacity,text:e.textContent,visible:e.checkVisibility({checkOpacity:true}),top:e.getBoundingClientRect().top}));

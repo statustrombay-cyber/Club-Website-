@@ -2211,10 +2211,12 @@ ok('newspaper traversal completes the source depth before returning to the herd'
   fs.readFileSync(path.join(ROOT,'tools/story/reference-bridge.js'),'utf8').includes('clamp((p-.49)/.51);') && !fs.readFileSync(path.join(ROOT,'tools/story/reference-bridge.js'),'utf8').includes('rS(ctx);uS(ctx)'));
 ok('story viewport stays locked through browser-toolbar resizes with opaque underpaint',
   storySource.includes('function lockViewport()') && storySource.includes('Math.max(viewportHeight,Math.ceil(innerHeight))') && storyCss.includes('var(--story-viewport-height, 100lvh)') && storyCss.includes('background:#230706'));
-ok('the herd tail and story section keep a dark opaque underpaint at the lower edge',
-  storyCss.includes('.mind-story[data-story-paint="herd"] .story-track,') && storyCss.includes('background:#09251b;') && storyCss.includes('.mind-story { background-color:#090b0a !important; }'));
-ok('the original we-are-here title is capped to the viewport and mobile shards keep their authored depth',
-  fs.readFileSync(path.join(ROOT,'tools/story/reference-core.js'),'utf8').includes('maxWidth: 0.9') && fs.readFileSync(path.join(ROOT,'tools/story/reference-core.js'),'utf8').includes('maxWidth: 0.88') && fs.readFileSync(path.join(ROOT,'tools/story/reference-bridge.js'),'utf8').includes('ctx.components.glassShards.group.position.z=0'));
+ok('the red curtain underpaint and full-screen black exit hold remain opaque',
+  storyCss.includes('.story-enhanced .story-track, .story-enhanced .story-stage { background:#230706; }') && storyCss.includes('.mind-story[data-story-paint="herd"] .story-track,') && storyCss.includes('background:#090b0a;') && storyCss.includes('.mind-story.story-enhanced::after') && storyCss.includes('var(--story-viewport-height,100lvh)') && storySource.includes('bounds=root.getBoundingClientRect()') && storySource.includes('root.dataset.storyCovered=String(active)'));
+ok('mobile WebGL pixel ratio is bounded for motion performance without changing desktop phase math',
+  fs.readFileSync(path.join(ROOT,'tools/story/reference-bridge.js'),'utf8').includes('(w<768?1.35:1.75)') && fs.readFileSync(path.join(ROOT,'tools/story/reference-bridge.js'),'utf8').includes('function placeWelcome()'));
+ok('the original we-are-here title is capped and depth-tested above the hand; mobile shards keep their authored depth',
+  fs.readFileSync(path.join(ROOT,'tools/story/reference-core.js'),'utf8').includes('maxWidth: 0.78') && fs.readFileSync(path.join(ROOT,'tools/story/reference-core.js'),'utf8').includes('baseScale: 0.28, maxWidth: 0.78, anchor: `top-center`, offset: 8') && fs.readFileSync(path.join(ROOT,'tools/story/reference-core.js'),'utf8').includes('material.depthTest = false') && fs.readFileSync(path.join(ROOT,'tools/story/reference-core.js'),'utf8').includes('maxWidth: 0.88') && fs.readFileSync(path.join(ROOT,'tools/story/reference-bridge.js'),'utf8').includes('ctx.components.glassShards.group.position.z=0'));
 const blankIdentityHtml=String(await php.x(["(function(){ $db=mt_db(); foreach(['department','universityName','intro','aboutHeading','aboutBody','joiningIntro'] as $key) $db['site'][$key]=''; ob_start(); require MT_ROOT . '/views/public/home.php'; return ob_get_clean(); })()"]));
 ok('older blank live identity fields still render the real department, university and joining form',
   blankIdentityHtml.includes('Department of Applied Social Science') && blankIdentityHtml.includes('Chhatrapati Shivaji Maharaj University') && blankIdentityHtml.includes('id="membershipForm"'));
@@ -2240,12 +2242,12 @@ ok('camera-attached glass retains source upward motion and papers retain inward 
   !referenceCore.includes('shard.startPosition[1] *= -1') && !referenceCore.includes('shard.endPosition[1] *= -1') && referenceBridge.includes('Xx.scrub(ctx,local)'));
 ok('original paper and individual-strip shaders are constructed synchronously for reversible scrolling',
   referenceBridge.includes('ctx._stage3DeferredStarted=true;eS(ctx);nS(ctx);rS(ctx)') && referenceCore.includes('certConvergeRotOffsets'));
-ok('no sound/tilt controls or gyro permission request are installed',
-  !storyView.includes('data-enable-tilt') && !fs.readFileSync(path.join(ROOT,'views/layout.php'),'utf8').includes('soundButton') && !referenceCore.includes('requestPermission(') && referenceBridge.includes("addEventListener('deviceorientation',rig._handleGyro,{passive:true})"));
+ok('gyro permission is requested only from a trusted mobile gesture, with no tilt controls',
+  !storyView.includes('data-enable-tilt') && !fs.readFileSync(path.join(ROOT,'views/layout.php'),'utf8').includes('soundButton') && referenceCore.includes('requestPermission') && referenceCore.includes('this._gyroAttempt = `granted`') && referenceBridge.includes('rig.enableGyro().catch') && referenceBridge.includes("addEventListener('deviceorientation',rig._handleGyro,{passive:true})"));
 ok('native viewport rendering preserves document height and handles context loss',
   storyCss.includes('var(--story-viewport-height, 100lvh)') && storyCss.includes('background: none !important') && storySource.includes('innerHeight*6.6') && referenceBridge.includes("canvas.addEventListener('webglcontextlost',contextLost)"));
-ok('only the requested chapter audio is eligible; leaving it stops every sound',
-  referenceBridge.includes("['glass-shatter','stage2-ambient','money-burn'].includes(key)") && /if\(!visible\)\{[^}]*stopAudio\(\)/.test(referenceBridge) && referenceBridge.includes('function gesture(e){if(e.isTrusted)X.unlockNow();}') && referenceBridge.includes('X.setEnabled(false)') && !audioSource.includes('localStorage'));
+ok('first-touch ambience, chapter sounds, and gesture-gated gyro unlock are wired without site-wide audio',
+  referenceBridge.includes("['stage1-ambient','glass-shatter','stage2-ambient','money-burn'].includes(key)") && /if\(!visible\)\{[^}]*stopAudio\(\)/.test(referenceBridge) && referenceBridge.includes('X.unlockNow();if(!rig._isDesktop&&!ctx._gyroPermissionAttempted)') && referenceBridge.includes('X.setEnabled(false)') && !audioSource.includes('localStorage'));
 ok('missing-texture white portal and original HUD/text are not rendered',
   referenceBridge.includes('ctx.components.portalCircle.visible=false') && referenceBridge.includes('text.textScene.visible=false') && referenceBridge.includes('_xpReplaySkip:true') && !referenceCore.includes('var WO = window.location.hash'));
 ok('club-specific atlases retain the original UV layout without source advertisements',
