@@ -26,6 +26,7 @@ with tarfile.open(fileobj=io.BytesIO(archive)) as tar:
         assert name not in members, f'Live settings or dev-only file exported: {name}'
     assert not any(n.startswith('tools/') for n in members), 'Development source exported'
     assert not any(n.lower().endswith('.zip') for n in members), 'Nested ZIP exported'
+    assert not any(re.fullmatch(r'cartier-part-\d{3}', n) or ('/' not in n and n.lower().endswith('.glb')) for n in members), 'Cartier study uploads exported into the club runtime'
     for suffix, size in [('running', 9938593), ('desktop', 3831086), ('mobile', 1894350)]:
         name = f'assets/media/horses-{suffix}.mp4'
         assert members[name].size == size, f'Horse clip absent/changed: {name}'

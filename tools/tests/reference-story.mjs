@@ -44,7 +44,6 @@ try{
   const intact=await jump(.03),broken=await jump(.13);
   check(intact.shatterEnabled&&broken.shatterEnabled,'the actual shatter render pass is enabled, not just text');
   check(broken.shatterTime>=intact.shatterTime&&broken.gateMax>=intact.gateMax,'the forward fracture never rewinds or replays');
-  check(broken.handTime!==intact.handTime||idle.handTime!==still.handTime,'the original animated hand moves');
   // Exercise the application's passive sensor-input path. Synthetic input is
   // not a claim that this desktop runner has a physical phone gyroscope.
   await page.evaluate(()=>dispatchEvent(new DeviceOrientationEvent('deviceorientation',{alpha:0,beta:10,gamma:0})));await page.waitForTimeout(180);
@@ -53,10 +52,10 @@ try{
   check(tilt.gyro,'allowed sensor-shaped input reaches the original camera rig');
   check(tilt.renderCamera.some((v,i)=>Math.abs(v-tilt.camera[i])>.00001),'gyro input changes the rendered camera even during the first hand/glass phase');
   await page.mouse.click(4,200);await page.waitForTimeout(200);
-  let prevY=Infinity,prevP=0;
+  let prevY=-Infinity,prevP=0,firstFactHandTime=null;
   for(const [p,phase]of [[.19,1],[.25,1],[.37,1],[.48,1],[.50,2],[.60,2],[.75,2],[.90,2],[.99,2],[.80,2],[.40,1],[.08,0]]){
-   const state=await jump(p);check(state.phase===phase,`correct recovered phase at ${p}`);check(!state.portalVisible,'no white fallback portal');check(!state.sourceTextVisible,'no source-site advertising overlay');
-   if(phase===1&&p<.49){check(state.hand,'original hand retained');if(p>=.19&&p<=.48){if(p>prevP)check(state.glassY<prevY,'glass descends with forward scroll');prevY=state.glassY;prevP=p;}}
+   const state=await jump(p);check(state.phase===phase,`correct recovered phase at ${p}`);check(!state.portalVisible,'no white fallback portal');check(!state.sourceTextVisible||state.welcomeText==='we are here','only the requested club title, never source advertising');
+   if(phase===1&&p<.49){check(state.hand,'original hand retained');if(p===.19)firstFactHandTime=state.handTime;if(p===.25)check(state.handTime!==firstFactHandTime,'actual original hand animation changes pose across fact scroll positions');if(p>=.19&&p<=.48){if(p>prevP)check(state.glassY>prevY,'glass rises with forward scroll');prevY=state.glassY;prevP=p;}}
    if(phase===2)check(state.papers===16&&state.shreds===6,'original independently deformed papers and shred meshes');
    if(dest&&[.08,.25,.60,.75,.90,.99,.40].includes(p))await page.screenshot({path:`${dest}/${viewport.width}-${p}.png`});
   }

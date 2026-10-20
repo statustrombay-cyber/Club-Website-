@@ -23,6 +23,7 @@ window.MTStory3D={async create(root){
   return /^(?:https?:|\/assets\/reference\/)/.test(url)?url:'/assets/reference/'+url.replace(/^\//,'');
  });
  loader.stageAssets.initial=loader.stageAssets.initial.filter(a=>['humanHandsAtlas','spcAtlas','handMatcap'].includes(a.key));
+ loader.stageAssets.initial.push({type:'texture',key:'clubWelcomeAtlas',path:'assets/atlases/club-welcome.webp',mipmaps:true});
  loader.mandatoryAssets=loader.mandatoryAssets.filter(a=>a.key==='frosting');
  loader.stageAssets.stage4=[];loader.stageAssets.worldMap=[];
  loader.stageAssets.stage3.push({type:'texture',key:'clubPaperAtlas',path:'assets/atlases/club-editorials.webp?v=__CLUB_EDITORIAL_REVISION__',mipmaps:true});
@@ -32,10 +33,13 @@ window.MTStory3D={async create(root){
  const required=keys=>{for(const key of keys)if(!loader.getAsset(key))throw Error('Missing original scene asset: '+key);};
  // Let the hand/glass render before the later paper textures finish downloading.
  const openingReady=Promise.all([loader.loadMandatoryAssets(),loader.loadStageAssets('initial'),loader.loadStageAssets('stage2')]);
- const stage3Ready=openingReady.then(()=>loader.loadStageAssets('stage3'));
+ const stage3Ready=openingReady.then(()=>loader.loadStageAssets('stage3')).then(()=>{
+  const printed=loader.getAsset('clubPaperAtlas');
+  if(printed){printed.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());printed.needsUpdate=true;}
+ });
  stage3Ready.catch(()=>{}); // Observed again before this stage is entered.
  try{await openingReady;
- required(['handsModel2','cameraModel2','glassShatter','allShards','humanHandsAtlas','spcAtlas']);
+ required(['handsModel2','cameraModel2','glassShatter','allShards','humanHandsAtlas','spcAtlas','clubWelcomeAtlas']);
  }catch(error){loader.dispose();renderer.dispose();throw error;}
  loader.flushUploads();loader.disposeTextures=()=>{}; // Retained for reversible native scrolling.
  const composer=new o_(renderer),renderPass=new s_(scene,camera);renderPass.clear=true;composer.addPass(renderPass);
@@ -61,7 +65,7 @@ window.MTStory3D={async create(root){
  const nativeDispose=loader.dispose.bind(loader);
  function resize(){resizeNeeded=true;schedule();}
  function applySize(){
-  resizeNeeded=false;const w=stage.clientWidth,h=stage.clientHeight,dpr=software?(w<600?.65:.5):Math.min(devicePixelRatio||1,constrained()?.85:1);
+  resizeNeeded=false;const w=stage.clientWidth,h=stage.clientHeight,dpr=software?(w<600?.65:.5):Math.min(devicePixelRatio||1,constrained()?1:2);
   if(w===width&&h===height&&renderer.getPixelRatio()===dpr)return;
   width=w;height=h;ctx._vw=w;ctx._vh=h;camera.fov=w<768?40:30;camera.aspect=w/h;camera.updateProjectionMatrix();
   renderer.setPixelRatio(dpr);renderer.setSize(w,h,false);composer.setPixelRatio(dpr);composer.setSize(w,h);glass.setSize(w,h);shatter.setSize(w,h);text.setSize(w,h);lens.setSize(w*dpr,h*dpr);
@@ -130,8 +134,13 @@ window.MTStory3D={async create(root){
   }
   else if(phase===1){Wb.scrub(ctx,local);Wb.update(ctx,now/1000,dt);}
   else{paperTime+=dt;Xx.scrub(ctx,local);Xx.update(ctx,paperTime,dt);if(ctx.components.portalCircle)ctx.components.portalCircle.visible=false;}
-  if(ctx.components.glassShards)ctx.components.glassShards._reducedMotion=reduced();
-  ctx.components.textLayout?.update?.(ctx._scrollProgress||0,dt);text.textScene.visible=false;
+  if(ctx.components.glassShards){
+   ctx.components.glassShards._reducedMotion=reduced();
+   // Fit portrait screens without changing desktop or the paper camera path.
+   ctx.components.glassShards.group.position.z=width<768?-Math.max(0,.55*(height/width-1.2)):0;
+  }
+  if(phase===0)ctx.components.textLayout?.update?.(0,dt);
+  text.textScene.visible=!!ctx.components.textLayout?.hasVisibleSprites&&(phase===1||phase===0&&gateMax>.3);
   fg.uniforms.uTime.value=reduced()?0:now/1000;fg.uniforms.uEnableNoise.value=reduced()?0:2;fg.uniforms.uNoiseOffset.value.set(0,0);
   // The break and its sound are one-shot on reverse. The independent glass
   // pass, shard geometry and printed fact overlays remain fully visible.
@@ -142,10 +151,10 @@ window.MTStory3D={async create(root){
   if(shards){shards.group.visible=true;if(shards._overlayMaterial)shards._overlayMaterial.opacity=1;}
   if(fractureSpent){shatter.enabled=false;X.stop('glass-shatter',{fadeOut:0});}
   glass.enabled=phase===1||(phase===0&&fractureSpent);
-  loader.chunkedUploader?.tick();text.enabled=false;
+  loader.chunkedUploader?.tick();text.enabled=text.textScene.visible;
   lastRenderedProgress=p;const renderCamera=camera.position.toArray();composer.render(dt);rig.restore();
   root.dataset.storyProgress=p.toFixed(4);
-  root.dataset.storyNative=JSON.stringify({phase,gateAuto,gateClock,fractureSpent,glassOpacity,glassEnabled:glass.enabled,visibleFactOverlays:glass.enabled&&shards?.group.visible?glass._overlayProxies.filter(({proxy})=>proxy.visible&&proxy.material.opacity>0).length:0,degreeShred:ctx.components.certMaterials?.[0]?.uniforms.uShredProgress.value,degreeOpacity:ctx.components.certMaterials?.[0]?.uniforms.uOpacity.value,editorialOpacity:ctx.components.shredMaterials?.[0]?.uniforms.uOpacity.value,gateMax,breakCount:ctx._storyBreakCount||0,renderCamera,shatterEnabled:shatter.enabled,shatterTime:shatter._actions[0]?.time,handTime:ctx.components.handsModel?._scrubProgress,hand:!!ctx.components.handsModel,camera:camera.position.toArray(),paperProgress:phase===2?local:0,paperClearance:phase===2?camera.position.z-Math.max(...[...(ctx.components.certMeshes||[]),...(ctx.components.shredMeshes||[])].map(m=>m.position.z)):null,papers:ctx.components.certMeshes?.length||0,shreds:ctx.components.shredMeshes?.length||0,gyro:rig.gyroActive,portalVisible:!!ctx.components.portalCircle?.visible,sourceTextVisible:text.textScene.visible,audioEnabled:X.isEnabled(),playing:[...X._howls].filter(([,h])=>h.playing()).map(([k])=>k),glassY:ctx.components.glassShards?.shards[0]?.position.y});
+  root.dataset.storyNative=JSON.stringify({phase,gateAuto,gateClock,fractureSpent,glassOpacity,glassEnabled:glass.enabled,visibleFactOverlays:glass.enabled&&shards?.group.visible?glass._overlayProxies.filter(({proxy})=>proxy.visible&&proxy.material.opacity>0).length:0,degreeShred:ctx.components.certMaterials?.[0]?.uniforms.uShredProgress.value,degreeOpacity:ctx.components.certMaterials?.[0]?.uniforms.uOpacity.value,editorialOpacity:ctx.components.shredMaterials?.[0]?.uniforms.uOpacity.value,gateMax,breakCount:ctx._storyBreakCount||0,renderCamera,shatterEnabled:shatter.enabled,shatterTime:shatter._actions[0]?.time,handTime:ctx.components.handsModel?._scrubProgress,hand:!!ctx.components.handsModel,camera:camera.position.toArray(),paperProgress:phase===2?local:0,paperClearance:phase===2?camera.position.z-Math.max(...[...(ctx.components.certMeshes||[]),...(ctx.components.shredMeshes||[])].map(m=>m.position.z)):null,papers:ctx.components.certMeshes?.length||0,shreds:ctx.components.shredMeshes?.length||0,gyro:rig.gyroActive,portalVisible:!!ctx.components.portalCircle?.visible,sourceTextVisible:text.textScene.visible,welcomeVisible:text.textScene.visible,welcomeText:text.textScene.visible?'we are here':'',pixelRatio:renderer.getPixelRatio(),shardDepth:shards?.group.position.z,audioEnabled:X.isEnabled(),playing:[...X._howls].filter(([,h])=>h.playing()).map(([k])=>k),glassY:ctx.components.glassShards?.shards[0]?.position.y});
   root.style.setProperty('--burn-title',String(phase===2?clamp((local-.28)/.04)*(1-clamp((local-.38)/.05)):0));
   root.style.setProperty('--burn-title-scale',String(1+(phase===2?clamp((local-.28)/.15)*.12:0)));
   root.style.setProperty('--reference-end',String(clamp((p-.90)/.04)*(1-clamp((p-.97)/.03))));

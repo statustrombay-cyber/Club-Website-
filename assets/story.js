@@ -17,6 +17,14 @@
    announce('The animated scene could not start. The text version is shown below.');
    if(keep&&anchor.isConnected){const shift=anchor.getBoundingClientRect().top-before;if(Math.abs(shift)>1)scrollBy({top:shift,behavior:'instant'});}
   }
+  // Never parse the large engine, decode models or compile WebGL programs in
+  // the middle of the paint/ring splash. Preload may download without executing.
+  const introReady=new Promise(resolve=>{
+   if(!document.documentElement.classList.contains('intro-cover'))return resolve();
+   window.addEventListener('mt:intro-ready',()=>requestAnimationFrame(()=>requestAnimationFrame(resolve)),{once:true});
+   // Same accessibility/failure escape as the splash; no permanently held scene.
+   setTimeout(resolve,7000);
+  });
   function engine(){
    if(window.MTStory3D)return Promise.resolve();if(enginePromise)return enginePromise;
    enginePromise=new Promise((resolve,reject)=>{
@@ -42,7 +50,7 @@
    if(loading||instance||failed)return;loading=true;const ticket=generation;
    root.classList.add('story-pending');root.dataset.storyState='loading';announce('');
    try{
-    await engine();if(ticket!==generation)return;
+    await introReady;await engine();if(ticket!==generation)return;
     const scene=await window.MTStory3D.create(root);
     if(ticket!==generation){scene.dispose();return;}instance=scene;root.dataset.storyState='ready';delete root.dataset.storyError;announce('');
    }catch(error){failure(error);}finally{loading=false;}
@@ -61,6 +69,8 @@
   function immersion(){
    const r=track.getBoundingClientRect(),active=r.top<=72&&r.bottom>0;
    document.body.classList.toggle('story-immersive',active);
+   document.documentElement.classList.toggle('story-immersive',active);
+   root.dataset.storyPinned=String(r.top<=0&&r.bottom>root.querySelector('.story-stage').clientHeight);
    const progress=Math.max(0,Math.min(1,-r.top/Math.max(1,track.offsetHeight-root.querySelector('.story-stage').clientHeight)));
    // Paint belongs to native scrolling, not the slower asynchronous GPU loop.
    root.dataset.storyPaint=progress>.975?'herd':progress>=.49?'money-paper':'hand-glass';
@@ -80,9 +90,9 @@
   if(connection?.addEventListener)connection.addEventListener('change',configure);
   if('IntersectionObserver'in window){const observer=new IntersectionObserver(entries=>{if(entries.some(entry=>entry.isIntersecting))prepare();},{rootMargin:'2800px'});observer.observe(track);}
   root.classList.add('story-pending');configure();
-  // Fetch the engine immediately, then warm models/shaders while the visitor
-  // reads the opening. Offscreen scenes do not run an animation loop.
-  engine().then(()=>{
+  // Warm models/shaders after the splash, while the visitor reads the hero.
+  // Offscreen scenes do not run an animation loop.
+  introReady.then(()=>engine()).then(()=>{
    if('requestIdleCallback'in window)requestIdleCallback(()=>prepare(),{timeout:1600});
    else setTimeout(prepare,500);
   }).catch(()=>{});

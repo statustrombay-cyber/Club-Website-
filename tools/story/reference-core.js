@@ -20419,7 +20419,6 @@ function Gb(e36) {
     let t3 = String(e37 + 1).padStart(2, `0`), [r3, i3, a3] = u2[e37], o3 = d2[e37], s3 = 1.584 / 2, c3 = e37 % 2 ? 1 : -1;
     n2.push({ meshName: `BG_Shard_${t3}`, background: true, startPosition: [r3, i3 - s3, a3], endPosition: [r3, i3 + s3, a3], startRotation: o3, endRotation: [o3[0] + l2 * c3, o3[1] - l2 * 0.6, o3[2] + l2 * c3], scale: f2[e37] });
   }
-  for (const shard of n2) { shard.startPosition[1] *= -1; shard.endPosition[1] *= -1; }
   return new Ub(e36, n2, e36.getAsset(`allShards`));
 }
 function Kb(e36) {
@@ -20431,7 +20430,7 @@ function Kb(e36) {
     let i3 = r2.getAsset(`frostingNormal`);
     i3 && e36.glassShardPass.setRefractionMap(i3, 0.3, 3, 3);
   }
-  let s2 = null, c2 = r2.getAsset(`textsAtlas`);
+  let s2 = null, c2 = r2.getAsset(`clubWelcomeAtlas`);
   c2 && (e36.renderer && (c2.anisotropy = e36.renderer.capabilities.getMaxAnisotropy()), s2 = new vb(i2, [{ texture: c2, atlasUV: Nv(1092.93, 558.45, 945.23, 371.64), aspect: Pv(945.23, 371.64), baseScale: 0.4, anchor: `center-center`, appearAt: 0, disappearAt: 0.2 }]), s2.resize(e36._vw, e36._vh)), e36.components = { handsModel: a2, glassShards: o2, textLayout: s2 };
 }
 var qb = new As(new Uint8Array([0, 0, 0, 255]), 1, 1, E);

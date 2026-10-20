@@ -25,7 +25,7 @@ function collect(dir, base = '') {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const rel = base ? base + '/' + entry.name : entry.name;
     // Root recordings and generated bundles are never PHP runtime inputs.
-    if (!base && /\.(mp4|zip)$/i.test(entry.name)) continue;
+    if (!base && (/\.(mp4|zip|glb)$/i.test(entry.name) || /^cartier-part-\d{3}$/.test(entry.name))) continue;
     if (SKIP.has(entry.name) || SKIP.has(rel)) continue;
     if (entry.isDirectory()) out.push(...collect(path.join(dir, entry.name), rel));
     else if (entry.isFile()) out.push([rel, path.join(dir, entry.name)]);
@@ -1631,7 +1631,7 @@ ok('the glass header has no opaque scrim or perimeter line',
   round37Css.includes('.nav-wrap:before, body.is-black-chapter .nav-wrap:before { display: none; }')
   && round37Css.includes('border: 0; box-shadow: none; background: rgba(255,255,255,.12)'));
 ok('wire objects use antialiased recorded silhouettes instead of invented filaments',
-  appJs.includes('function setupWireObjects()') && appJs.includes('setupWireObjects();')
+  appJs.includes('function setupWireObjects()') && appJs.includes('requestAnimationFrame(setupWireObjects)')
   && appJs.includes('player.context.drawImage') && appJs.includes('document.hidden')
   && cardsSource.includes('data-wire-object=') && !cardsSource.includes('data-wire-line='));
 
@@ -2167,24 +2167,19 @@ ok('all three wires embed a host-independent PNG fallback',(mindPage.body.match(
 console.log('\n— the lamps that breathe —');
 ok('no dotted lamps sit before the small labels any more',
   !/\.eyebrow:before/.test(round37Css) && !/\.kicker:before\s*,?[^}]*lightPulse/.test(round37Css));
-ok('the Mind doorway wears a lamp of its own',
-  /\.nav-links a\.nav-lens:before \{[\s\S]{0,220}?animation: lightPulse/.test(round37Css));
+ok('the Lens has no desktop beacon', !/\.nav-links a\.nav-lens:before \{[\s\S]{0,220}?animation: lightPulse/.test(round37Css));
 ok('the lamps breathe rather than blink',
   /@keyframes lightPulse \{[\s\S]{0,220}?opacity: \.55[\s\S]{0,160}?opacity: 1/.test(round37Css));
 ok('the wheel keeps its own pulse', /\.psi-stage-glow \{[^}]*psiPulse/.test(round37Css));
 
 console.log('\n— the Mind doorway can no longer be missed —');
-ok('it is a filled chip in the club\'s terracotta, not a bare word',
-  /\.nav-links a\.nav-lens \{[^}]*background: linear-gradient\(180deg, #9c4a2c, #7d3520\)/.test(round37Css)
-  && /\.nav-links a\.nav-lens \{[^}]*color: #fff8ee/.test(round37Css));
-ok('it glows and hops, so the eye finds it',
-  /\.nav-links a\.nav-lens \{[^}]*animation: lensHop 2\.8s ease-in-out infinite, lensGlow 3\.6s ease-in-out infinite/.test(round37Css)
-  && /@keyframes lensGlow \{/.test(round37Css));
+ok('desktop Lens is not a highlighted chip', !round37Css.includes('background: linear-gradient(180deg, #9c4a2c, #7d3520)'));
+ok('desktop Lens has no hop or special glow', !round37Css.includes('animation: lensHop') && !round37Css.includes('@keyframes lensGlow'));
 ok('hamburger lens row matches other links with no chip, glow or dot',
   round37Css.includes('color: inherit; font-weight: inherit; background: none;')
   && round37Css.includes('box-shadow: none; text-shadow: none; animation: none; transform: none;')
   && round37Css.includes('.nav-links a.nav-lens:before { display: none; }'));
-ok('the menu renders with its chip, on the live page',
+ok('the menu keeps one ordinary Lens link on the live page',
   mindPage.body.includes('class="nav-lens"') && mindPage.body.includes('>The lens</a>')
   && (mindPage.body.match(/class="nav-lens"/g) || []).length === 1);
 
@@ -2210,7 +2205,7 @@ ok('every psychologist photograph is local and available to the atlas baker',
 ok('intact editorial reverse faces stay printed while degrees retain the original backing',
   (fs.readFileSync(path.join(ROOT,'tools/story/reference-core.js'),'utf8').match(/vec2 paperUv = gl_FrontFacing/g)||[]).length===1 && fs.readFileSync(path.join(ROOT,'tools/story/reference-core.js'),'utf8').includes('vec3 backBase = vec3(0.341'));
 ok('scene warms early without a loading banner and hides the header only within its chapter',
-  storySource.includes('engine().then(') && storySource.includes('requestIdleCallback') && !storySource.includes("announce('Loading the animated scene") && storySource.includes("classList.toggle('story-immersive',active)") && storySource.includes('header.inert=active'));
+  storySource.includes('introReady.then(()=>engine())') && storySource.includes('requestIdleCallback') && !storySource.includes("announce('Loading the animated scene") && storySource.includes("classList.toggle('story-immersive',active)") && storySource.includes('header.inert=active'));
 ok('upward scrolling preserves fact fragments while disabling only the fracture',
   ['fractureSpent=true','gateMax=gateProgress','glass.uniforms.uStoryGlassAlpha.value=1','glass.enabled=phase===1||(phase===0&&fractureSpent)','shards.group.visible=true'].every(t=>fs.readFileSync(path.join(ROOT,'tools/story/reference-bridge.js'),'utf8').includes(t)));
 
@@ -2250,8 +2245,8 @@ ok('original hand, camera, glass and paper assets replace the rejected reconstru
   ['human_hand_2.glb','camera_2.glb','stage2_glass-shatter.glb','glass_shards.glb','tunnel_new_new.glb'].every(name=>fs.existsSync(path.join(ROOT,'assets/reference/assets/models',name))) && fs.existsSync(path.join(ROOT,'assets/vendor/THREE-LICENSE.txt')) && fs.statSync(path.join(ROOT,'assets/vendor/story-3d.js')).size<1000000 && !fs.readFileSync(path.join(ROOT,'tools/build-story.mjs'),'utf8').includes('scene.js'));
 ok('the original baked hand and camera animations are used',
   referenceCore.includes('class extends Kv') && referenceBridge.includes('new Lb(loader)') && referenceBridge.includes('Wb.scrub(ctx,local)') && referenceCore.includes('humanHandsAtlas'));
-ok('camera-attached glass moves down, while the recovered bills/papers retain inward camera travel',
-  referenceCore.includes('shard.startPosition[1] *= -1') && referenceCore.includes('shard.endPosition[1] *= -1') && referenceBridge.includes('Xx.scrub(ctx,local)'));
+ok('camera-attached glass retains source upward motion and papers retain inward camera travel',
+  !referenceCore.includes('shard.startPosition[1] *= -1') && !referenceCore.includes('shard.endPosition[1] *= -1') && referenceBridge.includes('Xx.scrub(ctx,local)'));
 ok('original paper and individual-strip shaders are constructed synchronously for reversible scrolling',
   referenceBridge.includes('ctx._stage3DeferredStarted=true;eS(ctx);nS(ctx);rS(ctx)') && referenceCore.includes('certConvergeRotOffsets'));
 ok('no sound/tilt controls or gyro permission request are installed',

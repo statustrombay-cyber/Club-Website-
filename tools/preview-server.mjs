@@ -41,7 +41,7 @@ function collectSourceFiles(dir, base = '') {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const rel = base ? base + '/' + entry.name : entry.name;
     // Root recordings and generated bundles are never PHP runtime inputs.
-    if (!base && /\.(mp4|zip)$/i.test(entry.name)) continue;
+    if (!base && (/\.(mp4|zip|glb)$/i.test(entry.name) || /^cartier-part-\d{3}$/.test(entry.name))) continue;
     if (SKIP_DIRS.has(entry.name) || SKIP_DIRS.has(rel)) continue;
     if (entry.isDirectory()) out.push(...collectSourceFiles(path.join(dir, entry.name), rel));
     else if (entry.isFile()) out.push(rel);

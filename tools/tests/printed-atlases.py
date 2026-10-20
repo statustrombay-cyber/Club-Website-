@@ -8,16 +8,16 @@ root=Path(__file__).resolve().parents[2]
 folder=root/'assets/reference/assets/atlases'
 boxes=[(0,0,492,912),(492,0,492,912),(982,0,492,912),(0,911,491,1137),(492,913,490,1135),(983,912,491,911)]
 im=Image.open(folder/'club-editorials.webp').convert('RGB')
-assert im.size==(2048,2048)
+assert im.size==(4096,4096)
 for index,((x,y,w,h),name) in enumerate(zip(boxes,['freud','rogers','james']*2)):
-    tile=im.crop((x,y,x+w,y+h))
-    expected=ImageOps.fit(Image.open(root/'assets/story/portraits'/f'{name}.webp').convert('RGB'),(250,284),method=Image.Resampling.LANCZOS,centering=(.5,.32))
-    actual=tile.crop((20,490,270,774))
+    tile=im.crop((x*2,y*2,(x+w)*2,(y+h)*2))
+    expected=ImageOps.fit(Image.open(root/'assets/story/portraits'/f'{name}.webp').convert('RGB'),(500,568),method=Image.Resampling.LANCZOS,centering=(.5,.32))
+    actual=tile.crop((40,980,540,1548))
     # Ignore only the two-pixel printed border, not the actual photograph.
-    error=ImageStat.Stat(ImageChops.difference(actual.crop((3,3,247,281)),expected.crop((3,3,247,281)))).mean
+    error=ImageStat.Stat(ImageChops.difference(actual.crop((6,6,494,562)),expected.crop((6,6,494,562)))).mean
     assert max(error)<8,(index,name,'photo pixels do not match',error)
-    assert ImageStat.Stat(tile.crop((18,221,w-18,450)).convert('L')).stddev[0]>20,(index,'missing editorial thought')
-    assert ImageStat.Stat(tile.crop((16,36,w-16,172)).convert('L')).stddev[0]>15,(index,'missing opening columns')
+    assert ImageStat.Stat(tile.crop((36,442,(w-18)*2,900)).convert('L')).stddev[0]>20,(index,'missing editorial thought')
+    assert ImageStat.Stat(tile.crop((32,72,(w-16)*2,344)).convert('L')).stddev[0]>15,(index,'missing opening columns')
     print(index,name,': actual portrait pixels and editorial print verified')
 for name in ['freud','rogers','james']:
     portrait=Image.open(root/'assets/story/portraits'/f'{name}.webp').convert('RGB')

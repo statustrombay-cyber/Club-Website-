@@ -9,7 +9,8 @@ parser.add_argument('--papers-only',action='store_true',help='Leave the existing
 args=parser.parse_args()
 root=Path(__file__).resolve().parents[2];work=args.source_dir;args.work_dir.mkdir(parents=True,exist_ok=True);out=root/'assets/reference/assets/atlases'
 f=TTFont(root/'assets/fonts/bodoni-moda-latin.woff2');f.flavor=None;f.save(args.work_dir/'bodoni.ttf')
-def font(n):return ImageFont.truetype(str(args.work_dir/'bodoni.ttf'),n)
+print_scale=1
+def font(n):return ImageFont.truetype(str(args.work_dir/'bodoni.ttf'),round(n*print_scale))
 def fit(draw,text,w,maxsize):
  n=maxsize
  while draw.textlength(text,font=font(n))>w and n>14:n-=1
@@ -38,7 +39,17 @@ if not args.papers_only:
  im.save(out/'club-fragments.webp',lossless=True)
 # Preserve the supplied six newspaper islands and quote/photo/column layout.
 # These are editorial summaries, never invented quotations attributed as speech.
-im=Image.open(work/'moneyShredsAtlas.png').convert('RGBA')
+print_scale=2
+# Unused atlas space is transparent; banknotes use their ORIGINAL KTX2.
+im=Image.new('RGBA',(4096,4096))
+class PrintDraw:
+ def __init__(self,tile):self.draw=ImageDraw.Draw(tile)
+ def textlength(self,text,**kw):return self.draw.textlength(text,**kw)/print_scale
+ def text(self,xy,*a,**kw):return self.draw.text(tuple(v*print_scale for v in xy),*a,**kw)
+ def line(self,xy,**kw):
+  if 'width' in kw:kw['width']*=print_scale
+  return self.draw.line(tuple(v*print_scale for v in xy),**kw)
+
 profiles=[
  ('Sigmund Freud','Psychoanalysis','Dreams open questions about the unconscious.','Dreams and unconscious processes were central to Freud’s psychoanalytic thought. His historical influence invites discussion, not unquestioning agreement with every theory. Psychology continues to examine how memories, feelings and experience shape a person.','freud'),
  ('Carl Rogers','Person-centred therapy','To understand a person, begin by listening.','Rogers placed the person’s experience and the therapeutic relationship at the centre of his approach. Empathy, congruence and unconditional positive regard became important ideas in person-centred therapy. Listening begins with curiosity and respect.','rogers'),
@@ -59,7 +70,7 @@ def columns(d,text,x,y,w,h,size=20,count=2):
    if not line:break
    d.text((x+col*(cw+gap),yy),line,font=ff,fill=ink);yy+=round(size*1.16)
 def photo(tile,name,box):
- x,y,w,h=box;im=ImageOps.fit(portraits[name],(w,h),method=Image.Resampling.LANCZOS,centering=(.5,.32));tile.paste(im,(x,y));ImageDraw.Draw(tile).rectangle((x,y,x+w,y+h),outline=ink,width=2)
+ x,y,w,h=box;im=ImageOps.fit(portraits[name],(w*print_scale,h*print_scale),method=Image.Resampling.LANCZOS,centering=(.5,.32));tile.paste(im,(x*print_scale,y*print_scale));ImageDraw.Draw(tile).rectangle((x*print_scale,y*print_scale,(x+w)*print_scale,(y+h)*print_scale),outline=ink,width=2*print_scale)
 boxes=[(0,0,492,912),(492,0,492,912),(982,0,492,912),(0,911,491,1137),(492,913,490,1135),(983,912,491,911)]
 reading_note=('Ideas from the history of psychology deserve both curiosity and critical thought. '
  'Ask what an idea helps us notice, how it was studied and where its limits lie. '
@@ -73,7 +84,7 @@ for (x,y,w,h),(who,topic,headline,body,name) in zip(boxes,profiles):
  # Keep the source hierarchy: opening small print, large editorial thought,
  # photograph/name row and closing columns. These thoughts are clearly labelled
  # editorial writing, not quotations invented for the historical psychologists.
- tile=Image.new('RGBA',(w,h),stock);d=ImageDraw.Draw(tile)
+ tile=Image.new('RGBA',(w*print_scale,h*print_scale),stock);d=PrintDraw(tile)
  d.text((16,5),'MINDFUL TATTVA · HISTORY OF PSYCHOLOGY',font=fit(d,'MINDFUL TATTVA · HISTORY OF PSYCHOLOGY',w-32,19),fill=ink)
  columns(d,body,16,36,w-32,136,17)
  d.line((16,181,w-16,181),fill=ink,width=2)
@@ -84,7 +95,7 @@ for (x,y,w,h),(who,topic,headline,body,name) in zip(boxes,profiles):
  para(d,topic,286,625,w-302,21,ink,leading=26)
  d.text((20,785),'READ · THINK · DISCUSS',font=font(17),fill=ink)
  columns(d,body+' '+reading_note,16,819,w-32,h-829,17)
- im.paste(tile,(x,y))
+ im.paste(tile,(x*print_scale,y*print_scale))
 # Bills still sample the supplied original KTX2, including its banknote island.
 # Degree meshes also sample their ORIGINAL KTX2 unchanged.
-im.save(out/'club-editorials.webp',quality=94,method=6)
+im.save(out/'club-editorials.webp',lossless=True,method=6)

@@ -91,7 +91,10 @@ body.story-immersive .to-top { opacity:0 !important; visibility:hidden !importan
 /* Paint the whole reserved track as well as the sticky viewport: upward
    compositor scrolling must never uncover the light page between GPU frames. */
 .story-enhanced .story-track, .story-enhanced .story-stage { background:#230706; }
-.story-enhanced .story-stage { transform:translateZ(0); }
+/* A viewport-fixed active surface avoids the reverse-scroll sticky-layer
+   tile discard seen on mobile. The track still owns all document geometry. */
+.mind-story.story-enhanced[data-story-pinned="true"] .story-stage { position:fixed; left:0; right:0; top:0; width:100%; }
+html.story-immersive, body.story-immersive { background-color:#090b0a; overscroll-behavior-y:none; }
 .story-enhanced .story-canvas { opacity:var(--story-canvas-opacity,1); }
 .mind-story[data-story-paint="money-paper"] .story-track,
 .mind-story[data-story-paint="money-paper"] .story-stage { background:#09251b; }

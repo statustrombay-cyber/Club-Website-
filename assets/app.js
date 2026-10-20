@@ -1083,9 +1083,11 @@
 
   function start() {
     setupButterfly();
+    const warmWires=()=>requestAnimationFrame(()=>requestAnimationFrame(setupWireObjects));
+    if(document.documentElement.classList.contains('intro-cover'))window.addEventListener('mt:intro-ready',warmWires,{once:true});
+    else warmWires();
     setupSplash();
     setupBrandBand();
-    setupWireObjects();
     setupHappinessGraph();
     setupMarqueeTiming();
     setupCardDeck();
