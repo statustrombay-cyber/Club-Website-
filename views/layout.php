@@ -157,7 +157,9 @@ $nav = [
           <span class="brand-mark" id="brandMark"><img src="<?= e($logo) ?>" alt="<?= e($clubName) ?> logo" loading="lazy" decoding="async"></span>
           <span class="brand-name" id="brandName"><?= e($clubName) ?></span>
         </a>
-        <button type="button" class="menu-button" id="menuButton" aria-label="Open menu" aria-expanded="false" aria-controls="navLinks">☰</button>
+        <details class="mobile-nav-toggle">
+          <summary class="menu-button" id="menuButton" aria-label="Main navigation" aria-controls="navLinks" onkeydown="if(event.key==='Escape')this.parentElement.open=false">☰</summary>
+        </details>
         <nav class="nav-links" id="navLinks" aria-label="Main">
           <?php foreach ($nav as [$href, $label, $class]): ?>
             <?php
@@ -165,7 +167,7 @@ $nav = [
               $isAnchor = str_starts_with($href, '/#');
               $target = $isAnchor && $route === 'home' ? substr($href, 1) : $href;
             ?>
-            <a href="<?= e($target) ?>"<?= $class !== '' ? ' class="' . e($class) . '"' : '' ?>><?= e($label) ?></a>
+            <a href="<?= e($target) ?>" onclick="const menu=this.closest('#navLinks')?.previousElementSibling;if(menu?.matches('details'))menu.open=false"<?= $class !== '' ? ' class="' . e($class) . '"' : '' ?>><?= e($label) ?></a>
           <?php endforeach; ?>
           <?php if ($instagram !== ''): ?>
             <a class="nav-action" id="instagramNav" href="<?= e($instagram) ?>" target="_blank" rel="noreferrer noopener">Instagram ↗</a>

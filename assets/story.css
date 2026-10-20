@@ -21,7 +21,7 @@
 .story-type > span { display: block; }
 .story-type em { display: inline-block; margin-right: -.055em; font: 400 1.12em/.7 "Story Script", cursive; letter-spacing: -.01em; }
 .story-type-focus { margin: .19em 0 .13em; font-size: .72em; }
-.story-type .story-type-human { font-size: clamp(5rem, 23vw, 18rem); line-height: 1.06; }
+.story-type .story-type-human { font-size: clamp(3.2rem, 18vw, 18rem); line-height: 1.02; letter-spacing: -.075em; }
 .story-type-human em { margin-right: -.09em; }
 .story-research { position: relative; padding: 24px max(24px, calc((100% - 1100px) / 2)); border: 0; color: var(--ink, #403634); background: rgba(252,248,243,.93); }
 .story-research summary { cursor: pointer; font-size: .8rem; font-weight: 700; padding: 8px 0; }
@@ -84,7 +84,7 @@
 body.story-immersive .nav-wrap,
 body.story-immersive .nav-butterfly,
 body.story-immersive .to-top { opacity:0 !important; visibility:hidden !important; pointer-events:none !important; }
-.nav-wrap { transition:opacity .24s ease,visibility .24s ease; }
+.nav-wrap { transition:opacity .24s ease; }
 
 /* Stable largest-viewport backing avoids reallocation on every toolbar pixel.
    The opaque underpaint also covers a GPU upload/resize frame, never white. */
@@ -95,11 +95,12 @@ body.story-immersive .to-top { opacity:0 !important; visibility:hidden !importan
    tile discard seen on mobile. The track still owns all document geometry. */
 .mind-story.story-enhanced[data-story-pinned="true"] .story-stage { position:fixed; left:0; right:0; top:0; width:100%; }
 html.story-immersive, body.story-immersive { background-color:#090b0a; overscroll-behavior-y:none; }
+.mind-story { background-color:#090b0a !important; }
 .story-enhanced .story-canvas { opacity:var(--story-canvas-opacity,1); }
 .mind-story[data-story-paint="money-paper"] .story-track,
 .mind-story[data-story-paint="money-paper"] .story-stage { background:#09251b; }
 .mind-story[data-story-paint="herd"] .story-track,
-.mind-story[data-story-paint="herd"] .story-stage { background:transparent; }
+.mind-story[data-story-paint="herd"] .story-stage { background:#09251b; }
 .story-pending .story-track, .story-enhanced .story-track { overflow:visible; }
 .story-stage { isolation:isolate; }
 /* This underlay is the same running herd, not another decoder/video copy. */

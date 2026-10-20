@@ -93,32 +93,6 @@
     });
   }
 
-  /* ------------------------------------------------------------ mobile nav */
-  function setupMenu() {
-    const button = $('#menuButton');
-    const nav = $('#navLinks');
-    if (!button || !nav) return;
-    function setOpen(open) {
-      nav.classList.toggle('open', open);
-      button.setAttribute('aria-expanded', open ? 'true' : 'false');
-      button.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
-      button.textContent = open ? '×' : '☰';
-    }
-    const close = function () { setOpen(false); };
-    button.addEventListener('click', function () { setOpen(!nav.classList.contains('open')); });
-    $$('a', nav).forEach(function (link) { link.addEventListener('click', close); });
-    document.addEventListener('click', function (event) {
-      if (!nav.classList.contains('open')) return;
-      if (nav.contains(event.target) || button.contains(event.target)) return;
-      close();
-    });
-    document.addEventListener('keydown', function (event) {
-      if (event.key === 'Escape' && nav.classList.contains('open')) { close(); button.focus(); }
-    });
-    window.addEventListener('resize', function () { if (window.innerWidth > 1100) close(); });
-    setOpen(false);
-  }
-
   /* --------------------------------------------------- the gallery stage */
   function setupGalleryStage() {
     const stage = $('#galleryStageImage');
@@ -1093,7 +1067,6 @@
     setupCardDeck();
     setupReveal();
     setupPortraits();
-    setupMenu();
     setupHeroVideo();
     setupPhotoFrame();
     setupGalleryStage();

@@ -16585,7 +16585,7 @@ var _g = class {
     }, u2 = function() {
       if (n2.usingWebAudio) {
         try {
-          typeof AudioContext < `u` ? n2.ctx = new AudioContext() : typeof webkitAudioContext < `u` ? n2.ctx = new webkitAudioContext() : n2.usingWebAudio = false;
+          typeof window < `u` && window.__mtStoryAudioContext ? n2.ctx = window.__mtStoryAudioContext : typeof AudioContext < `u` ? n2.ctx = new AudioContext() : typeof webkitAudioContext < `u` ? n2.ctx = new webkitAudioContext() : n2.usingWebAudio = false, typeof window < `u` && n2.ctx && (window.__mtStoryAudioContext = n2.ctx);
         } catch {
           n2.usingWebAudio = false;
         }
@@ -16699,7 +16699,7 @@ var _g = class {
   })();
 }))();
 vg.Howler.autoSuspend = false, vg.Howler.autoUnlock = true;
-var yg = 22050, bg = 750, xg = 350, Sg = `/assets/reference/`, Cg = 0.4, wg = { "stage1-ambient": { src: `${Sg}assets/audio/amb_stage1.mp3`, type: `ambient`, loop: true, volume: 0.55, fadeIn: 1.5, fadeOut: 2.5, preload: true, startOn: `firstTouch` }, "stage2-ambient": { src: `${Sg}assets/audio/amb_stage2-3.mp3`, type: `ambient`, loop: true, volume: 0.55, fadeIn: 2, fadeOut: 1.5, preload: true }, "loader-drag": { src: `${Sg}assets/audio/fx_loader-drag.mp3`, type: `fx`, loop: true, volume: 0.255, fadeIn: 0.12, fadeOut: 0.25, preload: true }, "hand-entry": { src: `${Sg}assets/audio/fx_hand-entry.mp3`, type: `fx`, loop: false, volume: 0.8, fadeIn: 0, fadeOut: 0.1, preload: true }, whoosh: { src: `${Sg}assets/audio/fx_whoosh.mp3`, type: `fx`, loop: false, volume: 0.6, fadeIn: 0, fadeOut: 0.1, preload: true, muffleable: false }, click: { src: `${Sg}assets/audio/fx_click.mp3`, type: `fx`, loop: false, volume: 0.25, fadeIn: 0, fadeOut: 0.05, preload: true, muffleable: false }, loader: { src: `${Sg}assets/audio/fx_loader.mp3`, type: `fx`, loop: false, volume: 0.8, fadeIn: 0, fadeOut: 0.1, preload: true }, "xp-topup": { src: `${Sg}assets/audio/fx_xp-topup.mp3`, type: `fx`, loop: false, volume: 0.35, fadeIn: 0, fadeOut: 0.05, preload: true }, tunnel: { src: `${Sg}assets/audio/fx_tunnel.mp3`, type: `fx`, loop: false, volume: 1, fadeIn: 0, fadeOut: 0.15, preload: true }, "glass-shatter": { src: `${Sg}assets/audio/fx_glass-shatter.mp3`, type: `fx`, loop: false, volume: 0.85, fadeIn: 0, fadeOut: 0.1, preload: true }, "hold-button": { src: `${Sg}assets/audio/fx_hold-button.mp3`, type: `fx`, loop: false, volume: 0.75, fadeIn: 0.04, fadeOut: 0.08, preload: true, holdRateScale: 0.75 }, "money-burn": { src: `${Sg}assets/audio/fx_money-burn.mp3`, type: `fx`, loop: true, volume: 0.05, fadeIn: 0.05, fadeOut: 0.25, preload: false }, "stage4-ambient": { src: `${Sg}assets/audio/amb_stage4-5.mp3`, type: `ambient`, loop: true, volume: 1, fadeIn: 2, fadeOut: 1.5, preload: true }, "stage5-ambient": { src: `${Sg}assets/audio/amb_stage5.mp3`, type: `ambient`, loop: true, volume: 0.7, fadeIn: 2, fadeOut: 1.5, preload: true } }, X = new class {
+var yg = 22050, bg = 750, xg = 350, Sg = `/assets/reference/`, Cg = 0.4, wg = { "stage1-ambient": { src: `${Sg}assets/audio/amb_stage2-3.mp3`, type: `ambient`, loop: true, volume: 0.55, fadeIn: 1.5, fadeOut: 2.5, preload: true, startOn: `firstTouch` }, "stage2-ambient": { src: `${Sg}assets/audio/amb_stage2-3.mp3`, type: `ambient`, loop: true, volume: 0.55, fadeIn: 2, fadeOut: 1.5, preload: true }, "loader-drag": { src: `${Sg}assets/audio/fx_loader-drag.mp3`, type: `fx`, loop: true, volume: 0.255, fadeIn: 0.12, fadeOut: 0.25, preload: true }, "hand-entry": { src: `${Sg}assets/audio/fx_hand-entry.mp3`, type: `fx`, loop: false, volume: 0.8, fadeIn: 0, fadeOut: 0.1, preload: true }, whoosh: { src: `${Sg}assets/audio/fx_whoosh.mp3`, type: `fx`, loop: false, volume: 0.6, fadeIn: 0, fadeOut: 0.1, preload: true, muffleable: false }, click: { src: `${Sg}assets/audio/fx_click.mp3`, type: `fx`, loop: false, volume: 0.25, fadeIn: 0, fadeOut: 0.05, preload: true, muffleable: false }, loader: { src: `${Sg}assets/audio/fx_loader.mp3`, type: `fx`, loop: false, volume: 0.8, fadeIn: 0, fadeOut: 0.1, preload: true }, "xp-topup": { src: `${Sg}assets/audio/fx_xp-topup.mp3`, type: `fx`, loop: false, volume: 0.35, fadeIn: 0, fadeOut: 0.05, preload: true }, tunnel: { src: `${Sg}assets/audio/fx_tunnel.mp3`, type: `fx`, loop: false, volume: 1, fadeIn: 0, fadeOut: 0.15, preload: true }, "glass-shatter": { src: `${Sg}assets/audio/fx_glass-shatter.mp3`, type: `fx`, loop: false, volume: 0.85, fadeIn: 0, fadeOut: 0.1, preload: true }, "hold-button": { src: `${Sg}assets/audio/fx_hold-button.mp3`, type: `fx`, loop: false, volume: 0.75, fadeIn: 0.04, fadeOut: 0.08, preload: true, holdRateScale: 0.75 }, "money-burn": { src: `${Sg}assets/audio/fx_money-burn.mp3`, type: `fx`, loop: true, volume: 0.05, fadeIn: 0.05, fadeOut: 0.25, preload: false }, "stage4-ambient": { src: `${Sg}assets/audio/amb_stage2-3.mp3`, type: `ambient`, loop: true, volume: 1, fadeIn: 2, fadeOut: 1.5, preload: true }, "stage5-ambient": { src: `${Sg}assets/audio/amb_stage2-3.mp3`, type: `ambient`, loop: true, volume: 0.7, fadeIn: 2, fadeOut: 1.5, preload: true } }, X = new class {
   constructor() {
     this._howls = /* @__PURE__ */ new Map(), this._activeIds = /* @__PURE__ */ new Map(), this._stopTimers = /* @__PURE__ */ new Map(), this._enabled = true, this._armed = false, this._ctxWatch = null, this._ambientActive = /* @__PURE__ */ new Set(), this._muffleNodes = null, this._muffleAmount = 0;
   }
@@ -20021,7 +20021,7 @@ var ab = 768, ob = 1728, sb = 3686, cb = 0.1, lb = 1e3, ub = 1536, db = 0.15, fb
     this._viewportWidth = e36, this._viewportHeight = t2;
     let n2 = e36 < ab, r2 = e36 / 2, i2 = t2 / 2, a2 = Math.min(e36, t2), o2 = Math.max(n2 ? lb : ob, Math.min(n2 ? ub : sb, a2)), s2 = n2 ? db * a2 : cb * a2, c2 = n2 ? s2 * 0.5 : s2, l2 = n2 ? 124 : 116;
     this.sprites.forEach((e37) => {
-      let t3 = e37.userData, u2 = t3.config.offset == null ? null : t3.config.offset, d2 = n2 ? 0.85 : 1, f2 = t3.baseScale * o2 * d2, p2 = f2 / t3.aspect;
+      let t3 = e37.userData, u2 = t3.config.offset == null ? null : t3.config.offset, d2 = n2 ? 0.85 : 1, f2 = Math.min(t3.baseScale * o2 * d2, t3.config.maxWidth ? e36 * t3.config.maxWidth : 1e9), p2 = f2 / t3.aspect;
       e37.scale.set(f2, p2, 1);
       let m2 = t3.anchor.split(`-`), h2 = m2[0], g2 = m2[1], _2 = 0;
       g2 === `left` ? _2 = -r2 + (u2 ?? c2) + f2 / 2 : g2 === `right` && (_2 = r2 - (u2 ?? c2) - f2 / 2);
@@ -20431,7 +20431,7 @@ function Kb(e36) {
     i3 && e36.glassShardPass.setRefractionMap(i3, 0.3, 3, 3);
   }
   let s2 = null, c2 = r2.getAsset(`clubWelcomeAtlas`);
-  c2 && (e36.renderer && (c2.anisotropy = e36.renderer.capabilities.getMaxAnisotropy()), s2 = new vb(i2, [{ texture: c2, atlasUV: Nv(1092.93, 558.45, 945.23, 371.64), aspect: Pv(945.23, 371.64), baseScale: 0.4, anchor: `center-center`, appearAt: 0, disappearAt: 0.2 }]), s2.resize(e36._vw, e36._vh)), e36.components = { handsModel: a2, glassShards: o2, textLayout: s2 };
+  c2 && (e36.renderer && (c2.anisotropy = e36.renderer.capabilities.getMaxAnisotropy()), s2 = new vb(i2, [{ texture: c2, atlasUV: Nv(1092.93, 558.45, 945.23, 371.64), aspect: Pv(945.23, 371.64), baseScale: 0.4, maxWidth: 0.9, anchor: `center-center`, appearAt: 0, disappearAt: 0.2 }]), s2.resize(e36._vw, e36._vh)), e36.components = { handsModel: a2, glassShards: o2, textLayout: s2 };
 }
 var qb = new As(new Uint8Array([0, 0, 0, 255]), 1, 1, E);
 qb.needsUpdate = true;
@@ -20455,7 +20455,7 @@ function ox(e36) {
 var sx = { id: `gate1to2`, scrollVh: 50, autoScroll: true, autoScrollDuration: Jb, fastForwardPreRoll: 3, async enter(e36) {
   ix(e36), X.stop(`stage1-ambient`), e36._gateElapsed = e36._ripplePreplayed ? 3 : 0, e36._ripplePreplayed = false, e36._gateShatterStarted = false, e36._gateShatterSfxFired = false, e36._gateHandElapsed = 0, e36._gateTextElapsed = 0;
   let t2 = e36.assetLoader.getAsset(`textsAtlas`);
-  t2 && (e36.renderer && (t2.anisotropy = e36.renderer.capabilities.getMaxAnisotropy()), e36._gateTextLayout = new vb(e36.textScene, [{ texture: t2, atlasUV: Nv(257.75, 558.45, 247.06, 165.84), aspect: Pv(247.06, 165.84), baseScale: 0.15, anchor: `center-center`, appearAt: 1, disappearAt: 2 }]), e36._gateTextLayout.resize(e36._vw, e36._vh));
+  t2 && (e36.renderer && (t2.anisotropy = e36.renderer.capabilities.getMaxAnisotropy()), e36._gateTextLayout = new vb(e36.textScene, [{ texture: t2, atlasUV: Nv(257.75, 558.45, 247.06, 165.84), aspect: Pv(247.06, 165.84), baseScale: 0.15, maxWidth: 0.88, anchor: `center-center`, appearAt: 1, disappearAt: 2 }]), e36._gateTextLayout.resize(e36._vw, e36._vh));
 }, update(e36, t2, n2) {
   let r2 = Math.min(n2, 0.1);
   e36._gateElapsed = (e36._gateElapsed || 0) + r2, e36._gateTextLayout && (e36._gateTextElapsed = (e36._gateTextElapsed || 0) + r2, e36._gateTextLayout.update(e36._gateTextElapsed, n2));

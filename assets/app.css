@@ -167,6 +167,9 @@ body.is-scrolled .nav:before { background: rgba(255,250,241,.62); box-shadow: 0 
 .nav-action:hover, .solid-button:hover { background: var(--plum-deep); box-shadow: 0 12px 22px rgba(78,49,85,.26); }
 .outline-button:hover { border-color: var(--terracotta-ink); color: var(--terracotta-ink); }
 .menu-button { display: none; border: 0; background: transparent; color: var(--plum); font-size: 1.4rem; }
+.mobile-nav-toggle { display: contents; }
+.mobile-nav-toggle > summary { list-style: none; cursor: pointer; }
+.mobile-nav-toggle > summary::-webkit-details-marker { display: none; }
 
 .hero { position: relative; padding: 70px 0 120px; }
 .hero:before, .hero:after { content: ''; position: absolute; pointer-events: none; border-radius: 50%; filter: blur(1px); }
@@ -653,7 +656,7 @@ html.js .scroll-reveal.is-visible { opacity: 1; transform: none; }
   .container, .narrow { width: min(100% - 34px, 680px); }
   .nav { min-height: 70px; }
   .nav-links { display: none; position: absolute; top: 66px; left: 17px; right: 17px; padding: 18px; flex-direction: column; align-items: stretch; gap: 0; border: 1px solid var(--line); border-radius: 17px; background: var(--cream); box-shadow: var(--shadow); }
-  .nav-links.open { display: flex; }
+  .nav-links.open, .mobile-nav-toggle[open] + .nav-links { display: flex; }
   .nav-links a { padding: 10px 4px; }
   .nav-links .nav-action { margin-top: 8px; text-align: center; }
   .menu-button { display: block; }

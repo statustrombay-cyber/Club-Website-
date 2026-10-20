@@ -908,9 +908,10 @@ ok('reveals are hidden only under html.js', /html\.js \.scroll-reveal \{/.test(a
 ok('a script that never arrives cannot hide content', /classList\.remove\('js'\)/.test(layoutSource));
 ok('the bubbles keep their motion', ['bubbleDrift', 'orbitSpin', 'psiPulse', 'fadeIn', 'breathe', 'stickerPulse'].every((name) => appCss.includes('@keyframes ' + name)));
 ok('the mobile menu is styled', /\.nav-links\.open/.test(appCss) || /nav-links\.open/.test(appCss));
-ok('the menu puts itself away when the visitor taps elsewhere',
-  appJs.includes('if (nav.contains(event.target) || button.contains(event.target)) return;')
-  && appJs.includes("if (event.key === 'Escape' && nav.classList.contains('open')) { close(); button.focus(); }"));
+ok('the native mobile menu closes on navigation and Escape',
+  layoutSource.includes("this.closest('#navLinks')?.previousElementSibling")
+  && layoutSource.includes('menu.open=false')
+  && layoutSource.includes("event.key==='Escape'"));
 ok('a phone keeps the lights at a smaller cost',
   /\.drift-blob \{ filter: blur\(30px\); opacity: \.36; \}/.test(appCss)
   && /\.blob-c \{ display: none; \}/.test(appCss));
@@ -1790,26 +1791,12 @@ ok('wave artwork fades naturally rather than meeting a rectangular edge',
   cardsSource.includes('reference-ribbons.webp')
   && (mindPage.body.match(/class="blue-waves reference-ribbons"/g) || []).length === 1
   && round37Css.includes('mask-image: linear-gradient(transparent, #000 8%, #000 88%, transparent)'));
-/* Execute every menu dismissal path, including its visible icon and label. */
-{
-  const {runInNewContext}=await import('node:vm');
-  const events={},windowEvents={},links=[{handlers:{},addEventListener(n,f){this.handlers[n]=f;}}];
-  const classes=new Set();
-  const nav={classList:{contains:n=>classes.has(n),toggle(n,value){if(value)classes.add(n);else classes.delete(n);}},contains:target=>links.includes(target)};
-  const button={handlers:{},attrs:{},setAttribute(n,v){this.attrs[n]=v;},addEventListener(n,f){this.handlers[n]=f;},contains:target=>target===button,focus(){this.focused=true;}};
-  const win={innerWidth:390,addEventListener:(n,f)=>windowEvents[n]=f};
-  const begin=appJs.indexOf('function setupMenu()'),end=appJs.indexOf('function setupGalleryStage()',begin);
-  runInNewContext(appJs.slice(begin,end)+'\nsetupMenu();',{$:s=>s==='#menuButton'?button:nav,$$:()=>links,document:{addEventListener:(n,f)=>events[n]=f},window:win});
-  const closed=()=>button.textContent==='☰'&&button.attrs['aria-label']==='Open menu'&&button.attrs['aria-expanded']==='false'&&!classes.has('open');
-  const opened=()=>button.textContent==='×'&&button.attrs['aria-label']==='Close menu'&&button.attrs['aria-expanded']==='true'&&classes.has('open');
-  ok('menu initially has the hamburger and a truthful accessible label',closed());
-  button.handlers.click();ok('opening changes the hamburger into a cross',opened());
-  button.handlers.click();ok('closing with the cross restores the hamburger',closed());
-  button.handlers.click();events.click({target:{}});ok('outside dismissal restores the hamburger and label',closed());
-  button.handlers.click();events.keydown({key:'Escape'});ok('Escape closes and returns keyboard focus to the menu button',closed()&&button.focused);
-  button.handlers.click();links[0].handlers.click();ok('following a menu link restores its closed state',closed());
-  button.handlers.click();win.innerWidth=1440;windowEvents.resize();ok('desktop resize cannot leave the mobile menu open',closed());
-}
+ok('mobile navigation uses a native disclosure and closes when the Lens is followed',
+  layoutSource.includes('<details class=\"mobile-nav-toggle\">')
+  && layoutSource.includes('<summary class=\"menu-button\" id=\"menuButton\"')
+  && layoutSource.includes("this.closest('#navLinks')?.previousElementSibling")
+  && layoutSource.includes("event.key==='Escape'")
+  && round37Css.includes('.mobile-nav-toggle[open] + .nav-links { display: flex; }'));
 ok('fans are nested with photos and anchored to their top edge',
   /class="portrait-photo">\s*<span class="portrait-badge"/.test(home.body)
   && round37Css.includes('.portrait-photo > .portrait-badge { top: 0; right: 0; left: auto; transform: translate(25%, -50%)'));
@@ -2224,6 +2211,10 @@ ok('newspaper traversal completes the source depth before returning to the herd'
   fs.readFileSync(path.join(ROOT,'tools/story/reference-bridge.js'),'utf8').includes('clamp((p-.49)/.51);') && !fs.readFileSync(path.join(ROOT,'tools/story/reference-bridge.js'),'utf8').includes('rS(ctx);uS(ctx)'));
 ok('story viewport stays locked through browser-toolbar resizes with opaque underpaint',
   storySource.includes('function lockViewport()') && storySource.includes('Math.max(viewportHeight,Math.ceil(innerHeight))') && storyCss.includes('var(--story-viewport-height, 100lvh)') && storyCss.includes('background:#230706'));
+ok('the herd tail and story section keep a dark opaque underpaint at the lower edge',
+  storyCss.includes('.mind-story[data-story-paint="herd"] .story-track,') && storyCss.includes('background:#09251b;') && storyCss.includes('.mind-story { background-color:#090b0a !important; }'));
+ok('the original we-are-here title is capped to the viewport and mobile shards keep their authored depth',
+  fs.readFileSync(path.join(ROOT,'tools/story/reference-core.js'),'utf8').includes('maxWidth: 0.9') && fs.readFileSync(path.join(ROOT,'tools/story/reference-core.js'),'utf8').includes('maxWidth: 0.88') && fs.readFileSync(path.join(ROOT,'tools/story/reference-bridge.js'),'utf8').includes('ctx.components.glassShards.group.position.z=0'));
 const blankIdentityHtml=String(await php.x(["(function(){ $db=mt_db(); foreach(['department','universityName','intro','aboutHeading','aboutBody','joiningIntro'] as $key) $db['site'][$key]=''; ob_start(); require MT_ROOT . '/views/public/home.php'; return ob_get_clean(); })()"]));
 ok('older blank live identity fields still render the real department, university and joining form',
   blankIdentityHtml.includes('Department of Applied Social Science') && blankIdentityHtml.includes('Chhatrapati Shivaji Maharaj University') && blankIdentityHtml.includes('id="membershipForm"'));
