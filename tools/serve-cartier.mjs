@@ -22,6 +22,7 @@ const repo = path.resolve(here, '..');
 
 const args = process.argv.slice(2);
 const dirArg = args.find((a) => a.startsWith('--dir='));
+const repoRoot = repo;
 const rootDir = path.resolve(repo, dirArg ? dirArg.slice(6) : 'cartier');
 const portArg = args.find((a) => /^\d+$/.test(a));
 const PORT = Number(portArg || process.env.PORT || 4180);
@@ -69,6 +70,23 @@ const exists = async (p) => {
     return null;
   }
 };
+
+/**
+ * The static build lives in cartier/, while the club CMS writes uploaded
+ * photos to uploads/ and keeps site photos in assets/photos/. Serving those
+ * two trees from the repository root lets the standalone preview show real
+ * gallery photos instead of only the temporary portraits.
+ */
+const SHARED_TREES = ['/uploads/', '/assets/photos/'];
+
+function sharedTarget(repoRoot, urlPath) {
+  const decoded = decodeURIComponent(urlPath.split('?')[0].split('#')[0]);
+  if (!SHARED_TREES.some((prefix) => decoded.startsWith(prefix))) return null;
+  const full = path.join(repoRoot, path.normalize(decoded));
+  return full.startsWith(path.join(repoRoot, 'uploads')) || full.startsWith(path.join(repoRoot, 'assets'))
+    ? full
+    : null;
+}
 
 function safeJoin(root, urlPath) {
   const decoded = decodeURIComponent(urlPath.split('?')[0].split('#')[0]);
@@ -127,7 +145,15 @@ const server = http.createServer(async (req, res) => {
   if (urlPath === '/') urlPath = '/index.html';
 
   const target = safeJoin(rootDir, urlPath);
-  const stat = await exists(target);
+  let stat = await exists(target);
+
+  if (!stat) {
+    const shared = sharedTarget(repoRoot, urlPath);
+    if (shared) {
+      stat = await exists(shared);
+      if (stat && stat.isFile()) return serveFile(req, res, shared, stat);
+    }
+  }
 
   if (stat && stat.isFile()) {
     return serveFile(req, res, target, stat);

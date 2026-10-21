@@ -1,100 +1,76 @@
-# Mindfultattva — Watchmaking Experience (reconstructed)
+# Mindful Tattva — club site
 
-The **Cartier Watches & Wonders 2026** scrolling WebGL site (as captured in
-`cartierfile1–5.rar` + `cartier-part-000…012`) rebuilt as a self-contained,
-brand-free build for **Mindfultattva**.
-
-Everything the original experience needs is served locally: the Three.js engine
-bundle, the four signature watch models, the scene models, DRACO + Basis
-decoders, HDR cubemaps, lightmaps, transition masks, LUTs, audio beds, videos
-and every responsive stage image.
+The standalone club experience, built on the scrolling engine recovered from the
+Cartier Watches & Wonders capture. It is **separate from the PHP club site** in
+this repository and can be deployed on its own.
 
 ```
 cartier/
-  index.html          ← page shell + runtime config (LANG / CDN_URL) + boot screen
-  .htaccess           ← SPA rewrites, MIME types, compression (Apache hosts)
+  index.html            ← the club site: loader, hero, about, gallery, pillars, visit
+  engine.html           ← the original 3D journey, kept intact but not linked into
+                          the club page (see "About the 3D journey" below)
+  club-data.json        ← snapshot of data/site.json, used when /api/site is absent
   assets/
-    app.js            ← the experience bundle (7 MB, rebranded)
-    app.css           ← styles + self-hosted, open-licensed fonts
-    fonts/            ← Bodoni Moda (display), Inter (UI), Quicksand (condensed)
-    favicon.svg
-  webgl/
-    models/           ← mainScene(.glb), mainScene_characters, watches/{desktop,mobile}
-    textures/
-      cubemaps/       ← HDR environments (*_oct.exr + *_sh.json spherical harmonics)
-      lightmaps/      ← baked lighting, 2K desktop / 1K mobile
-      masks/          ← MSDF transition masks per watch
-      floor_MR.webp
-    libs/draco/       ← draco_decoder.wasm + draco_wasm_wrapper.js
-    libs/basis/       ← basis_transcoder.{js,wasm}
-    luts/watches/     ← .3DL colour grades per watch
-    global/           ← noise, spectrum, gradient and mask helpers
-  images/             ← podcast carousel (LD/HD + masks), stage blocks, shapes
-  audio/              ← theme beds, UI click sprites, podcast bed
-  videos/             ← film preview / film
+    club.css, club.js   ← the club site styles and behaviour
+    app.js, app.css     ← the engine bundle and its styles (used by engine.html only)
+    fonts/              ← Bodoni Moda, Inter (both SIL OFL), self-hosted
+  images/psychologists/ ← ten temporary portraits used to fill the gallery
+  webgl/, images/, audio/, videos/, club-data.json …  ← engine assets
 ```
 
 ## Run it
 
 ```bash
-npm run preview:cartier          # http://localhost:4180
-# or, directly:
-node tools/serve-cartier.mjs 4180
+npm run preview:cartier      # http://localhost:4180
 ```
 
-`tools/serve-cartier.mjs` is a dependency-free static server: correct MIME types
-for `wasm / glb / exr / ktx2 / webp`, byte-range support for the film, and
-`index.html` fallback so deep links such as `/roadster` work on refresh.
+`tools/serve-cartier.mjs` is a dependency-free static server. It also serves
+`/uploads/**` and `/assets/photos/**` from the repository root, so the photos
+the club uploads through the PHP dashboard appear in the gallery while the two
+sites are still separate.
 
-Deployment: copy the **contents of `cartier/`** to any static host (or the
-domain root on Apache — the bundled `.htaccess` handles the rewrites). No PHP,
-Node or database is needed on the server.
+Deployment: copy this folder (plus `uploads/` if you want the real gallery) to
+any static host. `.htaccess` handles MIME types, compression and caching.
 
-## What was rebuilt, and how
+## The gallery
 
-* **Source**: `cartierfile2` (engine bundle, CSS, fonts, audio, images, videos,
-  draco, LUTs), `cartierfile3` / `cartierfile4` (desktop watch + character
-  models), `cartierfile5` (cubemaps, lightmaps, masks, floor), and the
-  mobile `.glb` files that were already in this repository.
-* **AEM host page → `index.html`**: the original markup is AEM + analytics
-  (Contentsquare, DoubleClick, Medallia, UserWay, LinkedIn, TikTok …). Only the
-  part that boots the experience was kept: the `#__nuxt` mount point plus the
-  `window.__NUXT__` runtime config (`LANG`, `CDN_URL`, `baseURL`). A boot screen
-  and a no-WebGL fallback page were added.
-* **Files that were mangled by the downloader were repaired.** Several archives
-  came back UTF-8-encoded (mojibake), which breaks binary formats:
-  `crash_desktop.glb`, `roadster_desktop.glb`, `santos_desktop.glb`,
-  `mainScene_characters.glb`, `baignoire_desktop.glb` and all 13 `.exr`
-  cubemaps were byte-recovered and validated (glTF header/`JSON`+`BIN` chunks,
-  OpenEXR header/offset table).
-* **Re-generated assets** (the originals were missing from the capture, or came
-  back as Adobe's "No Content" placeholders):
-  * the responsive `images/productPages/**` sets (7 stages × 4 chapters) built
-    from the site's own artwork, at the exact aspect ratios the loader expects;
-  * podcast HD thumbnails + soft `images/podcasts/masks/*_mask.png`;
-  * 1K mobile lightmaps derived from the 2K masters;
-  * `audio/global/{mainTheme,podcastTheme,sprites}.wav` and
-    `audio/podcasts/podcast.wav` — procedurally generated, loopable beds
-    (the captured MP3s were partial fragments);
-  * the film and chapter videos (the captured MP4s were partial fragments; the
-    club's own film assets are used, so nothing 404s).
-* **Licensed fonts replaced.** The original Brilliant Cut / Fancy Cut faces are
-  proprietary and two of them were truncated downloads. The UI now uses
-  **Bodoni Moda** (display), **Inter** (interface) and **Quicksand** (condensed),
-  all SIL Open Font Licensed, self-hosted in `assets/fonts/` with their licence
-  texts.
-* **Rebranding**: the header wordmark and menu emblem are now typographic
-  “MINDFUL TATTVA” marks, brand names in the copy read *Mindful Tattva* /
-  *MINDFUL TATTVA*, external `cartier.com` / `.cn` links and the social handle
-  point nowhere (`#` / `@mindfultattva`), and analytics/streaming hosts are not
-  contacted. Engine internals (`santos-de-cartier-1.webp`, `cartier-prive.webp`,
-  collection slugs) keep their original names because the bundle and the
-  filesystem must agree.
+The wall holds ten frames, the same number the reference site gave the watches.
 
-## Notes
+1. Every **uploaded gallery photo** (added in the PHP dashboard, visible and with
+   an image) fills a frame, in order.
+2. Whatever is **still empty** is filled by a temporary psychologist portrait —
+   Freud, Jung, Adler, Klein, Bowlby, Pavlov, Skinner, Frankl, Maslow, Rogers —
+   each marked `PLACEHOLDER`, so the section never looks bare while the club has
+   no photos of its own.
+3. When the gallery fills up, the placeholders disappear completely; delete a
+   photo and a placeholder comes back in its space. The caption under the wall
+   always states the split ("3 photos · 7 placeholders").
+4. The header's `mt-club-logo.jpg` starter image is ignored: it is a CMS
+   stand-in, not an event photo.
 
-* The site needs **WebGL 2**; without it a static fallback with the chapter links
-  is shown instead of a blank screen.
-* First load is heavy (≈110 MB of models, HDRIs and stage images), exactly like
-  the original. Compression (`mod_deflate`) and long cache headers for
-  images/fonts/models are enabled in `.htaccess`.
+Testing the three states without touching the database:
+
+| URL              | Result                         |
+| ---------------- | ------------------------------ |
+| `/`              | photos from the CMS snapshot   |
+| `/?gallery=0`    | ten placeholders               |
+| `/?gallery=3`    | three photos, seven placeholders |
+| `/?gallery=10`   | ten photos, no placeholders    |
+
+## About the 3D journey
+
+The original experience is a WebGL walkthrough (`engine.html`). Its rooms, desert
+dunes, cliffs and figures are in the model, but in the captured build the camera
+sits inside an invisible box and only the floating watch products are ever lit —
+the environment stays switched off, and with the watches hidden the canvas is
+empty white. The club site therefore does not depend on it: the rooms and the
+desert can be brought back as a later layer once that scene is repaired, and
+`engine.html` is kept as the reference for that work.
+
+## Rebranding
+
+Nothing in the club pages refers to watches, jewellery, products, a shop, a
+soundtrack or the original exhibition. Copy comes from the club's own content
+in `data/site.json`. Engine-internal asset names (for example
+`santos-de-cartier-1.webp`) keep their original filenames because the bundle and
+the filesystem must agree; none of them are visible to a visitor.

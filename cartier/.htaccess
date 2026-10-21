@@ -1,4 +1,6 @@
-# Mindfultattva — static single-page build (all routes are served by index.html)
+# Mindful Tattva — club site (static). Uploaded photos live in the PHP app's
+# uploads/ folder; when this folder is deployed on its own, copy uploads/
+# alongside it so the gallery can find the photos.
 
 Options -MultiViews
 DirectoryIndex index.html
@@ -26,7 +28,8 @@ DirectoryIndex index.html
   RewriteCond %{REQUEST_FILENAME} -d
   RewriteRule ^ - [L]
 
-  # Everything else is a client-side route.
+  # Single-page anchors such as /#gallery resolve to the shell; anything else
+  # that is not a file falls back to index.html as well.
   RewriteRule ^ index.html [L]
 </IfModule>
 
