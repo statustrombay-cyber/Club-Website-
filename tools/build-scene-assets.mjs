@@ -6,6 +6,9 @@ import fs from 'node:fs';
 import crypto from 'node:crypto';
 const entries={
  engine:['assets/vendor/story-3d.js','application/javascript; charset=utf-8'],
+ 'story-ambient':['assets/reference/assets/audio/amb_stage2-3.mp3','audio/mpeg'],
+ 'story-glass':['assets/reference/assets/audio/fx_glass-shatter.mp3','audio/mpeg'],
+ 'story-burn':['assets/reference/assets/audio/fx_money-burn.mp3','audio/mpeg'],
  'basis-wasm':['assets/reference/vendor/basis/basis_transcoder.wasm','application/wasm'],
  'draco-wasm':['assets/reference/vendor/draco/draco_decoder.wasm','application/wasm'],
  'hand-atlas':['assets/reference/assets/atlases/human_hands.ktx2','image/ktx2'],

@@ -31,6 +31,11 @@ window.MTStory3D={async create(root){
  for(const asset of Object.values(loader.stageAssets).flat())if(clubAtlases[asset.key]){asset.type='texture';asset.path='assets/atlases/'+clubAtlases[asset.key];asset.mipmaps=asset.key==='certAtlas';}
  for(const asset of [...loader.mandatoryAssets,...Object.values(loader.stageAssets).flat()])if(asset.path)asset.path='/assets/reference/'+asset.path.replace(/^\//,'');
  const required=keys=>{for(const key of keys)if(!loader.getAsset(key))throw Error('Missing original scene asset: '+key);};
+ // Decode the original recordings alongside models, not after the first break.
+ const audioAssets={'stage2-ambient':'story-ambient','glass-shatter':'story-glass','money-burn':'story-burn'};
+ for(const key of Object.keys(wg)){if(!audioAssets[key])delete wg[key];else{wg[key].src='/index.php?scene-asset='+audioAssets[key];wg[key].preload=true;}}
+ X.setEnabled(false);X.preload();
+ const audioWarmup=X.decodeAll();
  // Let the hand/glass render before the later paper textures finish downloading.
  const openingReady=Promise.all([loader.loadMandatoryAssets(),loader.loadStageAssets('initial'),loader.loadStageAssets('stage2')]);
  const stage3Ready=openingReady.then(()=>loader.loadStageAssets('stage3')).then(()=>{
@@ -39,6 +44,8 @@ window.MTStory3D={async create(root){
  });
  stage3Ready.catch(()=>{}); // Observed again before this stage is entered.
  try{await openingReady;
+ // An unavailable sound must never hold the visual scene indefinitely.
+ await Promise.race([audioWarmup,new Promise(resolve=>setTimeout(resolve,650))]);
  required(['handsModel2','cameraModel2','glassShatter','allShards','humanHandsAtlas','spcAtlas','clubWelcomeAtlas']);
  }catch(error){loader.dispose();renderer.dispose();throw error;}
  loader.flushUploads();loader.disposeTextures=()=>{}; // Retained for reversible native scrolling.
@@ -51,12 +58,11 @@ window.MTStory3D={async create(root){
  const shatter=new G_(renderer,1,1);composer.addPass(shatter);shatter.enabled=false;
  const white=new As(new Uint8Array([255,255,255,255]),1,1,E);white.needsUpdate=true;
  const rig=new Wg(camera);window.addEventListener('deviceorientation',rig._handleGyro,{passive:true});
+ if(window.MTStoryInputs?.motionSample)rig._handleGyro(window.MTStoryInputs.motionSample);
  const noop=()=>{},ui=new Proxy({},{get:()=>noop});
  const ctx={scene,camera,renderer,assetLoader:loader,ui,bgPass:bg,fgPass:fg,lensBlurPass:lens,frostingPass:{enabled:false,active:false},glassShardPass:glass,shatterPass:shatter,textPass:text,textScene:text.textScene,whiteTex:white,renderPass,_composer:composer,cameraRig:rig,components:{},preWarmed:{},_xpReplaySkip:true,_frameProf:{update:0,render:0},_tempVec3:new K(),_tempQuat:new Ct(),_ethHandWorldPos:new K(),godRaysState:{rects:null},scrollManager:{setHeld:noop},_onMouseMove:e=>rig.onMouseMove(e.clientX/innerWidth*2-1,1-e.clientY/innerHeight*2)};
  // No initial loader, HUD, progress/XP, logo, cookie store, forms or original UI.
  // Only these recovered tracks are eligible, and only inside this chapter.
- for(const key of Object.keys(wg))if(!['stage1-ambient','glass-shatter','stage2-ambient','money-burn'].includes(key))delete wg[key];
- X.setEnabled(false);X.preload();
  let paperTime=0,gateAuto=false,gateClock=0,gateLastTime=null,lastRenderedProgress=null,gateMax=0,fractureSpent=false,glassOpacity=1;
  let alive=true,phase=-1,busy=false,raf=0,prevTime=0,lastDraw=0,p=0,chapterTop=Infinity,visible=false,width=0,height=0,resizeNeeded=true;
  const reduced=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -116,7 +122,7 @@ window.MTStory3D={async create(root){
  function stopAudio(){ctx._billBurnAudioIds=null;root.dataset.storyAudio='silent';X.setEnabled(false);X.stop('stage2-ambient',{fadeOut:0});X.stop('money-burn',{fadeOut:0});root.dataset.storyPlaying=JSON.stringify([...X._howls].filter(([,h])=>h.playing()).map(([k])=>k));}
  function frame(now){
   raf=0;if(!alive)return;const dt=reduced()?0:Math.min(.05,Math.max(0,(now-prevTime)/1000));prevTime=now;
-  measure();if(!visible){gateLastTime=null;stopAudio();ctx._stage2Video?.pause();return;}
+  measure();if(!visible||document.hidden){gateLastTime=null;stopAudio();ctx._stage2Video?.pause();return;}
   // Do not keep rendering a fully transparent WebGL tail over the next page.
   if(p>=1){stopAudio();ctx._stage2Video?.pause();root.style.setProperty('--reference-end','0');root.style.setProperty('--burn-title','0');root.dataset.storyPhase='herd';root.dataset.storyProgress='1.0000';lastRenderedProgress=p;return;}
   if(software&&now-lastDraw<48&&!resizeNeeded){schedule();return;}lastDraw=now;
@@ -124,7 +130,7 @@ window.MTStory3D={async create(root){
   const next=p<.18?0:p<.49?1:2;
   if(next!==phase){change(next).catch(fail);return;}
   if(busy){schedule();return;}
-  X.setEnabled(true);root.dataset.storyAudio='chapter-only';if((phase>0||ctx._gateShatterSfxFired)&&!fractureSpent&&!X._ambientActive.has('stage2-ambient'))X.play('stage2-ambient');if(ctx._stage2Video){if(reduced())ctx._stage2Video.pause();else Ov(ctx._stage2Video);}
+  X.setEnabled(true);root.dataset.storyAudio=X.isUnlocked()?'chapter-only':'awaiting-gesture';if((phase>0||ctx._gateShatterSfxFired)&&!fractureSpent&&!X._ambientActive.has('stage2-ambient'))X.play('stage2-ambient');if(ctx._stage2Video){if(reduced())ctx._stage2Video.pause();else Ov(ctx._stage2Video);}
   const local=phase===0?clamp(p/.18):phase===1?clamp((p-.18)/.31):clamp((p-.49)/.51);
   if(phase===0){
    // The supplied gate is a three-second automatic fracture, not a frozen
@@ -140,8 +146,9 @@ window.MTStory3D={async create(root){
   if(ctx.components.glassShards){
    ctx.components.glassShards._reducedMotion=reduced();
    // Fit portrait screens without changing desktop or the paper camera path.
-   // Keep the recovered fragment depth exactly as authored on every viewport.
-   ctx.components.glassShards.group.position.z=0;
+   // Restore the last portrait fit: real tilt must not magnify the edge facts
+   // off a narrow screen. Desktop retains its authored viewing distance.
+   ctx.components.glassShards.group.position.z=width<768?-Math.max(0,.55*(height/width-1.2)):0;
   }
   if(phase===0)ctx.components.textLayout?.update?.(0,dt);
   placeWelcome();
@@ -159,22 +166,23 @@ window.MTStory3D={async create(root){
   loader.chunkedUploader?.tick();text.enabled=text.textScene.visible;
   lastRenderedProgress=p;const renderCamera=camera.position.toArray();composer.render(dt);rig.restore();
   root.dataset.storyProgress=p.toFixed(4);
-  root.dataset.storyNative=JSON.stringify({phase,gateAuto,gateClock,fractureSpent,glassOpacity,glassEnabled:glass.enabled,visibleFactOverlays:glass.enabled&&shards?.group.visible?glass._overlayProxies.filter(({proxy})=>proxy.visible&&proxy.material.opacity>0).length:0,degreeShred:ctx.components.certMaterials?.[0]?.uniforms.uShredProgress.value,degreeOpacity:ctx.components.certMaterials?.[0]?.uniforms.uOpacity.value,editorialOpacity:ctx.components.shredMaterials?.[0]?.uniforms.uOpacity.value,gateMax,breakCount:ctx._storyBreakCount||0,renderCamera,shatterEnabled:shatter.enabled,shatterTime:shatter._actions[0]?.time,handTime:ctx.components.handsModel?._scrubProgress,hand:!!ctx.components.handsModel,camera:camera.position.toArray(),paperProgress:phase===2?local:0,paperClearance:phase===2?camera.position.z-Math.max(...[...(ctx.components.certMeshes||[]),...(ctx.components.shredMeshes||[])].map(m=>m.position.z)):null,papers:ctx.components.certMeshes?.length||0,shreds:ctx.components.shredMeshes?.length||0,gyro:rig.gyroActive,portalVisible:!!ctx.components.portalCircle?.visible,sourceTextVisible:text.textScene.visible,welcomeVisible:text.textScene.visible,welcomeText:text.textScene.visible?'we are here':'',welcomeWidth:ctx.components.textLayout?.sprites?.[0]?.scale.x||0,welcomeX:ctx.components.textLayout?.sprites?.[0]?.position.x||0,welcomeY:ctx.components.textLayout?.sprites?.[0]?.position.y||0,pixelRatio:renderer.getPixelRatio(),shardDepth:shards?.group.position.z,audioEnabled:X.isEnabled(),playing:[...X._howls].filter(([,h])=>h.playing()).map(([k])=>k),glassY:ctx.components.glassShards?.shards[0]?.position.y});
+  root.dataset.storyNative=JSON.stringify({phase,gateAuto,gateClock,fractureSpent,glassOpacity,glassEnabled:glass.enabled,visibleFactOverlays:glass.enabled&&shards?.group.visible?glass._overlayProxies.filter(({proxy})=>proxy.visible&&proxy.material.opacity>0).length:0,degreeShred:ctx.components.certMaterials?.[0]?.uniforms.uShredProgress.value,degreeOpacity:ctx.components.certMaterials?.[0]?.uniforms.uOpacity.value,editorialOpacity:ctx.components.shredMaterials?.[0]?.uniforms.uOpacity.value,gateMax,breakCount:ctx._storyBreakCount||0,renderCamera,shatterEnabled:shatter.enabled,shatterTime:shatter._actions[0]?.time,handTime:ctx.components.handsModel?._scrubProgress,hand:!!ctx.components.handsModel,camera:camera.position.toArray(),paperProgress:phase===2?local:0,paperClearance:phase===2?camera.position.z-Math.max(...[...(ctx.components.certMeshes||[]),...(ctx.components.shredMeshes||[])].map(m=>m.position.z)):null,papers:ctx.components.certMeshes?.length||0,shreds:ctx.components.shredMeshes?.length||0,gyro:rig.gyroActive,gyroPermission:window.MTStoryInputs?.motionState||'waiting',audioContext:vg.Howler.ctx?.state||'unavailable',audioUnlocked:X.isUnlocked(),portalVisible:!!ctx.components.portalCircle?.visible,sourceTextVisible:text.textScene.visible,welcomeVisible:text.textScene.visible,welcomeText:text.textScene.visible?'we are here':'',welcomeWidth:ctx.components.textLayout?.sprites?.[0]?.scale.x||0,welcomeX:ctx.components.textLayout?.sprites?.[0]?.position.x||0,welcomeY:ctx.components.textLayout?.sprites?.[0]?.position.y||0,pixelRatio:renderer.getPixelRatio(),shardDepth:shards?.group.position.z,audioEnabled:X.isEnabled(),playing:[...X._howls].filter(([,h])=>h.playing()).map(([k])=>k),glassY:ctx.components.glassShards?.shards[0]?.position.y});
   root.style.setProperty('--burn-title',String(phase===2?clamp((local-.28)/.04)*(1-clamp((local-.38)/.05)):0));
   root.style.setProperty('--burn-title-scale',String(1+(phase===2?clamp((local-.28)/.15)*.12:0)));
   root.style.setProperty('--reference-end',String(clamp((p-.90)/.04)*(1-clamp((p-.97)/.03))));
   root.dataset.storyPhase=p>.975?'herd':['hand-glass','glass-facts','money-paper'][phase];
   schedule();
  }
- function gesture(e){if(!e.isTrusted)return;X.unlockNow();if(!rig._isDesktop&&!ctx._gyroPermissionAttempted){ctx._gyroPermissionAttempted=true;rig.enableGyro().catch(()=>{});}}
+ function gesture(e){if(e.isTrusted)X.unlockNow();}
  function pointer(e){if(visible)rig.onMouseMove(e.clientX/innerWidth*2-1,1-e.clientY/innerHeight*2);}
  function scroll(){schedule();}
- function visibility(){if(document.hidden){gateLastTime=null;stopAudio();if(raf)cancelAnimationFrame(raf);raf=0;}else schedule();}
+ function visibility(){rig.recenterGyro();if(document.hidden){gateLastTime=null;stopAudio();if(raf)cancelAnimationFrame(raf);raf=0;}else schedule();}
  function contextLost(e){e.preventDefault();fail(Error('WebGL context lost'));}
  function fail(error){console.error('Recovered chapter:',error);dispose();root.dispatchEvent(new CustomEvent('mt:story-fallback',{detail:{error}}));}
  function dispose(){if(!alive)return;alive=false;if(raf)cancelAnimationFrame(raf);stopAudio();rig.dispose();window.removeEventListener('deviceorientation',rig._handleGyro);window.removeEventListener('scroll',scroll);window.removeEventListener('resize',resize);window.visualViewport?.removeEventListener('resize',resize);window.removeEventListener('pointermove',pointer);window.removeEventListener('mousemove',ctx._onMouseMove);window.removeEventListener('pointerdown',gesture,true);window.removeEventListener('touchend',gesture,true);window.removeEventListener('keydown',gesture,true);document.removeEventListener('visibilitychange',visibility);ctx._stage2Video&&Av(ctx._stage2Video);ctx._stage2VideoPrefetch&&Av(ctx._stage2VideoPrefetch);composer.dispose();renderer.dispose();nativeDispose();X.stopAll();for(const howl of X._howls.values())howl.unload();X._howls.clear();if(X._ctxWatch&&vg.Howler.ctx)vg.Howler.ctx.removeEventListener('statechange',X._ctxWatch);X._ctxWatch=null;X._armed=false;X.suspendContext();canvas.removeEventListener('webglcontextlost',contextLost);canvas.style.removeProperty('opacity');root.classList.remove('story-reference');}
- // A prior grant can be reused without opening a new permission prompt. On
- // browsers that require a fresh grant, passive sensor events simply stay absent.
+ // Silent warmup can arm the mixer, but only a real page gesture can unlock
+ // browser audio or obtain native motion consent. The early broker survives
+ // slow downloads; no custom Sound/Tilt/Gyro controls are installed.
  X.unlockNow();
  window.addEventListener('pointerdown',gesture,true);window.addEventListener('touchend',gesture,true);window.addEventListener('keydown',gesture,true);
  window.addEventListener('pointermove',pointer,{passive:true});window.addEventListener('scroll',scroll,{passive:true});window.addEventListener('resize',resize,{passive:true});window.visualViewport?.addEventListener('resize',resize,{passive:true});document.addEventListener('visibilitychange',visibility);

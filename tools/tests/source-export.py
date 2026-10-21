@@ -36,7 +36,7 @@ with tarfile.open(fileobj=io.BytesIO(archive)) as tar:
         assert member.size <= limit, f'Exceeds conservative InfinityFree file limit: {name}'
     manifest = tar.extractfile(members['app/scene-manifest.php']).read().decode()
     entries = re.findall(r"'([a-z-]+)'=>\['path'=>'([^']+)'.*?'bytes'=>(\d+),'sha256'=>'([a-f0-9]+)','chunks'=>\[([^]]+)\]", manifest)
-    assert len(entries) == 12
+    assert len(entries) == 15
     for key, original, size, digest, chunk_list in entries:
         data = bytearray()
         for filename in re.findall(r"'([^']+)'", chunk_list):
@@ -48,5 +48,5 @@ with tarfile.open(fileobj=io.BytesIO(archive)) as tar:
         assert hashlib.sha256(data).hexdigest() == digest, f'Wrong exported hash: {key}'
         assert bytes(data) == tar.extractfile(members[original]).read(), f'Export mismatch: {key}'
     print(f'GitHub-equivalent export verified in memory: {len(members)} files, '
-          '12 exact scene payloads, all horse clips, no nested ZIP, no live data/password '
+          '15 exact scene payloads, all horse clips, no nested ZIP, no live data/password '
           'overwrite, no development tooling, all files within host size limits.')

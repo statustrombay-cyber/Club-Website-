@@ -16117,7 +16117,9 @@ var _g = class {
     }, _unlockAudio: function() {
       var e37 = this || n2;
       if (!(e37._audioUnlocked || !e37.ctx)) {
-        e37._audioUnlocked = false, e37.autoUnlock = false, !e37._mobileUnloaded && e37.ctx.sampleRate !== 44100 && (e37._mobileUnloaded = true, e37.unload()), e37._scratchBuffer = e37.ctx.createBuffer(1, 1, 22050);
+        // Modern devices legitimately use 48 kHz. Never close the context that
+        // the page already unlocked in a real gesture just to force 44.1 kHz.
+        e37._audioUnlocked = false, e37.autoUnlock = false, e37._mobileUnloaded = true, e37._scratchBuffer = e37.ctx.createBuffer(1, 1, 22050);
         var t3 = function(n3) {
           for (; e37._html5AudioPool.length < e37.html5PoolSize; ) try {
             var r3 = new Audio();
@@ -16585,7 +16587,7 @@ var _g = class {
     }, u2 = function() {
       if (n2.usingWebAudio) {
         try {
-          typeof window < `u` && window.__mtStoryAudioContext ? n2.ctx = window.__mtStoryAudioContext : typeof AudioContext < `u` ? n2.ctx = new AudioContext() : typeof webkitAudioContext < `u` ? n2.ctx = new webkitAudioContext() : n2.usingWebAudio = false, typeof window < `u` && n2.ctx && (window.__mtStoryAudioContext = n2.ctx);
+          typeof window < `u` && window.__mtStoryAudioContext && window.__mtStoryAudioContext.state !== `closed` ? n2.ctx = window.__mtStoryAudioContext : typeof AudioContext < `u` ? n2.ctx = new AudioContext() : typeof webkitAudioContext < `u` ? n2.ctx = new webkitAudioContext() : n2.usingWebAudio = false, typeof window < `u` && n2.ctx && (window.__mtStoryAudioContext = n2.ctx);
         } catch {
           n2.usingWebAudio = false;
         }
@@ -16699,7 +16701,7 @@ var _g = class {
   })();
 }))();
 vg.Howler.autoSuspend = false, vg.Howler.autoUnlock = true;
-var yg = 22050, bg = 750, xg = 350, Sg = `/assets/reference/`, Cg = 0.4, wg = { "stage1-ambient": { src: `${Sg}assets/audio/amb_stage2-3.mp3`, type: `ambient`, loop: true, volume: 0.55, fadeIn: 1.5, fadeOut: 2.5, preload: true, startOn: `firstTouch` }, "stage2-ambient": { src: `${Sg}assets/audio/amb_stage2-3.mp3`, type: `ambient`, loop: true, volume: 0.55, fadeIn: 2, fadeOut: 1.5, preload: true }, "loader-drag": { src: `${Sg}assets/audio/fx_loader-drag.mp3`, type: `fx`, loop: true, volume: 0.255, fadeIn: 0.12, fadeOut: 0.25, preload: true }, "hand-entry": { src: `${Sg}assets/audio/fx_hand-entry.mp3`, type: `fx`, loop: false, volume: 0.8, fadeIn: 0, fadeOut: 0.1, preload: true }, whoosh: { src: `${Sg}assets/audio/fx_whoosh.mp3`, type: `fx`, loop: false, volume: 0.6, fadeIn: 0, fadeOut: 0.1, preload: true, muffleable: false }, click: { src: `${Sg}assets/audio/fx_click.mp3`, type: `fx`, loop: false, volume: 0.25, fadeIn: 0, fadeOut: 0.05, preload: true, muffleable: false }, loader: { src: `${Sg}assets/audio/fx_loader.mp3`, type: `fx`, loop: false, volume: 0.8, fadeIn: 0, fadeOut: 0.1, preload: true }, "xp-topup": { src: `${Sg}assets/audio/fx_xp-topup.mp3`, type: `fx`, loop: false, volume: 0.35, fadeIn: 0, fadeOut: 0.05, preload: true }, tunnel: { src: `${Sg}assets/audio/fx_tunnel.mp3`, type: `fx`, loop: false, volume: 1, fadeIn: 0, fadeOut: 0.15, preload: true }, "glass-shatter": { src: `${Sg}assets/audio/fx_glass-shatter.mp3`, type: `fx`, loop: false, volume: 0.85, fadeIn: 0, fadeOut: 0.1, preload: true }, "hold-button": { src: `${Sg}assets/audio/fx_hold-button.mp3`, type: `fx`, loop: false, volume: 0.75, fadeIn: 0.04, fadeOut: 0.08, preload: true, holdRateScale: 0.75 }, "money-burn": { src: `${Sg}assets/audio/fx_money-burn.mp3`, type: `fx`, loop: true, volume: 0.05, fadeIn: 0.05, fadeOut: 0.25, preload: false }, "stage4-ambient": { src: `${Sg}assets/audio/amb_stage2-3.mp3`, type: `ambient`, loop: true, volume: 1, fadeIn: 2, fadeOut: 1.5, preload: true }, "stage5-ambient": { src: `${Sg}assets/audio/amb_stage2-3.mp3`, type: `ambient`, loop: true, volume: 0.7, fadeIn: 2, fadeOut: 1.5, preload: true } }, X = new class {
+var yg = 22050, bg = 750, xg = 350, Sg = `/assets/reference/`, Cg = 0.4, wg = { "stage1-ambient": { src: `${Sg}assets/audio/amb_stage1.mp3`, type: `ambient`, loop: true, volume: 0.55, fadeIn: 1.5, fadeOut: 2.5, preload: true, startOn: `firstTouch` }, "stage2-ambient": { src: `${Sg}assets/audio/amb_stage2-3.mp3`, type: `ambient`, loop: true, volume: 0.55, fadeIn: 2, fadeOut: 1.5, preload: true }, "loader-drag": { src: `${Sg}assets/audio/fx_loader-drag.mp3`, type: `fx`, loop: true, volume: 0.255, fadeIn: 0.12, fadeOut: 0.25, preload: true }, "hand-entry": { src: `${Sg}assets/audio/fx_hand-entry.mp3`, type: `fx`, loop: false, volume: 0.8, fadeIn: 0, fadeOut: 0.1, preload: true }, whoosh: { src: `${Sg}assets/audio/fx_whoosh.mp3`, type: `fx`, loop: false, volume: 0.6, fadeIn: 0, fadeOut: 0.1, preload: true, muffleable: false }, click: { src: `${Sg}assets/audio/fx_click.mp3`, type: `fx`, loop: false, volume: 0.25, fadeIn: 0, fadeOut: 0.05, preload: true, muffleable: false }, loader: { src: `${Sg}assets/audio/fx_loader.mp3`, type: `fx`, loop: false, volume: 0.8, fadeIn: 0, fadeOut: 0.1, preload: true }, "xp-topup": { src: `${Sg}assets/audio/fx_xp-topup.mp3`, type: `fx`, loop: false, volume: 0.35, fadeIn: 0, fadeOut: 0.05, preload: true }, tunnel: { src: `${Sg}assets/audio/fx_tunnel.mp3`, type: `fx`, loop: false, volume: 1, fadeIn: 0, fadeOut: 0.15, preload: true }, "glass-shatter": { src: `${Sg}assets/audio/fx_glass-shatter.mp3`, type: `fx`, loop: false, volume: 0.85, fadeIn: 0, fadeOut: 0.1, preload: true }, "hold-button": { src: `${Sg}assets/audio/fx_hold-button.mp3`, type: `fx`, loop: false, volume: 0.75, fadeIn: 0.04, fadeOut: 0.08, preload: true, holdRateScale: 0.75 }, "money-burn": { src: `${Sg}assets/audio/fx_money-burn.mp3`, type: `fx`, loop: true, volume: 0.05, fadeIn: 0.05, fadeOut: 0.25, preload: false }, "stage4-ambient": { src: `${Sg}assets/audio/amb_stage4-5.mp3`, type: `ambient`, loop: true, volume: 1, fadeIn: 2, fadeOut: 1.5, preload: true }, "stage5-ambient": { src: `${Sg}assets/audio/amb_stage5.mp3`, type: `ambient`, loop: true, volume: 0.7, fadeIn: 2, fadeOut: 1.5, preload: true } }, X = new class {
   constructor() {
     this._howls = /* @__PURE__ */ new Map(), this._activeIds = /* @__PURE__ */ new Map(), this._stopTimers = /* @__PURE__ */ new Map(), this._enabled = true, this._armed = false, this._ctxWatch = null, this._ambientActive = /* @__PURE__ */ new Set(), this._muffleNodes = null, this._muffleAmount = 0;
   }
@@ -16943,7 +16945,8 @@ var yg = 22050, bg = 750, xg = 350, Sg = `/assets/reference/`, Cg = 0.4, wg = { 
     let n2 = wg[e36];
     if (!n2) return;
     let r2 = this._get(e36);
-    if (!r2 || n2.type === `ambient` && !this.isUnlocked()) return;
+    // A missed one-shot is not queued to erupt after leaving/reversing the scene.
+    if (!r2 || !this.isUnlocked() || n2.type !== `ambient` && r2.state() !== `loaded`) return;
     let i2 = this._stopTimers.get(e36);
     i2 && (clearTimeout(i2), this._stopTimers.delete(e36));
     let a2 = (t2.fadeIn ?? n2.fadeIn ?? 0) * 1e3 | 0, o2 = t2.volume ?? n2.volume ?? 1, s2 = this._activeIds.get(e36), c2 = s2 != null && r2.playing(s2);
@@ -16979,7 +16982,7 @@ var yg = 22050, bg = 750, xg = 350, Sg = `/assets/reference/`, Cg = 0.4, wg = { 
     let t2 = this._howls.get(e36);
     if (t2) return t2;
     let n2 = wg[e36];
-    return n2 ? (t2 = new vg.Howl({ src: [n2.src], loop: !!n2.loop, volume: 0, html5: false, preload: true }), t2.on(`play`, (t3) => this._routeSound(e36, t3)), this._howls.set(e36, t2), t2) : null;
+    return n2 ? (t2 = new vg.Howl({ src: [n2.src], format: [`mp3`], loop: !!n2.loop, volume: 0, html5: false, preload: true }), t2.on(`play`, (t3) => this._routeSound(e36, t3)), this._howls.set(e36, t2), t2) : null;
   }
 }(), Tg = class {
   constructor(e36) {
@@ -17354,6 +17357,7 @@ var yg = 22050, bg = 750, xg = 350, Sg = `/assets/reference/`, Cg = 0.4, wg = { 
       if (!Number.isFinite(e37.gamma) || !Number.isFinite(e37.beta)) return;
       this._gyroActive || (this._gyroActive = true, console.log(`[CameraRig] First deviceorientation event received`, { beta: e37.beta, gamma: e37.gamma, absolute: e37.absolute }));
       let t2 = e37.beta, n2 = e37.gamma, r2 = screen.orientation?.angle ?? (typeof window.orientation == `number` ? window.orientation : 0);
+      if (this._gyroScreenAngle !== r2) { this._gyroScreenAngle = r2; this.recenterGyro(); }
       if (r2 === 90 ? (t2 = e37.gamma, n2 = -e37.beta) : r2 === 270 ? (t2 = -e37.gamma, n2 = e37.beta) : r2 === 180 && (t2 = -e37.beta, n2 = -e37.gamma), this._gyroBetaRef === null) {
         this._gyroBetaRef = t2, this._gyroGammaRef = n2;
         return;
@@ -17389,24 +17393,14 @@ var yg = 22050, bg = 750, xg = 350, Sg = `/assets/reference/`, Cg = 0.4, wg = { 
   get inputY() {
     return this._inputY;
   }
-  // Never requests permission. Existing browser grants deliver passive events.
+  // Consent is handled synchronously by the early page gesture broker, not
+  // by a late shader/model callback. Existing grants deliver passive events.
   async enableGyro() {
-    let request = window.DeviceOrientationEvent && window.DeviceOrientationEvent.requestPermission;
-    if (typeof request !== `function`) {
-      this._gyroAttempt = `granted`;
-      return true;
-    }
-    if (this._gyroAttempt === `granted`) return true;
-    if (this._gyroAttempt === `requesting`) return false;
-    this._gyroAttempt = `requesting`;
-    try {
-      let result = await request.call(window.DeviceOrientationEvent);
-      this._gyroAttempt = result === `granted` ? `granted` : `denied`;
-      return this._gyroAttempt === `granted`;
-    } catch {
-      this._gyroAttempt = `denied`;
-      return false;
-    }
+    return this._gyroActive || [`granted`, `active`, `listening`].includes(window.MTStoryInputs?.motionState);
+  }
+  recenterGyro() {
+    this._gyroBetaRef = null, this._gyroGammaRef = null;
+    this._inputX = this._inputY = this._currentX = this._currentY = 0;
   }
   setEnabled(e36) {
     this.enabled = e36, e36 || (this._inputX = 0, this._inputY = 0, this._currentX = 0, this._currentY = 0);

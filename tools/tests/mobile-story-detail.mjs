@@ -13,7 +13,7 @@ try{
  async function jump(page,progress){await page.locator('.story-track').evaluate((e,v)=>scrollTo({top:e.getBoundingClientRect().top+scrollY+(e.offsetHeight-e.querySelector('.story-stage').clientHeight)*v,behavior:'instant'}),progress);await page.waitForFunction(v=>Math.abs(+document.querySelector('.mind-story').dataset.storyProgress-v)<.005,progress,{timeout:30000});return page.locator('.mind-story').evaluate(e=>JSON.parse(e.dataset.storyNative));}
  await jump(p,.01);await p.locator('.story-stage').click({position:{x:15,y:15}});
  await p.waitForFunction(()=>window.__gyroPermissionCalls===1&&window.Howler?.ctx?.state==='running'&&JSON.parse(document.querySelector('.mind-story').dataset.storyNative||'{}').playing?.includes('stage2-ambient'),null,{timeout:10000});
- assert.ok(await p.evaluate(()=>window.Howler._howls.some(h=>h._src.includes('amb_stage2-3.mp3')&&h._state==='loaded'&&h.playing())),'first-touch story ambience is decoded and playing');
+ assert.ok(await p.evaluate(()=>window.Howler._howls.some(h=>h._src.includes('scene-asset=story-ambient')&&h._state==='loaded'&&h.playing())),'first-touch story ambience is decoded and playing');
  await p.evaluate(()=>{const e=new Event('deviceorientation');Object.defineProperties(e,{beta:{value:0},gamma:{value:0},absolute:{value:true}});dispatchEvent(e);});
  await p.waitForFunction(()=>JSON.parse(document.querySelector('.mind-story').dataset.storyNative||'{}').gyro===true,null,{timeout:5000});
  const cameraBeforeSensor=await p.locator('.mind-story').evaluate(e=>JSON.parse(e.dataset.storyNative).renderCamera);
@@ -22,14 +22,14 @@ try{
  const cameraAfterSensor=await p.locator('.mind-story').evaluate(e=>JSON.parse(e.dataset.storyNative).renderCamera);
  assert.ok(cameraAfterSensor.some((value,index)=>Math.abs(value-cameraBeforeSensor[index])>.001),'a permitted orientation input moves the scene camera');
  const first=await jump(p,.19);assert.ok(first.welcomeVisible&&first.welcomeText==='we are here');assert.ok(first.welcomeWidth<=390*.78+1,'the mobile title stays within the centered safe width');assert.equal(first.welcomeX,0,'the mobile title remains centered');assert.ok(first.welcomeY>844*.65,'the mobile title is positioned above the hand');if(dest)await p.screenshot({path:dest+'/mobile-welcome.png'});
- const early=await jump(p,.25),later=await jump(p,.4);assert.ok(later.glassY>early.glassY,'the original shards travel UP with forward scrolling');assert.equal(later.shardDepth,0,'mobile glass stays at the previous closer authored distance');
+ const early=await jump(p,.25),later=await jump(p,.4);assert.ok(later.glassY>early.glassY,'the original shards travel UP with forward scrolling');assert.ok(later.shardDepth<0,'portrait glass preserves a safe reading distance with tilt');
  assert.equal(await p.locator('.story-stage').evaluate(e=>getComputedStyle(e).position),'fixed');
  const reverse=await jump(p,.3);assert.equal(reverse.breakCount,later.breakCount);assert.ok(reverse.glassEnabled&&reverse.visibleFactOverlays===6&&!reverse.shatterEnabled);
  // A real trusted tap must unlock the same context used by the deferred engine,
  // then the first-touch story bed should actually play on mobile.
  await jump(p,.05);await p.locator('.story-stage').click({position:{x:15,y:15}});
  await p.waitForFunction(()=>window.Howler?.ctx?.state==='running'&&JSON.parse(document.querySelector('.mind-story').dataset.storyNative||'{}').playing?.includes('stage2-ambient'),null,{timeout:12000});
- assert.ok(await p.evaluate(()=>window.Howler._howls.some(h=>h._src.includes('amb_stage2-3.mp3')&&h._state==='loaded'&&h.playing())),'the restored ambient file is decoded and playing');
+ assert.ok(await p.evaluate(()=>window.Howler._howls.some(h=>h._src.includes('scene-asset=story-ambient')&&h._state==='loaded'&&h.playing())),'the restored ambient file is decoded and playing');
  assert.equal(await p.evaluate(()=>window.Howler.ctx===window.__mtStoryAudioContext),true,'the page and story share their unlocked audio context');
  const paperState=await jump(p,.68);assert.ok(paperState.papers>0&&paperState.shreds>0,'the provided magazine pages and paper shreds are rendered in the later chapter');
  const paperCameraBefore=paperState.renderCamera;

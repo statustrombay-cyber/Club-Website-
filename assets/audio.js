@@ -1,31 +1,74 @@
-/* The story engine is loaded lazily after the intro. Resume one shared Web
-   AudioContext directly inside a real gesture so mobile browsers never leave
-   the chapter silent; this installs no controls and emits no sound by itself. */
+/* Capture real chapter gestures BEFORE the deferred engine loads. No controls,
+   background music, synthetic activation, or stored permission preferences. */
 (function(){
  'use strict';
- let unlocking=false;
- function unlock(event){
-  if(!event.isTrusted||unlocking)return;
-  const Ctx=window.AudioContext||window.webkitAudioContext;
-  if(!Ctx)return;
-  let ctx=window.__mtStoryAudioContext||window.Howler?.ctx;
-  try{
-   if(!ctx){ctx=new Ctx();window.__mtStoryAudioContext=ctx;}
-   if(ctx.state==='suspended'){
-    unlocking=true;
-    try{
-     const buffer=ctx.createBuffer(1,1,22050),source=ctx.createBufferSource();
-     source.buffer=buffer;source.connect(ctx.destination);source.start(0);
-    }catch(_){/* resume below is still useful on browsers without silent unlock */}
-    const resumed=ctx.resume?.();
-    if(resumed&&typeof resumed.then==='function')resumed.catch(()=>{}).finally(()=>{unlocking=false;});
-    else unlocking=false;
-   }
-   const howler=window.Howler;
-   if(howler&&howler.ctx===ctx&&typeof howler._autoResume==='function')howler._autoResume();
-  }catch(_){unlocking=false;}
+ if(window.MTStoryInputs)return;
+ const inputs=window.MTStoryInputs={motionState:'waiting',motionSample:null,motionError:'',audioError:''};
+ let motionRequest=null,lastTouchEnd=-Infinity;
+ function currentContext(){
+  const mixer=window.Howler?.ctx,shared=window.__mtStoryAudioContext;
+  return mixer&&mixer.state!=='closed'?mixer:shared&&shared.state!=='closed'?shared:null;
  }
- window.addEventListener('pointerdown',unlock,{capture:true,passive:true});
- window.addEventListener('touchend',unlock,{capture:true,passive:true});
- window.addEventListener('keydown',unlock,{capture:true});
+ function unlockAudio(){
+  const Ctx=window.AudioContext||window.webkitAudioContext;if(!Ctx)return;
+  try{
+   const ctx=currentContext()||new Ctx();window.__mtStoryAudioContext=ctx;
+   if(ctx.state!=='running'){
+    // A resume issued by a non-activating touch can stay pending indefinitely.
+    // Never let that promise suppress the next eligible real gesture.
+    // The one silent sample is an unlock, never a recording or site-wide bed.
+    try{const source=ctx.createBufferSource();source.buffer=ctx.createBuffer(1,1,22050);source.connect(ctx.destination);source.onended=()=>source.disconnect();source.start(0);}catch(_){}
+    const result=ctx.resume();
+    Promise.resolve(result).then(()=>{inputs.audioError='';},error=>{inputs.audioError=error?.name||'resume failed';});
+   }
+   const mixer=window.Howler;
+   if(mixer?.ctx===ctx&&typeof mixer._autoResume==='function')mixer._autoResume();
+  }catch(error){inputs.audioError=error?.name||'Audio unavailable';}
+ }
+ function storyVisible(){
+  const track=document.querySelector('.story-track');if(!track||document.hidden)return false;
+  const rect=track.getBoundingClientRect();return rect.top<innerHeight&&rect.bottom>0;
+ }
+ function requestMotion(){
+  if(motionRequest||['granted','active','denied','blocked','unavailable','insecure'].includes(inputs.motionState))return;
+  if(!window.isSecureContext){inputs.motionState='insecure';return;}
+  const Orientation=window.DeviceOrientationEvent;
+  if(!Orientation){inputs.motionState='unavailable';return;}
+  const policy=document.permissionsPolicy||document.featurePolicy;
+  if(policy&&['accelerometer','gyroscope'].some(name=>!policy.allowsFeature(name))){inputs.motionState='blocked';return;}
+  if(typeof Orientation.requestPermission!=='function'){inputs.motionState='listening';return;}
+  inputs.motionState='requesting';
+  try{
+   // Synchronous invocation inside touchend/click/activation-key, never after
+   // models, promises or shader compilation have consumed the user gesture.
+   const result=Orientation.requestPermission();
+   motionRequest=Promise.resolve(result).then(permission=>{
+    inputs.motionState=permission==='granted'?(inputs.motionSample?'active':'granted'):'denied';inputs.motionError='';
+   },error=>{
+    // NotAllowedError can mean a non-activating scroll/touch, NOT a refusal.
+    // Allow a later real tap to retry; an explicit 'denied' is never re-prompted.
+    inputs.motionState='waiting';inputs.motionError=error?.name||'Motion unavailable';
+   }).finally(()=>{motionRequest=null;});
+  }catch(error){inputs.motionState='waiting';inputs.motionError=error?.name||'Motion unavailable';}
+ }
+ function activate(event){
+  if(!event.isTrusted)return;
+  unlockAudio();
+  if(event.type==='touchend')lastTouchEnd=performance.now();
+  // A touch also emits a compatibility click: never ask twice for one tap.
+  const motionGesture=event.type==='touchend'||event.type==='click'&&performance.now()-lastTouchEnd>800||event.type==='keydown'&&(event.key==='Enter'||event.key===' ');
+  if(motionGesture&&storyVisible()&&matchMedia('(pointer: coarse)').matches)requestMotion();
+ }
+ function orientation(event){
+  if(!Number.isFinite(event.beta)||!Number.isFinite(event.gamma))return;
+  inputs.motionSample={beta:event.beta,gamma:event.gamma,absolute:!!event.absolute};inputs.motionState='active';
+ }
+ // The broker also retains a calibration sample if consent/sensors arrive
+ // before the WebGL assets finish. The scene listens to subsequent OS events.
+ window.addEventListener('deviceorientation',orientation,{passive:true});
+ for(const type of ['pointerdown','touchend','click','keydown'])window.addEventListener(type,activate,{capture:true,passive:true});
+ document.addEventListener('visibilitychange',()=>{
+  inputs.motionSample=null;
+  if(!document.hidden){const ctx=currentContext();if(ctx&&ctx.state!=='running')Promise.resolve(ctx.resume()).catch(()=>{});}
+ });
 })();
