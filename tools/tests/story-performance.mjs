@@ -20,7 +20,7 @@ try{
  for(const height of [928,754,844]){
   await p.setViewportSize({width:390,height});await p.locator('.brand-chapter').evaluate(e=>scrollTo({top:e.getBoundingClientRect().top+scrollY+(e.offsetHeight-innerHeight)*.7,behavior:'instant'}));await p.waitForTimeout(150);
   const rect=await p.locator('.brand-chapter-stage').evaluate(e=>({top:e.getBoundingClientRect().top,bottom:e.getBoundingClientRect().bottom,viewport:innerHeight}));
-  check(Math.abs(rect.bottom-rect.viewport)<1,'rings/Manifest stage fills the current '+height+'px viewport without a bottom band');
+  check(rect.top<=1&&rect.bottom>=rect.viewport-1,'rings/Manifest stage fills the current '+height+'px viewport without a bottom band');
   if(dest)await p.screenshot({path:`${dest}/manifest-${height}.png`});
  }
  await p.waitForFunction(()=>[...document.querySelectorAll('[data-wire-object]')].every(e=>['motion','fallback-motion'].includes(e.dataset.wireState)));

@@ -28,3 +28,6 @@ screen-*.mp4 export-ignore
 # Cartier uploads are untouched study references, not club runtime assets.
 /cartier-part-* export-ignore
 /*.glb export-ignore
+
+# New reference-only RAR parts must not add 69 MB to the website upload.
+/cartierfile*.rar export-ignore

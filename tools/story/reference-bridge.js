@@ -64,26 +64,24 @@ window.MTStory3D={async create(root){
  // No initial loader, HUD, progress/XP, logo, cookie store, forms or original UI.
  // Only these recovered tracks are eligible, and only inside this chapter.
  let paperTime=0,gateAuto=false,gateClock=0,gateLastTime=null,lastRenderedProgress=null,gateMax=0,fractureSpent=false,glassOpacity=1;
- let alive=true,phase=-1,busy=false,raf=0,prevTime=0,lastDraw=0,p=0,chapterTop=Infinity,visible=false,width=0,height=0,resizeNeeded=true,qualityDpr=Infinity,slowFrames=0,qualityChangedAt=0;
+ let alive=true,initialized=false,phase=-1,busy=false,raf=0,prevTime=0,lastDraw=0,p=0,chapterTop=Infinity,visible=false,width=0,height=0,resizeNeeded=true,qualityDpr=Infinity,slowFrames=0,qualityChangedAt=0,geometryDirty=true,lastDiagnostics=0,lastDiagnosticProgress=-1;
  const reduced=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
  const constrained=()=>reduced()||!!navigator.connection?.saveData;
  const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
  const nativeDispose=loader.dispose.bind(loader);
- function resize(){resizeNeeded=true;schedule();}
+ function resize(){geometryDirty=true;resizeNeeded=true;schedule();}
  function applySize(){
-  resizeNeeded=false;const w=stage.clientWidth,h=stage.clientHeight,dpr=software?(w<600?.65:.5):Math.min(devicePixelRatio||1,constrained()?1:(w<768?1.35:1.75),qualityDpr);
+  resizeNeeded=false;const w=stage.clientWidth,h=stage.clientHeight,dpr=software?(w<600?.65:.5):Math.min(devicePixelRatio||1,constrained()?1:(w<768?1.35:1.75),Math.max(1,Math.sqrt(2000000/(w*h))),qualityDpr);
   if(w===width&&h===height&&renderer.getPixelRatio()===dpr)return;
   width=w;height=h;ctx._vw=w;ctx._vh=h;camera.fov=w<768?40:30;camera.aspect=w/h;camera.updateProjectionMatrix();
-  renderer.setPixelRatio(dpr);renderer.setSize(w,h,false);composer.setPixelRatio(dpr);composer.setSize(w,h);glass.setSize(w,h);shatter.setSize(w,h);text.setSize(w,h);lens.setSize(w*dpr,h*dpr);
+  renderer.setPixelRatio(dpr);renderer.setSize(w,h,false);composer.setPixelRatio(dpr);composer.setSize(w,h);glass.setSize(w,h);shatter.setSize(w,h);text.setSize(w*dpr,h*dpr);lens.setSize(w*dpr,h*dpr);
   bg.uniforms.uViewportAspect.value=w/h;fg.uniforms.uViewportAspect.value=w/h;Zg(bg,w/h);Zg(fg,w/h);
   ctx.components.textLayout?.resize(w,h);
-  const welcome=ctx.components.textLayout?.sprites?.[0];if(welcome)welcome.userData.storyBaseY=welcome.position.y;
   if(phase===1)Wb.resize(ctx,w,h);
  }
- function placeWelcome(){const welcome=ctx.components.textLayout?.sprites?.[0];if(!welcome)return;if(!Number.isFinite(welcome.userData.storyBaseY))welcome.userData.storyBaseY=welcome.position.y;welcome.position.y=welcome.userData.storyBaseY+height*(width<768?.22:.48);}
  ctx.applyPixelRatioOverride=()=>{}; // The original gate must not clear the backing store asynchronously.
- function schedule(){if(alive&&!raf)raf=requestAnimationFrame(frame);}
- function measure(){const r=track.getBoundingClientRect();chapterTop=r.top;visible=r.top<innerHeight&&r.bottom>0;p=clamp(-r.top/Math.max(1,track.offsetHeight-stage.clientHeight));
+ function schedule(){if(alive&&initialized&&!raf)raf=requestAnimationFrame(frame);}
+ function measure(){if(!geometryDirty)return;geometryDirty=false;const r=track.getBoundingClientRect();chapterTop=r.top;visible=r.top<innerHeight&&r.bottom>0;p=clamp(-r.top/Math.max(1,track.offsetHeight-stage.clientHeight));
   if(r.top>=innerHeight&&fractureSpent){fractureSpent=false;glassOpacity=1;if(ctx.components.glassShards)ctx.components.glassShards.group.visible=true;gateMax=0;gateClock=0;gateAuto=true;lastRenderedProgress=null;ctx._gateShatterStarted=false;ctx._gateShatterSfxFired=false;if(ctx.components.handsModel)ctx.preWarmed.handsModel2=ctx.components.handsModel;if(ctx.components.glassShards)ctx.preWarmed.glassShards=ctx.components.glassShards;}
   if(lastRenderedProgress!==null&&p<lastRenderedProgress-.0003){fractureSpent=true;gateAuto=false;gateLastTime=null;}
  }
@@ -109,12 +107,15 @@ window.MTStory3D={async create(root){
     // A fast jump may bypass Wb.enter, the source's normal grade reset.
     // Never carry its pre-fracture black exposure/zoom into the paper stage.
     fg.uniforms.uExposure.value=1;fg.uniforms.uContrast.value=1;fg.uniforms.uRedTint.value=0;bg.uniforms.uZoom.value=1;
-    await stage3Ready;required(['moneyShredsAtlas','certAtlas','clubPaperAtlas','tunnelModel']);
+    await stage3Ready;if(!alive)return;required(['moneyShredsAtlas','certAtlas','clubPaperAtlas','tunnelModel']);
     paperTime=0;ctx._stage3DeferredStarted=false;await Xx.enter(ctx);
     if(ctx.components.portalCircle)ctx.components.portalCircle.visible=false;
     // Build the original paper/shred objects once, not in an uncancellable
     // deferred callback that can attach objects to the wrong phase on reversal.
-    ctx._stage3DeferredStarted=true;eS(ctx);nS(ctx);rS(ctx);
+    ctx._stage3DeferredStarted=true;eS(ctx);
+    await new Promise(resolve=>requestAnimationFrame(resolve));if(!alive)return;
+    nS(ctx);await new Promise(resolve=>requestAnimationFrame(resolve));if(!alive)return;
+    rS(ctx);await renderer.compileAsync(scene,camera);if(!alive)return;
    }
    phase=next;glass.enabled=next===1;root.dataset.storyPhase=['hand-glass','glass-facts','money-paper'][phase];
   }finally{busy=false;schedule();}
@@ -151,14 +152,12 @@ window.MTStory3D={async create(root){
   else{paperTime+=dt;Xx.scrub(ctx,local);Xx.update(ctx,paperTime,dt);if(ctx.components.portalCircle)ctx.components.portalCircle.visible=false;}
   if(ctx.components.glassShards){
    ctx.components.glassShards._reducedMotion=reduced();
-   // Fit portrait screens without changing desktop or the paper camera path.
-   // Restore the last portrait fit: real tilt must not magnify the edge facts
-   // off a narrow screen. Desktop retains its authored viewing distance.
-   ctx.components.glassShards.group.position.z=width<768?-Math.max(0,.55*(height/width-1.2)):0;
+   // Restore the original near-camera shard distance on phones as requested.
+   // Geometry, flight, refraction and camera paths are unchanged.
+   ctx.components.glassShards.group.position.z=0;
   }
   if(phase===0)ctx.components.textLayout?.update?.(0,dt);
-  placeWelcome();
-  text.textScene.visible=!!ctx.components.textLayout?.hasVisibleSprites&&(phase===1||phase===0&&gateMax>.3);
+  text.textScene.visible=!!ctx.components.textLayout?.hasVisibleSprites&&(phase===1||phase===0&&ctx._gateShatterStarted);
   fg.uniforms.uTime.value=reduced()?0:now/1000;fg.uniforms.uEnableNoise.value=reduced()?0:2;fg.uniforms.uNoiseOffset.value.set(0,0);
   // The break and its sound are one-shot on reverse. The independent glass
   // pass, shard geometry and printed fact overlays remain fully visible.
@@ -172,7 +171,7 @@ window.MTStory3D={async create(root){
   loader.chunkedUploader?.tick();text.enabled=text.textScene.visible;
   lastRenderedProgress=p;const renderCamera=camera.position.toArray();composer.render(dt);rig.restore();
   root.dataset.storyProgress=p.toFixed(4);
-  root.dataset.storyNative=JSON.stringify({phase,frameGap:gap,slowFrames,gateAuto,gateClock,fractureSpent,glassOpacity,glassEnabled:glass.enabled,visibleFactOverlays:glass.enabled&&shards?.group.visible?glass._overlayProxies.filter(({proxy})=>proxy.visible&&proxy.material.opacity>0).length:0,degreeShred:ctx.components.certMaterials?.[0]?.uniforms.uShredProgress.value,degreeOpacity:ctx.components.certMaterials?.[0]?.uniforms.uOpacity.value,editorialOpacity:ctx.components.shredMaterials?.[0]?.uniforms.uOpacity.value,gateMax,breakCount:ctx._storyBreakCount||0,renderCamera,shatterEnabled:shatter.enabled,shatterTime:shatter._actions[0]?.time,handTime:ctx.components.handsModel?._scrubProgress,hand:!!ctx.components.handsModel,camera:camera.position.toArray(),paperProgress:phase===2?local:0,paperClearance:phase===2?camera.position.z-Math.max(...[...(ctx.components.certMeshes||[]),...(ctx.components.shredMeshes||[])].map(m=>m.position.z)):null,papers:ctx.components.certMeshes?.length||0,shreds:ctx.components.shredMeshes?.length||0,gyro:rig.gyroActive,gyroPermission:window.MTStoryInputs?.motionState||'waiting',audioContext:vg.Howler.ctx?.state||'unavailable',audioUnlocked:X.isUnlocked(),portalVisible:!!ctx.components.portalCircle?.visible,sourceTextVisible:text.textScene.visible,welcomeVisible:text.textScene.visible,welcomeText:text.textScene.visible?'we are here':'',welcomeWidth:ctx.components.textLayout?.sprites?.[0]?.scale.x||0,welcomeX:ctx.components.textLayout?.sprites?.[0]?.position.x||0,welcomeY:ctx.components.textLayout?.sprites?.[0]?.position.y||0,pixelRatio:renderer.getPixelRatio(),shardDepth:shards?.group.position.z,audioEnabled:X.isEnabled(),playing:[...X._howls].filter(([,h])=>h.playing()).map(([k])=>k),glassY:ctx.components.glassShards?.shards[0]?.position.y});
+  if(now-lastDiagnostics>=100||p!==lastDiagnosticProgress){lastDiagnostics=now;lastDiagnosticProgress=p;root.dataset.storyNative=JSON.stringify({phase,frameGap:gap,slowFrames,gateAuto,gateClock,fractureSpent,glassOpacity,glassEnabled:glass.enabled,visibleFactOverlays:glass.enabled&&shards?.group.visible?glass._overlayProxies.filter(({proxy})=>proxy.visible&&proxy.material.opacity>0).length:0,degreeShred:ctx.components.certMaterials?.[0]?.uniforms.uShredProgress.value,degreeOpacity:ctx.components.certMaterials?.[0]?.uniforms.uOpacity.value,editorialOpacity:ctx.components.shredMaterials?.[0]?.uniforms.uOpacity.value,gateMax,breakCount:ctx._storyBreakCount||0,renderCamera,shatterEnabled:shatter.enabled,shatterTime:shatter._actions[0]?.time,handTime:ctx.components.handsModel?._scrubProgress,hand:!!ctx.components.handsModel,camera:camera.position.toArray(),paperProgress:phase===2?local:0,paperClearance:phase===2?camera.position.z-Math.max(...[...(ctx.components.certMeshes||[]),...(ctx.components.shredMeshes||[])].map(m=>m.position.z)):null,papers:ctx.components.certMeshes?.length||0,shreds:ctx.components.shredMeshes?.length||0,gyro:rig.gyroActive,gyroPermission:window.MTStoryInputs?.motionState||'waiting',audioContext:vg.Howler.ctx?.state||'unavailable',audioUnlocked:X.isUnlocked(),portalVisible:!!ctx.components.portalCircle?.visible,sourceTextVisible:text.textScene.visible,welcomeVisible:text.textScene.visible,welcomeText:text.textScene.visible?'we are here':'',welcomeWidth:ctx.components.textLayout?.sprites?.[0]?.scale.x||0,welcomeX:ctx.components.textLayout?.sprites?.[0]?.position.x||0,welcomeY:ctx.components.textLayout?.sprites?.[0]?.position.y||0,pixelRatio:renderer.getPixelRatio(),shardDepth:shards?.group.position.z,audioEnabled:X.isEnabled(),playing:[...X._howls].filter(([,h])=>h.playing()).map(([k])=>k),glassY:ctx.components.glassShards?.shards[0]?.position.y,textViewport:[text.textCamera.right*2,text.textCamera.top*2]});}
   root.style.setProperty('--burn-title',String(phase===2?clamp((local-.28)/.04)*(1-clamp((local-.38)/.05)):0));
   root.style.setProperty('--burn-title-scale',String(1+(phase===2?clamp((local-.28)/.15)*.12:0)));
   root.style.setProperty('--reference-end',String(clamp((p-.90)/.04)*(1-clamp((p-.97)/.03))));
@@ -181,11 +180,11 @@ window.MTStory3D={async create(root){
  }
  function gesture(e){if(e.isTrusted)X.unlockNow();}
  function pointer(e){if(visible&&e.pointerType!=='touch')rig.onMouseMove(e.clientX/innerWidth*2-1,1-e.clientY/innerHeight*2);}
- function scroll(){schedule();}
+ function scroll(){geometryDirty=true;schedule();}
  function visibility(){rig.recenterGyro();if(document.hidden){gateLastTime=null;stopAudio();ctx._stage2Video?.pause();ctx._stage2VideoPrefetch?.pause();if(raf)cancelAnimationFrame(raf);raf=0;}else schedule();}
  function contextLost(e){e.preventDefault();fail(Error('WebGL context lost'));}
  function fail(error){console.error('Recovered chapter:',error);dispose();root.dispatchEvent(new CustomEvent('mt:story-fallback',{detail:{error}}));}
- function dispose(){if(!alive)return;alive=false;if(raf)cancelAnimationFrame(raf);stopAudio();rig.dispose();window.removeEventListener('deviceorientation',rig._handleGyro);window.removeEventListener('scroll',scroll);window.removeEventListener('resize',resize);window.visualViewport?.removeEventListener('resize',resize);window.removeEventListener('pointermove',pointer);window.removeEventListener('mousemove',ctx._onMouseMove);window.removeEventListener('pointerdown',gesture,true);window.removeEventListener('touchend',gesture,true);window.removeEventListener('keydown',gesture,true);document.removeEventListener('visibilitychange',visibility);ctx._stage2Video&&Av(ctx._stage2Video);ctx._stage2VideoPrefetch&&Av(ctx._stage2VideoPrefetch);composer.dispose();renderer.dispose();nativeDispose();X.stopAll();for(const howl of X._howls.values())howl.unload();X._howls.clear();if(X._ctxWatch&&vg.Howler.ctx)vg.Howler.ctx.removeEventListener('statechange',X._ctxWatch);X._ctxWatch=null;X._armed=false;X.suspendContext();canvas.removeEventListener('webglcontextlost',contextLost);canvas.style.removeProperty('opacity');root.classList.remove('story-reference');}
+ function dispose(){if(!alive)return;alive=false;if(raf)cancelAnimationFrame(raf);stopAudio();rig.dispose();window.removeEventListener('deviceorientation',rig._handleGyro);window.removeEventListener('scroll',scroll);window.removeEventListener('resize',resize);window.visualViewport?.removeEventListener('resize',resize);window.removeEventListener('pointermove',pointer);window.removeEventListener('mousemove',ctx._onMouseMove);window.removeEventListener('pointerdown',gesture,true);window.removeEventListener('touchend',gesture,true);window.removeEventListener('keydown',gesture,true);document.removeEventListener('visibilitychange',visibility);ctx._stage2Video&&Av(ctx._stage2Video);ctx._stage2VideoPrefetch&&Av(ctx._stage2VideoPrefetch);geometryObserver?.disconnect();composer.dispose();renderer.dispose();nativeDispose();X.stopAll();for(const howl of X._howls.values())howl.unload();X._howls.clear();if(X._ctxWatch&&vg.Howler.ctx)vg.Howler.ctx.removeEventListener('statechange',X._ctxWatch);X._ctxWatch=null;X._armed=false;X.suspendContext();canvas.removeEventListener('webglcontextlost',contextLost);canvas.style.removeProperty('opacity');root.classList.remove('story-reference');}
  // Silent warmup can arm the mixer, but only a real page gesture can unlock
  // browser audio or obtain native motion consent. The early broker survives
  // slow downloads; no custom Sound/Tilt/Gyro controls are installed.
@@ -193,15 +192,22 @@ window.MTStory3D={async create(root){
  window.addEventListener('pointerdown',gesture,true);window.addEventListener('touchend',gesture,true);window.addEventListener('keydown',gesture,true);
  window.addEventListener('pointermove',pointer,{passive:true});window.addEventListener('scroll',scroll,{passive:true});window.addEventListener('resize',resize,{passive:true});window.visualViewport?.addEventListener('resize',resize,{passive:true});document.addEventListener('visibilitychange',visibility);
  canvas.addEventListener('webglcontextlost',contextLost);
+ const geometryObserver=typeof ResizeObserver==='function'?new ResizeObserver(()=>{geometryDirty=true;schedule();}):null;
+ geometryObserver?.observe(track);geometryObserver?.observe(document.body);
+ document.fonts?.ready.then(()=>{geometryDirty=true;schedule();});
  applySize();ctx.preWarmed.handsModel2=new Lb(loader);ctx.preWarmed.glassShards=Gb(loader);
+ // Observer/scroll callbacks may mark geometry dirty during warmup, but must
+ // not start a second render/phase transition while the passes are compiling.
  await shatter.prewarm(renderer,camera,ctx.preWarmed.handsModel2.handRef,loader.getAsset('glassShatter'),loader.assets.animations.glassShatter);
+ if(!alive)throw Error('WebGL context lost');
  await new Promise(resolve=>requestAnimationFrame(resolve));
  await glass.prewarm(renderer,camera);
+ if(!alive)throw Error('WebGL context lost');
  ctx._stage2VideoPrefetch=Dv('',false);
  root.classList.add('story-reference','story-enhanced');root.classList.remove('story-pending');root.dataset.storyRenderer='webgl';root.dataset.storySource='recovered-original';
  measure();await change(p<.18?0:p<.49?1:2);
  // Pay first-use shader compilation/upload during the early offscreen warmup,
  // not the first scroll into the chapter.
  if(!visible){composer.render(0);rig.restore();}
- root.dataset.storyWarm='true';schedule();return{dispose,resize};
+ initialized=true;root.dataset.storyWarm='true';schedule();return{dispose,resize};
 }};

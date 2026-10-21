@@ -2213,16 +2213,18 @@ ok('story viewport stays locked through browser-toolbar resizes with opaque unde
   storySource.includes('function lockViewport()') && storySource.includes('Math.max(viewportHeight,Math.ceil(innerHeight))') && storyCss.includes('var(--story-viewport-height, 100lvh)') && storyCss.includes('background:#230706'));
 ok('the opaque story underpaint ends at the real track, without an extra black exit box',
   storyCss.includes('.story-enhanced .story-track, .story-enhanced .story-stage { background:#230706; }') && storyCss.includes('.mind-story[data-story-paint="herd"] .story-stage { background:transparent; }') && !storyCss.includes('.mind-story.story-enhanced::after') && storySource.includes('root.dataset.storyCovered=String(active&&progress<.94)'));
-ok('Manifest/rings fills the dynamic viewport and does not leave a small-viewport bottom band',
-  fs.readFileSync(path.join(ROOT,'assets/app.css'),'utf8').includes('height:calc(100dvh - 68px)'));
+ok('Manifest/rings fills the viewport with a transparent stage over one continuous dark chapter',
+  appCss.includes('height:100lvh; min-height:100dvh; background:none;'));
 ok('motion can activate before the chapter and remains usable with reduced idle motion',
   audioSource.includes("navigator.maxTouchPoints>0") && !audioSource.includes('motionGesture&&storyVisible()') && fs.readFileSync(path.join(ROOT,'tools/story/reference-core.js'),'utf8').includes('if (e36 === 0) e36 = 1 / 60;'));
 ok('slow-frame adaptation lowers fill rate without replacing source geometry/print',
   fs.readFileSync(path.join(ROOT,'tools/story/reference-bridge.js'),'utf8').includes('qualityDpr=Math.max(1,renderer.getPixelRatio()-.2)') && fs.readFileSync(path.join(ROOT,'tools/story/reference-core.js'),'utf8').includes('await e36.compileAsync'));
 ok('mobile WebGL pixel ratio is bounded for motion performance without changing desktop phase math',
-  fs.readFileSync(path.join(ROOT,'tools/story/reference-bridge.js'),'utf8').includes('(w<768?1.35:1.75)') && fs.readFileSync(path.join(ROOT,'tools/story/reference-bridge.js'),'utf8').includes('function placeWelcome()'));
-ok('the original we-are-here title is capped and depth-tested above the hand; mobile shards keep their authored depth',
-  fs.readFileSync(path.join(ROOT,'tools/story/reference-core.js'),'utf8').includes('maxWidth: 0.78') && fs.readFileSync(path.join(ROOT,'tools/story/reference-core.js'),'utf8').includes('baseScale: 0.28, maxWidth: 0.78, anchor: `top-center`, offset: 8') && fs.readFileSync(path.join(ROOT,'tools/story/reference-core.js'),'utf8').includes('material.depthTest = false') && fs.readFileSync(path.join(ROOT,'tools/story/reference-core.js'),'utf8').includes('maxWidth: 0.88') && fs.readFileSync(path.join(ROOT,'tools/story/reference-bridge.js'),'utf8').includes('ctx.components.glassShards.group.position.z=width<768?-Math.max(0,.55*(height/width-1.2)):0'));
+  fs.readFileSync(path.join(ROOT,'tools/story/reference-bridge.js'),'utf8').includes('(w<768?1.35:1.75)') && fs.readFileSync(path.join(ROOT,'tools/story/reference-bridge.js'),'utf8').includes('Math.sqrt(2000000/(w*h))'));
+ok('the relettered source title uses the original center anchor and shards use the original near-camera depth',
+  fs.readFileSync(path.join(ROOT,'tools/story/reference-core.js'),'utf8').includes('baseScale: 0.4, maxWidth: 0.9, anchor: `center-center`') && fs.readFileSync(path.join(ROOT,'tools/story/reference-bridge.js'),'utf8').includes('text.setSize(w*dpr,h*dpr)') && fs.readFileSync(path.join(ROOT,'tools/story/reference-bridge.js'),'utf8').includes('ctx.components.glassShards.group.position.z=0'));
+ok('native chapter clipping bounds one permanent fixed canvas without scroll-time position switches',
+  storyCss.includes('.mind-story.story-enhanced { clip-path:inset(0); }') && !storyCss.includes('data-story-pinned') && !storySource.includes('storyPinned'));
 const blankIdentityHtml=String(await php.x(["(function(){ $db=mt_db(); foreach(['department','universityName','intro','aboutHeading','aboutBody','joiningIntro'] as $key) $db['site'][$key]=''; ob_start(); require MT_ROOT . '/views/public/home.php'; return ob_get_clean(); })()"]));
 ok('older blank live identity fields still render the real department, university and joining form',
   blankIdentityHtml.includes('Department of Applied Social Science') && blankIdentityHtml.includes('Chhatrapati Shivaji Maharaj University') && blankIdentityHtml.includes('id="membershipForm"'));
@@ -2246,8 +2248,8 @@ ok('the original baked hand and camera animations are used',
   referenceCore.includes('class extends Kv') && referenceBridge.includes('new Lb(loader)') && referenceBridge.includes('Wb.scrub(ctx,local)') && referenceCore.includes('humanHandsAtlas'));
 ok('camera-attached glass retains source upward motion and papers retain inward camera travel',
   !referenceCore.includes('shard.startPosition[1] *= -1') && !referenceCore.includes('shard.endPosition[1] *= -1') && referenceBridge.includes('Xx.scrub(ctx,local)'));
-ok('original paper and individual-strip shaders are constructed synchronously for reversible scrolling',
-  referenceBridge.includes('ctx._stage3DeferredStarted=true;eS(ctx);nS(ctx);rS(ctx)') && referenceCore.includes('certConvergeRotOffsets'));
+ok('original paper and individual-strip construction yields between systems inside the awaited phase change',
+  referenceBridge.includes('ctx._stage3DeferredStarted=true;eS(ctx);') && referenceBridge.includes('nS(ctx);await new Promise(resolve=>requestAnimationFrame(resolve));if(!alive)return;') && referenceBridge.includes('rS(ctx);await renderer.compileAsync(scene,camera)') && referenceCore.includes('certConvergeRotOffsets'));
 ok('gyro permission is requested only from a trusted mobile gesture, with no tilt controls',
   !storyView.includes('data-enable-tilt') && !fs.readFileSync(path.join(ROOT,'views/layout.php'),'utf8').includes('soundButton') && audioSource.includes('Orientation.requestPermission()') && audioSource.includes("event.type==='touchend'") && !referenceCore.includes('await request.call(window.DeviceOrientationEvent)') && referenceBridge.includes("addEventListener('deviceorientation',rig._handleGyro,{passive:true})"));
 ok('native viewport rendering preserves document height and handles context loss',

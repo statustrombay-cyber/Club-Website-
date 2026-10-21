@@ -18142,7 +18142,7 @@ var S_ = `
     for (let t2 = 0; t2 < e36.length; t2++) e36[t2].visible = false;
   }
   setSize(e36, t2) {
-    let n2 = this._renderer.getPixelRatio(), r2 = Math.round(e36 / n2), i2 = Math.round(t2 / n2), a2 = x_();
+    let n2 = this._renderer.getPixelRatio(), r2 = Math.round(e36 / n2), i2 = Math.round(t2 / n2), a2 = Math.min(x_(), n2);
     this.textRT.setSize(Math.floor(r2 * a2), Math.floor(i2 * a2)), this.textCamera.left = -r2 / 2, this.textCamera.right = r2 / 2, this.textCamera.top = i2 / 2, this.textCamera.bottom = -i2 / 2, this.textCamera.updateProjectionMatrix();
   }
   dispose() {
@@ -20448,7 +20448,7 @@ function Kb(e36) {
     i3 && e36.glassShardPass.setRefractionMap(i3, 0.3, 3, 3);
   }
   let s2 = null, c2 = r2.getAsset(`clubWelcomeAtlas`);
-  c2 && (e36.renderer && (c2.anisotropy = e36.renderer.capabilities.getMaxAnisotropy()), s2 = new vb(i2, [{ texture: c2, atlasUV: Nv(1092.93, 558.45, 945.23, 371.64), aspect: Pv(945.23, 371.64), baseScale: 0.28, maxWidth: 0.78, anchor: `top-center`, offset: 8, appearAt: 0, disappearAt: 0.2 }]), s2.sprites[0].userData.material.depthTest = false, s2.resize(e36._vw, e36._vh)), e36.components = { handsModel: a2, glassShards: o2, textLayout: s2 };
+  c2 && (e36.renderer && (c2.anisotropy = e36.renderer.capabilities.getMaxAnisotropy()), s2 = new vb(i2, [{ texture: c2, atlasUV: Nv(1092.93, 558.45, 945.23, 371.64), aspect: Pv(945.23, 371.64), baseScale: 0.4, maxWidth: 0.9, anchor: `center-center`, appearAt: 0, appearDuration: 0.45, disappearAt: 0.2 }]), s2.sprites[0].userData.material.depthTest = false, s2.resize(e36._vw, e36._vh)), e36.components = { handsModel: a2, glassShards: o2, textLayout: s2 };
 }
 var qb = new As(new Uint8Array([0, 0, 0, 255]), 1, 1, E);
 qb.needsUpdate = true;

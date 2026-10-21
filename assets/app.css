@@ -1987,11 +1987,15 @@ html.intro-cover { color-scheme:dark; }
 /* Do not animate unseen page decoration underneath the splash's SVG paint. */
 body.intro-pending .site-shell * { animation-play-state:paused !important; }
 
-/* Rings/Manifest must fill the CURRENT mobile viewport, not the permanently
-   smaller toolbar-visible viewport. Keep the existing header clearance. */
-@supports (height: 100dvh) {
-  .brand-chapter-stage { height:calc(100dvh - 84px); }
-  @media (max-width:1100px) { .brand-chapter-stage { height:calc(100dvh - 68px); } }
-  @media (prefers-reduced-motion:reduce) { .brand-chapter-stage { height:auto; } }
-  html.no-js .brand-chapter-stage { height:auto; }
-}
+/* Paint the dark interlude ONCE. The old sticky child's rectangular radial
+   background over a differently painted 300vh parent exposed a hard panel edge.
+   A full-height, transparent stage has no bottom/header-sized black insert. */
+.brand-chapter.black-chapter { background:#0b0b0d; }
+/* Do not leave the header's dark glass rectangle or floating controls over
+   the rings, Manifest lettering, or closing dark chapter. */
+body.is-black-chapter .nav-wrap,
+body.is-black-chapter .nav-butterfly,
+body.is-black-chapter .to-top { opacity:0 !important; visibility:hidden !important; pointer-events:none !important; }
+.brand-chapter .brand-chapter-stage { top:0; height:100vh; height:100lvh; min-height:100dvh; background:none; }
+@media (prefers-reduced-motion:reduce) { .brand-chapter .brand-chapter-stage { height:auto; min-height:0; } }
+html.no-js .brand-chapter .brand-chapter-stage { height:auto; min-height:0; }

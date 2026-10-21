@@ -64,14 +64,13 @@
     viewportHeight=Math.ceil(Math.max(innerHeight,window.visualViewport?.height||0,root.querySelector('.story-stage').clientHeight));
     viewportWidth=width;
    }else viewportHeight=Math.max(viewportHeight,Math.ceil(innerHeight));
-   root.style.setProperty('--story-viewport-height',viewportHeight+'px');
+   if(root.style.getPropertyValue('--story-viewport-height')!==viewportHeight+'px')root.style.setProperty('--story-viewport-height',viewportHeight+'px');
   }
-  function immersion(){
-   const r=track.getBoundingClientRect(),active=r.top<=0&&r.bottom>0;
+  function immersion(r){
+   r=r||track.getBoundingClientRect();const active=r.top<=0&&r.bottom>0;
    document.body.classList.toggle('story-immersive',active);
    document.documentElement.classList.toggle('story-immersive',active);
-   root.dataset.storyPinned=String(r.top<=0&&r.bottom>root.querySelector('.story-stage').clientHeight);
-   const progress=Math.max(0,Math.min(1,-r.top/Math.max(1,track.offsetHeight-root.querySelector('.story-stage').clientHeight)));
+   const progress=Math.max(0,Math.min(1,-r.top/Math.max(1,track.offsetHeight-viewportHeight)));
    // Paint belongs to native scrolling, not the slower asynchronous GPU loop.
    root.dataset.storyPaint=progress>.975?'herd':progress>=.49?'money-paper':'hand-glass';
    root.style.setProperty('--story-canvas-opacity',String(1-Math.max(0,Math.min(1,(progress-.97)/.03))));
@@ -79,12 +78,13 @@
    window.MTStoryInputs?.setChapterActive(active&&progress<1);
    if(header){header.inert=active;if(active)header.setAttribute('aria-hidden','true');else header.removeAttribute('aria-hidden');}
   }
-  function near(){lockViewport();immersion();const r=track.getBoundingClientRect();if(r.top<innerHeight+1600&&r.bottom>-1600)prepare();}
-  function configure(){root.dataset.storyReducedMotion=String(motion.matches);root.dataset.storySaveData=String(!!connection?.saveData);instance?.resize();near();}
+  function near(){const r=track.getBoundingClientRect();immersion(r);if(r.top<innerHeight+1600&&r.bottom>-1600)prepare();}
+  function resizeViewport(){lockViewport();near();}
+  function configure(){root.dataset.storyReducedMotion=String(motion.matches);root.dataset.storySaveData=String(!!connection?.saveData);instance?.resize();resizeViewport();}
   root.addEventListener('mt:story-fallback',event=>failure(event.detail?.error||Error('WebGL scene stopped')));
-  addEventListener('scroll',near,{passive:true});addEventListener('resize',near,{passive:true});
-  window.visualViewport?.addEventListener('resize',near,{passive:true});
-  window.visualViewport?.addEventListener('scroll',immersion,{passive:true});
+  addEventListener('scroll',near,{passive:true});addEventListener('resize',resizeViewport,{passive:true});
+  window.visualViewport?.addEventListener('resize',resizeViewport,{passive:true});
+  window.visualViewport?.addEventListener('scroll',()=>immersion(),{passive:true});
   canvas.addEventListener('webglcontextrestored',()=>{failed=false;retries=0;near();});
   addEventListener('online',()=>{clearTimeout(retryTimer);failed=false;retries=0;near();});
   if(motion.addEventListener)motion.addEventListener('change',configure);else if(motion.addListener)motion.addListener(configure);
