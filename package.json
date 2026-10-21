@@ -8,7 +8,8 @@
     "preview": "node tools/preview-server.mjs",
     "test": "node tools/test.mjs",
     "lint": "node tools/lint-pass.mjs",
-    "build:story": "node tools/build-story.mjs"
+    "build:story": "node tools/build-story.mjs",
+    "preview:cartier": "node tools/serve-cartier.mjs 4180"
   },
   "devDependencies": {
     "php-wasm": "^0.2.0",
