@@ -254,7 +254,7 @@
   /* ── loader ────────────────────────────────────────────────────────────── */
   function runLoader(work) {
     var shown = 0;
-    var target = 0;
+    var target = 38;   // start climbing immediately, then follow the real work
     var started = performance.now();
 
     var painting = false;
@@ -295,10 +295,10 @@
       if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { target = Math.max(target, 96); kick(); });
     });
 
-    requestAnimationFrame(paint);
+    kick();
 
     // Never hold a visitor at the door.
-    var safety = 4200;
+    var safety = 2300;
     work.then(function () {
       var wait = Math.max(700, safety - (performance.now() - started));
       window.setTimeout(function () { target = 100; finish(); kick(); }, wait);

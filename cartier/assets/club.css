@@ -1,3 +1,19 @@
+/* ── self-hosted, openly licensed type ───────────────────────────────────── */
+@font-face {
+  font-family: MindfulDisplay;
+  font-style: normal;
+  font-weight: 300 500;
+  font-display: swap;
+  src: url("./fonts/bodoni-moda-latin.woff2") format("woff2");
+}
+@font-face {
+  font-family: MindfulSans;
+  font-style: normal;
+  font-weight: 300 600;
+  font-display: swap;
+  src: url("./fonts/inter-latin-regular.woff2") format("woff2");
+}
+
 /* ==========================================================================
    Mindful Tattva — club site
    A quiet, editorial layer: cream paper, Bodoni display, letterspaced labels.
