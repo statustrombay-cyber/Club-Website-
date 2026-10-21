@@ -46,8 +46,8 @@ const KEYS = [
   { p: 0.60, pos: [-3.1, 2.05, -30.5], look: [-7.2, 2.55, -43.5] },
   { p: 0.74, pos: [0.0, 2.40, -50.0], look: [0.0, 2.20, -70.0] },
   { p: 0.84, pos: [0.0, 3.00, -64.0], look: [0.0, 2.60, -92.0] },
-  { p: 0.92, pos: [0.0, 5.20, -76.0], look: [0.0, 3.00, -110.0] },
-  { p: 1.00, pos: [0.0, 8.40, -92.0], look: [0.0, 3.40, -140.0] }
+  { p: 0.92, pos: [0.0, 5.40, -76.0], look: [0.0, 4.60, -112.0] },
+  { p: 1.00, pos: [0.0, 7.60, -90.0], look: [0.0, 5.60, -142.0] }
 ];
 
 /* ── helpers ─────────────────────────────────────────────────────────────── */
@@ -86,7 +86,9 @@ function duneHeight(x, z) {
   const b = Math.sin(z * 0.031 - 0.6) * 3.4;
   const c = Math.sin((x + z) * 0.017 + 2.2) * 4.2;
   const d = Math.sin(x * 0.11 - z * 0.07) * 0.7;
-  return a + b + c + d;
+  const e = Math.sin(x * 0.021 + z * 0.047 + 0.9) * 5.0;
+  const f = Math.sin(x * 0.088 - z * 0.062 + 2.4) * 1.1;
+  return a + b + c + d + e + f;
 }
 
 /* ========================================================================== */
@@ -103,7 +105,7 @@ export function createAtrium(options = {}) {
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(PALETTE.paper);
-  scene.fog = new THREE.FogExp2(0xf1e9da, 0.0050);
+  scene.fog = new THREE.FogExp2(0xf4ecdc, 0.0042);
 
   const camera = new THREE.PerspectiveCamera(46, 1, 0.1, 600);
 
@@ -320,8 +322,8 @@ export function createAtrium(options = {}) {
   const hMin = Math.min(...duneHeights);
   const hMax = Math.max(...duneHeights);
   const duneColors = new Float32Array(pos.count * 3);
-  const cLow = new THREE.Color(0xa8916f);
-  const cHigh = new THREE.Color(0xe2d0ab);
+  const cLow = new THREE.Color(0xab8a5f);
+  const cHigh = new THREE.Color(0xe9d5ae);
   const cTmp = new THREE.Color();
   for (let i = 0; i < pos.count; i++) {
     const f = THREE.MathUtils.clamp((duneHeights[i] - hMin) / (hMax - hMin + 0.001), 0, 1);
