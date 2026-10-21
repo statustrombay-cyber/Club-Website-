@@ -375,11 +375,32 @@ export function createAtrium(options = {}) {
   scene.add(fill);
 
   /* ── light shafts ──────────────────────────────────────────────────────── */
-  const shaftTex = verticalGradientTexture([[0, 'rgba(255,240,214,0.55)'], [0.55, 'rgba(255,238,208,0.18)'], [1, 'rgba(255,236,206,0)']]);
+  const shaftTex = (() => {
+    const c = document.createElement('canvas');
+    c.width = 256; c.height = 512;
+    const ctx = c.getContext('2d');
+    const v = ctx.createLinearGradient(0, 0, 0, 512);
+    v.addColorStop(0, 'rgba(255,244,222,0.85)');
+    v.addColorStop(0.45, 'rgba(255,240,214,0.34)');
+    v.addColorStop(1, 'rgba(255,238,208,0)');
+    ctx.fillStyle = v;
+    ctx.fillRect(0, 0, 256, 512);
+    // feather the long edges so the beam has no cut line
+    const h = ctx.createLinearGradient(0, 0, 256, 0);
+    h.addColorStop(0, 'rgba(0,0,0,0)');
+    h.addColorStop(0.5, 'rgba(0,0,0,1)');
+    h.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.globalCompositeOperation = 'destination-in';
+    ctx.fillStyle = h;
+    ctx.fillRect(0, 0, 256, 512);
+    const tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    return tex;
+  })();
   for (let i = 0; i < 4; i++) {
     const shaft = new THREE.Mesh(
       new THREE.PlaneGeometry(4.4, 17),
-      new THREE.MeshBasicMaterial({ map: shaftTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.26 })
+      new THREE.MeshBasicMaterial({ map: shaftTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.30 })
     );
     shaft.position.set(-3.4 + i * 2.4, 6.2, -14 - i * 13);
     shaft.rotation.set(0.26, 0.5, -0.24);
