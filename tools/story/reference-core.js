@@ -17376,7 +17376,7 @@ var yg = 22050, bg = 750, xg = 350, Sg = `/assets/reference/`, Cg = 0.4, wg = { 
     this._isDesktop = window.matchMedia(`(pointer: fine)`).matches;
   }
   onMouseMove(e36, t2) {
-    !this._isDesktop || !this.enabled || (this._inputX = e36, this._inputY = t2);
+    !this._isDesktop || this._gyroActive || !this.enabled || (this._inputX = e36, this._inputY = t2);
   }
   get cursorX() {
     return this._currentX;
@@ -17410,6 +17410,8 @@ var yg = 22050, bg = 750, xg = 350, Sg = `/assets/reference/`, Cg = 0.4, wg = { 
   }
   update(e36) {
     if (!this._hasInput || !this.enabled) return;
+    // Reduced idle animation must not disable deliberate, permitted tilt.
+    if (e36 === 0) e36 = 1 / 60;
     let t2 = 1 - Math.exp(-e36 / this.config.SMOOTH_TC);
     this._currentX += (this._inputX - this._currentX) * t2, this._currentY += (this._inputY - this._currentY) * t2, Math.abs(this._currentX) < 1e-4 && (this._currentX = 0), Math.abs(this._currentY) < 1e-4 && (this._currentY = 0), this._savedPos.copy(this.camera.position), this._savedQuat.copy(this.camera.quaternion), zg.set(0, 0, -1).applyQuaternion(this._savedQuat), Bg.set(1, 0, 0).applyQuaternion(this._savedQuat), Vg.set(0, 1, 0).applyQuaternion(this._savedQuat), Hg.copy(this._savedPos).addScaledVector(zg, this.config.FOCAL_DISTANCE);
     let n2 = this.config.MAX_OFFSET * this.influence;
@@ -18659,7 +18661,7 @@ var z_ = 0.5, B_ = `
       this._shardMaterial = new Pr({ vertexShader: H_, fragmentShader: U_, uniforms: { uMapA: { value: e36 }, uMapB: { value: t2 || e36 }, uBlend: { value: 0 }, uFresnelPower: { value: 2.5 } }, side: 2 });
     }
   }
-  prewarm(e36, t2, n2 = null, r2 = null, i2 = null) {
+  async prewarm(e36, t2, n2 = null, r2 = null, i2 = null) {
     if (this._prewarmed) return;
     if (this._prewarmed = true, r2 && (this._precloneSrc = r2, this._preclone = L_(r2)), !this._shardMaterial) {
       let e37 = new As(new Uint8Array([0, 0, 0, 255]), 1, 1);
@@ -18668,7 +18670,11 @@ var z_ = 0.5, B_ = `
     r2 && i2 && this.startScrub(r2, i2);
     let a2 = new $o(), o2 = new Zr(1, 1);
     for (let e37 of [this._shardMaterial, this._compositeMaterial, this._copyMaterial]) e37 && a2.add(new Cr(o2, e37));
-    if (e36.compile(a2, t2), this._shardScene && e36.compile(this._shardScene, this._shardCamera || t2), n2 && n2.isSkinnedMesh && (this.setHandSource(n2, t2), e36.compile(this._handMaskScene, t2), this.clearHandSource()), o2.dispose(), this._shardScene && this._shardCamera) {
+    await e36.compileAsync(a2, t2);
+    if (this._shardScene) await e36.compileAsync(this._shardScene, this._shardCamera || t2);
+    if (n2 && n2.isSkinnedMesh) { this.setHandSource(n2, t2); await e36.compileAsync(this._handMaskScene, t2); this.clearHandSource(); }
+    o2.dispose();
+    if (this._shardScene && this._shardCamera) {
       let t3 = new bt(1, 1), n3 = e36.getRenderTarget();
       e36.setRenderTarget(t3), e36.render(this._shardScene, this._shardCamera), this._handMaskScene && this._handCamera && e36.render(this._handMaskScene, this._handCamera), e36.setRenderTarget(n3), t3.dispose();
     }
@@ -18856,12 +18862,12 @@ var z_ = 0.5, B_ = `
     let i2 = this._compositeMaterial.uniforms;
     i2.uRefractionMap.value = e36, i2.uMapStrength.value = t2, i2.uMapScale.value.set(n2, r2);
   }
-  prewarm(e36, t2) {
+  async prewarm(e36, t2) {
     if (this._prewarmed) return;
     this._prewarmed = true;
     let n2 = new $o(), r2 = new Zr(1, 1);
     for (let e37 of [this._maskMaterial, this._depthMaterial, this._compositeMaterial]) e37 && n2.add(new Cr(r2, e37));
-    e36.compile(n2, t2), r2.dispose();
+    await e36.compileAsync(n2, t2); r2.dispose();
     let i2 = e36.getRenderTarget();
     e36.setRenderTarget(this._maskRT), e36.clear(), e36.setRenderTarget(i2);
   }
@@ -19250,16 +19256,16 @@ function wv(e36, t2 = {}) {
   }).catch((t3) => console.warn(`_loadTextureBitmap failed: ${e36}`, t3)), n2;
 }
 var Tv = window.matchMedia(`(pointer: coarse)`).matches ? `assets/videos/stage2_background_video-mobile.mp4` : `assets/videos/stage2_background_video-mobile.mp4`, Ev = `position:fixed;left:0;top:0;width:1px;height:1px;opacity:0;pointer-events:none;z-index:-1`;
-function Dv(e36 = ``) {
+function Dv(e36 = ``, play = true) {
  e36 = `/assets/reference/`;
   let t2 = document.createElement(`video`);
-  return t2.muted = true, t2.defaultMuted = true, t2.playsInline = true, t2.setAttribute(`playsinline`, ``), t2.setAttribute(`webkit-playsinline`, ``), t2.loop = true, t2.preload = `auto`, t2.crossOrigin = `anonymous`, t2.src = `${e36}${Tv}`, t2.style.cssText = Ev, document.body.appendChild(t2), Ov(t2), t2;
+  return t2.muted = true, t2.defaultMuted = true, t2.playsInline = true, t2.setAttribute(`playsinline`, ``), t2.setAttribute(`webkit-playsinline`, ``), t2.loop = true, t2.preload = `auto`, t2.crossOrigin = `anonymous`, t2.src = `${e36}${Tv}`, t2.style.cssText = Ev, document.body.appendChild(t2), play && Ov(t2), t2;
 }
 function Ov(e36) {
   if (!e36) return;
   let t2 = e36.play();
-  !t2 || typeof t2.then != `function` || t2.catch(() => {
-    if (e36.__retryArmed) return;
+  !t2 || typeof t2.then != `function` || t2.catch((error) => {
+    if (error?.name === `AbortError` || e36.__retryArmed) return;
     e36.__retryArmed = true;
     let t3 = () => {
       e36.__retryArmed = false, window.removeEventListener(`pointerdown`, t3, true), window.removeEventListener(`touchstart`, t3, true), window.removeEventListener(`keydown`, t3, true), Ov(e36);

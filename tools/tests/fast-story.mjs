@@ -16,10 +16,14 @@ try{
   await context.route(/\/assets\/(?:vendor\/story-3d\.js|reference\/.*\.(?:wasm|ktx2|glb))(?:\?|$)/,r=>r.fulfill({status:403,contentType:'text/html',body:'Direct scene file denied by host'}));
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>requests.push(r.url()));
   await page.goto(base+'/#human-story',{waitUntil:'domcontentloaded'});
+  // A real fast-scroll visitor cancels the deep link's deferred font/load
+  // alignment. A bare JS scroll has no user intent and can be aligned back
+  // to the hash; that tests anchor placement, not cold phase skipping.
+  await page.mouse.wheel(0,80);
   // Jump straight past both opening phases before waiting for the engine.
   await page.locator('.story-track').evaluate(e=>scrollTo({top:e.getBoundingClientRect().top+scrollY+(e.offsetHeight-e.querySelector('.story-stage').clientHeight)*.79,behavior:'instant'}));
   assert.ok(await page.locator('.story-status').isHidden(),'no loading banner on a fast entry');
-  await page.waitForFunction(()=>{const e=document.querySelector('.mind-story'),s=JSON.parse(e?.dataset.storyNative||'{}');return e?.dataset.storyState==='ready'&&s.phase===2&&s.papers===16&&s.shreds===6;},null,{timeout:60000});
+  await page.waitForFunction(()=>{const e=document.querySelector('.mind-story'),s=JSON.parse(e?.dataset.storyNative||'{}');return e?.dataset.storyState==='ready'&&s.phase===2&&s.papers===16&&s.shreds===6;},null,{timeout:60000}).catch(async error=>{console.error(await page.evaluate(()=>({data:{...document.querySelector('.mind-story').dataset},scrollY,top:document.querySelector('.story-track').getBoundingClientRect().top,draws:window.__draws})));throw error;});
   const timings=await page.evaluate(()=>({readyMs:Math.round(performance.now()),requests:performance.getEntriesByType('resource').filter(e=>e.name.includes('scene-asset=')).map(e=>({file:new URL(e.name).searchParams.get('scene-asset'),startMs:Math.round(e.startTime),endMs:Math.round(e.responseEnd)}))}));
   assert.ok(await page.locator('.story-canvas').isVisible());
   assert.equal(await page.locator('.story-research').count(),0);

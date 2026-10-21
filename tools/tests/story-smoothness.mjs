@@ -1,3 +1,4 @@
+import {warmStory} from './browser-story.mjs';
 /** Rendered forward/reverse regression. No software-GPU FPS claim. */
 import {chromium} from 'playwright-core';
 import assert from 'node:assert/strict';
@@ -8,7 +9,7 @@ try{
  const page=await browser.newPage({viewport:{width,height:900}}),errors=[];
  page.on('pageerror',e=>errors.push(e.message));
  await page.goto((process.env.TEST_URL||'http://localhost:4173')+'/');
- await page.waitForFunction(()=>document.querySelector('.mind-story')?.dataset.storyState==='ready',null,{timeout:60000});
+ await warmStory(page);await page.waitForFunction(()=>document.querySelector('.mind-story')?.dataset.storyState==='ready',null,{timeout:60000});
  const warm=await page.evaluate(()=>({scrollY,top:document.querySelector('.story-track').getBoundingClientRect().top,hidden:document.querySelector('.story-status').hidden,warm:document.querySelector('.mind-story').dataset.storyWarm}));
  assert.equal(warm.scrollY,0);assert.ok(warm.top>900);assert.ok(warm.hidden);assert.equal(warm.warm,'true');
  async function jump(progress){

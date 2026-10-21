@@ -1573,7 +1573,7 @@ ok('rings gather first, rotate only after gathering, and reverse with scrolling'
 ok('reduced motion and no scripts leave the chapter short and fully formed',
   round37Css.includes('html.no-js .brand-chapter, html.no-js .brand-finale { height: auto; }')
   && round37Css.includes('.brand-chapter, .brand-finale { height: auto; }')
-  && appJs.includes('if (lowMotion) return;'));
+  && appJs.includes('if (lowMotion || box.bottom < 0 || box.top > window.innerHeight) return;'));
 ok('rings stand alone and exactly one name band renders at the end',
   (mindPage.body.match(/class="brand-chapter black-chapter"/g) || []).length === 1
   && (mindPage.body.match(/class="brand-band"/g) || []).length === 1
@@ -2191,8 +2191,8 @@ ok('every psychologist photograph is local and available to the atlas baker',
   ['freud','rogers','james'].every(name=>fs.statSync(path.join(ROOT,'assets/story/portraits',name+'.webp')).size>1000));
 ok('intact editorial reverse faces stay printed while degrees retain the original backing',
   (fs.readFileSync(path.join(ROOT,'tools/story/reference-core.js'),'utf8').match(/vec2 paperUv = gl_FrontFacing/g)||[]).length===1 && fs.readFileSync(path.join(ROOT,'tools/story/reference-core.js'),'utf8').includes('vec3 backBase = vec3(0.341'));
-ok('scene warms early without a loading banner and hides the header only within its chapter',
-  storySource.includes('introReady.then(()=>engine())') && storySource.includes('requestIdleCallback') && !storySource.includes("announce('Loading the animated scene") && storySource.includes("classList.toggle('story-immersive',active)") && storySource.includes('header.inert=active'));
+ok('scene warms on chapter approach, not during hero/splash, with no loading banner',
+  !storySource.includes('introReady.then(()=>engine())') && storySource.includes("rootMargin:'1600px'") && !fs.readFileSync(path.join(ROOT,'views/layout.php'),'utf8').includes('as="script" href="/index.php?scene-asset=engine"') && !storySource.includes("announce('Loading the animated scene") && storySource.includes("classList.toggle('story-immersive',active)") && storySource.includes('header.inert=active'));
 ok('upward scrolling preserves fact fragments while disabling only the fracture',
   ['fractureSpent=true','gateMax=gateProgress','glass.uniforms.uStoryGlassAlpha.value=1','glass.enabled=phase===1||(phase===0&&fractureSpent)','shards.group.visible=true'].every(t=>fs.readFileSync(path.join(ROOT,'tools/story/reference-bridge.js'),'utf8').includes(t)));
 
@@ -2211,8 +2211,14 @@ ok('newspaper traversal completes the source depth before returning to the herd'
   fs.readFileSync(path.join(ROOT,'tools/story/reference-bridge.js'),'utf8').includes('clamp((p-.49)/.51);') && !fs.readFileSync(path.join(ROOT,'tools/story/reference-bridge.js'),'utf8').includes('rS(ctx);uS(ctx)'));
 ok('story viewport stays locked through browser-toolbar resizes with opaque underpaint',
   storySource.includes('function lockViewport()') && storySource.includes('Math.max(viewportHeight,Math.ceil(innerHeight))') && storyCss.includes('var(--story-viewport-height, 100lvh)') && storyCss.includes('background:#230706'));
-ok('the red curtain underpaint and full-screen black exit hold remain opaque',
-  storyCss.includes('.story-enhanced .story-track, .story-enhanced .story-stage { background:#230706; }') && storyCss.includes('.mind-story[data-story-paint="herd"] .story-track,') && storyCss.includes('background:#090b0a;') && storyCss.includes('.mind-story.story-enhanced::after') && storyCss.includes('var(--story-viewport-height,100lvh)') && storySource.includes('bounds=root.getBoundingClientRect()') && storySource.includes('root.dataset.storyCovered=String(active)'));
+ok('the opaque story underpaint ends at the real track, without an extra black exit box',
+  storyCss.includes('.story-enhanced .story-track, .story-enhanced .story-stage { background:#230706; }') && storyCss.includes('.mind-story[data-story-paint="herd"] .story-stage { background:transparent; }') && !storyCss.includes('.mind-story.story-enhanced::after') && storySource.includes('root.dataset.storyCovered=String(active&&progress<.94)'));
+ok('Manifest/rings fills the dynamic viewport and does not leave a small-viewport bottom band',
+  fs.readFileSync(path.join(ROOT,'assets/app.css'),'utf8').includes('height:calc(100dvh - 68px)'));
+ok('motion can activate before the chapter and remains usable with reduced idle motion',
+  audioSource.includes("navigator.maxTouchPoints>0") && !audioSource.includes('motionGesture&&storyVisible()') && fs.readFileSync(path.join(ROOT,'tools/story/reference-core.js'),'utf8').includes('if (e36 === 0) e36 = 1 / 60;'));
+ok('slow-frame adaptation lowers fill rate without replacing source geometry/print',
+  fs.readFileSync(path.join(ROOT,'tools/story/reference-bridge.js'),'utf8').includes('qualityDpr=Math.max(1,renderer.getPixelRatio()-.2)') && fs.readFileSync(path.join(ROOT,'tools/story/reference-core.js'),'utf8').includes('await e36.compileAsync'));
 ok('mobile WebGL pixel ratio is bounded for motion performance without changing desktop phase math',
   fs.readFileSync(path.join(ROOT,'tools/story/reference-bridge.js'),'utf8').includes('(w<768?1.35:1.75)') && fs.readFileSync(path.join(ROOT,'tools/story/reference-bridge.js'),'utf8').includes('function placeWelcome()'));
 ok('the original we-are-here title is capped and depth-tested above the hand; mobile shards keep their authored depth',

@@ -447,7 +447,7 @@
         return bounds.top <= top + 1 && bounds.bottom > top;
       });
       document.body.classList.toggle('is-black-chapter', dark);
-      if (lowMotion) return;
+      if (lowMotion || box.bottom < 0 || box.top > window.innerHeight) return;
       const travel = Math.max(1, chapter.offsetHeight - (window.innerHeight - top));
       const progress = clamp((top - box.top) / travel);
       const gather = clamp(progress / 0.38);
@@ -975,7 +975,7 @@
     let waitingTimer = 0;
     function coveredByStory() {
       const story = $('.mind-story');
-      return window.matchMedia('(max-width: 900px)').matches && document.body.classList.contains('story-immersive') && story?.dataset.storyCovered !== 'false';
+      return document.body.classList.contains('story-immersive') && story?.dataset.storyCovered !== 'false';
     }
     function drop() { video.hidden = true; pause(); }
     function pause() { try { video.pause(); } catch (error) { /* already stopped */ } }
@@ -1057,7 +1057,14 @@
 
   function start() {
     setupButterfly();
-    const warmWires=()=>requestAnimationFrame(()=>requestAnimationFrame(setupWireObjects));
+    const warmWires=()=>{
+      const chapter=$('.brand-chapter');
+      const load=()=>requestAnimationFrame(()=>requestAnimationFrame(setupWireObjects));
+      // Keep large animation-atlas decoding off the hero/splash too; the
+      // server-rendered wire silhouettes remain until the chapter approaches.
+      if(chapter&&'IntersectionObserver'in window){const observer=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting)){observer.disconnect();load();}},{rootMargin:'1200px'});observer.observe(chapter);}
+      else load();
+    };
     if(document.documentElement.classList.contains('intro-cover'))window.addEventListener('mt:intro-ready',warmWires,{once:true});
     else warmWires();
     setupSplash();

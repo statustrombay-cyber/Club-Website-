@@ -1,3 +1,4 @@
+import {warmStory} from './browser-story.mjs';
 /** Actual viewport/paint and essential-content checks; no production FPS claim.
  * Run against npm run preview with optional CHROMIUM_PATH / TEST_ARTIFACTS.
  */
@@ -21,7 +22,7 @@ try{
  const splashShot=await page.screenshot();noWhiteBand(splashShot);if(dest)fs.writeFileSync(`${dest}/splash-resize.png`,splashShot);
  await page.waitForFunction(()=>document.body.classList.contains('intro-revealed'));
  assert.equal(await page.locator('meta[name=theme-color]').getAttribute('content'),'#403634');
- await page.waitForFunction(()=>document.querySelector('.mind-story')?.dataset.storyState==='ready',null,{timeout:60000});
+ await warmStory(page);await page.waitForFunction(()=>document.querySelector('.mind-story')?.dataset.storyState==='ready',null,{timeout:60000});
  const originalHeight=await page.locator('.story-track').evaluate(e=>e.offsetHeight);
  for(const [progress,height]of [[.08,928],[.35,844],[.68,754],[.8,844],[.4,928],[.82,754],[.93,844]]){
   await page.setViewportSize({width:390,height});
@@ -60,9 +61,11 @@ try{
  const gap=await page.locator('.mind-story').evaluate(e=>e.nextElementSibling.getBoundingClientRect().top-e.getBoundingClientRect().bottom);
  assert.ok(Math.abs(gap)<1,'next section starts exactly at story boundary');
  assert.equal(await page.locator('.mind-story').getAttribute('data-story-audio'),'silent','the transparent tail cannot play music over the next section');
- assert.equal(await page.locator('.mind-story').getAttribute('data-story-covered'),'true','the black exit hold remains an immersive full-screen story beat');
- const exitShot=await page.screenshot(),exitPixels=screenshotPixels(exitShot);for(const [x,y]of [[.1,.1],[.5,.5],[.9,.9]]){const i=(Math.floor(y*exitPixels.height)*exitPixels.width+Math.floor(x*exitPixels.width))*exitPixels.channels;assert.ok(exitPixels.pixels[i]<20&&exitPixels.pixels[i+1]<20&&exitPixels.pixels[i+2]<20,'the next section stays below the full-screen black exit hold');}
- if(dest)fs.writeFileSync(`${dest}/story-exit-hold.png`,exitShot);
+ assert.equal(await page.locator('.mind-story').getAttribute('data-story-covered'),'false','the transparent exit releases the underlying herd');
+ const exitGeometry=await page.locator('.mind-story').evaluate(e=>({height:e.offsetHeight,track:e.querySelector('.story-track').offsetHeight,after:getComputedStyle(e,'::after').content}));
+ assert.ok(Math.abs(exitGeometry.height-exitGeometry.track)<1,'no extra viewport-sized black spacer after the actual story');
+ assert.ok(await page.locator('#heroVideo').evaluate(e=>!e.paused),'the same underlying herd resumes before the transparent exit');
+ if(dest)await page.screenshot({path:`${dest}/story-exit.png`});
  for(const selector of ['#about','#membershipForm']){
   await page.locator(selector).evaluate(e=>scrollTo({top:e.getBoundingClientRect().top+scrollY-80,behavior:'instant'}));
   const content=await page.locator(selector).evaluate(e=>({opacity:getComputedStyle(e).opacity,text:e.textContent,visible:e.checkVisibility({checkOpacity:true}),top:e.getBoundingClientRect().top}));
@@ -73,7 +76,7 @@ try{
  }
  const desktop=await browser.newContext({viewport:{width:1440,height:900}}),wide=await desktop.newPage();
  wide.on('pageerror',e=>report.errors.push(e.message));await wide.goto(base+'/');
- await wide.waitForFunction(()=>document.body.classList.contains('intro-revealed')&&document.querySelector('.mind-story')?.dataset.storyState==='ready',null,{timeout:60000});
+ await warmStory(wide);await wide.waitForFunction(()=>document.body.classList.contains('intro-revealed')&&document.querySelector('.mind-story')?.dataset.storyState==='ready',null,{timeout:60000});
  report.desktopWheel=[];
  for(const [start,delta] of [[.3,1500],[.94,-1500],[.65,-1700],[.4,-1400],[.994,-650]]){
   await wide.locator('.story-track').evaluate((e,p)=>scrollTo({top:e.getBoundingClientRect().top+scrollY+(e.offsetHeight-e.querySelector('.story-stage').clientHeight)*p,behavior:'instant'}),start);

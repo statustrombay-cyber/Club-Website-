@@ -4,7 +4,14 @@
  'use strict';
  if(window.MTStoryInputs)return;
  const inputs=window.MTStoryInputs={motionState:'waiting',motionSample:null,motionError:'',audioError:''};
- let motionRequest=null,lastTouchEnd=-Infinity;
+ let motionRequest=null,lastTouchEnd=-Infinity,previousAudioSession='auto';
+ inputs.chapterActive=false;
+ inputs.setChapterActive=function(active){
+  active=!!active;if(active===inputs.chapterActive)return;inputs.chapterActive=active;
+  // Safari's default ambient audio session can obey the ringer switch even
+  // with a running context. Playback is chapter-scoped, never site-wide.
+  try{if(navigator.audioSession){if(active){previousAudioSession=navigator.audioSession.type;navigator.audioSession.type='playback';}else navigator.audioSession.type=previousAudioSession;}}catch(_){}
+ };
  function currentContext(){
   const mixer=window.Howler?.ctx,shared=window.__mtStoryAudioContext;
   return mixer&&mixer.state!=='closed'?mixer:shared&&shared.state!=='closed'?shared:null;
@@ -34,9 +41,14 @@
   if(!window.isSecureContext){inputs.motionState='insecure';return;}
   const Orientation=window.DeviceOrientationEvent;
   if(!Orientation){inputs.motionState='unavailable';return;}
-  const policy=document.permissionsPolicy||document.featurePolicy;
-  if(policy&&['accelerometer','gyroscope'].some(name=>!policy.allowsFeature(name))){inputs.motionState='blocked';return;}
-  if(typeof Orientation.requestPermission!=='function'){inputs.motionState='listening';return;}
+  if(typeof Orientation.requestPermission!=='function'){
+   // Unsupported Generic Sensor feature names can report false even when
+   // native DeviceOrientation is usable. Only diagnose recognised restrictions;
+   // a native requestPermission API must make its own authoritative decision.
+   const policy=document.permissionsPolicy||document.featurePolicy;
+   let blocked=false;try{const known=policy?.features?.();blocked=!!known&&['accelerometer','gyroscope'].some(name=>known.includes(name)&&!policy.allowsFeature(name));}catch(_){}
+   inputs.motionState=blocked?'blocked':'listening';return;
+  }
   inputs.motionState='requesting';
   try{
    // Synchronous invocation inside touchend/click/activation-key, never after
@@ -57,7 +69,7 @@
   if(event.type==='touchend')lastTouchEnd=performance.now();
   // A touch also emits a compatibility click: never ask twice for one tap.
   const motionGesture=event.type==='touchend'||event.type==='click'&&performance.now()-lastTouchEnd>800||event.type==='keydown'&&(event.key==='Enter'||event.key===' ');
-  if(motionGesture&&storyVisible()&&matchMedia('(pointer: coarse)').matches)requestMotion();
+  if(motionGesture&&(matchMedia('(any-pointer: coarse)').matches||navigator.maxTouchPoints>0))requestMotion();
  }
  function orientation(event){
   if(!Number.isFinite(event.beta)||!Number.isFinite(event.gamma))return;
@@ -66,9 +78,9 @@
  // The broker also retains a calibration sample if consent/sensors arrive
  // before the WebGL assets finish. The scene listens to subsequent OS events.
  window.addEventListener('deviceorientation',orientation,{passive:true});
- for(const type of ['pointerdown','touchend','click','keydown'])window.addEventListener(type,activate,{capture:true,passive:true});
+ for(const type of ['pointerdown','touchstart','touchend','click','keydown'])window.addEventListener(type,activate,{capture:true,passive:true});
  document.addEventListener('visibilitychange',()=>{
-  inputs.motionSample=null;
+  inputs.motionSample=null;inputs.setChapterActive(!document.hidden&&storyVisible());
   if(!document.hidden){const ctx=currentContext();if(ctx&&ctx.state!=='running')Promise.resolve(ctx.resume()).catch(()=>{});}
  });
 })();

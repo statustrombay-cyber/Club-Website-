@@ -1,3 +1,4 @@
+import {warmStory} from './browser-story.mjs';
 /** Public site acceptance: actual rendered content, native navigation,
  * continuous video and completed original paper travel on both viewport sizes.
  * Uses an isolated browser, never submits personal data to the preview store.
@@ -22,7 +23,7 @@ try{for(const width of [1440,390]){
   assert.ok(await video.evaluate((e,t)=>e.currentTime>t+.1&&!e.paused&&!e.hidden,before),'horse frames continuously advance');
   if(route==='/'){
    await page.waitForFunction(()=>document.body.classList.contains('intro-revealed'));
-   await page.waitForFunction(()=>document.querySelector('.mind-story')?.dataset.storyState==='ready',null,{timeout:60000});
+   await warmStory(page);await page.waitForFunction(()=>document.querySelector('.mind-story')?.dataset.storyState==='ready',null,{timeout:60000});
    for(const id of ['team','contact','join']){
     await page.locator('#'+id).evaluate(e=>scrollTo({top:e.getBoundingClientRect().top+scrollY-90,behavior:'instant'}));
     assert.equal(await page.locator('#'+id).evaluate(e=>getComputedStyle(e).opacity),'1');
@@ -40,7 +41,7 @@ try{for(const width of [1440,390]){
     const state=await page.locator('.mind-story').evaluate(e=>JSON.parse(e.dataset.storyNative));
     assert.equal(state.phase,progress<.18?0:progress<.49?1:2);
     if(progress===.65)assert.ok(await page.locator('.story-burn-title').evaluate(e=>+getComputedStyle(e).opacity)>.5,'post-burn mindful tattva title actually visible');
-    if(progress===.8&&width>900)assert.ok(await video.evaluate(e=>!e.paused),'desktop herd never pauses behind the chapter');
+    if(progress===.8)assert.ok(await video.evaluate(e=>e.paused),'do not decode the hidden herd behind an opaque GPU chapter');
     if(progress===.994){assert.ok(state.paperProgress>.98);assert.ok(state.paperClearance>2,'all paper centres have passed the camera with a full sheet-size clearance');}
     await page.screenshot({path:`${dest}/${width}-story-${progress}.png`});item.phases.push(state);
    }

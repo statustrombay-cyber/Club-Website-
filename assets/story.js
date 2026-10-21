@@ -67,7 +67,7 @@
    root.style.setProperty('--story-viewport-height',viewportHeight+'px');
   }
   function immersion(){
-   const r=track.getBoundingClientRect(),bounds=root.getBoundingClientRect(),active=bounds.top<=72&&bounds.bottom>0;
+   const r=track.getBoundingClientRect(),active=r.top<=0&&r.bottom>0;
    document.body.classList.toggle('story-immersive',active);
    document.documentElement.classList.toggle('story-immersive',active);
    root.dataset.storyPinned=String(r.top<=0&&r.bottom>root.querySelector('.story-stage').clientHeight);
@@ -75,10 +75,11 @@
    // Paint belongs to native scrolling, not the slower asynchronous GPU loop.
    root.dataset.storyPaint=progress>.975?'herd':progress>=.49?'money-paper':'hand-glass';
    root.style.setProperty('--story-canvas-opacity',String(1-Math.max(0,Math.min(1,(progress-.97)/.03))));
-   root.dataset.storyCovered=String(active);
+   root.dataset.storyCovered=String(active&&progress<.94);
+   window.MTStoryInputs?.setChapterActive(active&&progress<1);
    if(header){header.inert=active;if(active)header.setAttribute('aria-hidden','true');else header.removeAttribute('aria-hidden');}
   }
-  function near(){lockViewport();immersion();const r=track.getBoundingClientRect();if(r.top<innerHeight+2800&&r.bottom>-2800)prepare();}
+  function near(){lockViewport();immersion();const r=track.getBoundingClientRect();if(r.top<innerHeight+1600&&r.bottom>-1600)prepare();}
   function configure(){root.dataset.storyReducedMotion=String(motion.matches);root.dataset.storySaveData=String(!!connection?.saveData);instance?.resize();near();}
   root.addEventListener('mt:story-fallback',event=>failure(event.detail?.error||Error('WebGL scene stopped')));
   addEventListener('scroll',near,{passive:true});addEventListener('resize',near,{passive:true});
@@ -88,14 +89,10 @@
   addEventListener('online',()=>{clearTimeout(retryTimer);failed=false;retries=0;near();});
   if(motion.addEventListener)motion.addEventListener('change',configure);else if(motion.addListener)motion.addListener(configure);
   if(connection?.addEventListener)connection.addEventListener('change',configure);
-  if('IntersectionObserver'in window){const observer=new IntersectionObserver(entries=>{if(entries.some(entry=>entry.isIntersecting))prepare();},{rootMargin:'2800px'});observer.observe(track);}
+  if('IntersectionObserver'in window){const observer=new IntersectionObserver(entries=>{if(entries.some(entry=>entry.isIntersecting))prepare();},{rootMargin:'1600px'});observer.observe(track);}
   root.classList.add('story-pending');configure();
-  // Warm models/shaders after the splash, while the visitor reads the hero.
-  // Offscreen scenes do not run an animation loop.
-  introReady.then(()=>engine()).then(()=>{
-   if('requestIdleCallback'in window)requestIdleCallback(()=>prepare(),{timeout:1600});
-   else setTimeout(prepare,500);
-  }).catch(()=>{});
+  // Do not initialise WebGL, decode models or run a second video while the
+  // visitor is on the hero/forms. Warm only on approach to this chapter.
   const brand=document.querySelector('.brand-chapter');
   if(brand&&'IntersectionObserver'in window){const warm=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){prepare();warm.disconnect();}},{rootMargin:'600px'});warm.observe(brand);}
  }
