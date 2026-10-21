@@ -4,10 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#000000">
-  <title>Mindfultattva — The Sound of Craft</title>
-  <meta name="description" content="Mindfultattva is a club that explores craft, sound and design — an immersive, scroll-driven WebGL experience built around four signature creations.">
-  <meta property="og:title" content="Mindfultattva — The Sound of Craft">
-  <meta property="og:description" content="An immersive, scroll-driven WebGL experience by Mindfultattva.">
+  <title>Mindful Tattva — A Psychology Club</title>
+  <meta name="description" content="Mindful Tattva is a psychology club: a space for conversations, reading rooms and exhibitions about the mind.">
+  <meta property="og:title" content="Mindful Tattva — A Psychology Club">
+  <meta property="og:description" content="An immersive, scroll-driven experience by Mindful Tattva.">
   <meta property="og:type" content="website">
   <meta name="robots" content="index,follow">
   <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
@@ -15,6 +15,29 @@
   <link rel="stylesheet" href="/assets/app.css">
   <link rel="preload" href="/assets/fonts/bodoni-moda-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/inter-latin-regular.woff2" as="font" type="font/woff2" crossorigin>
+  <style>
+    /* ------------------------------------------------------------------
+       Club mode — the experience is presented as a psychology club, not as
+       a watchmaking exhibition. These overrides keep the 3D journey and the
+       typographic identity and take away the product chrome.
+       ------------------------------------------------------------------ */
+    .mainLoader__wrapper { display: none !important; }        /* loader tagline */
+    .mainLoader__icons { display: none !important; }          /* animated watch shapes */
+    .mainLoader__bottomWrapper {
+      top: 50%; bottom: auto; transform: translateY(-50%); justify-content: center !important;
+    }
+    .mainLoader__progress {
+      position: static !important; transform: none !important;
+      font-size: clamp(96px, 20vw, 260px) !important; font-weight: 300 !important;
+      letter-spacing: -0.02em !important; line-height: 1 !important;
+    }
+    /* Header: wordmark only — no sound button, no menu. */
+    .headerBlock__slot--left, .headerBlock__slot--right { display: none !important; }
+    /* Cursor affordances that belong to products / video / audio. */
+    .cursorWatch, .cursorVideoButton, .cursorClickSoundEnable, .cursorSlider { display: none !important; }
+    /* Gallery + podcast chrome (a club gallery replaces it). */
+    .homePage__podcastWrapper, .podcastTextPopupBlock, .podcastModeDismissOverlay { display: none !important; }
+  </style>
   <style>
     /* Boot screen — replaced by the application as soon as it mounts. */
     html, body { background: #000; }
@@ -60,32 +83,31 @@
 </head>
 <body>
   <div id="mt-boot" aria-hidden="true">
-    <div class="mt-boot__mark">Mindfultattva</div>
+    <div class="mt-boot__mark">Mindful Tattva</div>
     <div class="mt-boot__rule"></div>
-    <div class="mt-boot__tag">The Sound of Craft</div>
+    <div class="mt-boot__tag">Psychology Club</div>
   </div>
 
   <div id="__nuxt"></div>
 
   <section id="mt-fallback" aria-label="Fallback content">
-    <h1>Mindfultattva</h1>
+    <h1>Mindful Tattva</h1>
     <p>
-      This experience is built as an interactive 3D walkthrough and needs WebGL 2, which this browser
-      has turned off or does not offer. Everything is still reachable from the pages below.
+      This experience is an interactive 3D walkthrough and needs WebGL 2, which this browser has turned
+      off or does not offer. Everything is still reachable from the pages below.
     </p>
     <ul>
-      <li><a href="/baignoire">Baignoire &amp; Myst</a></li>
-      <li><a href="/santos-and-tortue">Santos &amp; Tortue</a></li>
-      <li><a href="/roadster">Roadster</a></li>
-      <li><a href="/crash">Crash</a></li>
+      <li><a href="/tailored-crafts-serving-one-form">Tailored Crafts Serving One Form</a></li>
       <li><a href="/the-eye-of-the-jeweller">The Eye of the Jeweller</a></li>
+      <li><a href="/shaping-movement">Shaping Movement Privé</a></li>
+      <li><a href="/the-manufacture-between-innovation-and-tradition">The Manufacture</a></li>
     </ul>
   </section>
 
   <noscript>
     <div style="position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;
                 background:#000;color:#f4f1ea;font-family:system-ui,sans-serif;padding:8vw;text-align:center">
-      Mindfultattva is an interactive experience and needs JavaScript enabled.
+      Mindful Tattva is an interactive experience and needs JavaScript enabled.
     </div>
   </noscript>
 
@@ -144,6 +166,28 @@
           if (nuxt.childElementCount > 0) hideBoot();
         }).observe(nuxt, { childList: true, subtree: false });
       }
+      // The experience itself always opens on the landing sequence. If a visitor
+      // arrives on a chapter URL (or a bookmarked one), re-apply it once the app
+      // has started so the deep link is honoured instead of bouncing to "/".
+      var entry = window.location.pathname;
+      if (entry && entry !== '/' && !/^\/(assets|webgl|images|audio|videos)\//.test(entry)) {
+        var attempts = 0;
+        var timer = window.setInterval(function () {
+          attempts += 1;
+          var app = nuxt && nuxt.__vue_app__;
+          var router = app && app.config && app.config.globalProperties
+            && app.config.globalProperties.$router;
+          if (router) {
+            if (router.currentRoute.value.path === entry) {
+              window.clearInterval(timer);
+              return;
+            }
+            router.push(entry)['catch'](function () {});
+          }
+          if (attempts > 6) window.clearInterval(timer);
+        }, 6000);
+      }
+
       // Never leave the boot screen up indefinitely.
       window.setTimeout(hideBoot, 20000);
     })();
