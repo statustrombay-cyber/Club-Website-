@@ -1,21 +1,25 @@
 # Mindful Tattva — club site
 
-The standalone club experience, built on the scrolling engine recovered from the
-Cartier Watches & Wonders capture. It is **separate from the PHP club site** in
-this repository and can be deployed on its own.
+The standalone club site. It grew out of the Cartier Watches & Wonders scrolling
+engine that was recovered from a split capture, and keeps that site's editorial
+rhythm — a loader that counts, a sideways wall of frames, a scroll-driven 3D room
+— with none of its products. It is **separate from the PHP club site** in this
+repository and can be deployed on its own.
 
 ```
 cartier/
-  index.html            ← the club site: loader, hero, about, gallery, pillars, visit
-  engine.html           ← the original 3D journey, kept intact but not linked into
-                          the club page (see "About the 3D journey" below)
+  index.html            ← the club site: loader, hero, about, gallery, atrium, pillars, visit
+  experience.html       ← the atrium: the scroll-driven 3D room
+  engine.html           ← forwards to experience.html (old links keep working)
   club-data.json        ← snapshot of data/site.json, used when /api/site is absent
   assets/
     club.css, club.js   ← the club site styles and behaviour
-    app.js, app.css     ← the engine bundle and its styles (used by engine.html only)
+    atrium.js           ← the 3D room (procedural scene, authored camera, scroll)
+    vendor/             ← three.js r186, self-hosted (MIT)
+    app.js, app.css     ← the captured engine bundle, kept only as reference
     fonts/              ← Bodoni Moda, Inter (both SIL OFL), self-hosted
   images/psychologists/ ← ten temporary portraits used to fill the gallery
-  webgl/, images/, audio/, videos/, club-data.json …  ← engine assets
+  webgl/, audio/, videos/  ← the capture's assets, no longer used at runtime
 ```
 
 ## Run it
@@ -57,15 +61,53 @@ Testing the three states without touching the database:
 | `/?gallery=3`    | three photos, seven placeholders |
 | `/?gallery=10`   | ten photos, no placeholders    |
 
-## About the 3D journey
+## The atrium (3D)
 
-The original experience is a WebGL walkthrough (`engine.html`). Its rooms, desert
-dunes, cliffs and figures are in the model, but in the captured build the camera
-sits inside an invisible box and only the floating watch products are ever lit —
-the environment stays switched off, and with the watches hidden the canvas is
-empty white. The club site therefore does not depend on it: the rooms and the
-desert can be brought back as a later layer once that scene is repaired, and
-`engine.html` is kept as the reference for that work.
+`experience.html` is a scroll-driven room that belongs to the club. It is not a
+patched product page, and it does not download a model: the hall, the arch
+springs, the bench, the basin and the field of dunes are generated in
+`assets/atrium.js` at load time, so the whole scene is one module, one three.js
+build and ten photographs.
+
+What happens as you scroll:
+
+| Scroll | Camera | Chapter |
+| ------ | ------ | ------- |
+| 0.00 – 0.14 | through the entrance arch | *The Atrium* (title) |
+| 0.15 – 0.28 | into the room, right wall | i, The Room |
+| 0.29 – 0.39 | down the centre aisle | ii, Conversations |
+| 0.40 – 0.50 | turned to a portrait | iii, The Reading Room |
+| 0.54 – 0.69 | along the wall of faces | iv, The Wall |
+| 0.72 – 0.87 | out through the last arch | v, The Field |
+| 0.89 – 1.00 | rising over the dunes | vi, Visit |
+
+The camera is a keyframe path keyed to *progress*, not to a spline parameter, so
+each chapter's framing is authored. Ten portraits (the same temporary set the
+gallery uses) hang on the walls; the frames, walls, lamps and dune colours are
+drawn from the site palette. A WebGL2 check falls back to the plain text page if
+the browser has 3D switched off, and `prefers-reduced-motion` removes the drift.
+
+Files: `experience.html` (page, loader, chapter copy), `assets/atrium.js`
+(scene), `assets/vendor/three.module.js` + `three.core.js` (MIT).
+
+## About the captured Cartier engine
+
+The original bundle (`assets/app.js`, `webgl/`) is still on disk but is no longer
+loaded by any page. It was examined at length before building the atrium:
+
+* the GLB carries a 24.33 s `SCENE_01` clip that lifts one room at a time from
+  y = −50 to y = 0 and drives an orbiting camera — that part works;
+* its materials load correctly (albedo 1K, baked lightmaps 2K, environment EXR),
+  but every environment surface renders flat white: the room shell, the sky and
+  the floor all resolve to the clear colour, so only the watches were ever lit;
+* the camera sits inside the room shell, so hiding the shell leaves white and
+  hiding the sky leaves white — the "half a field" the club complained about.
+
+Repairing that shader stack inside a minified bundle was the alternative; the
+atrium takes the other route the brief allowed — keep the scroll journey, remove
+the watches, and fill the space with work we can author and test. `engine.html`
+now forwards to it. The capture's `webgl/`, `audio/` and `videos/` folders can be
+deleted whenever the reference is no longer wanted (they are ~85 MB).
 
 ## Rebranding
 

@@ -397,6 +397,58 @@ a { color: inherit; }
   transition: width 120ms linear;
 }
 
+
+/* ── the atrium (3D room) ────────────────────────────────────────────────── */
+.mt-hero__acts { margin: clamp(16px, 3vh, 28px) 0 0; padding-left: clamp(0px, 12vw, 220px); }
+
+.mt-enter {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 22px;
+  border: 1px solid rgba(20, 18, 15, 0.22);
+  color: var(--ink);
+  text-decoration: none;
+  font-size: 10px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  transition: color .4s var(--ease), border-color .4s var(--ease), background-color .4s var(--ease);
+}
+.mt-enter svg { width: 22px; height: 10px; overflow: visible; }
+.mt-enter:hover {
+  color: var(--paper);
+  background: var(--ink);
+  border-color: var(--ink);
+}
+.mt-enter--large { padding: 16px 26px; }
+
+.mt-atrium {
+  position: relative;
+  padding: clamp(80px, 15vh, 190px) var(--pad);
+  border-top: 1px solid var(--line);
+  background:
+    radial-gradient(120% 90% at 78% 12%, #fbf6ec 0%, var(--paper) 52%, var(--paper-2) 100%);
+  overflow: hidden;
+}
+.mt-atrium::after {
+  content: "";
+  position: absolute;
+  right: -12vw;
+  top: 50%;
+  width: 46vw;
+  height: 46vw;
+  max-width: 620px;
+  max-height: 620px;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 45%, rgba(255, 249, 236, 0.95) 0%, rgba(255, 249, 236, 0) 62%);
+  pointer-events: none;
+}
+.mt-atrium__inner { position: relative; z-index: 1; max-width: 620px; }
+.mt-atrium .mt-h2 { margin: 0 0 clamp(18px, 3vh, 30px); }
+.mt-atrium .mt-h2 em { font-style: italic; color: var(--gold); }
+.mt-atrium .mt-body { max-width: 52ch; margin-bottom: clamp(26px, 4vh, 42px); }
+
 /* ── pillars ─────────────────────────────────────────────────────────────── */
 .mt-pillars {
   padding: clamp(80px, 14vh, 170px) var(--pad);
