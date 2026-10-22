@@ -27,7 +27,7 @@ const SCENES = [
     cam: { p: [-1.9, 2.7, 21.0], l: [-1.9, 3.6, 12.0], fov: 54 },
     look: { exp: 0.78, air: { on: true, css: 'radial-gradient(92% 64% at 50% 34%, rgba(255,244,229,.92), rgba(255,238,219,.28) 58%, rgba(255,235,214,0) 78%)', a: .72 } } },
   { id: 'room',    title: 'The room\nwe keep',        sub: 'Where the week is put down', cta: 'Explore',        room: 1,
-    cam: { p: [0.0, 2.10, -15.0], l: [-1.0, 1.35, -1.5], fov: 56 }, keyAngle: 0.80, keyPower: 560,
+    cam: { p: [3.4, 2.00, -9.0], l: [-1.4, 1.50, -3.5], fov: 56 }, keyAngle: 0.85, keyPower: 470,
     look: { exp: 0.92, air: null } },
   { id: 'circles', title: 'Small circles\nof talking', sub: 'Six chairs, no agenda', cta: 'Explore',       room: 1,
     cam: { p: [-3.5, 1.85, -8.0], l: [1.5, 1.55, -2.0], fov: 58 }, keyAngle: 0.90, keyPower: 460,
