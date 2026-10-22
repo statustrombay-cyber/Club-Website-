@@ -6,7 +6,7 @@ Open `cartier/index.html` (or serve the folder) and it goes straight into the
 room — there is no entry screen.
 
 ```
-node tools/serve-cartier.mjs 4180     # http://localhost:4180/
+python3 -m http.server 4180 --directory cartier    # http://localhost:4180/
 ```
 
 Everything the experience needs is inside `cartier/`:
