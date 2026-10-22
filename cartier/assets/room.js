@@ -20,22 +20,33 @@ const STILL = PARAMS.has('still');
 
 /* ── the chapters, in the order they are told ────────────────────────────── */
 const SCENES = [
-  { id: 'intro',   kicker: 'A psychology club',      title: 'Mindful\nTattva',          cta: null,             room: 0,
-    cam: { p: [-1.9, 2.7, 21.0], l: [-1.9, 3.6, 12.0], fov: 54 } },
-  { id: 'room',    kicker: 'i \u2014 The room',       title: 'The room\nwe keep',        cta: 'Explore',        room: 1,
-    cam: { p: [-3.6, 2.50, -2.0], l: [1.5, 2.10, -8.5], fov: 62 } },
-  { id: 'circles', kicker: 'ii \u2014 Conversations', title: 'Small circles\nof talking', cta: 'Explore',       room: 1,
-    cam: { p: [-3.9, 2.30, 1.6], l: [2.0, 2.45, -5.2], fov: 58 } },
-  { id: 'view',    kicker: 'iii \u2014 The long view', title: 'Ground we\nstand on',     cta: 'Explore',        room: 2,
-    cam: { p: [0.11, 2.13, -4.75], l: [0.11, 1.73, 3.25], fov: 66 } },
-  { id: 'wall',    kicker: 'iv \u2014 The wall',     title: 'Ten faces\non the wall',   cta: 'Explore',        room: 4,
-    cam: { p: [-4.2, 4.0, -1.4], l: [0.2, 3.2, 6.0], fov: 56 } },
-  { id: 'texts',   kicker: 'v \u2014 The reading room', title: 'Texts we\nreturn to',   cta: 'Explore',        room: 3,
-    cam: { p: [0.0, 2.4, -3.5], l: [0.0, 4.2, -14.0], fov: 62 } },
-  { id: 'lamp',    kicker: 'vi \u2014 The quiet room', title: 'The light\nwe leave on',  cta: 'Explore',        room: 6,
-    cam: { p: [-2.0, 3.20, 24.0], l: [-2.0, 1.60, 10.0], fov: 62 } },
-  { id: 'visit',   kicker: 'vii \u2014 Visit',        title: 'Come and\nsit with us',    cta: 'Visit the club', room: 1,
-    cam: { p: [4.2, 2.45, -0.6], l: [-2.4, 2.60, -6.4], fov: 58 } }
+  /* `look` is the chapter's light: exposure for the render, `air` is the haze
+     laid over the glass. The reference opens in a bright hall, runs dark
+     through the middle, and ends in gold. */
+  { id: 'intro',   title: 'Mindful\nTattva',          cta: null,             room: 0, huge: true,
+    cam: { p: [-1.9, 2.7, 21.0], l: [-1.9, 3.6, 12.0], fov: 54 },
+    look: { exp: 0.78, air: { on: true, css: 'radial-gradient(92% 64% at 50% 34%, rgba(255,244,229,.92), rgba(255,238,219,.28) 58%, rgba(255,235,214,0) 78%)', a: .72 } } },
+  { id: 'room',    title: 'The room\nwe keep',        cta: 'Explore',        room: 1,
+    cam: { p: [0.29, 2.20, -5.6], l: [0.29, 2.00, -11.0], fov: 62 },
+    look: { exp: 1.15, air: null } },
+  { id: 'circles', title: 'Small circles\nof talking', cta: 'Explore',       room: 1,
+    cam: { p: [-3.9, 2.30, 1.6], l: [2.0, 2.45, -5.2], fov: 58 },
+    look: { exp: 0.62, air: null } },
+  { id: 'view',    title: 'Ground we\nstand on',       cta: 'Explore',        room: 2,
+    cam: { p: [0.11, 2.13, -4.75], l: [0.11, 1.73, 3.25], fov: 66 },
+    look: { exp: 0.95, air: { on: true, css: 'radial-gradient(70% 46% at 50% 62%, rgba(255,214,150,.34), rgba(255,206,140,0) 72%)', a: .4 } } },
+  { id: 'wall',    title: 'Ten faces\non the wall',   cta: 'Explore',        room: 4,
+    cam: { p: [-4.2, 4.0, -1.4], l: [0.2, 3.2, 6.0], fov: 56 },
+    look: { exp: 0.92, air: { on: true, css: 'radial-gradient(80% 54% at 46% 58%, rgba(255,196,120,.30), rgba(255,190,110,0) 74%)', a: .34 } } },
+  { id: 'texts',   title: 'Texts we\nreturn to',      cta: 'Explore',        room: 3,
+    cam: { p: [0.0, 2.4, -3.5], l: [0.0, 4.2, -14.0], fov: 62 },
+    look: { exp: 1.28, air: null } },
+  { id: 'lamp',    title: 'The light\nwe leave on',   cta: 'Explore',        room: 6,
+    cam: { p: [-2.0, 3.20, 24.0], l: [-2.0, 1.60, 10.0], fov: 62 },
+    look: { exp: 0.82, air: { on: true, css: 'radial-gradient(74% 40% at 60% 46%, rgba(255,205,150,.22), rgba(255,200,140,0) 70%)', a: .28 } } },
+  { id: 'visit',   title: 'Come and\nsit with us',    cta: 'Visit the club', room: 1,
+    cam: { p: [4.2, 2.45, -0.6], l: [-2.4, 2.60, -6.4], fov: 58 },
+    look: { exp: 1.00, air: { on: true, css: 'radial-gradient(96% 66% at 50% 40%, rgba(255,226,178,.70), rgba(255,206,150,.22) 56%, rgba(255,200,140,0) 80%)', a: .58 } } }
 ];
 
 /* the watch layer, the product typography, the mirror duplicates ──────── */
@@ -43,13 +54,17 @@ const HIDE = /^(baignoire|roadster|santos|crash|WATCH|watch_bg|Panthere|Empty\.p
 
 const $ = (sel) => document.querySelector(sel);
 const boot = $('#mt-loader'), bootNum = $('#mt-loader-num');
-const titleEl = $('#mt-title'), kickerEl = $('#mt-kicker'), ctaEl = $('#mt-cta');
-const dotsEl = $('#mt-dots'), fadeEl = $('#mt-fade'), countNow = $('#mt-count-now');
+const titleEl = $('#mt-title'), ctaEl = $('#mt-cta');
+const dotsEl = $('#mt-dots'), fadeEl = $('#mt-fade');
+const airEl = $('#mt-air'), nextEl = $('#mt-next'), barEl = $('#mt-progress i');
 
 let renderer, post, scene, camera, main, chars, lightmaps = [], duration = 24.33;
 let mixer, charMixer, track = null;
 /* the authored timeline (theatre/mainScene.theatre-state.json) */
 let theatre = null, theatreTimeline = null, theatreWindows = null;
+let whip = 0;
+let dprCap = 1.75;
+let slow = 0, degraded = false;   // 1 at a cut → 0 as the new chapter settles (the sheet's motionBlur)
 const glowSprites = [];
 const probes = [];
 let activeProbe = null;
@@ -112,10 +127,14 @@ async function build() {
   const { EXRLoader } = await import('./vendor/EXRLoader.js');
 
   renderer = new THREE.WebGLRenderer({ canvas: $('#mt-canvas'), antialias: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+  /* the reference ships adaptive quality; so do we. A phone never needs more
+     than 1.75 device pixels, and one slow stretch drops the ratio rather than
+     the frame rate. */
+  dprCap = Math.min(devicePixelRatio || 1, 1.75);
+  renderer.setPixelRatio(dprCap);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.35;
+  renderer.toneMapping = THREE.NoToneMapping;   // the film pass tone maps
+  renderer.toneMappingExposure = 1;
 
   post = makePost(renderer, {});
   post.setSize(innerWidth, innerHeight);
@@ -186,15 +205,15 @@ async function build() {
       const shell = /^outside_box/i.test(o.name || '');
       if (shell) {
         // the room walls stay in shadow; the set pieces carry the light
-        if (m.color) m.color.multiplyScalar(0.42);
+        if (m.color) m.color.multiplyScalar(0.50);
         if (m.emissiveMap) m.emissiveIntensity = 0.3;
       }
       if (i >= 0 && o.geometry.attributes.uv1 && lightmaps[i]) {
         m.lightMap = lightmaps[i];
-        m.lightMapIntensity = shell ? 4.2 : 5.2;
+        m.lightMapIntensity = shell ? 1.15 : 1.75;
       }
       m.envMapIntensity = 0.22;
-      if (m.color) m.color.multiplyScalar(0.78);
+      if (m.color) m.color.multiplyScalar(0.9);
       if (m.map) m.map.anisotropy = 4;
       // the export drives these panels at 3–8× as flat light. At film level
       // they become the glow the reference keeps in its windows and lamps.
@@ -459,6 +478,8 @@ function applyCam(s) {
 }
 
 /* every chapter breathes: a slow push in, a slow sideways drift */
+const vFwd = new THREE.Vector3(), vRight = new THREE.Vector3(), vUp = new THREE.Vector3(0, 1, 0);
+
 function breathe(dt) {
   const s = SCENES[index];
   arriving += dt;
@@ -466,10 +487,13 @@ function breathe(dt) {
   const drift = Math.sin(clockDrift * 0.21) * 0.16;
   const push = e * 0.62;
 
-  const forward = new THREE.Vector3().subVectors(lookPoint, camera.position).normalize();
-  const right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
+  const forward = vFwd.subVectors(lookPoint, camera.position).normalize();
+  const right = vRight.crossVectors(forward, vUp).normalize();
   camera.position.addScaledVector(forward, push * 0.05);
-  camera.position.addScaledVector(right, drift * 0.02);
+  /* the reference never holds still: a slow sideways pan, wider on a desktop
+     than on a phone, plus a barely-there vertical float */
+  const pan = Math.sin(clockDrift * 0.11) * (s && s.pan ? s.pan : 0.30);
+  camera.position.addScaledVector(right, pan * 0.05 + drift * 0.02);
   if (!STILL) camera.position.y += Math.sin(clockDrift * 0.6) * 0.004;
   camera.lookAt(lookPoint);
 }
@@ -508,6 +532,14 @@ function frame(dt) {
     breathe(dt);
   }
 
+  if (whip > 0.001) {
+    whip = Math.max(0, whip - dt * 1.7);
+    if (post.setWhip) post.setWhip(whip * 0.9);
+  } else if (whip !== 0) {
+    whip = 0;
+    if (post.setWhip) post.setWhip(0);
+  }
+
   if (charMixer) charMixer.update(dt);
   post.render(scene, camera, dt);
 }
@@ -517,11 +549,9 @@ let busy = false;
 
 function paint(i) {
   const s = SCENES[i];
-  if (kickerEl) kickerEl.textContent = s.kicker || '';
   if (titleEl) {
-    titleEl.classList.remove('is-huge');
+    titleEl.classList.toggle('is-huge', !!s.huge);
     titleEl.innerHTML = s.title.split('\n').map((l) => `<span>${l}</span>`).join('');
-    if (i === 0) titleEl.classList.add('is-huge');
   }
   if (ctaEl) {
     ctaEl.textContent = s.cta || '';
@@ -531,8 +561,47 @@ function paint(i) {
     d.classList.toggle('is-on', k === i);
     d.classList.toggle('is-done', k < i);
   });
-  if (countNow) countNow.textContent = String(i + 1).padStart(2, '0');
+  if (barEl) barEl.style.width = `${((i + 1) / SCENES.length) * 100}%`;
+  fitTitle();
   document.body.dataset.scene = s.id;
+  light(i);
+}
+
+/* the reference sizes its titles to the frame; ours would wrap on a phone, so
+   the largest line is measured and the whole block scaled to fit the width */
+let fitFrame = 0;
+function fitTitle() {
+  if (!titleEl) return;
+  cancelAnimationFrame(fitFrame);
+  fitFrame = requestAnimationFrame(() => {
+    titleEl.style.fontSize = '';
+    const avail = titleEl.parentElement.clientWidth - 2 * parseFloat(getComputedStyle(titleEl.parentElement).paddingLeft || '0');
+    const spans = [...titleEl.children];
+    if (!spans.length || avail <= 0) return;
+    const widest = Math.max(...spans.map((sp) => sp.getBoundingClientRect().width));
+    if (!widest) return;
+    const base = parseFloat(getComputedStyle(titleEl).fontSize);
+    if (widest > avail) {
+      titleEl.style.fontSize = `${Math.max(20, Math.floor(base * (avail / widest) * 0.98))}px`;
+    }
+  });
+}
+
+/* the chapter's exposure and its air */
+function light(i) {
+  const s = SCENES[i];
+  const look = s && s.look;
+  if (!look) return;
+  if (post && post.setExposure) post.setExposure(look.exp);
+  if (!airEl) return;
+  if (look.air) {
+    airEl.style.background = look.air.css;
+    airEl.style.opacity = String(look.air.a);
+    airEl.classList.add('on');
+  } else {
+    airEl.classList.remove('on');
+    airEl.style.opacity = '0';
+  }
 }
 
 /* One absolute position (`want`) plus a kick: however many swipes arrive while
@@ -556,17 +625,18 @@ function kick() {
   busy = true;
   pending = want;
 
+  withdrawNext();
   fadeEl?.classList.add('is-on');
   setTimeout(() => {
     index = want;
     paint(index);
     stage(index, false);          // the room changes while the frame is black
+    whip = motionBlurAt(index);
     fadeEl?.classList.remove('is-on');
     busy = false;
     pending = null;
-    const hint = $('#mt-swipe');
-    hint?.classList.remove('on');
     if (want !== index) kick();   // another swipe arrived during the fade
+    else offerNext();
   }, 430);
 }
 
@@ -624,12 +694,12 @@ function wireNavigation() {
 
 /* ── sound: a room tone grown in the browser, no files ─────────────────── */
 function wireCta() {
-  if (!ctaEl) return;
-  ctaEl.addEventListener('click', () => { location.href = '/'; });
+  ctaEl?.addEventListener('click', () => { location.href = '/'; });
+  nextEl?.addEventListener('click', () => { nudge(1); withdrawNext(); });
 }
 
 function wireSound() {
-  const wrap = $('#mt-sound'), btn = $('#mt-sound-toggle'), state = $('#mt-sound-state');
+  const wrap = $('#mt-sound'), btn = $('#mt-sound-toggle');
   let ctx = null, gain = null, on = false;
 
   const make = () => {
@@ -666,7 +736,6 @@ function wireSound() {
     gain.gain.linearRampToValueAtTime(on ? 0.055 : 0, ctx.currentTime + (on ? 1.2 : 0.6));
     wrap.dataset.on = on ? '1' : '0';
     btn.setAttribute('aria-pressed', on ? 'true' : 'false');
-    if (state) state.textContent = on ? 'On' : 'Off';
   });
 }
 
@@ -676,6 +745,7 @@ function resize() {
   const w = innerWidth, h = innerHeight;
   renderer.setSize(w, h, false);
   camera.aspect = w / h;
+  fitTitle();
   camera.fov = SCENES[index].cam.fov || 58;
   camera.updateProjectionMatrix();
   post.setSize(w, h);
@@ -687,13 +757,35 @@ function reveal() {
   revealed = true;
   if (bootNum) bootNum.textContent = '100';
   setTimeout(() => {
-    boot?.classList.add('is-done');
+    boot?.classList.add('is-off');
     document.body.classList.add('is-ready');
     $('#mt-vignette')?.classList.add('on');
-    const hint = $('#mt-swipe');
-    hint?.classList.add('on');
-    setTimeout(() => hint?.classList.remove('on'), 6500);
+    offerNext();
   }, 260);
+}
+
+/* how hard the cut blurs: the sheet's own motionBlur curve, sampled at the
+   chapter's start. Cartier kicks a single frame of blur at every scene change. */
+function motionBlurAt(i) {
+  if (!theatre || !theatreTimeline || !theatreWindows) return 1;
+  const w = theatreWindows[i];
+  if (!w) return 1;
+  const v = theatre.sampleAt(theatreTimeline, Math.min(w.start + 0.05, w.end)).blur;
+  return Math.max(0.35, Math.min(1, Number(v) || 0));
+}
+
+/* the hairline circle: offered once a chapter has settled, withdrawn on a move */
+let nextTimer = 0;
+function offerNext() {
+  if (!nextEl) return;
+  clearTimeout(nextTimer);
+  nextEl.classList.remove('on');
+  if (want >= SCENES.length - 1) return;
+  nextTimer = setTimeout(() => nextEl.classList.add('on'), 2600);
+}
+function withdrawNext() {
+  clearTimeout(nextTimer);
+  nextEl?.classList.remove('on');
 }
 
 /* ── boot ───────────────────────────────────────────────────────────────── */
@@ -713,12 +805,27 @@ function start() {
   wireCta();
   wireSound();
   window.addEventListener('resize', resize);
+  window.addEventListener('orientationchange', () => setTimeout(resize, 180));
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', resize);
 
   let last = performance.now();
   (function loop(now) {
     const dt = Math.min((now - last) / 1000, 0.05);
     last = now;
     try { frame(dt); } catch (e) { /* keep the loop alive */ }
+    /* if two seconds of frames are consistently over 40 ms, render fewer pixels
+       once — the look is the same, the motion stays smooth */
+    if (!degraded && dt > 0.040) {
+      slow += dt;
+      if (slow > 2) {
+        degraded = true;
+        dprCap = Math.min(dprCap, 1);
+        renderer.setPixelRatio(1);
+        resize();
+      }
+    } else if (slow > 0 && dt < 0.025) {
+      slow = Math.max(0, slow - dt * 0.5);
+    }
     requestAnimationFrame(loop);
   })(last);
 
@@ -733,7 +840,7 @@ function start() {
   window.__MT_GO__ = go;
   window.__MT_ROOM__ = { go, get index() { return index; }, get scene() { return scene; } };
   window.__MT_DBG__ = {
-    THREE, get scene() { return scene; }, get camera() { return camera; }, get renderer() { return renderer; },
+    THREE, get post() { return post; }, get scene() { return scene; }, get camera() { return camera; }, get renderer() { return renderer; },
     get main() { return main; }, get chars() { return chars; }, get mixer() { return mixer; },
     roomOf, hide: HIDE, SCENES,
     free(p, l, fov) {

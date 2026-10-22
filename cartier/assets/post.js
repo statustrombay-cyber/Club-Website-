@@ -19,6 +19,29 @@ varying vec2 vUv;
 void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }
 `;
 
+/* Cartier tone maps before it blooms, and so must we: their threshold (0.3488)
+   is a display-space number. The scene renders into a linear buffer, so this
+   pass is what turns it into the picture everything else is tuned against. */
+const TONE = /* glsl */`
+uniform sampler2D tMap;
+uniform float uExposure;
+uniform float uToneMap;
+varying vec2 vUv;
+vec3 acesFilmic(vec3 x) {
+  const float a = 2.51, b = 0.03, c = 2.43, d = 0.59, e = 0.14;
+  return clamp((x * (a * x + b)) / (x * (c * x + d) + e), 0.0, 1.0);
+}
+vec3 linearToSRGB(vec3 c) {
+  return mix(c * 12.92, 1.055 * pow(max(c, vec3(0.0)), vec3(1.0 / 2.4)) - 0.055,
+             step(0.0031308, c));
+}
+void main() {
+  vec3 c = texture2D(tMap, vUv).rgb * uExposure;
+  if (uToneMap > 0.5) c = acesFilmic(c);
+  gl_FragColor = vec4(linearToSRGB(max(c, vec3(0.0))), 1.0);
+}
+`;
+
 const PREPASS = /* glsl */`
 uniform sampler2D tMap;
 uniform vec2 uLumafilterParams;
@@ -82,6 +105,7 @@ uniform float uVignetteRadius;
 uniform float uVignetteBias;
 uniform float uLensDistortion;
 uniform float uLensDistortionMax;
+uniform float uWhip;
 varying vec2 vUv;
 
 float hash12(vec2 p) {
@@ -119,6 +143,15 @@ void main() {
   }
   color /= totalSpectrum;
 
+  /* Cartier's cut kicks a one-frame motion blur; ours is the same idea, a short
+     horizontal smear that decays as the new chapter settles. */
+  if (uWhip > 0.001) {
+    vec3 smear = color * 0.5;
+    smear += texture2D(tMap, uv + vec2(0.020 * uWhip, 0.0)).rgb * 0.25;
+    smear += texture2D(tMap, uv - vec2(0.020 * uWhip, 0.0)).rgb * 0.25;
+    color = smear;
+  }
+
   float grain = hash12(gl_FragCoord.xy + fract(uTime) * 100.0);
   color += (grain - 0.5) * 0.025;
 
@@ -150,6 +183,7 @@ export function makePost(renderer, opts = {}) {
 
   const rtOpts = { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, depthBuffer: false, stencilBuffer: false };
   const sceneRT = new THREE.WebGLRenderTarget(2, 2, Object.assign({ depthBuffer: true }, rtOpts));
+  const toneRT = new THREE.WebGLRenderTarget(2, 2, rtOpts);
   const prepassRT = new THREE.WebGLRenderTarget(2, 2, rtOpts);
   const blurA = new THREE.WebGLRenderTarget(2, 2, rtOpts);
   const blurB = new THREE.WebGLRenderTarget(2, 2, rtOpts);
@@ -166,8 +200,12 @@ export function makePost(renderer, opts = {}) {
   const blueNoiseTex = tex('/webgl/global/noises/bluenoise256.png');
   blueNoiseTex.wrapS = blueNoiseTex.wrapT = THREE.RepeatWrapping;
 
+  const toneMat = new THREE.ShaderMaterial({
+    uniforms: { tMap: { value: sceneRT.texture }, uExposure: { value: 1 }, uToneMap: { value: 1 } },
+    vertexShader: VERT, fragmentShader: TONE, depthTest: false, depthWrite: false
+  });
   const prepassMat = new THREE.ShaderMaterial({
-    uniforms: { tMap: { value: sceneRT.texture }, uLumafilterParams: { value: new THREE.Vector2(cfg.threshold, cfg.knee) } },
+    uniforms: { tMap: { value: toneRT.texture }, uLumafilterParams: { value: new THREE.Vector2(cfg.threshold, cfg.knee) } },
     vertexShader: VERT, fragmentShader: PREPASS, depthTest: false, depthWrite: false
   });
   const blurMat = new THREE.ShaderMaterial({
@@ -193,6 +231,7 @@ export function makePost(renderer, opts = {}) {
       uVignetteRadius: { value: cfg.vignetteRadius },
       uVignetteBias: { value: cfg.vignetteBias },
       uLensDistortion: { value: 1 },
+      uWhip: { value: 0 },
       uLensDistortionMax: { value: cfg.lensDistortionMax }
     },
     vertexShader: VERT, fragmentShader: FILM, depthTest: false, depthWrite: false
@@ -206,6 +245,7 @@ export function makePost(renderer, opts = {}) {
     const pr = renderer.getPixelRatio();
     const W = Math.max(2, Math.floor(w * pr)), H = Math.max(2, Math.floor(h * pr));
     sceneRT.setSize(W, H);
+    toneRT.setSize(W, H);
     const hw = Math.max(2, Math.floor(W / 2)), hh = Math.max(2, Math.floor(H / 2));
     prepassRT.setSize(hw, hh);
     blurA.setSize(hw, hh);
@@ -229,6 +269,7 @@ export function makePost(renderer, opts = {}) {
     renderer.clear();
     renderer.render(scene, camera);
 
+    pass(toneMat, toneRT);
     pass(prepassMat, prepassRT);
     const tx = 1 / prepassRT.width, ty = 1 / prepassRT.height;
     blurMat.uniforms.tMap.value = prepassRT.texture;
@@ -254,6 +295,9 @@ export function makePost(renderer, opts = {}) {
     render: renderFinal,
     setSize,
     uniforms: filmMat.uniforms,
+    setWhip(v) { filmMat.uniforms.uWhip.value = v; },
+    setExposure(v) { toneMat.uniforms.uExposure.value = v; },
+    setToneMap(on) { toneMat.uniforms.uToneMap.value = on ? 1 : 0; },
     config: cfg
   };
 }
