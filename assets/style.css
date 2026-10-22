@@ -1,0 +1,366 @@
+/* Self-hosted, OFL licensed. Declared first so the shader-side work is not
+   held up by a font request. */
+@font-face {
+  font-family: "Bodoni Moda";
+  src: url("./fonts/bodoni-moda-latin.woff2") format("woff2");
+  font-weight: 300 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Inter";
+  src: url("./fonts/inter-latin-regular.woff2") format("woff2");
+  font-weight: 300 600;
+  font-display: swap;
+}
+
+/* Mindful Tattva — The Long Room
+   Type, chrome and motion. The room itself is drawn by assets/js. */
+
+:root {
+  --ink: #f4efe6;
+  --ink-dim: rgba(244, 239, 230, 0.58);
+  --ink-faint: rgba(244, 239, 230, 0.26);
+  --gold: #d9ab63;
+  --gold-soft: rgba(217, 171, 99, 0.5);
+  --void: #070605;
+  --serif: "Bodoni Moda", "Didot", "Bodoni MT", "Playfair Display", "Times New Roman", Georgia, serif;
+  --sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--void);
+  color: var(--ink);
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+body {
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  cursor: default;
+}
+
+#stage {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+}
+
+/* a very light film — the WebGL pass has its own grain, this keeps the type
+   from ever sitting on pure pixels */
+.grain {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+  opacity: 0.16;
+  mix-blend-mode: overlay;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.14) 0.5px, transparent 0.5px);
+  background-size: 3px 3px;
+}
+
+/* ── loader ─────────────────────────────────────────────────────────────── */
+#loader {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: var(--void);
+  display: grid;
+  place-items: center;
+  transition: opacity 900ms var(--ease), visibility 900ms;
+}
+#loader[data-done="1"] { opacity: 0; visibility: hidden; }
+
+.loader__inner { text-align: center; display: grid; gap: 18px; justify-items: center; }
+
+.loader__mark {
+  font-family: var(--serif);
+  font-size: clamp(15px, 1.4vw, 18px);
+  letter-spacing: 0.5em;
+  text-indent: 0.5em;
+  text-transform: uppercase;
+  color: var(--ink);
+  opacity: 0.9;
+}
+
+.loader__num {
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: clamp(84px, 13vw, 152px);
+  line-height: 0.9;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.loader__num i { font-style: normal; font-size: 0.24em; color: var(--gold); margin-left: 0.12em; vertical-align: 0.85em; }
+
+.loader__line { width: min(240px, 42vw); height: 1px; background: rgba(244, 239, 230, 0.12); overflow: hidden; }
+.loader__line b { display: block; height: 100%; width: 0; background: var(--gold); transition: width 240ms linear; }
+
+.loader__note {
+  font-size: 10px;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* ── frame ──────────────────────────────────────────────────────────────── */
+.top {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: clamp(18px, 2.6vw, 34px) clamp(18px, 3.4vw, 48px);
+  pointer-events: none;
+}
+.top::after {
+  content: "";
+  position: absolute;
+  left: clamp(18px, 3.4vw, 48px);
+  right: clamp(18px, 3.4vw, 48px);
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(244, 239, 230, 0.13) 18%, rgba(244, 239, 230, 0.13) 82%, transparent);
+}
+
+.mark {
+  font-family: var(--serif);
+  font-size: clamp(14px, 1.15vw, 17px);
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: var(--ink);
+  text-decoration: none;
+  pointer-events: auto;
+  white-space: nowrap;
+}
+.mark::before {
+  content: "";
+  display: inline-block;
+  width: 18px; height: 1px;
+  background: var(--gold);
+  margin-right: 12px;
+  vertical-align: 0.3em;
+}
+
+.top__right { display: flex; align-items: center; gap: clamp(14px, 2vw, 30px); }
+.top__meta {
+  font-size: 10px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.sound {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: none;
+  border: 0;
+  padding: 6px 0;
+  color: var(--ink-dim);
+  font: inherit;
+  font-size: 10px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color 240ms var(--ease);
+}
+.sound:hover, .sound:focus-visible { color: var(--ink); }
+.sound__bars { display: inline-flex; align-items: flex-end; gap: 2px; height: 10px; }
+.sound__bars i {
+  display: block; width: 1.5px; height: 3px; background: var(--gold);
+  transition: height 300ms var(--ease), opacity 300ms;
+  opacity: 0.5;
+}
+.sound[aria-pressed="true"] .sound__bars i { opacity: 1; animation: bounce 1.4s infinite ease-in-out; }
+.sound[aria-pressed="true"] .sound__bars i:nth-child(2) { animation-delay: 0.18s; }
+.sound[aria-pressed="true"] .sound__bars i:nth-child(3) { animation-delay: 0.34s; }
+.sound[aria-pressed="true"] .sound__bars i:nth-child(4) { animation-delay: 0.5s; }
+@keyframes bounce { 0%, 100% { height: 3px; } 50% { height: 10px; } }
+
+/* ── the chapter copy ───────────────────────────────────────────────────── */
+.stage-copy {
+  position: fixed;
+  inset: 0;
+  z-index: 8;
+  pointer-events: none;
+  display: grid;
+  align-content: center;
+  padding: 0 clamp(22px, 7vw, 132px);
+}
+/* the wall behind the type is sometimes the brightest thing in the room, so the
+   copy gets its own quiet scrim — invisible until you look for it */
+.stage-copy::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(60% 55% at 18% 50%, rgba(6, 5, 4, 0.72), rgba(6, 5, 4, 0.34) 45%, rgba(6, 5, 4, 0) 72%),
+    linear-gradient(90deg, rgba(6, 5, 4, 0.45) 0%, rgba(6, 5, 4, 0.12) 34%, rgba(6, 5, 4, 0) 58%);
+  pointer-events: none;
+}
+
+.chapter {
+  max-width: min(640px, 58vw);
+  will-change: opacity, transform, filter;
+  opacity: 0;
+  transform: translateY(22px);
+  filter: blur(6px);
+}
+
+.chapter__kicker {
+  font-size: 10px;
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin: 0 0 clamp(14px, 1.8vw, 22px);
+}
+
+.chapter__title {
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: clamp(38px, 4.9vw, 74px);
+  line-height: 0.96;
+  letter-spacing: -0.015em;
+  margin: 0;
+  color: var(--ink);
+  text-wrap: balance;
+  text-shadow: 0 2px 40px rgba(0, 0, 0, 0.45);
+  white-space: pre-line;
+}
+.chapter__title em { font-style: italic; color: var(--gold); }
+
+.chapter__sub {
+  margin: clamp(16px, 2vw, 26px) 0 0;
+  font-size: clamp(12px, 1.05vw, 14px);
+  line-height: 1.6;
+  letter-spacing: 0.02em;
+  color: rgba(244, 239, 230, 0.74);
+  max-width: 32ch;
+}
+
+/* ── dots ───────────────────────────────────────────────────────────────── */
+.dots {
+  position: fixed;
+  z-index: 10;
+  right: clamp(16px, 2.4vw, 34px);
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  gap: 14px;
+  pointer-events: auto;
+}
+.dots button {
+  position: relative;
+  width: 22px; height: 22px;
+  border: 0; padding: 0;
+  background: none;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+.dots button::after {
+  content: "";
+  width: 3px; height: 3px;
+  border-radius: 50%;
+  background: var(--ink-faint);
+  transition: background 300ms var(--ease), transform 300ms var(--ease);
+}
+.dots button:hover::after { background: var(--ink-dim); transform: scale(1.4); }
+.dots button[aria-current="true"]::after { background: var(--gold); transform: scale(1.9); }
+.dots button:focus-visible { outline: 1px solid var(--gold-soft); outline-offset: 2px; }
+
+/* ── footer ─────────────────────────────────────────────────────────────── */
+.bottom {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: clamp(16px, 2.2vw, 28px) clamp(18px, 3.4vw, 48px);
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  pointer-events: none;
+}
+.bottom__hint { transition: opacity 600ms var(--ease); }
+.bottom__hint[data-off="1"] { opacity: 0; }
+
+.progress {
+  position: absolute;
+  left: clamp(18px, 3.4vw, 48px);
+  right: clamp(18px, 3.4vw, 48px);
+  bottom: clamp(10px, 1.4vw, 16px);
+  height: 1px;
+  background: rgba(244, 239, 230, 0.11);
+}
+.progress i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, var(--gold-soft), var(--gold));
+}
+
+/* ── errors, fallback ───────────────────────────────────────────────────── */
+.fallback[hidden] { display: none !important; }
+.fallback {
+  position: fixed; inset: 0; z-index: 30;
+  display: grid; place-content: center; gap: 16px;
+  padding: 8vw; background: var(--void);
+  font-size: 15px; line-height: 1.6; color: var(--ink-dim);
+}
+.fallback h1 { font-family: var(--serif); font-weight: 300; color: var(--ink); margin: 0; letter-spacing: 0.16em; text-transform: uppercase; font-size: clamp(24px, 4vw, 44px); }
+.fallback ul { margin: 0; padding-left: 18px; }
+
+.error {
+  position: fixed;
+  left: 50%; bottom: 18px;
+  transform: translateX(-50%);
+  z-index: 50;
+  max-width: 80vw;
+  padding: 10px 16px;
+  background: rgba(20, 14, 10, 0.92);
+  border: 1px solid rgba(217, 171, 99, 0.35);
+  color: #f4efe6;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  white-space: pre-wrap;
+}
+
+.noscript {
+  position: fixed; inset: 0; z-index: 60; display: grid; place-items: center;
+  background: var(--void); color: var(--ink); font-family: var(--serif);
+}
+
+/* ── phones ─────────────────────────────────────────────────────────────── */
+@media (max-width: 720px) {
+  .stage-copy { align-content: end; padding: 0 22px 26vh; }
+  .chapter { max-width: none; }
+  .chapter__title { font-size: clamp(34px, 10.4vw, 52px); }
+  .chapter__sub { font-size: 13px; }
+  .top__meta { display: none; }
+  .dots { right: 10px; gap: 10px; }
+  .dots button { width: 26px; height: 14px; }
+  .bottom { padding-bottom: 22px; }
+  .bottom__hint { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chapter { transition: none !important; }
+  .sound[aria-pressed="true"] .sound__bars i { animation: none; height: 6px; }
+}
