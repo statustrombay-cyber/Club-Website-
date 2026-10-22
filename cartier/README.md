@@ -75,7 +75,7 @@ phone, which is why the framing is per chapter.
 
 | # | Chapter | Room |
 | - | ------- | ---- |
-| – | *Mindful Tattva* (title) | the panelled entrance |
+| – | *Mindful Tattva* — "A room for the mind, a club for the curious" | the panelled entrance |
 | i | The room we keep | the hall, a figure turning |
 | ii | Small circles of talking | the hall, groups standing |
 | iii | Ground we stand on | the standing stones in their cone of light |
@@ -83,6 +83,20 @@ phone, which is why the framing is per chapter.
 | v | Texts we return to | the reading wall of painted strokes |
 | vi | The light we leave on | the quiet room and its lit bench |
 | vii | Come and sit with us | the hall from the far side |
+
+The frame is the recorded reference's, matched from the phone capture: SOUND
+upper left, the wordmark upper centre, one huge hairline uppercase title with a
+short tagline beneath it, EXPLORE under a rule, the chapter dots and a progress
+line at the foot, and — on the opening card only — a hairline circle with a down
+arrow. Type is measured and scaled to the viewport, so the longest line never
+wraps; the same frame is used from 320 px to a desktop, in both orientations.
+
+**Light.** The capture shows a bright hall opening, a long dark middle and a
+gold ending, and the build follows it chapter by chapter: a per-chapter exposure
+plus a screen-blended air layer over the render. The film pass tone maps
+(exposure → ACES → sRGB) *before* the bloom, which matters: Cartier's bloom
+threshold is a display-space number, and feeding it linear values both flattened
+the highlights and made exposure do nothing.
 
 Grading: the baked lightmaps store irradiance in the red channel only, so they
 are collapsed to luminance on a canvas and tinted to the club's warm light

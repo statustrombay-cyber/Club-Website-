@@ -23,28 +23,28 @@ const SCENES = [
   /* `look` is the chapter's light: exposure for the render, `air` is the haze
      laid over the glass. The reference opens in a bright hall, runs dark
      through the middle, and ends in gold. */
-  { id: 'intro',   title: 'Mindful\nTattva',          cta: null,             room: 0, huge: true,
+  { id: 'intro',   title: 'Mindful\nTattva',          sub: 'A room for the mind,\na club for the curious', cta: null,             room: 0, huge: true,
     cam: { p: [-1.9, 2.7, 21.0], l: [-1.9, 3.6, 12.0], fov: 54 },
     look: { exp: 0.78, air: { on: true, css: 'radial-gradient(92% 64% at 50% 34%, rgba(255,244,229,.92), rgba(255,238,219,.28) 58%, rgba(255,235,214,0) 78%)', a: .72 } } },
-  { id: 'room',    title: 'The room\nwe keep',        cta: 'Explore',        room: 1,
+  { id: 'room',    title: 'The room\nwe keep',        sub: 'Where the week is put down', cta: 'Explore',        room: 1,
     cam: { p: [0.29, 2.20, -5.6], l: [0.29, 2.00, -11.0], fov: 62 },
     look: { exp: 1.15, air: null } },
-  { id: 'circles', title: 'Small circles\nof talking', cta: 'Explore',       room: 1,
+  { id: 'circles', title: 'Small circles\nof talking', sub: 'Six chairs, no agenda', cta: 'Explore',       room: 1,
     cam: { p: [-3.9, 2.30, 1.6], l: [2.0, 2.45, -5.2], fov: 58 },
     look: { exp: 0.62, air: null } },
-  { id: 'view',    title: 'Ground we\nstand on',       cta: 'Explore',        room: 2,
+  { id: 'view',    title: 'Ground we\nstand on',       sub: 'The practices that hold us', cta: 'Explore',        room: 2,
     cam: { p: [0.11, 2.13, -4.75], l: [0.11, 1.73, 3.25], fov: 66 },
     look: { exp: 0.95, air: { on: true, css: 'radial-gradient(70% 46% at 50% 62%, rgba(255,214,150,.34), rgba(255,206,140,0) 72%)', a: .4 } } },
-  { id: 'wall',    title: 'Ten faces\non the wall',   cta: 'Explore',        room: 4,
+  { id: 'wall',    title: 'Ten faces\non the wall',   sub: 'The people who listen', cta: 'Explore',        room: 4,
     cam: { p: [-4.2, 4.0, -1.4], l: [0.2, 3.2, 6.0], fov: 56 },
     look: { exp: 0.92, air: { on: true, css: 'radial-gradient(80% 54% at 46% 58%, rgba(255,196,120,.30), rgba(255,190,110,0) 74%)', a: .34 } } },
-  { id: 'texts',   title: 'Texts we\nreturn to',      cta: 'Explore',        room: 3,
+  { id: 'texts',   title: 'Texts we\nreturn to',      sub: 'A shelf, and the margins\nwe write in', cta: 'Explore',        room: 3,
     cam: { p: [0.0, 2.4, -3.5], l: [0.0, 4.2, -14.0], fov: 62 },
-    look: { exp: 1.28, air: null } },
-  { id: 'lamp',    title: 'The light\nwe leave on',   cta: 'Explore',        room: 6,
-    cam: { p: [-2.0, 3.20, 24.0], l: [-2.0, 1.60, 10.0], fov: 62 },
+    look: { exp: 1.55, air: { on: true, css: 'radial-gradient(72% 52% at 50% 46%, rgba(255,236,208,.30), rgba(255,230,198,0) 72%)', a: .38 } } },
+  { id: 'lamp',    title: 'The light\nwe leave on',   sub: 'Nine in the evening, still here', cta: 'Explore',        room: 6,
+    cam: { p: [-2.0, 2.20, 24.0], l: [-2.0, 2.00, 8.0], fov: 62 },
     look: { exp: 0.82, air: { on: true, css: 'radial-gradient(74% 40% at 60% 46%, rgba(255,205,150,.22), rgba(255,200,140,0) 70%)', a: .28 } } },
-  { id: 'visit',   title: 'Come and\nsit with us',    cta: 'Visit the club', room: 1,
+  { id: 'visit',   title: 'Come and\nsit with us',    sub: 'Open to every student', cta: 'Visit the club', room: 1,
     cam: { p: [4.2, 2.45, -0.6], l: [-2.4, 2.60, -6.4], fov: 58 },
     look: { exp: 1.00, air: { on: true, css: 'radial-gradient(96% 66% at 50% 40%, rgba(255,226,178,.70), rgba(255,206,150,.22) 56%, rgba(255,200,140,0) 80%)', a: .58 } } }
 ];
@@ -54,7 +54,7 @@ const HIDE = /^(baignoire|roadster|santos|crash|WATCH|watch_bg|Panthere|Empty\.p
 
 const $ = (sel) => document.querySelector(sel);
 const boot = $('#mt-loader'), bootNum = $('#mt-loader-num');
-const titleEl = $('#mt-title'), ctaEl = $('#mt-cta');
+const titleEl = $('#mt-title'), subEl = $('#mt-sub'), ctaEl = $('#mt-cta');
 const dotsEl = $('#mt-dots'), fadeEl = $('#mt-fade');
 const airEl = $('#mt-air'), nextEl = $('#mt-next'), barEl = $('#mt-progress i');
 
@@ -553,6 +553,9 @@ function paint(i) {
     titleEl.classList.toggle('is-huge', !!s.huge);
     titleEl.innerHTML = s.title.split('\n').map((l) => `<span>${l}</span>`).join('');
   }
+  if (subEl) {
+    subEl.innerHTML = (s.sub || '').split('\n').map((l) => `<span>${l}</span>`).join('');
+  }
   if (ctaEl) {
     ctaEl.textContent = s.cta || '';
     ctaEl.classList.toggle('is-off', !s.cta);
@@ -780,8 +783,10 @@ function offerNext() {
   if (!nextEl) return;
   clearTimeout(nextTimer);
   nextEl.classList.remove('on');
-  if (want >= SCENES.length - 1) return;
-  nextTimer = setTimeout(() => nextEl.classList.add('on'), 2600);
+  /* the reference puts the circle on the opening card only; later chapters
+     carry the dots, and the bar says how far along we are */
+  if (index !== 0 || want >= SCENES.length - 1) return;
+  nextTimer = setTimeout(() => nextEl.classList.add('on'), 2200);
 }
 function withdrawNext() {
   clearTimeout(nextTimer);

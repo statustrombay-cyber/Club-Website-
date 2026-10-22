@@ -178,8 +178,8 @@ body:active { cursor: grabbing; }
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: clamp(18px, 3.6vh, 40px);
-  padding: 10vh var(--pad) 16vh;
+  gap: clamp(16px, 2.6vh, 30px);
+  padding: 16vh var(--pad) 26vh;
   pointer-events: none;
 }
 
@@ -193,9 +193,24 @@ body:active { cursor: grabbing; }
   letter-spacing: .004em;
   line-height: .95;
   font-size: clamp(30px, min(13.4vw, 17.5vh), 172px);
-  text-shadow: 0 1px 40px rgba(0, 0, 0, .30);
+  text-shadow: 0 1px 46px rgba(0, 0, 0, .38), 0 0 120px rgba(0, 0, 0, .22);
 }
 #mt-title span { display: block; white-space: nowrap; }
+
+/* the tagline under the title: small, spaced, two lines at most */
+#mt-sub {
+  margin: 0;
+  font: 400 clamp(9px, .74vw, 11px)/1.85 'MTS', ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  text-align: center;
+  color: rgba(246, 242, 234, .84);
+  max-width: 100%;
+  padding: 0 6px;
+  text-shadow: 0 1px 18px rgba(0, 0, 0, .55), 0 0 42px rgba(0, 0, 0, .35);
+}
+#mt-sub span { display: block; white-space: nowrap; }
+#mt-sub:empty { display: none; }
 
 /* the reference sets the opening title wider than the rest */
 #mt-title.is-huge {
@@ -205,6 +220,11 @@ body:active { cursor: grabbing; }
 }
 
 #mt-cta {
+  position: fixed;
+  text-shadow: 0 1px 14px rgba(0, 0, 0, .55);
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: max(7.4vh, calc(env(safe-area-inset-bottom) + 52px));
   pointer-events: auto;
   appearance: none;
   border: 0;
@@ -215,8 +235,8 @@ body:active { cursor: grabbing; }
   letter-spacing: .3em;
   text-transform: uppercase;
   cursor: pointer;
-  position: relative;
   transition: opacity .5s var(--ease);
+  white-space: nowrap;
 }
 #mt-cta::after {
   content: "";
@@ -238,7 +258,7 @@ body:active { cursor: grabbing; }
   position: fixed;
   z-index: 18;
   left: 50%;
-  bottom: clamp(74px, 13vh, 132px);
+  bottom: max(6.4vh, calc(env(safe-area-inset-bottom) + 46px));
   width: clamp(44px, 5.4vw, 58px);
   height: clamp(44px, 5.4vw, 58px);
   margin-left: calc(clamp(44px, 5.4vw, 58px) / -2);
@@ -267,16 +287,17 @@ body:active { cursor: grabbing; }
   z-index: 20;
   left: 0;
   right: 0;
-  bottom: max(calc(var(--pad) + 6px), calc(env(safe-area-inset-bottom) + 10px));
+  bottom: max(1.4vh, env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: clamp(12px, 2.4vh, 20px);
+  gap: clamp(7px, 1.3vh, 12px);
   padding: 0 var(--pad);
 }
 
 #mt-dots {
   display: flex;
+  order: 1;
   align-items: center;
   justify-content: center;
   gap: clamp(7px, 1.2vw, 12px);
@@ -292,20 +313,21 @@ body:active { cursor: grabbing; }
 .mt-dot::after {
   content: "";
   display: block;
-  width: 4px;
-  height: 4px;
+  width: 3px;
+  height: 3px;
   border-radius: 50%;
-  background: rgba(246, 242, 234, .34);
+  background: rgba(246, 242, 234, .32);
   transition: background .4s var(--ease), transform .4s var(--ease);
 }
 .mt-dot.is-done::after { background: rgba(246, 242, 234, .55); }
 .mt-dot.is-on::after { background: var(--paper); transform: scale(1.35); }
 
 #mt-progress {
-  width: clamp(120px, 26vw, 280px);
-  height: 2px;
-  border-radius: 2px;
-  background: rgba(246, 242, 234, .16);
+  order: 2;
+  width: clamp(150px, 42vw, 300px);
+  height: 4px;
+  border-radius: 3px;
+  background: rgba(246, 242, 234, .13);
   overflow: hidden;
 }
 #mt-progress i {
@@ -313,8 +335,7 @@ body:active { cursor: grabbing; }
   height: 100%;
   width: 12.5%;
   border-radius: 2px;
-  background: var(--paper);
-  opacity: .92;
+  background: rgba(246, 242, 234, .88);
   transition: width .7s var(--ease);
 }
 
