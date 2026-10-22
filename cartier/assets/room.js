@@ -27,20 +27,20 @@ const SCENES = [
     cam: { p: [-1.9, 2.7, 21.0], l: [-1.9, 3.6, 12.0], fov: 54 },
     look: { exp: 0.78, air: { on: true, css: 'radial-gradient(92% 64% at 50% 34%, rgba(255,244,229,.92), rgba(255,238,219,.28) 58%, rgba(255,235,214,0) 78%)', a: .72 } } },
   { id: 'room',    title: 'The room\nwe keep',        sub: 'Where the week is put down', cta: 'Explore',        room: 1,
-    cam: { p: [0.29, 2.20, -5.6], l: [0.29, 2.00, -11.0], fov: 62 },
-    look: { exp: 1.15, air: null } },
+    cam: { p: [0.0, 2.10, -15.0], l: [-1.0, 1.35, -1.5], fov: 56 }, keyAngle: 0.80, keyPower: 560,
+    look: { exp: 0.92, air: null } },
   { id: 'circles', title: 'Small circles\nof talking', sub: 'Six chairs, no agenda', cta: 'Explore',       room: 1,
-    cam: { p: [-3.9, 2.30, 1.6], l: [2.0, 2.45, -5.2], fov: 58 },
+    cam: { p: [-3.5, 1.85, -8.0], l: [1.5, 1.55, -2.0], fov: 58 }, keyAngle: 0.90, keyPower: 460,
     look: { exp: 0.62, air: null } },
   { id: 'view',    title: 'Ground we\nstand on',       sub: 'The practices that hold us', cta: 'Explore',        room: 2,
     cam: { p: [0.11, 2.13, -4.75], l: [0.11, 1.73, 3.25], fov: 66 },
     look: { exp: 0.95, air: { on: true, css: 'radial-gradient(70% 46% at 50% 62%, rgba(255,214,150,.34), rgba(255,206,140,0) 72%)', a: .4 } } },
   { id: 'wall',    title: 'Ten faces\non the wall',   sub: 'The people who listen', cta: 'Explore',        room: 4,
-    cam: { p: [-4.2, 4.0, -1.4], l: [0.2, 3.2, 6.0], fov: 56 },
-    look: { exp: 0.92, air: { on: true, css: 'radial-gradient(80% 54% at 46% 58%, rgba(255,196,120,.30), rgba(255,190,110,0) 74%)', a: .34 } } },
-  { id: 'texts',   title: 'Texts we\nreturn to',      sub: 'A shelf, and the margins\nwe write in', cta: 'Explore',        room: 3,
-    cam: { p: [0.0, 2.4, -3.5], l: [0.0, 4.2, -14.0], fov: 62 },
-    look: { exp: 1.55, air: { on: true, css: 'radial-gradient(72% 52% at 50% 46%, rgba(255,236,208,.30), rgba(255,230,198,0) 72%)', a: .38 } } },
+    cam: { p: [-4.6, 2.70, 0.4], l: [-0.6, 3.30, 9.2], fov: 60 }, keyAngle: 0.52, keyPower: 460,
+    look: { exp: 1.05, air: { on: true, css: 'radial-gradient(80% 54% at 46% 58%, rgba(255,196,120,.22), rgba(255,190,110,0) 74%)', a: .26 } } },
+  { id: 'texts',   title: 'Texts we\nreturn to',      sub: 'A shelf, and the margins\nwe write in', cta: 'Explore',        room: 1,
+    cam: { p: [-2.6, 2.05, -8.6], l: [1.5, 1.55, -2.2], fov: 56 }, keyAngle: 0.90, keyPower: 440,
+    look: { exp: 0.90, air: { on: true, css: 'radial-gradient(72% 52% at 50% 46%, rgba(255,236,208,.16), rgba(255,230,198,0) 72%)', a: .18 } } },
   { id: 'lamp',    title: 'The light\nwe leave on',   sub: 'Nine in the evening, still here', cta: 'Explore',        room: 6,
     cam: { p: [-2.0, 2.20, 24.0], l: [-2.0, 2.00, 8.0], fov: 62 },
     look: { exp: 0.82, air: { on: true, css: 'radial-gradient(74% 40% at 60% 46%, rgba(255,205,150,.22), rgba(255,200,140,0) 70%)', a: .28 } } },
@@ -63,6 +63,7 @@ let mixer, charMixer, track = null;
 /* the authored timeline (theatre/mainScene.theatre-state.json) */
 let theatre = null, theatreTimeline = null, theatreWindows = null;
 let whip = 0;
+let keyLight = null, rimLight = null;
 let dprCap = 1.75;
 let slow = 0, degraded = false;   // 1 at a cut → 0 as the new chapter settles (the sheet's motionBlur)
 const glowSprites = [];
@@ -136,6 +137,12 @@ async function build() {
   renderer.toneMapping = THREE.NoToneMapping;   // the film pass tone maps
   renderer.toneMappingExposure = 1;
 
+  /* the bake is a shadow map with the light already in it: mean 18/255, and in
+     the darkest room 1. What Cartier adds on top is a hard-edged pool of light
+     with real shadows — the silhouettes in their film are cast, not painted. */
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
   post = makePost(renderer, {});
   post.setSize(innerWidth, innerHeight);
 
@@ -143,6 +150,7 @@ async function build() {
   scene.background = new THREE.Color(0x000000);
   scene.fog = new THREE.FogExp2(0x050403, 0.008);
   camera = new THREE.PerspectiveCamera(58, innerWidth / innerHeight, 0.08, 900);
+  resize();                      // the canvas is 300x150 until this is called
 
   const draco = new DRACOLoader();
   draco.setDecoderPath('/webgl/libs/draco/');
@@ -184,7 +192,12 @@ async function build() {
   }
 
   [main, chars].filter(Boolean).forEach((r) => r.traverse((o) => {
-    if (HIDE.test(o.name || '')) o.visible = false;
+    if (HIDE.test(o.name || '')) { o.visible = false; return; }
+    if (!o.isMesh) return;
+    const shell = /^outside_box/i.test(o.name || '');
+    o.castShadow = !shell;
+    o.receiveShadow = true;
+    o.frustumCulled = false;
   }));
 
 
@@ -204,17 +217,18 @@ async function build() {
       const i = roomOf(o);
       const shell = /^outside_box/i.test(o.name || '');
       if (shell) {
-        // the room walls stay in shadow; the set pieces carry the light
-        if (m.color) m.color.multiplyScalar(0.50);
-        if (m.emissiveMap) m.emissiveIntensity = 0.3;
+        /* the shell is the inside of the room: it is what we actually see, so
+           it carries the bake at full strength, not dimmed */
+        if (m.emissiveMap) m.emissiveIntensity = 0.55;
       }
       if (i >= 0 && o.geometry.attributes.uv1 && lightmaps[i]) {
         m.lightMap = lightmaps[i];
-        m.lightMapIntensity = shell ? 1.15 : 1.75;
+        m.lightMapIntensity = shell ? 3.4 : 2.6;
       }
       m.envMapIntensity = 0.22;
       if (m.color) m.color.multiplyScalar(0.9);
       if (m.map) m.map.anisotropy = 4;
+      o.receiveShadow = true;
       // the export drives these panels at 3–8× as flat light. At film level
       // they become the glow the reference keeps in its windows and lamps.
       if (m.emissiveMap) m.emissiveIntensity = Math.min(1.7, Math.min(m.emissiveIntensity || 1, 8) * 0.3);
@@ -239,13 +253,34 @@ async function build() {
     } catch (e) { /* no probe, no harm */ }
   }
 
+  [main, chars].filter(Boolean).forEach((root) => root.traverse((o) => {
+    if (o.isMesh) o.castShadow = root === chars;   // people cast, the set only receives
+  }));
+
   new EXRLoader().load('/webgl/textures/cubemaps/SC00_oct.exr', (t) => {
     t.mapping = THREE.EquirectangularReflectionMapping;
     scene.environment = t;
   });
 
-  scene.add(new THREE.AmbientLight(0xffffff, 0.12));
+  /* ── the light rig ────────────────────────────────────────────────────────
+     The lightmap bakes are shadow passes (mean luminance 1–56 of 255), so on
+     their own they leave the set almost black. The light that the reference
+     actually shows is a single warm pool that travels with the camera and
+     throws real shadows, plus a cold rim so edges separate from the wall. */
+  scene.add(new THREE.AmbientLight(0xffe9d2, 0.30));
   scene.environmentIntensity = 0.22;
+
+  keyLight = new THREE.SpotLight(0xffd9a8, 2.0, 0, 0.72, 0.92, 0);
+  keyLight.castShadow = true;
+  keyLight.shadow.mapSize.set(1024, 1024);
+  keyLight.shadow.bias = -0.0012;
+  keyLight.shadow.camera.near = 0.5;
+  keyLight.shadow.camera.far = 80;
+  scene.add(keyLight, keyLight.target);
+
+  rimLight = new THREE.DirectionalLight(0x9fb6d0, 0.35);
+  scene.add(rimLight, rimLight.target);
+
 
   /* the export parks whole sub-assemblies hundreds of metres down, and the
      site's own timeline lifts them one at a time. We bring them all home and
@@ -410,10 +445,30 @@ function stage(i, immediate) {
     moveT = 0;
   }
   arriving = 0;
+  placeKeyLight(s);
+}
+
+/* the pool sits above and behind the viewer and throws its cone onto what the
+   chapter frames, so the set gets one bright area and falls away into shadow */
+function placeKeyLight(s) {
+  if (!keyLight || !s || !s.cam) return;
+  const target = new THREE.Vector3(s.cam.l[0], s.cam.l[1], s.cam.l[2]);
+  const eye = new THREE.Vector3(s.cam.p[0], s.cam.p[1], s.cam.p[2]);
+  const dir = target.clone().sub(eye).normalize();
+  keyLight.position.copy(eye).addScaledVector(dir, -4).setY(eye.y + 8);
+  keyLight.target.position.copy(target);
+  keyLight.target.updateMatrixWorld();
+  keyLight.angle = s.keyAngle || 0.72;
+  keyLight.intensity = (s.keyPower || 200) / 200;   // authored 200 → 1.0
+  rimLight.position.copy(eye).addScaledVector(dir, -8).setY(eye.y + 3);
+  rimLight.target.position.copy(target);
+  rimLight.target.updateMatrixWorld();
 }
 
 /* ── camera ─────────────────────────────────────────────────────────────── */
 const lookPoint = new THREE.Vector3();
+const baseP = new THREE.Vector3(), baseL = new THREE.Vector3();
+let baseFov = 58;
 const shot = { p: new THREE.Vector3(), l: new THREE.Vector3(), fov: 58 };
 
 function shellBox(room) {
@@ -469,33 +524,44 @@ function applyCam(s) {
   const c = window.__MT_AUTOCAM__ ? clampInside(s, base) : base;
   camera.position.set(c.p[0], c.p[1], c.p[2]);
   lookPoint.set(c.l[0], c.l[1], c.l[2]);
-  camera.fov = c.fov || 58;
+  baseP.copy(camera.position);
+  baseL.copy(lookPoint);
+  baseFov = c.fov || 58;
+  camera.fov = baseFov;
   camera.updateProjectionMatrix();
   camera.lookAt(lookPoint);
   shot.p.copy(camera.position);
   shot.l.copy(lookPoint);
   shot.fov = camera.fov;
+  placeKeyLight({ cam: s.cam, keyAngle: s.keyAngle, keyPower: s.keyPower });
 }
 
-/* every chapter breathes: a slow push in, a slow sideways drift */
 const vFwd = new THREE.Vector3(), vRight = new THREE.Vector3(), vUp = new THREE.Vector3(0, 1, 0);
 
+/* every chapter breathes: a slow push in, a slow sideways drift.
+   These are offsets from the chapter's pose, recomputed every frame — never
+   accumulated onto the camera, which is what used to walk it into a wall. */
 function breathe(dt) {
-  const s = SCENES[index];
   arriving += dt;
-  const e = 1 - Math.pow(1 - Math.min(1, arriving / 7), 2);
-  const drift = Math.sin(clockDrift * 0.21) * 0.16;
-  const push = e * 0.62;
+  const e = 1 - Math.pow(1 - Math.min(1, arriving / 7), 2);   // 0 → 1 over seven seconds
+  const push = e * 0.42;                                      // metres forward, once
+  const pan = Math.sin(clockDrift * 0.17) * (SCENES[index].pan || 0.34);
+  const float = Math.sin(clockDrift * 0.6) * 0.012;
 
-  const forward = vFwd.subVectors(lookPoint, camera.position).normalize();
+  const forward = vFwd.subVectors(baseL, baseP).normalize();
   const right = vRight.crossVectors(forward, vUp).normalize();
-  camera.position.addScaledVector(forward, push * 0.05);
-  /* the reference never holds still: a slow sideways pan, wider on a desktop
-     than on a phone, plus a barely-there vertical float */
-  const pan = Math.sin(clockDrift * 0.11) * (s && s.pan ? s.pan : 0.30);
-  camera.position.addScaledVector(right, pan * 0.05 + drift * 0.02);
-  if (!STILL) camera.position.y += Math.sin(clockDrift * 0.6) * 0.004;
+
+  camera.position.copy(baseP)
+    .addScaledVector(forward, push)
+    .addScaledVector(right, pan);
+  if (!STILL) camera.position.y += float;
+
+  lookPoint.copy(baseL).addScaledVector(right, pan * 0.35);
   camera.lookAt(lookPoint);
+  if (Math.abs(camera.fov - baseFov) > 1e-3) {
+    camera.fov = baseFov;
+    camera.updateProjectionMatrix();
+  }
 }
 
 /* ── frame ──────────────────────────────────────────────────────────────── */
@@ -522,7 +588,12 @@ function frame(dt) {
     camera.fov = camFrom.fov + ((target.fov || 58) - camFrom.fov) * k;
     camera.updateProjectionMatrix();
     camera.lookAt(lookPoint);
-    if (moveT >= 1) camFrom = null;
+    if (moveT >= 1) {
+      camFrom = null;
+      baseP.copy(camera.position);
+      baseL.copy(lookPoint);
+      baseFov = camera.fov;
+    }
   } else if (window.__MT_FREE__) {
     const f = window.__MT_FREE__;
     camera.position.set(f.p[0], f.p[1], f.p[2]);
@@ -755,12 +826,23 @@ function resize() {
 }
 
 let revealed = false;
+
+/* a frame that throws must say so once, or the screen just goes black and
+   nobody knows why (which is exactly what happened during development) */
+let reported = false;
+function reportOnce(e) {
+  if (reported) return;
+  reported = true;
+  console.error('[room] frame failed:', String((e && e.stack) || e));
+  window.__MT_FRAME_ERROR__ = String((e && e.message) || e);
+}
 function reveal() {
   if (revealed) return;
   revealed = true;
   if (bootNum) bootNum.textContent = '100';
   setTimeout(() => {
     boot?.classList.add('is-off');
+    setTimeout(() => { if (boot) boot.style.display = 'none'; }, 950);
     document.body.classList.add('is-ready');
     $('#mt-vignette')?.classList.add('on');
     offerNext();
@@ -817,7 +899,7 @@ function start() {
   (function loop(now) {
     const dt = Math.min((now - last) / 1000, 0.05);
     last = now;
-    try { frame(dt); } catch (e) { /* keep the loop alive */ }
+    try { frame(dt); } catch (e) { reportOnce(e); }
     /* if two seconds of frames are consistently over 40 ms, render fewer pixels
        once — the look is the same, the motion stays smooth */
     if (!degraded && dt > 0.040) {
@@ -847,6 +929,7 @@ function start() {
   window.__MT_DBG__ = {
     THREE, get post() { return post; }, get scene() { return scene; }, get camera() { return camera; }, get renderer() { return renderer; },
     get main() { return main; }, get chars() { return chars; }, get mixer() { return mixer; },
+    get key() { return keyLight; }, get expv() { return post && post.toneMat ? post.toneMat.uniforms.uExposure.value : null; },
     roomOf, hide: HIDE, SCENES,
     free(p, l, fov) {
       window.__MT_FREE__ = { p, l };
@@ -854,6 +937,14 @@ function start() {
       lookPoint.set(l[0], l[1], l[2]);
       if (fov) { camera.fov = fov; camera.updateProjectionMatrix(); }
       camera.lookAt(lookPoint);
+    },
+    tryCam(p, l, fov, exp, angle, power) {
+      window.__MT_FREE__ = { p, l };
+      camera.position.set(p[0], p[1], p[2]);
+      lookPoint.set(l[0], l[1], l[2]);
+      camera.fov = fov || 58; camera.updateProjectionMatrix(); camera.lookAt(lookPoint);
+      if (post && post.setExposure) post.setExposure(exp || 1);
+      placeKeyLight({ cam: { p, l }, keyAngle: angle, keyPower: power });
     },
     stageNow(t) {}
     , content: (r) => window.__MT_CONTENT__ && window.__MT_CONTENT__(r)

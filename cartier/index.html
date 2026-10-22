@@ -3,144 +3,25 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#f7f4ee">
-<title>Mindful Tattva — A Psychology Club</title>
-<meta name="description" content="Mindful Tattva is a student-led psychology club at Chhatrapati Shivaji Maharaj University — conversations, reading rooms and exhibitions about the mind.">
-<meta property="og:title" content="Mindful Tattva — A Psychology Club">
-<meta property="og:description" content="A calmer space to understand the mind.">
-<meta property="og:type" content="website">
-<meta name="robots" content="index,follow">
+<meta name="theme-color" content="#0a0806">
+<title>Mindful Tattva</title>
+<meta name="description" content="Mindful Tattva is a psychology club: a room for conversations, a reading room, a wall of faces and a film.">
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="/assets/favicon.svg">
-<link rel="preload" href="/assets/fonts/bodoni-moda-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="/assets/fonts/inter-latin-regular.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/club.css">
+<meta http-equiv="refresh" content="0; url=/experience.html">
+<link rel="canonical" href="/experience.html">
+<style>
+  html, body { margin: 0; height: 100%; background: #0a0806; color: #f6f2ea;
+    font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; }
+  body { display: grid; place-content: center; justify-items: center; gap: 20px; }
+  a { color: #f6f2ea; font-size: 11px; letter-spacing: .26em; text-transform: uppercase;
+      text-decoration: none; border-bottom: 1px solid rgba(246,242,234,.3); padding-bottom: 5px; }
+  p { margin: 0; font-size: 13px; color: rgba(246,242,234,.55); }
+</style>
 </head>
-<body class="mt-club">
-
-<!-- ── Loader: the number only, nothing else ───────────────────────────── -->
-<div id="mt-boot" aria-hidden="true">
-  <div class="mt-boot__count"><span id="mt-boot-num">00</span></div>
-</div>
-
-<!-- ── Header: the wordmark, nothing else ──────────────────────────────── -->
-<header class="mt-head">
-  <a class="mt-head__mark" href="/" aria-label="Mindful Tattva, home">
-    <svg viewBox="0 0 110 31" role="img" aria-label="Mindful Tattva">
-      <text x="55" y="22" text-anchor="middle" textLength="98" lengthAdjust="spacingAndGlyphs"
-            font-family="MindfulSans, Inter, sans-serif" font-size="10" letter-spacing="2.4"
-            fill="currentColor">MINDFUL TATTVA</text>
-    </svg>
-  </a>
-</header>
-
-<main>
-  <!-- ── Hero ──────────────────────────────────────────────────────────── -->
-  <section class="mt-hero" id="top">
-    <p class="mt-eyebrow" data-field="eyebrow">Psychology Club, Department of Applied Social Science</p>
-    <h1 class="mt-hero__title">
-      <span class="mt-line">A calmer space</span>
-      <span class="mt-line">to understand</span>
-      <span class="mt-line">the mind.</span>
-    </h1>
-    <p class="mt-hero__intro" data-field="intro"></p>
-    <p class="mt-hero__acts">
-      <a class="mt-enter" href="/experience.html">
-        <span>Enter the room</span>
-        <svg viewBox="0 0 24 10" aria-hidden="true"><path d="M0 5h21M16 1l5 4-5 4" fill="none" stroke="currentColor" stroke-width="1"/></svg>
-      </a>
-    </p>
-    <a class="mt-scroll" href="#about">
-      <span>Scroll</span>
-      <span class="mt-scroll__rule" aria-hidden="true"></span>
-    </a>
-  </section>
-
-  <!-- ── About ─────────────────────────────────────────────────────────── -->
-  <section class="mt-about" id="about">
-    <p class="mt-label"><span>01</span> The club</p>
-    <h2 class="mt-h2" data-field="aboutHeading"></h2>
-    <div class="mt-about__grid">
-      <p class="mt-body" data-field="aboutBody"></p>
-      <p class="mt-body mt-body--muted" data-field="clubDescription"></p>
-    </div>
-    <ul class="mt-stats" id="mt-stats"></ul>
-  </section>
-
-  <!-- ── Gallery: a sideways walk ──────────────────────────────────────── -->
-  <section class="mt-gallery" id="gallery" aria-labelledby="mt-gallery-title">
-    <div class="mt-gallery__pin">
-      <div class="mt-gallery__head">
-        <p class="mt-label"><span>02</span> The gallery</p>
-        <h2 class="mt-h2" id="mt-gallery-title" data-field="galleryHeading"></h2>
-        <p class="mt-body mt-body--muted mt-gallery__intro" data-field="galleryIntro"></p>
-      </div>
-      <div class="mt-gallery__viewport">
-        <div class="mt-gallery__track" id="mt-gallery-track" tabindex="0" aria-label="Gallery, scroll sideways"></div>
-      </div>
-      <div class="mt-gallery__foot">
-        <span class="mt-gallery__count" id="mt-gallery-count"></span>
-        <span class="mt-gallery__hint">Scroll to walk the wall</span>
-      </div>
-      <div class="mt-gallery__bar" aria-hidden="true"><i id="mt-gallery-bar"></i></div>
-    </div>
-  </section>
-
-  <!-- ── The room: the 3D walkthrough ─────────────────────────────────── -->
-  <section class="mt-atrium" id="atrium">
-    <div class="mt-atrium__inner">
-      <p class="mt-label"><span>—</span> The room</p>
-      <h2 class="mt-h2">A room you can<br><em>walk through</em></h2>
-      <p class="mt-body mt-body--muted">
-        Eight chapters, one room at a time: a panelled entrance, a hall with people standing
-        in it, a field of standing stones in a cone of light, a stair that turns on itself,
-        a bench under a lamp. Swipe left or right, in either direction, for as long as you like.
-      </p>
-      <a class="mt-enter mt-enter--large" href="/experience.html">
-        <span>Enter the room</span>
-        <svg viewBox="0 0 24 10" aria-hidden="true"><path d="M0 5h21M16 1l5 4-5 4" fill="none" stroke="currentColor" stroke-width="1"/></svg>
-      </a>
-    </div>
-  </section>
-
-  <!-- ── Pillars ───────────────────────────────────────────────────────── -->
-  <section class="mt-pillars" id="pillars">
-    <p class="mt-label"><span>03</span> What we hold to</p>
-    <div class="mt-pillars__grid">
-      <article>
-        <h3>Mission</h3>
-        <p data-field="mission"></p>
-      </article>
-      <article>
-        <h3>Vision</h3>
-        <p data-field="vision"></p>
-      </article>
-      <article>
-        <h3>Membership</h3>
-        <p data-field="memberBenefits"></p>
-      </article>
-    </div>
-  </section>
-
-  <!-- ── Visit ─────────────────────────────────────────────────────────── -->
-  <section class="mt-visit" id="visit">
-    <p class="mt-label"><span>04</span> Find us</p>
-    <h2 class="mt-h2" data-field="contactNote"></h2>
-    <dl class="mt-visit__list">
-      <div><dt>University</dt><dd data-field="universityName"></dd></div>
-      <div><dt>Department</dt><dd data-field="department"></dd></div>
-      <div><dt>Address</dt><dd data-field="address"></dd></div>
-      <div><dt>Email</dt><dd><a data-field="email" href="#"></a></dd></div>
-      <div><dt>Instagram</dt><dd><a data-field="instagramHandle" href="#" target="_blank" rel="noopener"></a></dd></div>
-    </dl>
-  </section>
-</main>
-
-<footer class="mt-foot">
-  <span data-field="clubName">Mindful Tattva</span>
-  <span class="mt-foot__note">A student-led psychology club</span>
-</footer>
-
-<script src="/assets/club.js" defer></script>
+<body>
+  <p>Mindful Tattva</p>
+  <p>The room is opening…</p>
+  <a href="/experience.html">Open it now</a>
+  <script>location.replace('/experience.html');</script>
 </body>
 </html>

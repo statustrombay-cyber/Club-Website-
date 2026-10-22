@@ -1,5 +1,0 @@
-# The data folder must never be readable over the web.
-<IfModule mod_authz_core.c>
-  Require all denied
-</IfModule>
-Deny from all

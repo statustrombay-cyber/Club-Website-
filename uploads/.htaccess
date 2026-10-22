@@ -1,7 +1,0 @@
-# Uploaded files are served as-is and never executed.
-php_flag engine off
-<IfModule mod_authz_core.c>
-  <FilesMatch "\.(php|phtml|phar|cgi|pl|py|sh|html?)$">
-    Require all denied
-  </FilesMatch>
-</IfModule>
