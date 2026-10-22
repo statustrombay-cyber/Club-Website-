@@ -8,13 +8,13 @@ repository and can be deployed on its own.
 
 ```
 cartier/
-  index.html            ← the club site: loader, hero, about, gallery, atrium, pillars, visit
-  experience.html       ← the atrium: the scroll-driven 3D room
+  index.html            ← the club site: loader, hero, about, gallery, room link, pillars, visit
+  experience.html       ← the room: eight chapters of the club's 3D set
   engine.html           ← forwards to experience.html (old links keep working)
   club-data.json        ← snapshot of data/site.json, used when /api/site is absent
   assets/
     club.css, club.js   ← the club site styles and behaviour
-    atrium.js           ← the 3D room (procedural scene, authored camera, scroll)
+    room.js             ← the 3D room (captured set, one room per chapter)
     vendor/             ← three.js r186, self-hosted (MIT)
     app.js, app.css     ← the captured engine bundle, kept only as reference
     fonts/              ← Bodoni Moda, Inter (both SIL OFL), self-hosted
@@ -61,53 +61,61 @@ Testing the three states without touching the database:
 | `/?gallery=3`    | three photos, seven placeholders |
 | `/?gallery=10`   | ten photos, no placeholders    |
 
-## The atrium (3D)
+## The room (3D)
 
-`experience.html` is a scroll-driven room that belongs to the club. It is not a
-patched product page, and it does not download a model: the hall, the arch
-springs, the bench, the basin and the field of dunes are generated in
-`assets/atrium.js` at load time, so the whole scene is one module, one three.js
-build and ten photographs.
+`experience.html` is the club's own room, built from the captured Cartier set
+rather than from a procedural scene: `webgl/models/mainScene.glb` supplies the
+architecture, the baked light and the figures, and `assets/room.js` stages it.
 
-What happens as you scroll:
+The export parks seven whole rooms fifty metres below the floor and lifts them
+one at a time across a 24.33 s clip, so each chapter isolates one room, brings
+the parked assemblies home and frames it with a camera of its own. The clip's
+own camera is authored for a 16:9 desktop trailer and looks at bare walls on a
+phone, which is why the framing is per chapter.
 
-| Scroll | Camera | Chapter |
-| ------ | ------ | ------- |
-| 0.00 – 0.14 | through the entrance arch | *The Atrium* (title) |
-| 0.15 – 0.28 | into the room, right wall | i, The Room |
-| 0.29 – 0.39 | down the centre aisle | ii, Conversations |
-| 0.40 – 0.50 | turned to a portrait | iii, The Reading Room |
-| 0.54 – 0.69 | along the wall of faces | iv, The Wall |
-| 0.72 – 0.87 | out through the last arch | v, The Field |
-| 0.89 – 1.00 | rising over the dunes | vi, Visit |
+| # | Chapter | Room |
+| - | ------- | ---- |
+| – | *Mindful Tattva* (title) | the panelled entrance |
+| i | The room we keep | the hall, a figure turning |
+| ii | Small circles of talking | the hall, groups standing |
+| iii | Ground we stand on | the standing stones in their cone of light |
+| iv | Ten faces on the wall | the stepped wall of forms |
+| v | Texts we return to | the reading wall of painted strokes |
+| vi | The light we leave on | the quiet room and its lit bench |
+| vii | Come and sit with us | the hall from the far side |
 
-The camera is a keyframe path keyed to *progress*, not to a spline parameter, so
-each chapter's framing is authored. Ten portraits (the same temporary set the
-gallery uses) hang on the walls; the frames, walls, lamps and dune colours are
-drawn from the site palette. A WebGL2 check falls back to the plain text page if
-the browser has 3D switched off, and `prefers-reduced-motion` removes the drift.
+Grading: the baked lightmaps store irradiance in the red channel only, so they
+are collapsed to luminance on a canvas and tinted to the club's warm light
+(`#ffc280`, `lightMapIntensity` ≈ 5, `environmentIntensity` 0.22, ACES at 1.35).
+The figures in `mainScene_characters.glb` keep their own animations, each played
+on a random phase so a room never looks frozen.
 
-Files: `experience.html` (page, loader, chapter copy), `assets/atrium.js`
-(scene), `assets/vendor/three.module.js` + `three.core.js` (MIT).
+Navigation is a single position plus a queue: swipes, trackpad, arrow keys and
+the chapter dots all move `want`, and however many gestures land during the
+black frame between chapters they are summed rather than dropped, so a run of
+swipes in either direction lands exactly where it was asked to and never sticks.
+
+Files: `experience.html` (page, loader, chapter copy), `assets/room.js` (scene,
+camera, navigation), `assets/post.js` (bloom, grain, vignette),
+`assets/vendor/` (three r186, MIT).
 
 ## About the captured Cartier engine
 
-The original bundle (`assets/app.js`, `webgl/`) is still on disk but is no longer
-loaded by any page. It was examined at length before building the atrium:
+The original bundle (`assets/app.js`) is still on disk as reference but is not
+loaded by any page. What the capture settled:
 
 * the GLB carries a 24.33 s `SCENE_01` clip that lifts one room at a time from
-  y = −50 to y = 0 and drives an orbiting camera — that part works;
-* its materials load correctly (albedo 1K, baked lightmaps 2K, environment EXR),
-  but every environment surface renders flat white: the room shell, the sky and
-  the floor all resolve to the clear colour, so only the watches were ever lit;
-* the camera sits inside the room shell, so hiding the shell leaves white and
-  hiding the sky leaves white — the "half a field" the club complained about.
-
-Repairing that shader stack inside a minified bundle was the alternative; the
-atrium takes the other route the brief allowed — keep the scroll journey, remove
-the watches, and fill the space with work we can author and test. `engine.html`
-now forwards to it. The capture's `webgl/`, `audio/` and `videos/` folders can be
-deleted whenever the reference is no longer wanted (they are ~85 MB).
+  y = −50 to y = 0 and drives an orbiting camera — the staging, the baked light
+  and the figures all work once the shell is handled properly;
+* the shell (`outside_box_SC0k`) is what used to wash the frame out; hiding it
+  and letting each room's own pieces carry their baked light is what fixed it;
+* the lightmaps store irradiance in the **red** channel only, tinted `(1, 0, 0)`
+  by the original site and summed per material — hence the luminance-collapse
+  step in `assets/room.js`;
+* the theatre.js project data behind the screen-space light pass, the depth of
+  field and the motion blur is referenced by the bundle but not embedded, and a
+  HAR capture of the live site does not carry it either (its bodies are
+  stripped), so those passes are not reproduced.
 
 ## Rebranding
 

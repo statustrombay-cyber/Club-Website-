@@ -20,22 +20,22 @@ const STILL = PARAMS.has('still');
 
 /* ── the chapters, in the order they are told ────────────────────────────── */
 const SCENES = [
-  { id: 'intro', kicker: 'A psychology club', title: 'Mindful\nTattva', cta: null, room: 0,
+  { id: 'intro',   kicker: 'A psychology club',      title: 'Mindful\nTattva',          cta: null,             room: 0,
     cam: { p: [-1.9, 2.7, 21.0], l: [-1.9, 3.6, 12.0], fov: 54 } },
-  { id: 'room', kicker: 'i — The room', title: 'The room\nwe keep', cta: 'Explore', room: 1,
+  { id: 'room',    kicker: 'i \u2014 The room',       title: 'The room\nwe keep',        cta: 'Explore',        room: 1,
+    cam: { p: [-3.6, 2.50, -2.0], l: [1.5, 2.10, -8.5], fov: 62 } },
+  { id: 'circles', kicker: 'ii \u2014 Conversations', title: 'Small circles\nof talking', cta: 'Explore',       room: 1,
     cam: { p: [0.3, 2.35, 4.4], l: [0.3, 2.7, -4.4], fov: 60 } },
-  { id: 'circles', kicker: 'ii — Conversations', title: 'Small circles\nof talking', cta: 'Explore', room: 2,
-    cam: { p: [0.1, 2.2, 12.5], l: [0.1, 1.9, 3.0], fov: 58 } },
-  { id: 'texts', kicker: 'iii — The reading room', title: 'Texts we\nreturn to', cta: 'Explore', room: 3,
-    cam: { p: [0.0, 2.4, -3.5], l: [0.0, 4.2, -14.0], fov: 62 } },
-  { id: 'wall', kicker: 'iv — The wall', title: 'Ten faces\non the wall', cta: 'Explore', room: 4,
+  { id: 'view',    kicker: 'iii \u2014 The long view', title: 'Ground we\nstand on',     cta: 'Explore',        room: 2,
+    cam: { p: [0.11, 2.13, -4.75], l: [0.11, 1.73, 3.25], fov: 66 } },
+  { id: 'wall',    kicker: 'iv \u2014 The wall',     title: 'Ten faces\non the wall',   cta: 'Explore',        room: 4,
     cam: { p: [-4.2, 4.0, -1.4], l: [0.2, 3.2, 6.0], fov: 56 } },
-  { id: 'film', kicker: 'v — The film', title: 'The film\nwe show', cta: 'Watch', room: 5,
-    cam: { p: [-6.4, 2.6, -5.6], l: [3.6, 3.1, -12.6], fov: 62 } },
-  { id: 'sound', kicker: 'vi — The room, listening', title: 'The sound\nof a room', cta: 'Listen', room: 1,
-    cam: { p: [-6.0, 2.2, 3.4], l: [2.6, 2.5, -3.6], fov: 58 } },
-  { id: 'visit', kicker: 'vii — Visit', title: 'Come and\nsit with us', cta: 'Visit the club', room: 0,
-    cam: { p: [-1.9, 2.6, 20.4], l: [-1.9, 3.9, 12.0], fov: 56 } }
+  { id: 'texts',   kicker: 'v \u2014 The reading room', title: 'Texts we\nreturn to',   cta: 'Explore',        room: 3,
+    cam: { p: [0.0, 2.4, -3.5], l: [0.0, 4.2, -14.0], fov: 62 } },
+  { id: 'lamp',    kicker: 'vi \u2014 The quiet room', title: 'The light\nwe leave on',  cta: 'Explore',        room: 6,
+    cam: { p: [-2.0, 3.20, 24.0], l: [-2.0, 1.60, 10.0], fov: 62 } },
+  { id: 'visit',   kicker: 'vii \u2014 Visit',        title: 'Come and\nsit with us',    cta: 'Visit the club', room: 1,
+    cam: { p: [2.8, 2.40, 7.0], l: [-1.2, 2.20, -5.0], fov: 60 } }
 ];
 
 /* the watch layer, the product typography, the mirror duplicates ──────── */
@@ -72,6 +72,17 @@ async function warmLightmap(url) {
   ctx.drawImage(img, 0, 0);
   const px = ctx.getImageData(0, 0, c.width, c.height);
   const d = px.data;
+  /* The bake stores irradiance in the red channel only. Sampled raw it paints
+     the whole set crimson, so it is collapsed to luminance and tinted to the
+     warm light the club actually has. */
+  const TINT = [1.0, 0.76, 0.50];
+  for (let i = 0; i < d.length; i += 4) {
+    const l = d[i] / 255;
+    d[i] = 255 * Math.min(1, l * TINT[0]);
+    d[i + 1] = 255 * Math.min(1, l * TINT[1]);
+    d[i + 2] = 255 * Math.min(1, l * TINT[2]);
+    d[i + 3] = 255;
+  }
   ctx.putImageData(px, 0, 0);
   const tex = new THREE.CanvasTexture(c);
   tex.flipY = false;
@@ -101,7 +112,7 @@ async function build() {
   renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.0;
+  renderer.toneMappingExposure = 1.35;
 
   post = makePost(renderer, {});
   post.setSize(innerWidth, innerHeight);
@@ -127,12 +138,28 @@ async function build() {
   duration = gltf.animations[0].duration;
   progress(0.66);
 
+  let charGltf = null;
   try {
-    const cg = await loader.loadAsync('/webgl/models/mainScene_characters.glb');
-    chars = cg.scene;
+    charGltf = await loader.loadAsync('/webgl/models/mainScene_characters.glb');
+    chars = charGltf.scene;
     scene.add(chars);
   } catch (e) { chars = null; }
   progress(0.78);
+
+  /* the figures are animated in their own file: 28 looping performances */
+  if (chars && charGltf && charGltf.animations && charGltf.animations.length) {
+    charMixer = new THREE.AnimationMixer(chars);
+    let n = 0;
+    charGltf.animations.forEach((clip) => {
+      if (!/^(TC_|TE_|SM_|M_|F_|S_|char)/i.test(clip.name || '')) return;
+      const a = charMixer.clipAction(clip);
+      a.setLoop(THREE.LoopRepeat, Infinity);
+      a.time = Math.random() * clip.duration;
+      a.play();
+      n++;
+    });
+    window.__MT_CLIPS__ = n;
+  }
 
   [main, chars].filter(Boolean).forEach((r) => r.traverse((o) => {
     if (HIDE.test(o.name || '')) o.visible = false;
@@ -161,9 +188,9 @@ async function build() {
       }
       if (i >= 0 && o.geometry.attributes.uv1 && lightmaps[i]) {
         m.lightMap = lightmaps[i];
-        m.lightMapIntensity = shell ? 0.7 : 0.95;
+        m.lightMapIntensity = shell ? 4.2 : 5.2;
       }
-      m.envMapIntensity = 1.0;
+      m.envMapIntensity = 0.22;
       if (m.color) m.color.multiplyScalar(0.78);
       if (m.map) m.map.anisotropy = 4;
       // the export drives these panels at 3–8× as flat light. At film level
@@ -186,6 +213,7 @@ async function build() {
         return new THREE.Vector3(...(c ? c.rgb : [0, 0, 0]));
       });
       probes[i] = new THREE.LightProbe(sh);
+      probes[i].intensity = 0.9;
     } catch (e) { /* no probe, no harm */ }
   }
 
@@ -194,7 +222,8 @@ async function build() {
     scene.environment = t;
   });
 
-  scene.add(new THREE.AmbientLight(0xffffff, 0.06));
+  scene.add(new THREE.AmbientLight(0xffffff, 0.12));
+  scene.environmentIntensity = 0.22;
 
   /* the export parks whole sub-assemblies hundreds of metres down, and the
      site's own timeline lifts them one at a time. We bring them all home and
@@ -259,9 +288,10 @@ function stage(i, immediate) {
   if (!s) return;
   showRoom(s.room);
 
-  if (immediate) {
+  if (immediate || STILL) {      // stills mode: cut, never glide
     applyCam(s);
     camFrom = null;
+    moveT = 1;
   } else {
     camFrom = { p: camera.position.clone(), l: lookPoint.clone(), fov: camera.fov };
     moveT = 0;
@@ -320,7 +350,10 @@ function clampInside(s, c) {
 }
 
 function applyCam(s) {
-  const c = clampInside(s, (window.__MT_AUTOCAM__ ? autoCam(s) : s.cam) || s.cam);
+  /* the framings below were chosen against the real set, so they are used as
+     authored; only the fallback auto framing needs clamping */
+  const base = (window.__MT_AUTOCAM__ ? autoCam(s) : s.cam) || s.cam;
+  const c = window.__MT_AUTOCAM__ ? clampInside(s, base) : base;
   camera.position.set(c.p[0], c.p[1], c.p[2]);
   lookPoint.set(c.l[0], c.l[1], c.l[2]);
   camera.fov = c.fov || 58;
@@ -355,7 +388,9 @@ function frame(dt) {
   if (camFrom) {
     moveT = Math.min(1, moveT + dt / 0.9);
     const k = moveT < 0.5 ? 2 * moveT * moveT : 1 - Math.pow(-2 * moveT + 2, 2) / 2;
-    const target = clampInside(SCENES[index], (window.__MT_AUTOCAM__ ? autoCam(SCENES[index]) : SCENES[index].cam));
+    const sc = SCENES[index];
+    const base = window.__MT_AUTOCAM__ ? clampInside(sc, autoCam(sc)) : sc.cam;
+    const target = { p: base.p, l: base.l, fov: base.fov };
     camera.position.set(
       camFrom.p.x + (target.p[0] - camFrom.p.x) * k,
       camFrom.p.y + (target.p[1] - camFrom.p.y) * k,
@@ -379,6 +414,7 @@ function frame(dt) {
     breathe(dt);
   }
 
+  if (charMixer) charMixer.update(dt);
   post.render(scene, camera, dt);
 }
 
@@ -405,15 +441,30 @@ function paint(i) {
   document.body.dataset.scene = s.id;
 }
 
+/* One absolute position (`want`) plus a kick: however many swipes arrive while
+   the frame is black, they are summed instead of dropped, so a run of quick
+   swipes lands exactly where the reader expects and nothing ever sticks. */
+let want = 0;
+
 function go(next) {
-  const target = Math.max(0, Math.min(SCENES.length - 1, next));
-  if (busy || target === index) return;
+  want = Math.max(0, Math.min(SCENES.length - 1, Math.round(next)));
+  kick();
+}
+
+function nudge(dir) {
+  const from = busy ? want : index;
+  want = Math.max(0, Math.min(SCENES.length - 1, from + dir));
+  kick();
+}
+
+function kick() {
+  if (busy || want === index) return;
   busy = true;
-  pending = target;
+  pending = want;
 
   fadeEl?.classList.add('is-on');
   setTimeout(() => {
-    index = target;
+    index = want;
     paint(index);
     stage(index, false);          // the room changes while the frame is black
     fadeEl?.classList.remove('is-on');
@@ -421,6 +472,7 @@ function go(next) {
     pending = null;
     const hint = $('#mt-swipe');
     hint?.classList.remove('on');
+    if (want !== index) kick();   // another swipe arrived during the fade
   }, 430);
 }
 
@@ -448,7 +500,7 @@ function wireNavigation() {
     const dx = (x ?? sx) - sx, dy = (y ?? sy) - sy;
     const dt = performance.now() - st;
     if (Math.abs(dx) > 34 && Math.abs(dx) > Math.abs(dy) * 1.1 && dt < 1100) {
-      go(index + (dx < 0 ? 1 : -1));
+      nudge(dx < 0 ? 1 : -1);
     }
   };
 
@@ -460,23 +512,28 @@ function wireNavigation() {
     if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
       if (Math.abs(e.deltaX) > 26 && performance.now() - wheelT > 420) {
         wheelT = performance.now();
-        go(index + (e.deltaX > 0 ? 1 : -1));
+        nudge(e.deltaX > 0 ? 1 : -1);
       }
       return;
     }
     if (Math.abs(e.deltaY) > 26 && performance.now() - wheelT > 700) {
       wheelT = performance.now();
-      go(index + (e.deltaY > 0 ? 1 : -1));
+      nudge(e.deltaY > 0 ? 1 : -1);
     }
   }, { passive: true });
 
   window.addEventListener('keydown', (e) => {
-    if (['ArrowRight', 'ArrowDown', 'PageDown', ' ', 'Enter'].includes(e.key)) { e.preventDefault(); go(index + 1); }
-    if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(e.key)) { e.preventDefault(); go(index - 1); }
+    if (['ArrowRight', 'ArrowDown', 'PageDown', ' ', 'Enter'].includes(e.key)) { e.preventDefault(); nudge(1); }
+    if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(e.key)) { e.preventDefault(); nudge(-1); }
   });
 }
 
 /* ── sound: a room tone grown in the browser, no files ─────────────────── */
+function wireCta() {
+  if (!ctaEl) return;
+  ctaEl.addEventListener('click', () => { location.href = '/'; });
+}
+
 function wireSound() {
   const wrap = $('#mt-sound'), btn = $('#mt-sound-toggle'), state = $('#mt-sound-state');
   let ctx = null, gain = null, on = false;
@@ -559,6 +616,7 @@ function start() {
   }
   paint(0);
   wireNavigation();
+  wireCta();
   wireSound();
   window.addEventListener('resize', resize);
 
@@ -595,6 +653,7 @@ function start() {
     , content: (r) => window.__MT_CONTENT__ && window.__MT_CONTENT__(r)
     , auto: (on) => { window.__MT_AUTOCAM__ = on; }
     , setRoom(r) { showRoom(r); }
+    , state() { return { index, moveT, camFrom: !!camFrom, cam: camera.position.toArray(), look: lookPoint.toArray(), fov: camera.fov }; }
   };
 }
 
