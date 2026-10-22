@@ -117,6 +117,47 @@ loaded by any page. What the capture settled:
   HAR capture of the live site does not carry it either (its bodies are
   stripped), so those passes are not reproduced.
 
+## The authored timeline (and where it came from)
+
+Cartier's bundle (`cartier.app.js`) turned out to contain more than code: it
+ships the Theatre.js **project state** as a plain object literal. Two small
+tools lift the useful halves back out, so they can be read and reused instead of
+reverse-engineered:
+
+```bash
+node tools/extract-theatre.mjs     # → cartier/theatre/mainScene.theatre-state.json
+node tools/extract-shaders.mjs     # → cartier/shaders/*.glsl
+node tools/theatre-report.mjs      # → a chapter-by-chapter printout
+```
+
+The state is one sheet, `timeline`, 24.51 s long, 18 objects, 70 tracks and 375
+keyframes. It drives the things this build could never recover by eye:
+
+| object | what it says |
+| ------ | ------------ |
+| `currentScene.current` | eight scene windows, stepping at 0, 3.3, 7.3, 11.03, 14.5, 17.47, 20.77, 24.2 s |
+| `ui.sceneTitle`, `ui.exploreBttn` | when each chapter's card and button are on screen |
+| `camera.fov` | 50°, opening to 60° for scenes 3 and 5 |
+| `characters.opacity` | 21 keys — the crowd is not constant, it fades in and out per scene |
+| `objectsVisibility[...]` | `dark` and `opacity` per room part (`sc00_room`, `sc04_stairs`, `floor`, …) |
+| `glowSphere0…9.alpha` | the ten light blobs: static position/size/colour, animated strength |
+| `lightDecal0` | the projected light decal's size, tint `(1, 0.62, 0.27)`, falloff 2.5 |
+| `motionBlur.blur` | a one-frame blur kicked at each scene change |
+| `loop.forcedDark` | 1 → 0 at the first cut, back to 1 at the end |
+
+`theatre/sampler.js` reads all of that back into numbers (`sampleAt(t)`,
+`sampleWindow(a, b)`, `sceneWindows()`), with Theatre's semantics: `hold` keys
+step, `bezier` keys ease. The sampler is dependency-free, so it runs in node and
+in the browser unchanged.
+
+**What this build actually uses.** `assets/room.js` loads the state, builds the
+ten glows from the static overrides, and sets each chapter's strengths from the
+state's own curves. Two things it deliberately does not use: the timeline's
+camera (the `mainScene.glb` clip is the one that has real camera keys, and it is
+authored for 16:9), and `lightDecal0`, whose projected decal is built by
+Cartier's own code rather than by the model — `shaders/magic-light.glsl` is its
+shader, kept here for reference rather than wired in.
+
 ## Rebranding
 
 Nothing in the club pages refers to watches, jewellery, products, a shop, a

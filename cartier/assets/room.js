@@ -25,7 +25,7 @@ const SCENES = [
   { id: 'room',    kicker: 'i \u2014 The room',       title: 'The room\nwe keep',        cta: 'Explore',        room: 1,
     cam: { p: [-3.6, 2.50, -2.0], l: [1.5, 2.10, -8.5], fov: 62 } },
   { id: 'circles', kicker: 'ii \u2014 Conversations', title: 'Small circles\nof talking', cta: 'Explore',       room: 1,
-    cam: { p: [0.3, 2.35, 4.4], l: [0.3, 2.7, -4.4], fov: 60 } },
+    cam: { p: [-3.9, 2.30, 1.6], l: [2.0, 2.45, -5.2], fov: 58 } },
   { id: 'view',    kicker: 'iii \u2014 The long view', title: 'Ground we\nstand on',     cta: 'Explore',        room: 2,
     cam: { p: [0.11, 2.13, -4.75], l: [0.11, 1.73, 3.25], fov: 66 } },
   { id: 'wall',    kicker: 'iv \u2014 The wall',     title: 'Ten faces\non the wall',   cta: 'Explore',        room: 4,
@@ -35,7 +35,7 @@ const SCENES = [
   { id: 'lamp',    kicker: 'vi \u2014 The quiet room', title: 'The light\nwe leave on',  cta: 'Explore',        room: 6,
     cam: { p: [-2.0, 3.20, 24.0], l: [-2.0, 1.60, 10.0], fov: 62 } },
   { id: 'visit',   kicker: 'vii \u2014 Visit',        title: 'Come and\nsit with us',    cta: 'Visit the club', room: 1,
-    cam: { p: [2.8, 2.40, 7.0], l: [-1.2, 2.20, -5.0], fov: 60 } }
+    cam: { p: [4.2, 2.45, -0.6], l: [-2.4, 2.60, -6.4], fov: 58 } }
 ];
 
 /* the watch layer, the product typography, the mirror duplicates ──────── */
@@ -48,6 +48,9 @@ const dotsEl = $('#mt-dots'), fadeEl = $('#mt-fade'), countNow = $('#mt-count-no
 
 let renderer, post, scene, camera, main, chars, lightmaps = [], duration = 24.33;
 let mixer, charMixer, track = null;
+/* the authored timeline (theatre/mainScene.theatre-state.json) */
+let theatre = null, theatreTimeline = null, theatreWindows = null;
+const glowSprites = [];
 const probes = [];
 let activeProbe = null;
 
@@ -257,10 +260,100 @@ async function build() {
   window.__MT_UNPARK__ = unpark;
   unpark();
 
+  /* ── the authored timeline ───────────────────────────────────────────────
+     `theatre/mainScene.theatre-state.json` is Cartier's own Theatre.js project
+     state, lifted out of their bundle by tools/extract-theatre.mjs. It says when
+     each of the ten glow blobs is on, how strong the crowd is, and how dark the
+     opening and closing are. We take those numbers and nothing invented. */
+  try {
+    const [mod, state] = await Promise.all([
+      import('/theatre/sampler.js'),
+      fetch('/theatre/mainScene.theatre-state.json').then((r) => r.json()),
+    ]);
+    theatre = mod;
+    theatreTimeline = mod.createTimeline(state);
+    theatreWindows = mod.sceneWindows(theatreTimeline);
+    window.__MT_THEATRE__ = { timeline: theatreTimeline, windows: theatreWindows, mod };
+  } catch (e) {
+    theatre = null;
+    console.warn('[room] theatre state unavailable', e);
+  }
+
+  buildGlows();
+
   progress(0.97);
 
   stage(0, true);
   window.__MT_READY__ = true;
+}
+
+/* ── the ten glow blobs ────────────────────────────────────────────────────
+   Positions, sizes and colours are Cartier's static overrides; the per-chapter
+   strength is their authored `alpha` curve, sampled across that chapter's slice
+   of the 24.51 s timeline. Rendered additively so they read as haze, not discs. */
+function glowTexture() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 128;
+  const x = c.getContext('2d');
+  const g = x.createRadialGradient(64, 64, 0, 64, 64, 64);
+  g.addColorStop(0.0, 'rgba(255,255,255,1)');
+  g.addColorStop(0.35, 'rgba(255,255,255,0.42)');
+  g.addColorStop(0.7, 'rgba(255,255,255,0.10)');
+  g.addColorStop(1.0, 'rgba(255,255,255,0)');
+  x.fillStyle = g;
+  x.fillRect(0, 0, 128, 128);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+function buildGlows() {
+  if (!theatreTimeline) return;
+  const mid = theatre.sampleWindow(theatreTimeline, 0, theatreTimeline.length, 8);
+  if (!mid.glows.length) return;
+
+  // the static overrides, straight from the state
+  const statics = theatreTimeline.statics;
+  const tex = glowTexture();
+  mid.glows.forEach(({ name }) => {
+    const st = statics[name];
+    if (!st) return;
+    const colour = st.color || { r: 1, g: 1, b: 1 };
+    const material = new THREE.SpriteMaterial({
+      map: tex,
+      color: new THREE.Color(colour.r, colour.g, colour.b),
+      transparent: true,
+      opacity: 0,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      toneMapped: false,
+    });
+    const sprite = new THREE.Sprite(material);
+    const p = st.position || {};
+    const sc = st.scale || { x: 10, y: 10, z: 10 };
+    sprite.position.set(p.x || 0, p.y || 0, p.z || 0);
+    sprite.scale.set(sc.x || 10, sc.y || 10, 1);
+    sprite.visible = false;
+    sprite.renderOrder = st.renderOrder || 0;
+    sprite.name = name;
+    scene.add(sprite);
+    glowSprites.push({ name, sprite, base: 1 });
+  });
+}
+
+/* apply the authored strengths for one chapter (window index = chapter) */
+function stageTheatre(i) {
+  if (!theatreTimeline) return;
+  const w = theatreWindows[i] || theatreWindows[theatreWindows.length - 1];
+  if (!w) return;
+  const sw = theatre.sampleWindow(theatreTimeline, w.start, w.end, 24);
+  const alpha = new Map(sw.glows.map((g) => [g.name, g.alpha]));
+  glowSprites.forEach(({ name, sprite }) => {
+    const a = alpha.get(name) || 0;
+    sprite.material.opacity = a;
+    sprite.visible = a > 0.004;
+  });
+  window.__MT_THEATRE_NOW__ = sw;
 }
 
 /* one room at a time; the shells are shared, the interiors are not */
@@ -286,6 +379,7 @@ function showRoom(room) {
 function stage(i, immediate) {
   const s = SCENES[i];
   if (!s) return;
+  stageTheatre(i);          // the authored strengths for this chapter
   showRoom(s.room);
 
   if (immediate || STILL) {      // stills mode: cut, never glide

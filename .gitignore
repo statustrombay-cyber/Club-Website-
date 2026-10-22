@@ -30,3 +30,7 @@ Thumbs.db
 
 # One-time public-content recovery lock (never deploy runtime locks).
 data/.store.lock
+
+# The 7 MB Cartier bundle is only needed to regenerate the extracted data.
+# The two extractors in tools/ produce theatre/ and shaders/ from it.
+/cartier.app.js

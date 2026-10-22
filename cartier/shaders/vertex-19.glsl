@@ -1,0 +1,3 @@
+precision highp float;
+#define GLSLIFY 1
+in vec3 position;uniform mat4 projectionMatrix;uniform mat4 modelViewMatrix;uniform mat4 uObjectMatrix;uniform vec3 cameraPosition;uniform float uAngle;uniform float uPivotZ;out vec4 vObjectRayOrigin;out vec3 vPos;mat2 rotate2d(float angle){float c=cos(angle),s=sin(angle);return mat2(c,-s,s,c);}void main(){vec3 pos=position;float heightPhase=1.0-(pos.z*0.5+0.5);pos.y*=heightPhase*heightPhase;vPos=pos;vObjectRayOrigin=uObjectMatrix*vec4(cameraPosition,1.0);pos.z-=uPivotZ;pos.xz=rotate2d(uAngle)*pos.xz;pos.z+=uPivotZ;gl_Position=projectionMatrix*modelViewMatrix*vec4(pos,1.0);}
