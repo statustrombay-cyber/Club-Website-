@@ -116,3 +116,29 @@ soundtrack or the original exhibition. Copy comes from the club's own content
 in `data/site.json`. Engine-internal asset names (for example
 `santos-de-cartier-1.webp`) keep their original filenames because the bundle and
 the filesystem must agree; none of them are visible to a visitor.
+
+
+## The room — how the look is made
+
+The reference's own pipeline was recovered from the single-file capture
+(`cartier-part-000 … 012`, a Chrome SingleFile save of the live page). It is
+not one render: it is a composite.
+
+1. **Scene** — the captured set (`webgl/models/mainScene.glb`), materials lit
+   by per-scene baked lightmaps (`webgl/textures/lightmaps/LIGHTMAP_SC0*.webp`).
+   The light lives in the **red** channel; the site tints each map with
+   `lightmapRgb = (1, 0, 0)` and sums up to seven of them per material.
+2. **Ambient** — the site's own spherical-harmonic irradiance probes,
+   `webgl/textures/cubemaps/SC0k_sh.json`, loaded as `THREE.LightProbe`.
+3. **Bloom** — luma prepass at `threshold 0.348758`, `knee 0.47636217`,
+   separable blur, composited with a **screen blend** at `0.6`.
+4. **Film pass** — spectrum-sampled chroma shift (`0.025`, radius `3`), lens
+   distortion `0.04`, vignette (radius `2`, bias `0.5`), grain `0.025`, dither.
+
+`assets/post.js` is a faithful port of steps 3–4; `assets/room.js` handles 1–2.
+The screen-space *light pass* (spotlight phase, magic light) and the depth of
+field / motion blur passes are not reproduced: they need the theatre.js project
+data, which the capture does not contain.
+
+Note: lightmaps arrive with `flipY = false` and must not be colour-managed —
+`channel = 1`, `colorSpace = NoColorSpace`, sampled as `uv1` by the shader.

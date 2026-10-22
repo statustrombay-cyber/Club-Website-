@@ -20,21 +20,21 @@ const STILL = PARAMS.has('still');
 
 /* ── the chapters, in the order they are told ────────────────────────────── */
 const SCENES = [
-  { id: 'intro', kicker: 'A psychology club', title: 'Mindful\nTattva', cta: null, room: 0, time: 0.4,
+  { id: 'intro', kicker: 'A psychology club', title: 'Mindful\nTattva', cta: null, room: 0,
     cam: { p: [-1.9, 2.7, 21.0], l: [-1.9, 3.6, 12.0], fov: 54 } },
-  { id: 'room', kicker: 'i — The room', title: 'The room\nwe keep', cta: 'Explore', room: 1, time: 4.6,
+  { id: 'room', kicker: 'i — The room', title: 'The room\nwe keep', cta: 'Explore', room: 1,
     cam: { p: [0.3, 2.35, 4.4], l: [0.3, 2.7, -4.4], fov: 60 } },
-  { id: 'circles', kicker: 'ii — Conversations', title: 'Small circles\nof talking', cta: 'Explore', room: 3, time: 8.6,
+  { id: 'circles', kicker: 'ii — Conversations', title: 'Small circles\nof talking', cta: 'Explore', room: 2,
+    cam: { p: [0.1, 2.2, 12.5], l: [0.1, 1.9, 3.0], fov: 58 } },
+  { id: 'texts', kicker: 'iii — The reading room', title: 'Texts we\nreturn to', cta: 'Explore', room: 3,
     cam: { p: [0.0, 2.4, -3.5], l: [0.0, 4.2, -14.0], fov: 62 } },
-  { id: 'texts', kicker: 'iii — The reading room', title: 'Texts we\nreturn to', cta: 'Explore', room: 4, time: 12.2,
+  { id: 'wall', kicker: 'iv — The wall', title: 'Ten faces\non the wall', cta: 'Explore', room: 4,
     cam: { p: [-4.2, 4.0, -1.4], l: [0.2, 3.2, 6.0], fov: 56 } },
-  { id: 'wall', kicker: 'iv — The wall', title: 'Ten faces\non the wall', cta: 'Explore', room: 6, time: 15.6, grade: { exposure: 0.5, bloom: 0.22, threshold: 1.5 },
-    cam: { p: [-13.0, 2.7, 14.5], l: [2.4, 3.2, 13.0], fov: 58 } },
-  { id: 'film', kicker: 'v — The film', title: 'The film\nwe show', cta: 'Watch', room: 5, time: 19.2, grade: { exposure: 0.5, bloom: 0.22, threshold: 1.5 },
-    cam: { p: [0.4, 2.2, -2.2], l: [0.4, 2.8, -12.0], fov: 60 } },
-  { id: 'sound', kicker: 'vi — The room, listening', title: 'The sound\nof a room', cta: 'Listen', room: 3, time: 23.0,
-    cam: { p: [0.0, 2.3, -18.2], l: [0.0, 4.6, -7.6], fov: 62 } },
-  { id: 'visit', kicker: 'vii — Visit', title: 'Come and\nsit with us', cta: 'Visit the club', room: 0, time: 23.4,
+  { id: 'film', kicker: 'v — The film', title: 'The film\nwe show', cta: 'Watch', room: 5,
+    cam: { p: [-6.4, 2.6, -5.6], l: [3.6, 3.1, -12.6], fov: 62 } },
+  { id: 'sound', kicker: 'vi — The room, listening', title: 'The sound\nof a room', cta: 'Listen', room: 1,
+    cam: { p: [-6.0, 2.2, 3.4], l: [2.6, 2.5, -3.6], fov: 58 } },
+  { id: 'visit', kicker: 'vii — Visit', title: 'Come and\nsit with us', cta: 'Visit the club', room: 0,
     cam: { p: [-1.9, 2.6, 20.4], l: [-1.9, 3.9, 12.0], fov: 56 } }
 ];
 
@@ -48,6 +48,8 @@ const dotsEl = $('#mt-dots'), fadeEl = $('#mt-fade'), countNow = $('#mt-count-no
 
 let renderer, post, scene, camera, main, chars, lightmaps = [], duration = 24.33;
 let mixer, charMixer, track = null;
+const probes = [];
+let activeProbe = null;
 
 let index = 0;            // chapter we are on
 let pending = null;       // chapter we are going to
@@ -57,7 +59,7 @@ let arriving = 0;         // seconds since the chapter settled
 let clockDrift = 0;
 
 /* ── lightmaps: red channel is the bake; tint it warm ───────────────────── */
-async function warmLightmap(url, tint) {
+async function warmLightmap(url) {
   const img = await new Promise((res, rej) => {
     const im = new Image();
     im.onload = () => res(im);
@@ -70,13 +72,6 @@ async function warmLightmap(url, tint) {
   ctx.drawImage(img, 0, 0);
   const px = ctx.getImageData(0, 0, c.width, c.height);
   const d = px.data;
-  for (let i = 0; i < d.length; i += 4) {
-    const g = Math.min(255, d[i] * 1.22);
-    d[i] = Math.min(255, g * tint[0]);
-    d[i + 1] = Math.min(255, g * tint[1]);
-    d[i + 2] = Math.min(255, g * tint[2]);
-    d[i + 3] = 255;
-  }
   ctx.putImageData(px, 0, 0);
   const tex = new THREE.CanvasTexture(c);
   tex.flipY = false;
@@ -105,14 +100,15 @@ async function build() {
   renderer = new THREE.WebGLRenderer({ canvas: $('#mt-canvas'), antialias: true, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
-  renderer.toneMapping = THREE.NoToneMapping;      // the post pass grades
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.0;
 
-  post = makePost(renderer, { exposure: 0.84, bloom: 0.40, threshold: 1.02, vignette: 0.68, grain: 0.022 });
+  post = makePost(renderer, {});
   post.setSize(innerWidth, innerHeight);
 
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0x000000);
-  scene.fog = new THREE.FogExp2(0x0a0806, 0.017);
+  scene.fog = new THREE.FogExp2(0x050403, 0.008);
   camera = new THREE.PerspectiveCamera(58, innerWidth / innerHeight, 0.08, 900);
 
   const draco = new DRACOLoader();
@@ -142,10 +138,10 @@ async function build() {
     if (HIDE.test(o.name || '')) o.visible = false;
   }));
 
-  const tints = [[1, .74, .44], [1, .72, .40], [1, .78, .50], [1, .70, .42], [1, .72, .46], [1, .76, .50], [1, .74, .46]];
+
   for (let i = 0; i < 7; i++) {
     const url = i === 0 ? '/webgl/textures/lightmaps/LIGHTMAP_SC00.webp' : `/webgl/textures/lightmaps/LIGHTMAP_SC0${i}_2K.webp`;
-    try { lightmaps[i] = await warmLightmap(url, tints[i]); } catch (e) { lightmaps[i] = null; }
+    try { lightmaps[i] = await warmLightmap(url); } catch (e) { lightmaps[i] = null; }
     progress(0.78 + 0.12 * ((i + 1) / 7));
   }
 
@@ -167,7 +163,7 @@ async function build() {
         m.lightMap = lightmaps[i];
         m.lightMapIntensity = shell ? 0.7 : 0.95;
       }
-      m.envMapIntensity = 0.1;
+      m.envMapIntensity = 1.0;
       if (m.color) m.color.multiplyScalar(0.78);
       if (m.map) m.map.anisotropy = 4;
       // the export drives these panels at 3–8× as flat light. At film level
@@ -177,15 +173,28 @@ async function build() {
     });
   }));
 
+  // ambient from the reference's own irradiance probes (SC0k_sh.json)
+  for (let i = 0; i < 7; i++) {
+    try {
+      const res = await fetch(`/webgl/textures/cubemaps/SC0${i}_sh.json`);
+      if (!res.ok) continue;
+      const data = await res.json();
+      const sh = new THREE.SphericalHarmonics3();
+      const order = ['L00', 'L1-1', 'L10', 'L11', 'L2-2', 'L2-1', 'L20', 'L21', 'L22'];
+      sh.coefficients = order.map((name) => {
+        const c = (data.coefficients || []).find((k) => k.name === name);
+        return new THREE.Vector3(...(c ? c.rgb : [0, 0, 0]));
+      });
+      probes[i] = new THREE.LightProbe(sh);
+    } catch (e) { /* no probe, no harm */ }
+  }
+
   new EXRLoader().load('/webgl/textures/cubemaps/SC00_oct.exr', (t) => {
     t.mapping = THREE.EquirectangularReflectionMapping;
     scene.environment = t;
   });
 
-  scene.add(new THREE.HemisphereLight(0xffe4bd, 0x0d0a07, 0.06));
-  const key = new THREE.DirectionalLight(0xffd9a0, 0.13);
-  key.position.set(4, 9, 5);
-  scene.add(key);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.06));
 
   /* the export parks whole sub-assemblies hundreds of metres down, and the
      site's own timeline lifts them one at a time. We bring them all home and
@@ -227,6 +236,11 @@ async function build() {
 
 /* one room at a time; the shells are shared, the interiors are not */
 function showRoom(room) {
+  if (probes[room]) {
+    if (activeProbe) scene.remove(activeProbe);
+    activeProbe = probes[room];
+    scene.add(activeProbe);
+  }
   const keep = (o) => {
     const r = roomOf(o);
     if (r < 0) return true;                       // untagged set dressing
@@ -244,12 +258,7 @@ function stage(i, immediate) {
   const s = SCENES[i];
   if (!s) return;
   showRoom(s.room);
-  if (post && s.grade) {
-    const g = Object.assign({ exposure: 0.84, bloom: 0.40, threshold: 1.02 }, s.grade);
-    post.uniforms.exposure.value = g.exposure;
-    post.uniforms.bloom.value = g.bloom;
-    post.threshold = g.threshold;
-  }
+
   if (immediate) {
     applyCam(s);
     camFrom = null;
@@ -563,7 +572,7 @@ function start() {
 
   resize();
   build().then(reveal).catch((err) => {
-    console.error('[room]', err);
+    console.error('[room]', String((err && err.stack) || err));
     $('#mt-fallback')?.classList.add('is-on');
     reveal();
   });
