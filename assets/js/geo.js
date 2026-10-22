@@ -223,6 +223,23 @@ export function archWall({ width, height, thick, a, spring, segs = 26 }) {
   return b.geo();
 }
 
+/* a plane in XY facing +Z, uv 0..1 — the card every wall surface is cut from */
+export function panel(w, h) {
+  const b = new Builder();
+  const x = w / 2, y = h / 2;
+  const a = b.vert(-x, -y, 0, 0, 0, 1, 0, 0);
+  const c = b.vert(x, -y, 0, 0, 0, 1, 1, 0);
+  const d = b.vert(x, y, 0, 0, 0, 1, 1, 1);
+  const e = b.vert(-x, y, 0, 0, 0, 1, 0, 1);
+  b.quad(a, c, d, e);
+  return b.geo();
+}
+
+/* a quad in XY used for camera-facing figures, uv 0..1, x in [-0.5,0.5] */
+export function figureQuad() {
+  return panel(1, 1);
+}
+
 /* open cone: apex at the origin, rim at y = -h, uv.y runs apex → rim */
 export function cone(r, h, segs = 32) {
   const b = new Builder();

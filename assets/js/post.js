@@ -69,7 +69,7 @@ void main() { vUv = aPos * 0.5 + 0.5; gl_Position = vec4(aPos, 0.0, 1.0); }`, co
     end(w, h, opts = {}) {
       const {
         exposure = 1, bloomStrength = 0.5, fade = 1, grain = 0.05, time = 0,
-        threshold = 0.85, knee = 0.35,
+        threshold = 0.85, knee = 0.35, vignette = 0.5,
       } = opts;
       gl.disable(gl.DEPTH_TEST);
       gl.disable(gl.BLEND);
@@ -105,6 +105,7 @@ void main() { vUv = aPos * 0.5 + 0.5; gl_Position = vec4(aPos, 0.0, 1.0); }`, co
         .f('uBloomStrength', bloomStrength)
         .f('uFade', fade)
         .f('uGrain', grain)
+        .f('uVignette', vignette)
         .f('uTime', time)
         .v2('uRes', w, h);
       gl.drawArrays(gl.TRIANGLES, 0, 3);

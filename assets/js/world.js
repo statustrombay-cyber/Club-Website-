@@ -1,47 +1,34 @@
-/* The building. Seven rooms threaded on one axis, arch after arch: plaster,
-   sconces, gold dust, and the people who stand in the light. Everything here
-   is generated at load — there are no model or texture files. */
+/* The building. Six box rooms, each complete on all four sides so you can turn
+   right the way around inside it: walls, framed works, a ceiling, a window onto
+   the desert, furniture, a gold artifact, and the people. */
 
-import { mat4, compose, clamp, smoothstep } from './m4.js';
-import { box, plane, cylinder, sphere, torus, cone, archWall, merge } from './geo.js';
-import { buildFigure, POSE_NAMES } from './figures.js';
-import { mesh, drawInstanced } from './gl.js';
+import { mat4, compose } from './m4.js';
+import { box, plane, panel, cylinder, sphere, torus, merge } from './geo.js';
+import { mesh } from './gl.js';
 
-export const ROOM_LEN = 27;
-export const FIRST_WALL = 3;
-export const ROOMS = 7;
-export const WALL_Z = 5.4;       // half-width of the corridor, inside face
-export const CEIL_Y = 7.0;
-
-const ARCH_A = 2.75;
-const ARCH_SPRING = 3.7;
+export const ROOM_W = 11;
+export const ROOM_D = 11;
+export const ROOM_H = 5.4;
+export const EYE = 1.62;
+export const ROOM_GAP = 60;      // rooms are parked far apart; one is shown at a time
 
 export const CHAPTERS = [
-  { title: 'The First Door', kicker: 'Mindful Tattva', sub: 'A club for the mind. Scroll — or drag — to walk in.' },
-  { title: 'The Room\nWe Keep', kicker: 'Room I', sub: 'Where the week is put down. A long table, low light, no hurry.' },
-  { title: 'Small Circles\nof Talking', kicker: 'Room II', sub: 'Six chairs. No agenda. The conversation finds its own shape.' },
-  { title: 'Ground We\nStand On', kicker: 'Room III', sub: 'The practices that hold us: attention, patience, return.' },
-  { title: 'Ten Faces\non the Wall', kicker: 'Room IV', sub: 'The people who listen. They are not in a hurry either.' },
-  { title: 'The Gold Hour', kicker: 'Room V', sub: 'Late light on plaster, and the long table set for whoever comes.' },
-  { title: 'Texts We\nReturn To', kicker: 'Room VI', sub: 'A shelf, and the margins we write in. Bring a pencil.' },
-  { title: 'The Door\nThat Opens', kicker: 'Room VII', sub: 'Open to every student. The door stays unlocked.' },
+  { kicker: 'Room I', title: 'The Room\nWe Keep', sub: 'Where the week is put down. The door stays open, the light stays low.' },
+  { kicker: 'Room II', title: 'Small Circles\nof Talking', sub: 'Six chairs, no agenda. The conversation finds its own shape.' },
+  { kicker: 'Room III', title: 'Ground We\nStand On', sub: 'Attention, patience, return — the practices that hold a week together.' },
+  { kicker: 'Room IV', title: 'Ten Faces\non the Wall', sub: 'The people who listen. They are not in a hurry either.' },
+  { kicker: 'Room V', title: 'The Gold Hour', sub: 'Late light on plaster, and the long table set for whoever comes.' },
+  { kicker: 'Room VI', title: 'The Door\nThat Opens', sub: 'Open to every student. Bring a pencil, bring a friend.' },
 ];
 
-export const MATERIALS = {
-  plaster:  { albedo: [0.90, 0.875, 0.83], rough: 0.95, metal: 0.0, rim: 0.05, emissive: 0.0, detail: 1.0 },
-  plasterWarm: { albedo: [0.98, 0.93, 0.84], rough: 0.92, metal: 0.0, rim: 0.09, emissive: 0.0, detail: 1.0 },
-  ceiling:  { albedo: [0.18, 0.16, 0.14], rough: 0.97, metal: 0.0, rim: 0.02, emissive: 0.0, detail: 0.6 },
-  stone:    { albedo: [0.055, 0.051, 0.048], rough: 0.24, metal: 0.30, rim: 0.34, emissive: 0.0, detail: 0.5 },
-  dais:     { albedo: [0.085, 0.075, 0.066], rough: 0.40, metal: 0.12, rim: 0.20, emissive: 0.0, detail: 0.9 },
-  wood:     { albedo: [0.075, 0.055, 0.040], rough: 0.46, metal: 0.08, rim: 0.28, emissive: 0.0, detail: 0.8 },
-  door:     { albedo: [0.16, 0.125, 0.09], rough: 0.48, metal: 0.25, rim: 0.35, emissive: 0.0, detail: 0.7 },
-  figure:   { albedo: [0.010, 0.0095, 0.009], rough: 0.92, metal: 0.0, rim: 0.14, emissive: 0.0, detail: 0.1 },
-  gold:     { albedo: [0.84, 0.62, 0.27], rough: 0.38, metal: 1.0, rim: 0.2, emissive: 0.0, detail: 0.3 },
-  brass:    { albedo: [0.68, 0.50, 0.26], rough: 0.34, metal: 1.0, rim: 0.2, emissive: 0.0, detail: 0.35 },
-  lamp:     { albedo: [1.0, 0.88, 0.66], rough: 1.0, metal: 0.0, rim: 0.0, emissive: 3.4, detail: 0.0 },
-  cove:     { albedo: [1.0, 0.82, 0.56], rough: 1.0, metal: 0.0, rim: 0.0, emissive: 1.7, detail: 0.0 },
-  void:     { albedo: [0.013, 0.012, 0.011], rough: 0.22, metal: 0.45, rim: 0.0, emissive: 0.0, detail: 0.0 },
-};
+/* wall 0 front (−z) · 1 right (+x) · 2 back (+z) · 3 left (−x)
+   each with the yaw that turns a +Z-facing card into that wall's inward face */
+const WALLS = [
+  { yaw: 0, axis: 'z', sign: -1 },
+  { yaw: -Math.PI / 2, axis: 'x', sign: 1 },
+  { yaw: Math.PI, axis: 'z', sign: 1 },
+  { yaw: Math.PI / 2, axis: 'x', sign: -1 },
+];
 
 const T = (x, y, z) => { const m = mat4(); m[12] = x; m[13] = y; m[14] = z; return m; };
 
@@ -50,363 +37,411 @@ function rng(seed) {
   return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
 }
 
+/* place a +Z-facing card (w × h) on wall `wall`, `u` metres along it, `y` up,
+   `inset` metres in from the wall plane */
+export function wallPoint(wall, u, y, inset = 0) {
+  const w = WALLS[wall];
+  if (w.axis === 'z') {
+    return { pos: [u, y, w.sign * (ROOM_D / 2 - inset)], yaw: w.yaw };
+  }
+  return { pos: [w.sign * (ROOM_W / 2 - inset), y, u], yaw: w.yaw };
+}
+
 export function createWorld(gl) {
   const solids = [];
-  const instanced = [];
+  const glows = [];
+  const figures = [];
   const casters = [];
-  const doors = [];
+  const discs = [];
+  const hazes = [];
   const dustSpecs = [];
-  const cones = [];
-  const stats = { triangles: 0, draws: 0 };
+  const stats = { triangles: 0 };
 
   const add = (geo, model, mat, opts = {}) => {
     const m = mesh(gl, geo);
-    solids.push({ mesh: m, model, mat, x: model ? model[12] : 0 });
+    const item = { mesh: m, model, mat, x: model[12], y: model[13], z: model[14] };
+    solids.push(item);
     stats.triangles += geo.index.length / 3;
-    if (opts.cast) casters.push({ mesh: m, model });
-    return m;
-  };
-
-  const addInstanced = (geo, data, mat, opts = {}) => {
-    const m = mesh(gl, geo);
-    const count = m.instance(new Float32Array(data));
-    const item = { mesh: m, count, mat, x: opts.x || 0, range: opts.range || 40 };
-    instanced.push(item);
-    stats.triangles += (geo.index.length / 3) * count;
-    if (opts.cast) casters.push({ instanced: m, count });
+    if (opts.cast) casters.push(item);
     return item;
   };
-
-  /* ── geometry ─────────────────────────────────────────────────────────── */
-  const gFloor = plane(ROOM_LEN, WALL_Z * 2);
-  const gCeil = plane(ROOM_LEN, WALL_Z * 2, false);
-  const gWall = box(ROOM_LEN, CEIL_Y, 0.4);
-  const gSkirt = box(ROOM_LEN, 0.3, 0.09);
-  const gCove = box(ROOM_LEN, 0.18, 0.18);
-  const gDado = box(ROOM_LEN, 0.07, 0.09);
-  const gCarpet = box(ROOM_LEN, 0.012, 2.6);
-  const gCarpetEdge = box(ROOM_LEN, 0.014, 0.06);
-  const gImpost = box(0.62, 0.17, 0.5);
-  const gPilaster = merge([
-    { geo: box(0.52, 0.16, 0.42), matrix: T(0, 0.08, 0) },
-    { geo: box(0.4, CEIL_Y - 1.1, 0.3), matrix: T(0, (CEIL_Y - 1.1) / 2 + 0.12, 0) },
-    { geo: box(0.5, 0.14, 0.38), matrix: T(0, CEIL_Y - 0.95, 0) },
-  ]);
-  const gLintel = box(0.2, 0.2, WALL_Z * 2 + 0.9);
-  const gBeam = box(0.42, 0.34, WALL_Z * 2 + 0.4);
-  const gFrame = merge([
-    { geo: box(0.07, 1.92, 0.07), matrix: T(0, 0.96, -0.66) },
-    { geo: box(0.07, 1.92, 0.07), matrix: T(0, 0.96, 0.66) },
-    { geo: box(0.07, 0.07, 1.38), matrix: T(0, 1.92, 0) },
-    { geo: box(0.07, 0.07, 1.38), matrix: T(0, 0, 0) },
-  ]);
-  const gCanvas = box(0.04, 1.8, 1.26);
-  const gArch = archWall({ width: WALL_Z * 2 + 0.9, height: CEIL_Y, thick: 0.5, a: ARCH_A, spring: ARCH_SPRING, segs: 30 });
-
-  const pierH = CEIL_Y - 1.5;
-  const gPier = merge([
-    { geo: box(0.78, 0.18, 0.62), matrix: T(0, 0.09, 0) },
-    { geo: box(0.6, pierH, 0.46), matrix: T(0, pierH / 2 + 0.16, 0) },
-    { geo: box(0.74, 0.16, 0.56), matrix: T(0, pierH + 0.24, 0) },
-    { geo: box(0.82, 0.1, 0.62), matrix: T(0, pierH + 0.36, 0) },
-  ]);
-  const gPlate = box(0.05, 0.62, 0.2);
-  const gBulb = box(0.06, 0.44, 0.12);
-
-  const gPlinth = merge([
-    { geo: box(1.05, 0.18, 1.05), matrix: T(0, 0.09, 0) },
-    { geo: box(0.86, 0.95, 0.86), matrix: T(0, 0.6, 0) },
-    { geo: box(0.98, 0.08, 0.98), matrix: T(0, 1.12, 0) },
-  ]);
-  const gStand = merge([
-    { geo: box(0.62, 0.5, 0.62), matrix: T(0, 0.25, 0) },
-  ]);
-  const gTable = merge([
-    { geo: box(3.4, 0.12, 1.5), matrix: T(0, 0.74, 0) },
-    { geo: box(0.16, 0.72, 0.16), matrix: T(-1.5, 0.36, -0.6) },
-    { geo: box(0.16, 0.72, 0.16), matrix: T(1.5, 0.36, -0.6) },
-    { geo: box(0.16, 0.72, 0.16), matrix: T(-1.5, 0.36, 0.6) },
-    { geo: box(0.16, 0.72, 0.16), matrix: T(1.5, 0.36, 0.6) },
-  ]);
-  const gBench = merge([
-    { geo: box(2.6, 0.14, 0.6), matrix: T(0, 0.44, 0) },
-    { geo: box(0.14, 0.44, 0.5), matrix: T(-1.1, 0.22, 0) },
-    { geo: box(0.14, 0.44, 0.5), matrix: T(1.1, 0.22, 0) },
-  ]);
-  const gChair = merge([
-    { geo: box(0.46, 0.06, 0.46), matrix: T(0, 0.45, 0) },
-    { geo: box(0.46, 0.52, 0.06), matrix: T(0, 0.73, -0.2) },
-    { geo: box(0.05, 0.45, 0.05), matrix: T(-0.19, 0.22, -0.19) },
-    { geo: box(0.05, 0.45, 0.05), matrix: T(0.19, 0.22, -0.19) },
-    { geo: box(0.05, 0.45, 0.05), matrix: T(-0.19, 0.22, 0.19) },
-    { geo: box(0.05, 0.45, 0.05), matrix: T(0.19, 0.22, 0.19) },
-  ]);
-  const gShelf = merge([
-    { geo: box(2.8, 0.1, 0.5), matrix: T(0, 1.35, 0) },
-    { geo: box(2.8, 0.1, 0.5), matrix: T(0, 0.85, 0) },
-    { geo: box(0.1, 1.5, 0.5), matrix: T(-1.35, 0.75, 0) },
-    { geo: box(0.1, 1.5, 0.5), matrix: T(1.35, 0.75, 0) },
-  ]);
-
-  const gLeafA = box(0.09, ARCH_SPRING, 1.86);
-  const gLeafB = box(0.09, ARCH_SPRING, 1.86);
-  const leafA = mesh(gl, merge([{ geo: gLeafA, matrix: T(0, ARCH_SPRING / 2, 1.87) }]));
-  const leafB = mesh(gl, merge([{ geo: gLeafB, matrix: T(0, ARCH_SPRING / 2, -1.87) }]));
-
-  const gOrb = sphere(0.33, 26, 18);
-  const gRing = torus(0.7, 0.12, 44, 22);
-  const gUrn = merge([
-    { geo: sphere(0.32, 22, 16), matrix: T(0, 0.3, 0) },
-    { geo: cylinder(0.13, 0.36, 18, true), matrix: T(0, 0.52, 0) },
-    { geo: cylinder(0.32, 0.06, 20, true), matrix: T(0, 0.02, 0) },
-  ]);
-  const gSlot = box(0.8, 0.06, 2.8);
-  const gCone = cone(3.1, CEIL_Y - 0.3, 40);
-
-  const figureGeos = {};
-  for (const name of POSE_NAMES) figureGeos[name] = buildFigure(name);
-
-  /* ── the rooms ────────────────────────────────────────────────────────── */
-  const rnd = rng(20260214);
-
-  for (let k = 0; k < ROOMS; k++) {
-    const x0 = FIRST_WALL + k * ROOM_LEN;
-    const xc = x0 + ROOM_LEN / 2;
-
-    add(gFloor, T(xc, 0, 0), MATERIALS.stone);
-    add(gCeil, T(xc, CEIL_Y, 0), MATERIALS.ceiling);
-
-    for (const s of [-1, 1]) {
-      add(gWall, T(xc, CEIL_Y / 2, s * (WALL_Z + 0.2)), MATERIALS.plaster);
-      add(gSkirt, T(xc, 0.15, s * (WALL_Z - 0.05)), MATERIALS.dais);
-      add(gCove, T(xc, CEIL_Y - 0.42, s * (WALL_Z - 0.12)), MATERIALS.cove);
-      add(gDado, T(xc, 1.28, s * (WALL_Z - 0.05)), MATERIALS.plasterWarm);
-    }
-
-    // piers, sconces, and the people standing under them
-    const pierXs = [x0 + 3.6, x0 + 9.9, x0 + 17.1, x0 + 23.4];
-    const pierData = [], plateData = [], bulbData = [];
-    let pIndex = 0;
-    for (const s of [-1, 1]) {
-      for (const px of pierXs) {
-        const pz = s * (WALL_Z - 0.26);
-        pierData.push(px, 0, pz, 0, 1);
-        const sy = 3.15;
-        plateData.push(px, sy, s * (WALL_Z - 0.62), 0, 1);
-        bulbData.push(px, sy, s * (WALL_Z - 0.72), 0, 1);
-        pIndex++;
-      }
-    }
-    addInstanced(gPier, pierData, MATERIALS.plasterWarm, { x: xc, range: 24, cast: true });
-    addInstanced(gPlate, plateData, MATERIALS.brass, { x: xc, range: 24 });
-    addInstanced(gBulb, bulbData, MATERIALS.lamp, { x: xc, range: 24 });
-
-    // two figures standing against the walls, in the sconce light
-    const statueXs = [x0 + 6.6, x0 + 20.4];
-    for (let i = 0; i < 2; i++) {
-      const s = (k + i) % 2 === 0 ? -1 : 1;
-      const px = statueXs[i];
-      add(gStand, T(px, 0, s * (WALL_Z - 0.95)), MATERIALS.dais, { cast: true });
-      const pose = ['listening', 'leaning', 'folded', 'standing'][(k * 2 + i) % 4];
-      addInstanced(figureGeos[pose], [px, 0.5, s * (WALL_Z - 0.95), s < 0 ? Math.PI * 0.5 : -Math.PI * 0.5, 0.98],
-        MATERIALS.figure, { x: px, range: 22, cast: true });
-    }
-
-    // the people out in the room
-    const crowd = [];
-    const count = 3 + (k % 3);
-    for (let i = 0; i < count; i++) {
-      const side = i % 2 === 0 ? -1 : 1;
-      const px = x0 + 5 + rnd() * (ROOM_LEN - 9);
-      const pz = side * (1.9 + rnd() * 1.7);
-      const pose = POSE_NAMES[(i + k * 2) % POSE_NAMES.length];
-      const rot = (side < 0 ? 1 : -1) * (0.4 + rnd() * 0.9);
-      crowd.push([px, 0, pz, rot, 0.95 + rnd() * 0.1]);
-    }
-    addInstanced(figureGeos[POSE_NAMES[(k + 1) % POSE_NAMES.length]], crowd.flat(), MATERIALS.figure,
-      { x: xc, range: 26, cast: true });
-
-    // furniture, kept off the walking line
-    const chairRing = (tx, tz, ry, n, radius) => {
-      const data = [];
-      for (let c = 0; c < n; c++) {
-        const a = ry + (c / n) * Math.PI * 2;
-        data.push(tx + Math.cos(a) * radius, 0, tz + Math.sin(a) * radius, -a + Math.PI / 2, 1);
-      }
-      addInstanced(gChair, data, MATERIALS.wood, { x: tx, range: 26, cast: true });
-    };
-    if (k % 3 === 0) {
-      add(gTable, T(xc + 1.5, 0, -2.6), MATERIALS.wood, { cast: true });
-      add(gBench, T(xc + 1.5, 0, -4.1), MATERIALS.wood, { cast: true });
-      chairRing(xc + 1.5, -2.6, 0.2, 6, 1.45);
-    } else if (k % 3 === 1) {
-      add(gBench, T(xc - 2.0, 0, 3.1), MATERIALS.wood, { cast: true });
-      add(gTable, T(xc + 4.5, 0, 2.4), MATERIALS.wood, { cast: true });
-      chairRing(xc + 4.5, 2.4, 0.7, 5, 1.35);
-    } else {
-      add(gShelf, T(xc - 3.5, 0, 4.55), MATERIALS.wood, { cast: true });
-      add(gBench, T(xc + 2.0, 0, 3.4), MATERIALS.wood, { cast: true });
-    }
-
-    // framed works along the walls: the club's exhibitions
-    for (let f = 0; f < 3; f++) {
-      const side = (k + f) % 2 === 0 ? -1 : 1;
-      const fx = x0 + 5.4 + f * 8.1;
-      const fz = side * (WALL_Z - 0.08);
-      const rot = side < 0 ? Math.PI / 2 : -Math.PI / 2;
-      add(gFrame, compose(mat4(), fx, 1.35, fz, rot, 1, 1, 1), MATERIALS.brass);
-      add(gCanvas, compose(mat4(), fx, 2.3, fz, rot, 1, 1, 1), MATERIALS.void);
-    }
-
-    // ceiling beams: rhythm overhead, and something for the light to model
-    for (let bm = 0; bm < 5; bm++) {
-      add(gBeam, T(x0 + 3.2 + bm * 5.2, CEIL_Y - 0.32, 0), MATERIALS.wood);
-    }
-
-    // a runner down the middle: scale, direction, and something to catch the light
-    add(gCarpet, T(xc, 0.007, 0), MATERIALS.void);
-    for (const s2 of [-1, 1]) add(gCarpetEdge, T(xc, 0.009, s2 * 1.32), MATERIALS.brass);
-
-    // the ceiling slot that does the actual lighting of the room
-    add(gSlot, T(xc - 1.0, CEIL_Y - 0.08, 0), MATERIALS.lamp);
-    cones.push({ pos: [xc - 1.0, CEIL_Y - 0.12, 0], model: mat4() });
-
-    // an artifact on a plinth
-    const ax = xc + 4.6;
-    const az = k % 2 === 0 ? 1.5 : -1.5;
-    add(gPlinth, T(ax, 0, az), MATERIALS.dais, { cast: true });
-    if (k % 3 === 0) add(gOrb, T(ax, 1.45, az), MATERIALS.gold, { cast: true });
-    else if (k % 3 === 1) add(gUrn, T(ax, 1.16, az), MATERIALS.gold, { cast: true });
-    else add(gRing, compose(mat4(), ax, 1.62, az, 0.2, 0.5, 0.5, 0.5, Math.PI / 2), MATERIALS.brass, { cast: true });
-
-    // gold dust
-    const dr = rng(991 + k * 37);
-    const dustData = new Float32Array(1050 * 6);
-    for (let i = 0; i < 1050; i++) {
-      dustData[i * 6] = x0 + dr() * ROOM_LEN;
-      dustData[i * 6 + 1] = dr() * 6.4;
-      dustData[i * 6 + 2] = (dr() * 2 - 1) * (WALL_Z - 0.5);
-      dustData[i * 6 + 3] = dr();
-      dustData[i * 6 + 4] = dr();
-      dustData[i * 6 + 5] = dr();
-    }
-    dustSpecs.push({ x0, x1: x0 + ROOM_LEN, data: dustData });
-  }
-
-  // boundary walls and their doors
-  for (let b = 0; b <= ROOMS; b++) {
-    const bx = FIRST_WALL + b * ROOM_LEN;
-    add(gArch, compose(mat4(), bx, 0, 0, -Math.PI / 2, 1, 1, 1), MATERIALS.plasterWarm);
-    for (const s2 of [-1, 1]) {
-      add(gImpost, T(bx, ARCH_SPRING, s2 * (ARCH_A + 0.34)), MATERIALS.plasterWarm);
-      add(gPilaster, compose(mat4(), bx, 0, s2 * (WALL_Z - 0.55), -Math.PI / 2, 1, 1, 1), MATERIALS.plasterWarm);
-    }
-    add(gLintel, compose(mat4(), bx, CEIL_Y - 0.75, 0, 0, 1, 1, 1), MATERIALS.plasterWarm);
-    for (const s2 of [-1, 1]) {
-      add(gPlate, compose(mat4(), bx - 0.3, 3.05, s2 * (ARCH_A + 0.62), 0, 1, 1, 1), MATERIALS.brass);
-      add(gBulb, compose(mat4(), bx - 0.38, 3.05, s2 * (ARCH_A + 0.62), 0, 1, 1, 1), MATERIALS.lamp);
-    }
-    for (const s of [-1, 1]) {
-      const leaf = s < 0 ? leafA : leafB;
-      const hingeZ = s * (ARCH_A - 0.03);
-      const door = { mesh: leaf, x: bx, sign: s, hingeZ, angle: 0, model: compose(mat4(), bx, 0, hingeZ, 0, 1, 1, 1) };
-      doors.push(door);
-      casters.push({ mesh: leaf, door });
-    }
-  }
-
-  /* ── light shafts hanging from the slots ──────────────────────────────── */
-  const rotX = (a) => {
-    const c = Math.cos(a), sn = Math.sin(a);
-    const m = mat4();
-    m[5] = c; m[6] = sn; m[9] = -sn; m[10] = c;
+  const addGlow = (geo, model, mat, flipU = 0, crop = null) => {
+    const m = mesh(gl, geo);
+    glows.push({ mesh: m, model, mat, flipU, uvs: crop ? crop[0] : 1, uvo: crop ? [crop[1], crop[2]] : [0, 0] });
+    stats.triangles += geo.index.length / 3;
     return m;
   };
-  const shaftGeo = merge([{ geo: plane(1, 1, true), matrix: rotX(-Math.PI / 2) }]);
-  const shaftData = [];
-  for (let k = 0; k < ROOMS; k++) {
-    const xc = FIRST_WALL + k * ROOM_LEN + ROOM_LEN / 2;
-    for (let i = 0; i < 3; i++) {
-      shaftData.push(xc - 1.0, 3.1, (i - 1) * 2.1, Math.PI / 2 + (i - 1) * 0.09, 3.0 + i * 0.25);
-    }
-  }
-  const spillData = [];
-  for (let b = 0; b <= ROOMS; b++) {
-    const bx = FIRST_WALL + b * ROOM_LEN;
-    spillData.push(bx + 0.9, 3.3, 0, Math.PI / 2, 6.2);
-  }
-  const shaftMesh = mesh(gl, shaftGeo);
-  const shaftCount = shaftMesh.instance(new Float32Array(shaftData));
-  const spillMesh = mesh(gl, shaftGeo);
-  const spillCount = spillMesh.instance(new Float32Array(spillData));
 
-  /* ── dust ─────────────────────────────────────────────────────────────── */
-  const dustChunks = dustSpecs.map((c) => {
-    const vao = gl.createVertexArray();
-    gl.bindVertexArray(vao);
-    const b = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, b);
-    gl.bufferData(gl.ARRAY_BUFFER, c.data, gl.STATIC_DRAW);
-    gl.enableVertexAttribArray(0);
-    gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 24, 0);
-    gl.enableVertexAttribArray(1);
-    gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 24, 12);
-    gl.bindVertexArray(null);
-    return { vao, count: c.data.length / 6, x0: c.x0, x1: c.x1 };
-  });
+  /* place a card of w × h with its centre at p, facing yaw */
+  const card = (geo, x, y, z, yaw, sx = 1, sy = 1, sz = 1) => {
+    const m = compose(mat4(), x, y, z, yaw, sx, sy, sz);
+    return m;
+  };
 
-  let time = 0;
+  /* ── shared geometry ──────────────────────────────────────────────────── */
+  const gUnit = panel(1, 1);                  // 1 × 1 card, +Z
+  const gFloor = plane(ROOM_W, ROOM_D, true);
+  const gCeil = plane(ROOM_W, ROOM_D, false);
+  const gFigure = mesh(gl, panel(1, 1));
 
-  /* put every door in the state it should already be in for this camera,
-     so nothing swings open on the first frame the room is shown */
-  function settle(camX) {
-    for (const d of doors) {
-      const dist = Math.abs(camX - d.x);
-      d.angle = dist < 40 ? smoothstep((40 - dist) / 16) * 1.53 : 0;
-      compose(d.model, d.x, 0, d.hingeZ, d.sign > 0 ? -d.angle : d.angle, 1, 1, 1);
-    }
-  }
+  const gSkirt = box(1, 0.16, 0.05);
+  const gMullion = box(0.05, 1, 0.05);
+  const gSill = box(1, 0.12, 0.4);
 
-  function update(dt, camX) {
-    time += dt;
-    for (const d of doors) {
-      const dist = Math.abs(camX - d.x);
-      const target = dist < 40 ? smoothstep((40 - dist) / 16) * 1.53 : 0;
-      d.angle += (target - d.angle) * Math.min(1, dt * 3.2);
-      compose(d.model, d.x, 0, d.hingeZ, d.sign > 0 ? -d.angle : d.angle, 1, 1, 1);
-    }
-  }
+  const frameGeo = (w, h, t) => merge([
+    { geo: box(w, t, 0.07), matrix: T(0, h / 2, 0) },
+    { geo: box(w, t, 0.07), matrix: T(0, -h / 2, 0) },
+    { geo: box(t, h, 0.07), matrix: T(-w / 2, 0, 0) },
+    { geo: box(t, h, 0.07), matrix: T(w / 2, 0, 0) },
+  ]);
+
+  const gPlinth = merge([
+    { geo: box(0.92, 0.16, 0.92), matrix: T(0, 0.08, 0) },
+    { geo: box(0.76, 0.88, 0.76), matrix: T(0, 0.56, 0) },
+    { geo: box(0.88, 0.07, 0.88), matrix: T(0, 1.02, 0) },
+  ]);
+  const gTable = merge([
+    { geo: box(2.6, 0.065, 1.16), matrix: T(0, 0.745, 0) },
+    { geo: box(2.3, 0.10, 0.86), matrix: T(0, 0.665, 0) },
+    { geo: box(0.075, 0.72, 0.075), matrix: T(-1.16, 0.36, -0.48) },
+    { geo: box(0.075, 0.72, 0.075), matrix: T(1.16, 0.36, -0.48) },
+    { geo: box(0.075, 0.72, 0.075), matrix: T(-1.16, 0.36, 0.48) },
+    { geo: box(0.075, 0.72, 0.075), matrix: T(1.16, 0.36, 0.48) },
+    { geo: box(2.24, 0.05, 0.05), matrix: T(0, 0.16, -0.48) },
+    { geo: box(2.24, 0.05, 0.05), matrix: T(0, 0.16, 0.48) },
+  ]);
+  const gLowTable = merge([
+    { geo: cylinder(0.56, 0.055, 40), matrix: T(0, 0.40, 0) },
+    { geo: cylinder(0.50, 0.035, 36), matrix: T(0, 0.355, 0) },
+    { geo: cylinder(0.045, 0.34, 12), matrix: T(-0.3, 0.17, -0.22) },
+    { geo: cylinder(0.045, 0.34, 12), matrix: T(0.3, 0.17, -0.22) },
+    { geo: cylinder(0.045, 0.34, 12), matrix: T(0, 0.17, 0.32) },
+  ]);
+  const gChair = merge([
+    { geo: box(0.46, 0.055, 0.45), matrix: T(0, 0.44, 0) },
+    { geo: box(0.42, 0.045, 0.40), matrix: T(0, 0.40, 0) },
+    { geo: box(0.038, 0.44, 0.038), matrix: T(-0.19, 0.22, -0.18) },
+    { geo: box(0.038, 0.44, 0.038), matrix: T(0.19, 0.22, -0.18) },
+    { geo: box(0.038, 0.44, 0.038), matrix: T(-0.19, 0.22, 0.18) },
+    { geo: box(0.038, 0.44, 0.038), matrix: T(0.19, 0.22, 0.18) },
+    { geo: box(0.038, 0.42, 0.038), matrix: T(-0.19, 0.66, 0.185) },
+    { geo: box(0.038, 0.42, 0.038), matrix: T(0.19, 0.66, 0.185) },
+    { geo: box(0.42, 0.13, 0.035), matrix: T(0, 0.80, 0.185) },
+    { geo: box(0.42, 0.05, 0.03), matrix: T(0, 0.63, 0.185) },
+  ]);
+  const gBench = merge([
+    { geo: box(2.0, 0.07, 0.5), matrix: T(0, 0.43, 0) },
+    { geo: box(1.84, 0.05, 0.44), matrix: T(0, 0.385, 0) },
+    { geo: box(0.06, 0.42, 0.44), matrix: T(-0.86, 0.21, 0) },
+    { geo: box(0.06, 0.42, 0.44), matrix: T(0.86, 0.21, 0) },
+    { geo: box(1.68, 0.04, 0.04), matrix: T(0, 0.14, 0) },
+  ]);
+  const gShelf = merge([
+    { geo: box(0.5, 0.08, 2.2), matrix: T(0, 1.5, 0) },
+    { geo: box(0.5, 0.08, 2.2), matrix: T(0, 1.02, 0) },
+    { geo: box(0.5, 0.08, 2.2), matrix: T(0, 0.54, 0) },
+    { geo: box(0.5, 1.62, 0.08), matrix: T(0, 0.81, -1.06) },
+    { geo: box(0.5, 1.62, 0.08), matrix: T(0, 0.81, 1.06) },
+  ]);
+  const gOrb = sphere(0.3, 32, 22);
+  const gRing = torus(0.44, 0.08, 48, 24);
+  const gVessel = merge([
+    { geo: sphere(0.26, 28, 18), matrix: T(0, 0.27, 0) },
+    { geo: cylinder(0.1, 0.32, 20, true), matrix: T(0, 0.47, 0) },
+    { geo: cylinder(0.24, 0.05, 22, true), matrix: T(0, 0.02, 0) },
+  ]);
+  const gCube = box(0.52, 0.52, 0.52);
+  const gDisc = mesh(gl, panel(1, 1));
+  const slatParts = [];
+  for (let i = 0; i < 16; i++) slatParts.push({ geo: box(0.055, 2.9, 0.10), matrix: T(-1.05 + i * 0.14, 1.62, 0) });
+  slatParts.push({ geo: box(2.35, 0.06, 0.16), matrix: T(0, 0.14, 0) });
+  slatParts.push({ geo: box(2.35, 0.05, 0.14), matrix: T(0, 3.1, 0) });
+  const gSlats = merge(slatParts);
+  const gRug = box(6.2, 0.012, 4.4);
+
+  const layouts = [
+    {
+      window: { wall: 0, w: 4.6, h: 3.0, y: 2.55 },
+      works: [
+        { wall: 0, u: 3.55, y: 2.55, w: 1.3, h: 1.8, poster: 2 },
+        { wall: 1, u: 0.2, y: 2.7, w: 2.1, h: 2.8, art: 1 },
+        { wall: 1, u: -3.4, y: 2.6, w: 1.15, h: 1.55, poster: 4 },
+        { wall: 2, u: -0.4, y: 2.65, w: 2.5, h: 1.65, art: 3 },
+        { wall: 2, u: 3.0, y: 2.55, w: 1.2, h: 1.6, poster: 1 },
+        { wall: 3, u: 0.5, y: 2.75, w: 1.9, h: 2.6, art: 0 },
+        { wall: 3, u: -3.3, y: 2.55, w: 1.15, h: 1.55, poster: 5 },
+      ],
+      numeral: { wall: 2, u: -4.1, y: 1.45 },
+      figures: [
+        { wall: 0, u: -3.7, art: 0 },
+        { wall: 1, u: 2.7, art: 1 },
+      ],
+      props: ['salon'],
+      artifact: 'orb',
+      light: { at: [-2.2, 4.55, -1.0], color: [1.0, 0.83, 0.60] },
+    },
+    {
+      window: { wall: 2, w: 4.2, h: 2.8, y: 2.45 },
+      works: [
+        { wall: 2, u: -3.4, y: 2.5, w: 1.25, h: 1.7, poster: 3 },
+        { wall: 2, u: 3.4, y: 2.5, w: 1.25, h: 1.7, poster: 1 },
+        { wall: 0, u: -0.2, y: 2.8, w: 2.7, h: 1.75, art: 3 },
+        { wall: 0, u: 3.3, y: 2.6, w: 1.2, h: 1.6, poster: 0 },
+        { wall: 1, u: -0.4, y: 2.7, w: 1.9, h: 2.6, art: 5 },
+        { wall: 1, u: 3.3, y: 2.55, w: 1.15, h: 1.5, poster: 5 },
+        { wall: 3, u: 1.2, y: 2.65, w: 2.0, h: 2.7, art: 2 },
+        { wall: 3, u: -3.0, y: 2.55, w: 1.2, h: 1.6, poster: 2 },
+      ],
+      numeral: { wall: 0, u: -4.1, y: 1.45 },
+      figures: [
+        { wall: 2, u: -3.4, art: 2 },
+        { wall: 0, u: 2.4, art: 0 },
+      ],
+      props: ['circle', 'shelf'],
+      artifact: 'ring',
+      light: { at: [2.1, 4.55, 0.4], color: [1.0, 0.85, 0.65] },
+    },
+    {
+      window: { wall: 1, w: 3.4, h: 3.2, y: 2.6 },
+      works: [
+        { wall: 1, u: -3.6, y: 2.6, w: 1.35, h: 1.85, art: 4 },
+        { wall: 0, u: 0.2, y: 2.75, w: 2.4, h: 2.9, art: 0 },
+        { wall: 0, u: -3.4, y: 2.55, w: 1.2, h: 1.6, poster: 5 },
+        { wall: 2, u: -0.6, y: 2.7, w: 2.2, h: 1.6, poster: 2 },
+        { wall: 2, u: 3.1, y: 2.6, w: 1.3, h: 1.8, art: 2 },
+        { wall: 3, u: 0.4, y: 2.7, w: 1.8, h: 2.5, art: 3 },
+        { wall: 3, u: -3.4, y: 2.55, w: 1.2, h: 1.6, poster: 0 },
+      ],
+      numeral: { wall: 2, u: -4.1, y: 1.45 },
+      figures: [
+        { wall: 1, u: -3.6, art: 1 },
+        { wall: 0, u: 3.1, art: 4 },
+        { wall: 3, u: -2.2, art: 0 },
+      ],
+      props: ['benches'],
+      artifact: 'vessel',
+      light: { at: [0.6, 4.6, -2.2], color: [1.0, 0.82, 0.58] },
+    },
+    {
+      window: null,
+      works: [
+        { wall: 0, u: -3.0, y: 2.62, w: 1.18, h: 1.64, poster: 3 },
+        { wall: 0, u: -1.0, y: 2.62, w: 1.18, h: 1.64, poster: 0 },
+        { wall: 0, u: 1.0, y: 2.62, w: 1.18, h: 1.64, poster: 2 },
+        { wall: 0, u: 3.0, y: 2.62, w: 1.18, h: 1.64, poster: 5 },
+        { wall: 1, u: 0, y: 2.8, w: 2.6, h: 1.7, art: 1 },
+        { wall: 3, u: -0.2, y: 2.8, w: 2.2, h: 2.9, art: 3 },
+        { wall: 3, u: 3.4, y: 2.55, w: 1.2, h: 1.55, poster: 4 },
+        { wall: 2, u: -0.4, y: 2.7, w: 2.3, h: 1.55, art: 5 },
+        { wall: 2, u: 3.1, y: 2.55, w: 1.2, h: 1.6, poster: 1 },
+      ],
+      numeral: { wall: 2, u: -4.1, y: 1.45 },
+      figures: [
+        { wall: 0, u: 4.45, art: 2 },
+        { wall: 0, u: -4.45, art: 0 },
+      ],
+      props: ['bench'],
+      artifact: 'cube',
+      light: { at: [0, 4.6, 1.2], color: [1.0, 0.80, 0.56] },
+    },
+    {
+      window: null,
+      skylight: true,
+      works: [
+        { wall: 0, u: 0, y: 2.95, w: 3.4, h: 2.1, art: 2 },
+        { wall: 0, u: 3.9, y: 2.55, w: 1.0, h: 1.35, poster: 0 },
+        { wall: 1, u: 0.4, y: 2.7, w: 1.5, h: 2.0, poster: 4 },
+        { wall: 1, u: -3.5, y: 2.55, w: 1.2, h: 1.6, poster: 3 },
+        { wall: 3, u: -0.4, y: 2.7, w: 1.5, h: 2.0, poster: 1 },
+        { wall: 3, u: 3.5, y: 2.55, w: 1.2, h: 1.6, art: 4 },
+        { wall: 2, u: 0.6, y: 2.7, w: 2.4, h: 1.7, art: 5 },
+      ],
+      numeral: { wall: 2, u: -4.1, y: 1.45 },
+      figures: [
+        { wall: 1, u: 3.0, art: 4 },
+        { wall: 0, u: -4.1, art: 3 },
+      ],
+      props: ['longtable'],
+      artifact: 'orb',
+      light: { at: [0, 4.7, 0], color: [1.0, 0.74, 0.44] },
+    },
+    {
+      window: { wall: 3, w: 4.0, h: 3.0, y: 2.55 },
+      works: [
+        { wall: 3, u: -3.5, y: 2.55, w: 1.25, h: 1.7, poster: 2 },
+        { wall: 3, u: 3.5, y: 2.55, w: 1.25, h: 1.7, poster: 5 },
+        { wall: 0, u: 0, y: 2.85, w: 2.3, h: 3.0, art: 0 },
+        { wall: 0, u: -3.5, y: 2.55, w: 1.15, h: 1.55, poster: 0 },
+        { wall: 1, u: 0, y: 2.75, w: 1.7, h: 2.2, poster: 1 },
+        { wall: 1, u: -3.4, y: 2.55, w: 1.2, h: 1.6, art: 2 },
+        { wall: 2, u: -1.4, y: 2.7, w: 2.2, h: 1.6, art: 4 },
+        { wall: 2, u: 2.8, y: 2.6, w: 1.3, h: 1.75, poster: 4 },
+      ],
+      numeral: { wall: 2, u: 4.2, y: 1.45 },
+      figures: [
+        { wall: 3, u: -3.4, art: 3 },
+        { wall: 0, u: 2.4, art: 1 },
+      ],
+      props: ['shelf', 'bench'],
+      artifact: 'vessel',
+      light: { at: [1.8, 4.55, -1.8], color: [1.0, 0.84, 0.62] },
+    },
+  ];
+
+  const rooms = layouts.map((L, i) => ({ ...L, index: i, off: i * ROOM_GAP, chapter: CHAPTERS[i] }));
 
   return {
-    MATERIALS,
-    solids, instanced, doors, casters, stats,
-    dustChunks,
-    shafts: { mesh: shaftMesh, count: shaftCount },
-    spills: { mesh: spillMesh, count: spillCount },
-    coneGeo: gCone, cones,
-    chapters: CHAPTERS,
-    get time() { return time; },
-    update,
-    settle,
-    roomAt: (x) => clamp(Math.floor((x - FIRST_WALL) / ROOM_LEN), 0, ROOMS - 1),
-    /* one long graze along a wall per room: the wall is washed, the far side
-       of the corridor goes to shadow, and the people read as silhouettes */
-    lightAt(x) {
-      const room = clamp(Math.floor((x - FIRST_WALL) / ROOM_LEN), 0, ROOMS - 1);
-      const xc = FIRST_WALL + room * ROOM_LEN + ROOM_LEN / 2;
-      const side = room % 2 === 0 ? -1 : 1;
-      return {
-        pos: [xc - 4.5, CEIL_Y - 1.15, side * (WALL_Z - 1.35)],
-        target: [xc + 7.0, 0.55, side * (WALL_Z - 0.3)],
-        room, side,
-      };
-    },
-    /* each chapter looks down its room but a little off-axis, so the walls,
-       the sconces and the people read instead of a flat end wall */
-    chapterCamera(i) {
-      const anchor = i === 0 ? 6.4 : FIRST_WALL + (i - 1) * ROOM_LEN + 11;
-      const yaw = i === 0 ? 0.02 : (i % 2 === 0 ? 0.2 : -0.2);
-      return { anchor, yaw };
+    rooms, CHAPTERS, stats,
+    solids, glows, figures, casters, discs, hazes, dustSpecs,
+    gDisc, gUnit, gFigure,
+
+    build(T2) {
+      rooms.forEach((room) => {
+        const off = room.off;
+        const P = (m) => { const c = new Float32Array(m); c[14] += off; return c; };
+        const glowMat = (tex, tint = [1, 1, 1], power = 1.2) => ({ tex, tint, power });
+
+        /* shell */
+        add(gFloor, T(0, 0, off), T2.mats.floor);
+        add(gCeil, T(0, ROOM_H, off), T2.mats.ceiling);
+        for (let w = 0; w < 4; w++) {
+          const p = wallPoint(w, 0, ROOM_H / 2, 0);
+          const m = card(gUnit, p.pos[0], p.pos[1], p.pos[2], p.yaw, ROOM_W, ROOM_H, 1);
+          add(gUnit, P(m), T2.mats.plaster);
+          // skirting
+          const sp = wallPoint(w, 0, 0.055, 0.028);
+          const sm = card(gSkirt, sp.pos[0], sp.pos[1], sp.pos[2], sp.yaw, ROOM_W, 0.11, 1);
+          add(gSkirt, P(sm), T2.mats.skirt);
+        }
+
+        /* window or skylight */
+        if (room.window) {
+          const W = room.window;
+          const p = wallPoint(W.wall, 0, W.y, 0.05);
+          addGlow(gUnit, P(card(gUnit, p.pos[0], p.pos[1], p.pos[2], p.yaw, W.w, W.h, 1)),
+            glowMat(T2.skies[room.index % T2.skies.length], [1, 0.97, 0.92], 1.45));
+          // reveal
+          const fr = frameGeo(W.w + 0.3, W.h + 0.3, 0.09);
+          add(fr, P(card(fr, p.pos[0], p.pos[1], p.pos[2] + 0.03, p.yaw, 1, 1, 1)), T2.mats.sill);
+          for (let m = -1; m <= 1; m += 2) {
+            const p2 = wallPoint(W.wall, m * (W.w / 3), W.y, 0.08);
+            add(gMullion, P(card(gMullion, p2.pos[0], p2.pos[1], p2.pos[2], p2.yaw, 1, W.h, 1)), T2.mats.frame);
+          }
+        }
+        if (room.skylight) {
+          addGlow(gUnit, T(0, ROOM_H - 0.05, off), glowMat(T2.skies[4], [1, 0.96, 0.9], 1.5));
+          // a ceiling grid over the opening
+          for (let m = -1; m <= 1; m += 2) {
+            add(gMullion, P(card(gMullion, m * 1.4, ROOM_H - 0.03, off, Math.PI / 2, 1, 3.2, 1)), T2.mats.frame);
+          }
+        }
+
+        /* the works */
+        room.works.forEach((wk) => {
+          const p = wallPoint(wk.wall, wk.u, wk.y, 0.06);
+          const fr = frameGeo(wk.w + 0.14, wk.h + 0.14, 0.06);
+          add(fr, P(card(fr, p.pos[0], p.pos[1], p.pos[2], p.yaw)), T2.mats.frame);
+          const art = wk.poster != null ? T2.posters[wk.poster] : T2.arts[wk.art];
+          const flip = wk.wall === 1 || wk.wall === 3 ? 1 : 0;
+          addGlow(gUnit, P(card(gUnit, p.pos[0], p.pos[1], p.pos[2], p.yaw, wk.w, wk.h, 1)),
+            glowMat(art, [1.0, 0.97, 0.92], 0.95), flip);
+        });
+
+        /* the room's numeral, hung small and low like a plaque */
+        {
+          const nm = room.numeral || { wall: 2, u: 3.9, y: 2.15 };
+          const p = wallPoint(nm.wall, nm.u, nm.y, 0.06);
+          const fr = frameGeo(0.6, 0.6, 0.05);
+          add(fr, P(card(fr, p.pos[0], p.pos[1], p.pos[2], p.yaw)), T2.mats.frame);
+          const nf = nm.wall === 1 || nm.wall === 3 ? 1 : 0;
+          addGlow(gUnit, P(card(gUnit, p.pos[0], p.pos[1], p.pos[2], p.yaw, 0.47, 0.47, 1)),
+            glowMat(T2.numerals[room.index], [1, 1, 1], 0.85), nf);
+        }
+
+        /* furniture: a rug, a low table, chairs — placed in the round so there
+           is something in every direction you might turn */
+        const props = room.props || [];
+        const rug = props.some((p) => ['salon', 'circle', 'longtable'].includes(p));
+        if (rug) {
+          add(gRug, P(T(props.includes('longtable') ? 0 : 0.6, 0.006, -1.95)), T2.mats.rug);
+        }
+        if (props.includes('salon')) {
+          add(gLowTable, P(T(1.35, 0, -2.15)), T2.mats.wood, { cast: true });
+          add(gChair, P(compose(mat4(), 2.55, 0, -1.55, -0.75, 1, 1, 1)), T2.mats.wood, { cast: true });
+          add(gChair, P(compose(mat4(), 2.05, 0, -3.05, 2.5, 1, 1, 1)), T2.mats.wood, { cast: true });
+          add(gBench, P(compose(mat4(), -3.15, 0, -1.35, 1.5, 1, 1, 1)), T2.mats.wood, { cast: true });
+        }
+        if (props.includes('longtable')) {
+          const t = add(gTable, P(T(0, 0, -2.2)), T2.mats.wood, { cast: true });
+          t.model[0] *= 1.25;
+          add(gChair, P(compose(mat4(), -0.9, 0, -0.75, 0.15, 1, 1, 1)), T2.mats.wood, { cast: true });
+          add(gChair, P(compose(mat4(), 0.9, 0, -0.75, 0.15, 1, 1, 1)), T2.mats.wood, { cast: true });
+          add(gChair, P(compose(mat4(), -0.9, 0, -3.6, 3.29, 1, 1, 1)), T2.mats.wood, { cast: true });
+          add(gChair, P(compose(mat4(), 0.9, 0, -3.6, 3.29, 1, 1, 1)), T2.mats.wood, { cast: true });
+        }
+        if (props.includes('bench')) add(gBench, P(compose(mat4(), -3.0, 0, -2.0, 1.5, 1, 1, 1)), T2.mats.wood, { cast: true });
+        if (props.includes('benches')) {
+          add(gBench, P(compose(mat4(), -3.1, 0, -1.9, 1.52, 1, 1, 1)), T2.mats.wood, { cast: true });
+          add(gBench, P(compose(mat4(), 3.1, 0, -1.9, -1.52, 1, 1, 1)), T2.mats.wood, { cast: true });
+        }
+        if (props.includes('shelf')) add(gShelf, P(T(-4.6, 0, -2.2)), T2.mats.wood, { cast: true });
+        if (props.includes('circle')) {
+          const n = 6, rad = 1.5, cx = 0, cz = -1.9;
+          for (let c = 0; c < n; c++) {
+            const a = (c / n) * Math.PI * 2 + 0.3;
+            add(gChair, P(compose(mat4(), cx + Math.cos(a) * rad, 0, cz + Math.sin(a) * rad, -a + Math.PI / 2, 1, 1, 1)),
+              T2.mats.wood, { cast: true });
+          }
+          add(gLowTable, P(T(cx, 0, cz)), T2.mats.gold, { cast: true });
+        }
+
+        /* artifact */
+        {
+          const px = 3.4, pz = -3.0;
+          add(gPlinth, P(T(px, 0, pz)), T2.mats.sill, { cast: true });
+          const top = 1.05;
+          if (room.artifact === 'orb') add(gOrb, P(T(px, top + 0.3, pz)), T2.mats.gold, { cast: true });
+          else if (room.artifact === 'ring') add(gRing, P(compose(mat4(), px, top + 0.5, pz, 0.25, 1, 1, 1, Math.PI / 2)), T2.mats.gold, { cast: true });
+          else if (room.artifact === 'vessel') add(gVessel, P(T(px, top, pz)), T2.mats.brass, { cast: true });
+          else add(gCube, P(compose(mat4(), px, top + 0.27, pz, 0.5, 1, 1, 1, 0.4)), T2.mats.gold, { cast: true });
+          hazes.push({ pos: [px, top + 0.5, pz + off], size: 2.0, power: 0.05, color: [1, 0.72, 0.36] });
+        }
+
+        /* the ceiling lamp */
+        {
+          const [lx, ly, lz] = room.light.at;
+          add(box(1.7, 0.05, 0.3), P(T(lx, ROOM_H - 0.09, lz)), T2.mats.lamp);
+          hazes.push({ pos: [lx, ROOM_H - 0.3, lz + off], size: 3.6, power: 0.10, color: room.light.color });
+        }
+
+        /* the people */
+        room.figures.forEach((f) => {
+          const p = wallPoint(f.wall, f.u, 0, 0.85);
+          const art = T2.figures[f.art % T2.figures.length];
+          const height = 1.78;
+          figures.push({
+            tex: art.tex, aspect: art.aspect,
+            origin: [p.pos[0], height * 0.5, p.pos[2] + off],
+            size: [height * art.aspect, height],
+          });
+          discs.push({ pos: [p.pos[0], 0.014, p.pos[2] + off], size: height * 0.8, power: 0.6 });
+        });
+
+        /* dust */
+        const dr = rng(101 + room.index * 7);
+        const N = 900;
+        const data = new Float32Array(N * 6);
+        for (let k = 0; k < N; k++) {
+          data[k * 6] = (dr() * 2 - 1) * (ROOM_W / 2 - 0.4);
+          data[k * 6 + 1] = dr() * 5.1;
+          data[k * 6 + 2] = (dr() * 2 - 1) * (ROOM_D / 2 - 0.4) + off;
+          data[k * 6 + 3] = dr();
+          data[k * 6 + 4] = dr();
+          data[k * 6 + 5] = dr();
+        }
+        dustSpecs.push({ data, off });
+      });
+      return this;
     },
   };
 }
