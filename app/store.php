@@ -12,7 +12,13 @@
 
 declare(strict_types=1);
 
-const MT_COLLECTIONS = ['history', 'team', 'events', 'gallery', 'awareness'];
+const MT_COLLECTIONS = ['history', 'team', 'events', 'gallery'];
+
+/** Groups a member can belong to, in the order the members page shows them. */
+const MT_TEAM_GROUPS = ['management', 'heads', 'volunteers'];
+
+/** How a registration window can close. */
+const MT_WINDOW_MODES = ['date'];   // kept for old data: the hours mode is gone
 
 function mt_db_defaults(): array
 {
@@ -20,13 +26,13 @@ function mt_db_defaults(): array
         'revision'    => 1,
         'updatedAt'   => gmdate('c'),
         'site'        => [],
-        'history'     => [],
-        'team'        => [],
-        'events'      => [],
-        'gallery'     => [],
-        'awareness'   => [],
-        'submissions' => [],
-        'settings'    => ['frontendRegistration' => true],
+        'history'       => [],
+        'team'          => [],
+        'events'        => [],
+        'gallery'       => [],
+        'registrations' => [],
+        'submissions'   => [],
+        'settings'      => ['frontendRegistration' => true],
     ];
 }
 
@@ -62,6 +68,18 @@ function mt_db(bool $fresh = false): array
     }
     if (!is_array($db['submissions'])) {
         $db['submissions'] = [];
+    }
+    if (!is_array($db['registrations'])) {
+        $db['registrations'] = [];
+    }
+    $db['registrations'] = array_values($db['registrations']);
+    /* Older rows carried a plain-text pass token. It is never handed out, never
+       printed and never needed again: drop it the moment the store is read, so
+       it cannot leak through an API response or a backup. */
+    foreach ($db['registrations'] as $index => $registration) {
+        if (isset($db['registrations'][$index]['token'])) {
+            unset($db['registrations'][$index]['token']);
+        }
     }
     if (!is_array($db['site'])) {
         $db['site'] = [];
@@ -201,38 +219,79 @@ function mt_sanitize_item(string $collection, array $input, array $existing = []
 
         case 'events':
             $item['title']           = mt_clean_text($input['title'] ?? ($existing['title'] ?? ''), 180);
-            $item['date']            = mt_clean_text($input['date'] ?? ($existing['date'] ?? ''), 80);
-            $item['time']            = mt_clean_text($input['time'] ?? ($existing['time'] ?? ''), 60);
-            $item['location']        = mt_clean_text($input['location'] ?? ($existing['location'] ?? ''), 180);
             $item['kicker']          = mt_clean_text($input['kicker'] ?? ($existing['kicker'] ?? ''), 80);
             $item['description']     = mt_clean_text($input['description'] ?? ($existing['description'] ?? ''), 1200);
             $item['image']           = mt_safe_image($input['image'] ?? ($existing['image'] ?? ''));
-            $item['attachment']      = mt_safe_url($input['attachment'] ?? ($existing['attachment'] ?? ''), true);
+            // The editor/public cards call this brochureUrl; keep the older
+            // attachment key in sync so both old and new backups round-trip.
+            $brochure = mt_safe_url($input['brochureUrl'] ?? $input['attachment'] ?? $existing['brochureUrl'] ?? $existing['attachment'] ?? '', true);
+            $item['attachment'] = $brochure;
+            $item['brochureUrl'] = $brochure;
             $item['registrationUrl'] = mt_safe_url($input['registrationUrl'] ?? ($existing['registrationUrl'] ?? ''));
             $item['published']       = mt_truthy($input['published'] ?? ($existing['published'] ?? false));
+
+            /* The date: the month is the club calendar's, chosen from a fixed
+             * list; the day and the year are typed in. Everything else about an
+             * event — time, venue, notes — is free text, because an event can
+             * happen anywhere. */
+            $month = (int) ($input['month'] ?? ($existing['month'] ?? 0));
+            $item['month'] = ($month >= 1 && $month <= 12) ? $month : (int) date('n');
+            $day = (int) ($input['day'] ?? ($existing['day'] ?? 0));
+            $item['day']  = ($day >= 1 && $day <= 31) ? $day : 0;
+            $year = (int) ($input['year'] ?? ($existing['year'] ?? 0));
+            $item['year'] = ($year >= 2000 && $year <= 2100) ? $year : (int) date('Y');
+            $item['time']     = mt_clean_text($input['time'] ?? ($existing['time'] ?? ''), 60);
+            $item['location'] = mt_clean_text($input['location'] ?? ($existing['location'] ?? ''), 180);
+            $item['date']     = mt_event_date_display($item);
+
+            /* Money and the payment details the pass and the QR use. */
+            $item['fee']     = max(0, (float) ($input['fee'] ?? ($existing['fee'] ?? 0)));
+            $item['upiId']   = mt_clean_text($input['upiId'] ?? ($existing['upiId'] ?? ''), 120);
+            $item['upiName'] = mt_clean_text($input['upiName'] ?? ($existing['upiName'] ?? ''), 120);
+
+            /* When registration is open. There is no "open for N hours" mode
+               any more: an event opens when the club opens it and stays open —
+               for as long as it likes — until the club sets a closing date and
+               time, or closes it by hand. Nothing closes on its own. */
+            $item['registrationOpen'] = mt_truthy($input['registrationOpen'] ?? ($existing['registrationOpen'] ?? true));
+            $item['windowMode'] = 'date';
+            /* an event saved before the hours window was taken out keeps no
+               trace of it in the store */
+            unset($item['openHours']);
+            $closesAt = mt_clean_text($input['closesAt'] ?? ($existing['closesAt'] ?? ''), 40);
+            $item['closesAt'] = $closesAt;
+            /* an old "hours" event keeps its closing time only if one was
+               actually written down; otherwise it simply stays open */
+            $openedAt = mt_clean_text($input['openedAt'] ?? ($existing['openedAt'] ?? ''), 40);
+            $item['openedAt'] = $openedAt !== '' ? $openedAt : mt_now_iso();
+            $item['capacity'] = max(0, (int) ($input['capacity'] ?? ($existing['capacity'] ?? 0)));
+
+            /* Every event carries its own number. It is the club's filing
+               system: photos are filed under it, and nothing from one event
+               ever lands in another. New events are numbered by the API. */
+            $number = (int) ($input['number'] ?? ($existing['number'] ?? 0));
+            $item['number'] = max(0, $number);
             break;
 
         case 'gallery':
             $item['caption'] = mt_clean_text($input['caption'] ?? ($existing['caption'] ?? ''), 300);
             $item['alt']     = mt_clean_text($input['alt'] ?? ($existing['alt'] ?? ''), 300);
+            /* Which event this photo belongs to. The id is the real link; the
+               free-text label stays for photos that arrived before events were
+               numbered. */
+            $item['eventId'] = mt_clean_text($input['eventId'] ?? ($existing['eventId'] ?? ''), 80);
             $item['event']   = mt_clean_text($input['event'] ?? ($existing['event'] ?? ''), 180);
             $item['date']    = mt_clean_text($input['date'] ?? ($existing['date'] ?? ''), 80);
             $item['image']   = mt_safe_image($input['image'] ?? ($existing['image'] ?? ''));
             $item['order']   = (int) ($input['order'] ?? ($existing['order'] ?? 0));
+            if (array_key_exists('visible', $input) || array_key_exists('visible', $existing)) {
+                $item['visible'] = mt_truthy($input['visible'] ?? $existing['visible'] ?? true);
+            }
             break;
 
-        case 'awareness':
-        $item['eyebrow']  = mt_clean_text($input['eyebrow'] ?? ($existing['eyebrow'] ?? ''), 90);
-            $item['title']    = mt_clean_text($input['title'] ?? ($existing['title'] ?? ''), 180);
-            $item['body']     = mt_clean_text($input['body'] ?? ($existing['body'] ?? ''), 1200);
-            $item['stat']     = mt_clean_text($input['stat'] ?? ($existing['stat'] ?? ''), 220);
-            $item['source']   = mt_clean_text($input['source'] ?? ($existing['source'] ?? ''), 160);
-            $item['takeaway'] = mt_clean_text($input['takeaway'] ?? ($existing['takeaway'] ?? ''), 260);
-            $item['image']    = mt_safe_image($input['image'] ?? ($existing['image'] ?? ''));
-            $item['order']    = (int) ($input['order'] ?? ($existing['order'] ?? 0));
-            break;
     }
 
+    $item['order'] = (int) ($input['order'] ?? ($item['order'] ?? $existing['order'] ?? 0));
     if (empty($item['order'])) {
         $item['order'] = (int) ($existing['order'] ?? 0);
         if ($item['order'] <= 0) {
@@ -267,22 +326,35 @@ function mt_truthy($value): bool
 /** Public payload: everything people may see, never the inbox. */
 function mt_public_db(array $db): array
 {
+    $events = [];
+    foreach ($db['events'] as $event) {
+        $window = mt_event_window($event);
+        $event['registration'] = [
+            'open'     => $window['open'],
+            'closesAt' => $window['closesAt'],
+            'label'    => $window['label'],
+            'fee'      => mt_event_fee($event),
+            'seatsLeft'=> mt_event_seats_left($db, $event),
+        ];
+        $events[] = $event;
+    }
+
     $public = [
         'revision'  => (int) $db['revision'],
         'updatedAt' => $db['updatedAt'] ?? gmdate('c'),
         'site'      => $db['site'],
         'history'   => $db['history'],
         'team'      => $db['team'],
-        'events'    => $db['events'],
+        'events'    => $events,
         'gallery'   => $db['gallery'],
-        'awareness' => $db['awareness'],
         'settings'  => ['frontendRegistration' => (bool) ($db['settings']['frontendRegistration'] ?? true)],
     ];
+    /* Only the numbers, never the people: the registration list stays private. */
     $public['counts'] = [
-        'gallery'   => count($db['gallery']),
-        'team'      => count($db['team']),
-        'events'    => count($db['events']),
-        'awareness' => count($db['awareness']),
+        'gallery'       => count($db['gallery']),
+        'team'          => count($db['team']),
+        'events'        => count($db['events']),
+        'registrations' => count($db['registrations']),
     ];
     return $public;
 }

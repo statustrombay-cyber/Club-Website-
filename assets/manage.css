@@ -1,0 +1,194 @@
+/* ==========================================================================
+   Mindful Tattva · club dashboard
+   Loaded after app.css: everything here is dashboard-only.
+   ========================================================================== */
+
+.dash-body { background: #f4f0ea; }
+
+/* The club area had two decoration spans in its markup that no rule ever
+   picked up — an empty layer with nothing in it. Here it is: a warm, slow
+   drift behind the club's own pages, so the workspace feels like the same club
+   as the public site. It is decoration: it never takes a click, it is still for
+   anyone who asks for less motion, and it stays out of the printer. */
+.ambient { position: fixed; inset: -60px; z-index: 0; overflow: hidden; pointer-events: none; }
+.ambient-blob { position: absolute; display: block; border-radius: 50%; filter: blur(46px); opacity: .5; }
+.ambient-blob-a { width: 40vw; height: 40vw; left: -8vw; top: -6vh; background: radial-gradient(circle at 42% 44%, rgba(232,155,121,.45), rgba(232,155,121,0) 70%); animation: ambientDriftA 40s ease-in-out infinite; }
+.ambient-blob-b { width: 34vw; height: 34vw; right: -6vw; bottom: -8vh; background: radial-gradient(circle at 52% 48%, rgba(184,195,176,.5), rgba(184,195,176,0) 72%); animation: ambientDriftB 47s ease-in-out infinite; }
+@keyframes ambientDriftA { 0%, 100% { transform: translate3d(0, 0, 0) scale(1); } 50% { transform: translate3d(5vw, 4vh, 0) scale(1.1); } }
+@keyframes ambientDriftB { 0%, 100% { transform: translate3d(0, 0, 0) scale(1.05); } 50% { transform: translate3d(-4vw, -5vh, 0) scale(.94); } }
+.dash-shell, .login-wrap { position: relative; z-index: 1; }
+@media (prefers-reduced-motion: reduce) { .ambient-blob { animation: none; } }
+
+/* ------------------------------------------------------------------ login */
+.login-wrap { min-height: 100svh; display: grid; place-items: center; padding: 30px 20px; position: relative; z-index: 2; }
+.login-card {
+  width: min(430px, 100%); padding: 34px 30px; border-radius: 28px;
+  background: #fff; border: 1px solid var(--line); box-shadow: var(--shadow-lg);
+  display: grid; gap: 16px;
+}
+.login-card h1 { font-family: var(--font-display); font-size: 2rem; color: var(--plum-deep); }
+.login-card p { color: var(--ink-soft); font-size: .9rem; }
+.login-card label { display: grid; gap: 7px; font-size: .78rem; font-weight: 700; color: var(--ink-soft); }
+.login-card input {
+  width: 100%; padding: 13px 15px; border-radius: 14px; border: 1px solid var(--line-strong);
+  background: #fdfbf8; font-size: .95rem;
+}
+.login-card input:focus { outline: none; border-color: var(--terracotta); box-shadow: 0 0 0 4px rgba(200, 111, 88, .14); }
+.login-hint { font-size: .76rem; color: var(--ink-faint); }
+.login-error { color: #c0553f; font-size: .84rem; min-height: 20px; }
+
+/* ------------------------------------------------------------------ shell */
+.dash-shell { display: grid; grid-template-columns: 250px minmax(0, 1fr); min-height: 100svh; position: relative; z-index: 2; }
+.dash-side {
+  position: sticky; top: 0; align-self: start; height: 100svh; overflow-y: auto;
+  padding: 22px 18px; color: #f7eee6; background: linear-gradient(165deg, var(--plum-deep), #402a49);
+  display: grid; align-content: start; gap: 18px;
+}
+.dash-side .brand { color: #fff8ef; }
+.dash-side .brand small { color: rgba(247, 238, 230, .6); }
+.dash-where { margin: 0; color: var(--ink-soft); font-size: .95rem; font-weight: 600; }
+.dash-main .panel > .panel-head h2 { margin-bottom: 4px; }
+.dash-nav { display: grid; gap: 4px; }
+.dash-nav a {
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  padding: 11px 13px; border: 0; border-radius: 13px; background: transparent;
+  color: rgba(247, 238, 230, .78); font-size: .87rem; font-weight: 600;
+  text-decoration: none;
+  transition: background .2s var(--ease), color .2s var(--ease);
+}
+.dash-nav a:hover { background: rgba(255, 248, 239, .1); color: #fff8ef; }
+.dash-nav a.is-active { background: rgba(255, 248, 239, .16); color: #fff8ef; }
+.dash-nav .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--coral); }
+.dash-side-foot { display: grid; gap: 10px; font-size: .78rem; color: rgba(247, 238, 230, .62); }
+.dash-side-foot a, .dash-side-foot button {
+  color: rgba(247, 238, 230, .86); background: rgba(255, 248, 239, .1); border: 1px solid rgba(255, 248, 239, .18);
+  border-radius: 12px; padding: 10px 12px; text-align: center; font-size: .8rem; font-weight: 600;
+}
+.dash-side-foot a:hover, .dash-side-foot button:hover { background: rgba(255, 248, 239, .2); }
+
+.dash-main { padding: 26px clamp(18px, 3vw, 40px) 60px; display: grid; gap: 20px; align-content: start; }
+.dash-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; }
+.dash-top h1 { font-family: var(--font-display); font-size: clamp(1.6rem, 3vw, 2.3rem); color: var(--plum-deep); }
+.dash-status { display: flex; align-items: center; gap: 10px; font-size: .8rem; color: var(--ink-soft); }
+.pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--sage-deep); box-shadow: 0 0 0 4px rgba(125, 145, 121, .18); }
+.toast {
+  position: fixed; right: 22px; bottom: 22px; z-index: 200; padding: 13px 18px; border-radius: 14px;
+  background: var(--plum-deep); color: #fff8ef; font-size: .86rem; box-shadow: var(--shadow-lg);
+  opacity: 0; transform: translateY(12px); transition: opacity .25s var(--ease), transform .25s var(--ease);
+}
+.toast.is-shown { opacity: 1; transform: none; }
+.toast.is-error { background: #923f2c; }
+
+.panel { display: none; }
+.panel.is-active { display: grid; gap: 18px; }
+.panel-head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 14px; }
+.panel-head h2 { font-family: var(--font-display); font-size: clamp(1.4rem, 2.6vw, 2rem); color: var(--plum-deep); }
+.panel-head p { color: var(--ink-soft); font-size: .88rem; max-width: 70ch; }
+
+.stat-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; }
+.stat-card { padding: 18px 20px; border-radius: 18px; background: #fff; border: 1px solid var(--line); box-shadow: var(--shadow-sm); }
+.stat-card strong { display: block; font-family: var(--font-display); font-size: 1.9rem; color: var(--plum-deep); }
+.stat-card span { font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint); }
+
+.editor-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+.editor-card { padding: 20px; border-radius: 20px; background: #fff; border: 1px solid var(--line); box-shadow: var(--shadow-sm); display: grid; gap: 12px; }
+.editor-card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.editor-card-head span { font-size: .7rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-faint); }
+.editor-card h3 { font-family: var(--font-display); font-size: 1.2rem; color: var(--plum-deep); }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-grid.one { grid-template-columns: 1fr; }
+.form-grid .span-2 { grid-column: 1 / -1; }
+.editor-card label, .field { display: grid; gap: 6px; font-size: .74rem; font-weight: 700; letter-spacing: .04em; color: var(--ink-soft); }
+.editor-card input[type="text"], .editor-card input[type="url"], .editor-card input[type="tel"],
+.editor-card input[type="number"], .editor-card input:not([type]), .editor-card textarea, .editor-card select,
+.field input, .field textarea, .field select {
+  width: 100%; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line-strong);
+  background: #fdfbf8; font-size: .88rem; font-weight: 400;
+}
+.editor-card textarea { min-height: 84px; resize: vertical; }
+.editor-card input:focus, .editor-card textarea:focus, .editor-card select:focus {
+  outline: none; border-color: var(--terracotta); box-shadow: 0 0 0 3px rgba(200, 111, 88, .13);
+}
+.row-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+/* What happened, said on the card itself: Saving… then the time it saved.
+   The line holds its space so the buttons never jump while it changes. */
+.save-state { min-width: 0; color: #4a6242; font-size: .72rem; font-weight: 700; }
+/* An event kept off the website says so on its card, in the club's own colours. */
+.hidden-flag {
+  display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 999px;
+  background: rgba(215,162,70,.22); color: #7c5714; font-size: .68rem; font-weight: 800; letter-spacing: .04em;
+}
+.hidden-flag:before { content: '◌'; font-size: .8rem; }
+.save-state.is-error { color: #a0431f; }
+.editor-card { transition: box-shadow .3s ease, border-color .3s ease; }
+.editor-card.is-saved { border-color: rgba(74,98,66,.5); box-shadow: 0 0 0 3px rgba(74,98,66,.12); }
+.editor-card.is-deleting { opacity: .45; transform: scale(.99); transition: opacity .25s ease, transform .25s ease; }
+.btn-sm:disabled { opacity: .62; cursor: progress; }
+.btn-sm { padding: 8px 14px; font-size: .78rem; border-radius: 999px; border: 1px solid var(--line-strong); background: #fff; font-weight: 700; color: var(--plum); }
+.btn-sm:hover { border-color: var(--terracotta); color: var(--terracotta); }
+.btn-sm.primary { background: var(--plum); border-color: var(--plum); color: #fff8ef; }
+.btn-sm.primary:hover { background: var(--plum-deep); color: #fff8ef; }
+.btn-sm.danger { color: #a8452f; border-color: rgba(168, 69, 47, .32); }
+.btn-sm.danger:hover { background: #a8452f; border-color: #a8452f; color: #fff; }
+
+.upload-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.thumb {
+  width: 74px; height: 74px; border-radius: 14px; flex: 0 0 auto; border: 1px dashed var(--line-strong);
+  background: #faf6f1 center/cover no-repeat; display: grid; place-items: center; color: var(--ink-faint); font-size: .7rem;
+}
+.thumb.has-image { border-style: solid; border-color: var(--line); }
+.upload-row input[type="file"] { font-size: .78rem; max-width: 190px; }
+.upload-row .url-input { flex: 1 1 180px; }
+
+.submission { padding: 18px 20px; border-radius: 18px; background: #fff; border: 1px solid var(--line); box-shadow: var(--shadow-sm); display: grid; gap: 10px; }
+.submission-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 10px; }
+.submission-head strong { font-size: 1.05rem; color: var(--plum-deep); }
+.tag { display: inline-flex; padding: 4px 10px; border-radius: 999px; font-size: .68rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; background: rgba(215, 162, 70, .18); color: #8a6320; }
+.tag.membership { background: rgba(125, 145, 121, .18); color: #4c6349; }
+.submission dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px 16px; margin: 0; }
+.submission dt { font-size: .68rem; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint); }
+.submission dd { margin: 2px 0 0; font-size: .88rem; }
+.submission .links { display: flex; flex-wrap: wrap; gap: 12px; font-size: .84rem; }
+.submission .links a { color: var(--terracotta); font-weight: 700; }
+
+.note-card { padding: 16px 18px; border-radius: 16px; background: linear-gradient(150deg, #fff, #f8efe6); border: 1px solid var(--line); font-size: .86rem; color: var(--ink-soft); }
+.note-card strong { color: var(--plum-deep); }
+.backup-list { display: grid; gap: 8px; }
+.backup-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 14px; border-radius: 14px; background: #fff; border: 1px solid var(--line); font-size: .84rem; }
+
+@media (max-width: 900px) {
+  .dash-shell { grid-template-columns: 1fr; }
+  .dash-side { position: static; height: auto; }
+  /* the sections become one row that scrolls sideways, so every one of them
+     stays reachable on a phone */
+  .dash-nav { grid-auto-flow: column; grid-auto-columns: max-content; overflow-x: auto; padding-bottom: 6px; -webkit-overflow-scrolling: touch; }
+  .dash-nav a { white-space: nowrap; }
+  .form-grid { grid-template-columns: 1fr; }
+}
+
+/* Phones: the sign-in card and the club pages keep their margins, the
+   counters and editors go one per row, and the toast spans the screen. */
+@media (max-width: 620px) {
+  .login-wrap { padding: 10svh 16px 26px; align-items: start; }
+  .login-card { padding: 26px 22px; border-radius: 22px; }
+  .login-card h1 { font-size: 1.7rem; }
+  .dash-side { padding: 18px 14px; }
+  .dash-main { padding: 20px 16px 50px; gap: 16px; }
+  .dash-top h1, #panelTitle { font-size: 1.5rem; }
+  .dash-status { width: 100%; justify-content: space-between; }
+  .panel-head { align-items: flex-start; }
+  .panel-head .row-actions { width: 100%; }
+  .panel-head .btn-sm { width: 100%; text-align: center; }
+  .stat-cards, .editor-grid { grid-template-columns: 1fr; }
+  /* Save and Delete sit level, side by side, the same width — never stacked
+     like bricks down the page. */
+  .editor-card-head { flex-wrap: wrap; row-gap: 8px; }
+  .editor-card-head > span { flex: 1 1 100%; }
+  .editor-card-head .row-actions { flex: 1 1 100%; }
+  /* every row of buttons in the club area lays out as equal halves on a phone —
+     Save beside Delete, never one stacked on the next like bricks */
+  .row-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-items: center; }
+  .row-actions .save-state { grid-column: 1 / -1; text-align: left; }
+  .row-actions > .btn-sm { width: 100%; text-align: center; }
+  .toast { left: 16px; right: 16px; bottom: 16px; text-align: center; }
+}

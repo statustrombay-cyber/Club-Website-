@@ -10,16 +10,23 @@ $site   = $site ?? [];
 $authed = $authed ?? false;
 $csrf   = $csrf ?? '';
 $club   = (string) ($site['clubName'] ?? 'Mindful Tattva');
+$panel  = $panel ?? 'overview';
 $sections = [
     ['overview', 'Overview'],
     ['copy', 'Site copy'],
     ['team', 'Team members'],
     ['events', 'Events &amp; calendar'],
+    ['events-register', 'Event registrations'],
     ['gallery', 'Photo album'],
-    ['awareness', 'Awareness tiles'],
-    ['inbox', 'Registrations'],
+    ['inbox', 'Forms inbox'],
     ['data', 'Backups &amp; settings'],
 ];
+$panelKeys  = array_column($sections, 0);
+$panelTitles = array_column($sections, 1);
+$panelIndex = array_search($panel, $panelKeys, true);
+$panelIndex = $panelIndex === false ? 0 : $panelIndex;
+$panel = $panelKeys[$panelIndex];
+$panelTitle = $panelTitles[$panelIndex];
 ?>
 <!doctype html>
 <html lang="en">
@@ -29,9 +36,13 @@ $sections = [
   <meta name="robots" content="noindex, nofollow">
   <title>Club dashboard · <?= e($club) ?></title>
   <meta name="theme-color" content="#34213d">
-  <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
+  <!-- the club logo in the tab, the same one the public site shows -->
+  <link rel="icon" href="/assets/img/favicon-48.png" sizes="48x48" type="image/png">
+  <link rel="icon" href="/assets/img/favicon-192.png" sizes="192x192" type="image/png">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/img/apple-touch-icon.png">
   <link rel="stylesheet" href="/assets/app.css">
-  <link rel="stylesheet" href="/assets/dashboard.css">
+  <link rel="stylesheet" href="/assets/manage.css">
 </head>
 <body class="dash-body">
 
@@ -42,35 +53,19 @@ $sections = [
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <!-- ------------------------------------------------------------ sign in -->
-  <section class="login-wrap" id="loginView" <?= $authed ? 'hidden' : '' ?>>
-    <form class="login-card" id="loginForm" autocomplete="on">
-      <span class="eyebrow plain">Club dashboard</span>
-      <h1>Welcome back.</h1>
-      <p>This area is only for the Mindful Tattva team. Enter the club password to manage the website content.</p>
-      <label>Club password
-        <input type="password" name="password" id="loginPassword" autocomplete="current-password" required placeholder="••••••••">
-      </label>
-      <button class="btn btn-solid" type="submit">Sign in</button>
-      <div class="login-error" id="loginError" role="alert"></div>
-      <p class="login-hint">Forgot it? Ask the club president or check <code>data/config.php</code> on the server.</p>
-      <a class="event-link" href="/">← Back to the website</a>
-    </form>
-  </section>
-
   <!-- ---------------------------------------------------------- dashboard -->
-  <div class="dash-shell" id="appView" <?= $authed ? '' : 'hidden' ?>>
+  <div class="dash-shell" id="appView">
     <aside class="dash-side">
       <a class="brand" href="/" target="_blank" rel="noreferrer">
         <span class="brand-mark"><?= e((string) ($site['shortName'] ?? 'MT')) ?></span>
-        <span class="brand-text"><strong><?= e($club) ?></strong><small>Club dashboard</small></span>
+        <span class="brand-text"><strong><?= e($club) ?></strong><small>Club area</small></span>
       </a>
 
       <nav class="dash-nav" id="dashNav" aria-label="Dashboard sections">
-        <?php foreach ($sections as $index => [$key, $label]): ?>
-          <button type="button" data-panel="<?= e($key) ?>" class="<?= $index === 0 ? 'is-active' : '' ?>">
+        <?php foreach ($sections as [$key, $label]): ?>
+          <a href="/dashboard/<?= e($key) ?>" class="<?= $key === $panel ? 'is-active' : '' ?>"<?= $key === $panel ? ' aria-current="page"' : '' ?>>
             <span class="dot"></span><?= $label ?>
-          </button>
+          </a>
         <?php endforeach; ?>
       </nav>
 
@@ -85,8 +80,8 @@ $sections = [
     <main class="dash-main">
       <div class="dash-top">
         <div>
-          <span class="eyebrow plain">Mindful Tattva · admin</span>
-          <h1 id="panelTitle">Overview</h1>
+          <span class="eyebrow plain"><?= e($club) ?> · club area</span>
+          <h1 id="panelTitle"><?= $panelTitle ?></h1>
         </div>
         <div class="dash-status">
           <span class="pulse" aria-hidden="true"></span>
@@ -95,13 +90,16 @@ $sections = [
         </div>
       </div>
 
+      <?php if ($panel === 'overview'): ?>
       <section class="panel is-active" id="panel-overview">
         <div class="stat-cards" id="overviewStats"></div>
         <div class="note-card" id="overviewNote"></div>
         <div class="editor-grid" id="overviewRecent"></div>
       </section>
+      <?php endif; ?>
 
-      <section class="panel" id="panel-copy">
+      <?php if ($panel === 'copy'): ?>
+      <section class="panel is-active" id="panel-copy">
         <div class="panel-head">
           <div><h2>Site copy</h2><p>Words visitors read on the website. Save a group and it updates instantly — no republishing needed.</p></div>
           <div class="row-actions">
@@ -110,42 +108,64 @@ $sections = [
         </div>
         <div class="editor-grid" id="copyEditors"></div>
       </section>
+      <?php endif; ?>
 
-      <section class="panel" id="panel-team">
+      <?php if ($panel === 'team'): ?>
+      <section class="panel is-active" id="panel-team">
         <div class="panel-head">
           <div><h2>Team members</h2><p>Core committee, head committee and volunteers. Volunteers show only their name and contact details on the website.</p></div>
           <button class="btn-sm primary" type="button" id="addTeam">+ Add member</button>
         </div>
         <div class="editor-grid" id="teamEditors"></div>
       </section>
+      <?php endif; ?>
 
-      <section class="panel" id="panel-events">
+      <?php if ($panel === 'events'): ?>
+      <section class="panel is-active" id="panel-events">
         <div class="panel-head">
-          <div><h2>Events &amp; calendar</h2><p>Pick a month and type the day and year — the yearly calendar places the event automatically. Tick “Publish” to feature it on the home page.</p></div>
+          <div><h2>Events &amp; calendar</h2><p>Every event is filed under its own number — <b>Event 1</b>, <b>Event 2</b> — so photos, registrations and the calendar never mix two
+            events together. Pick the month (it places the event in the yearly calendar) and type the day and year, the time and the venue.
+            Set a fee and the UPI ID and the registration form shows the payment QR code; set the window and registration closes by itself.</p></div>
           <button class="btn-sm primary" type="button" id="addEvent">+ Add event</button>
         </div>
         <div class="editor-grid" id="eventEditors"></div>
       </section>
+      <?php endif; ?>
 
-      <section class="panel" id="panel-gallery">
+      <?php if ($panel === 'events-register'): ?>
+      <section class="panel is-active" id="panel-events-register">
         <div class="panel-head">
-          <div><h2>Photo album</h2><p>Upload event photos. Captions are optional and completely yours — whatever you type here is exactly what visitors see, and photos without a caption simply show as photos.</p></div>
-          <button class="btn-sm primary" type="button" id="addPhoto">+ Add photo</button>
+          <div><h2>Event registrations</h2><p>Every student who registers from the website, grouped by event. A seat is held only once a pass has been issued:
+            for a paid event that means the payment screenshot arrived — students “waiting to pay” hold no seat and have no serial yet.
+            Check a payment here, cancel with a refund, open a student's pass check page, or download the door list — it carries every serial number for matching entries at the gate.</p></div>
+          <div class="row-actions">
+            <a class="btn-sm primary" href="/api/registrations.csv">Download registrations CSV (serials)</a>
+            <button class="btn-sm" type="button" id="exportPassCsv">Download door list</button>
+          </div>
+        </div>
+        <div id="registrationGroups" style="display:grid;gap:14px"></div>
+      </section>
+      <?php endif; ?>
+
+      <?php if ($panel === 'gallery'): ?>
+      <section class="panel is-active" id="panel-gallery">
+        <div class="panel-head">
+          <div><h2>Photo album (gallery)</h2><p>Upload a photo, give it a caption and a <b>display order</b>: order 1 leads the gallery,
+            order 2 comes next, and so on. There are no categories — a photo is just a photo, and the caption is completely yours. Whatever you type here is
+            exactly what visitors see, on the gallery page and in the slideshow at the top of it.</p></div>
+          <div class="row-actions">
+            <a class="btn-sm" href="/gallery" target="_blank" rel="noreferrer">Open the gallery ↗</a>
+            <button class="btn-sm primary" type="button" id="addPhoto">+ Add photo</button>
+          </div>
         </div>
         <div class="editor-grid" id="galleryEditors"></div>
       </section>
+      <?php endif; ?>
 
-      <section class="panel" id="panel-awareness">
+      <?php if ($panel === 'inbox'): ?>
+      <section class="panel is-active" id="panel-inbox">
         <div class="panel-head">
-          <div><h2>Awareness tiles</h2><p>These tiles scroll with the page on the home page. Write your own numbers, notes and pictures — the artwork can be replaced with any image you upload.</p></div>
-          <button class="btn-sm primary" type="button" id="addTile">+ Add tile</button>
-        </div>
-        <div class="editor-grid" id="awarenessEditors"></div>
-      </section>
-
-      <section class="panel" id="panel-inbox">
-        <div class="panel-head">
-          <div><h2>Registrations</h2><p>Every membership and event registration sent from the website lands here — this inbox is never shown on the public site.</p></div>
+          <div><h2>Forms inbox</h2><p>Membership interest and general messages sent from the website. Event registrations live in their own tab, with their passes.</p></div>
           <div class="row-actions">
             <button class="btn-sm" type="button" id="exportCsv">Download CSV</button>
             <button class="btn-sm danger" type="button" id="clearInbox">Clear all</button>
@@ -153,8 +173,10 @@ $sections = [
         </div>
         <div id="submissionList" style="display:grid;gap:14px"></div>
       </section>
+      <?php endif; ?>
 
-      <section class="panel" id="panel-data">
+      <?php if ($panel === 'data'): ?>
+      <section class="panel is-active" id="panel-data">
         <div class="panel-head">
           <div><h2>Backups &amp; settings</h2><p>Every save keeps a copy of the previous version, so any change can be rolled back. You can also download a full backup before making big edits.</p></div>
           <div class="row-actions">
@@ -172,7 +194,7 @@ $sections = [
           <div class="editor-card">
             <div class="editor-card-head"><span>Import</span></div>
             <h3>Upload a backup file</h3>
-            <p class="muted" style="font-size:.84rem">Restores content, team, events, photos and awareness tiles from a <code>.json</code> backup.</p>
+            <p class="muted" style="font-size:.84rem">Restores the site copy, team, events, photos and registrations from a <code>.json</code> backup.</p>
             <div class="upload-row">
               <input type="file" accept="application/json,.json" id="importFile">
               <button class="btn-sm primary" type="button" id="importButton">Import file</button>
@@ -197,6 +219,7 @@ $sections = [
           </div>
         </div>
       </section>
+      <?php endif; ?>
     </main>
   </div>
 
@@ -204,8 +227,9 @@ $sections = [
       'authed'   => $authed,
       'csrf'     => $csrf,
       'revision' => (int) (($db['revision'] ?? 1)),
-      'site'     => $site,
+      'site'     => $authed ? $site : [],
+      'panel'    => $panel,
   ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>
-  <script src="/assets/dashboard.js"></script>
+  <script src="/assets/manage.js"></script>
 </body>
 </html>

@@ -1,0 +1,61 @@
+name: Recover public reference assets
+
+# One narrowly scoped hosted attempt, on the session branch only. The captured
+# site's JavaScript is downloaded as DATA, never executed by this job.
+on:
+  push:
+    branches: [arena/24a1daf8-club-website]
+    paths: [.github/workflows/recover-reference.yml]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: recover-zero-reference
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: arena/24a1daf8-club-website
+      - name: Fetch public narrative resources without executing downloaded code
+        id: capture
+        continue-on-error: true
+        run: |
+          python3 tools/recover-zero-assets.py --output "$RUNNER_TEMP/zero-reference" > "$RUNNER_TEMP/reference-capture.log" 2>&1
+      - name: Return bounded capture or failure diagnostics on the same branch
+        if: always()
+        env:
+          CAPTURE_OUTCOME: ${{ steps.capture.outcome }}
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib, shutil
+          temp = pathlib.Path(os.environ['RUNNER_TEMP'])
+          dest = pathlib.Path('tools/references/capture-result')
+          dest.mkdir(parents=True, exist_ok=True)
+          result = {'outcome': os.environ['CAPTURE_OUTCOME'], 'method': 'Hosted static public-resource capture; downloaded site JS was not executed.', 'files': []}
+          log = temp / 'reference-capture.log'
+          if log.exists():
+              (dest / 'capture.log').write_bytes(log.read_bytes()[-100000:])
+          manifest = temp / 'zero-reference/manifest.json'
+          if manifest.exists():
+              shutil.copyfile(manifest, dest / 'manifest.json')
+          if os.environ['CAPTURE_OUTCOME'] == 'success':
+              parts = sorted(temp.glob('zero-reference.zip.part-*'))
+              for p in parts or [temp / 'zero-reference.zip']:
+                  if not p.exists() or p.stat().st_size > 21 * 1024 * 1024:
+                      raise RuntimeError('Missing or oversized return file')
+                  shutil.copyfile(p, dest / p.name)
+                  result['files'].append({'file': p.name, 'bytes': p.stat().st_size, 'sha256': hashlib.sha256(p.read_bytes()).hexdigest()})
+          (dest / 'result.json').write_text(json.dumps(result, indent=2))
+          PY
+          git config user.name 'Reference recovery'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- tools/references/capture-result
+          git commit -m 'Return public reference capture diagnostics and bounded assets'
+          git pull --rebase origin arena/24a1daf8-club-website
+          git push origin arena/24a1daf8-club-website

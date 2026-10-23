@@ -1,0 +1,37 @@
+# Recordings are design references, never part of GitHub source ZIP downloads.
+screen-*.mp4 export-ignore
+/tools/references/*.mp4 export-ignore
+
+# Never export local rollback archives or uploaded root recordings.
+/.rollback/ export-ignore
+/*.mp4 export-ignore
+
+# Any re-uploaded reference dumps must stay out of source/deployment exports.
+/part_* export-ignore
+
+/university*.html export-ignore
+
+# Uploaded reference archives are never deployable runtime files.
+/*.zip export-ignore
+
+# GitHub Download ZIP is also the existing-site upload: keep dev tooling out.
+# Source/build tools remain in Git; production uses the prebuilt scene.
+/tools/ export-ignore
+/package.json export-ignore
+/package-lock.json export-ignore
+
+# Never overwrite live club records/settings when extracting a full GitHub ZIP.
+# Keep data/.htaccess in the archive so the private folder stays protected.
+/data/site.json export-ignore
+/data/config.php export-ignore
+
+# Cartier uploads are untouched study references, not club runtime assets.
+/cartier-part-* export-ignore
+/*.glb export-ignore
+
+# New reference-only RAR parts must not add 69 MB to the website upload.
+/cartierfile*.rar export-ignore
+
+# Repository housekeeping is not needed inside the website download.
+/.gitignore export-ignore
+/.gitattributes export-ignore
