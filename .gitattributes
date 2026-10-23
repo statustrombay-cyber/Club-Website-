@@ -36,7 +36,6 @@ screen-*.mp4 export-ignore
 /cartier/ export-ignore
 /reference* export-ignore
 /*.glb export-ignore
-/*.html export-ignore
 
 # Private club data must never be overwritten by an extraction.
 /data/site.json export-ignore

@@ -1,30 +1,11 @@
-/* ==========================================================================
-   Mindful Tattva — the room
-   --------------------------------------------------------------------------
-   A reconstruction of the Watches & Wonders room, with the watches taken
-   out and the club's name put in.
+/* ════════════════════════════════════════════════════════════════════════
+   The rebuild of Cartier's "Watches and Wonders" room as "Mindful Tattva".
 
-   What drives it is Cartier's own material, recovered from the page itself:
-
-     • the room            webgl/models/mainScene.glb
-       one clip, SCENE_01, 24.333 s. Seven whole rooms are parked fifty
-       metres below the floor and lifted one at a time; the camera is a
-       node in the same clip and orbits the set while it climbs.
-
-     • the people          webgl/models/mainScene_characters.glb
-       the same seven rooms with the figures in them, each room with its
-       own lift clip and each figure with its own looping performance.
-
-     • the timeline        theatre/mainScene.theatre-state.json
-       Cartier's own Theatre.js project state: when each chapter's title
-       is on, when EXPLORE appears, how the field of view opens, how the
-       set darkens, how much of the crowd is lit, and when the whole thing
-       fades to black and starts again.
-
-   Nothing here is invented: the rooms, the camera, the light and the copy
-   timings all come out of those files. The watches, the product menu and
-   the wordmark are the only things that are ours.
-   ========================================================================== */
+   Everything here is taken from the reference itself: the glTF room and its
+   clip, the Theatre.js timeline that drives it, the baked light of each
+   room, its irradiance probe and its sky of light. The scroll is the
+   clock — the page is seven rooms tall and the camera climbs as you read.
+   ════════════════════════════════════════════════════════════════════════ */
 
 import * as THREE from './vendor/three.module.js';
 import { makePost } from './post.js';
@@ -35,14 +16,16 @@ const CHAPTER = PARAMS.has('chapter') ? parseInt(PARAMS.get('chapter'), 10) : nu
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const AT = PARAMS.has('t') ? parseFloat(PARAMS.get('t')) : null;
 const num = (k, d) => (PARAMS.has(k) ? parseFloat(PARAMS.get(k)) : d);
-const EXPOSURE = num('exp', 0.78);
-const LMI = num('lmi', 6);
+const EXPOSURE = num('exp', 1.0);
+const LMI = num('lmi', 2.2);
 const DECAL = num('decal', 0.3);
-const GLOW = num('glow', 2.6);
+const GLOW = num('glow', 1.0);
 const FOV = num('fov', 0);          // vertical fov override
 const HFOV = num('hfov', 0);        // horizontal fov override
 const TINT = (PARAMS.get('tint') || '1,0.97,0.92').split(',').map(Number);
-const LMFLIP = num('lmflip', 1);
+const LMFLIP = num('lmflip', 0);
+const ENVI = num('env', 0.55);      // how much of the room's own sky of light
+const BKE = num('bke', 1.0);       // how hard the bake masks the colour
 
 /* ── the chapters ──────────────────────────────────────────────────────────
    Cartier's own scene list, in its own order. The opening room is ours:
@@ -102,7 +85,11 @@ let lightDecal = null;
 let decalMaterials = [];
 let lightDecalMaterial = null;
 let probes = [];
+const envMaps = [];
+const bakeMaterials = [];
+let envRoom = 0;
 let activeProbe = -1;
+let roomAir = null;
 let floorRoom = -1;
 
 /* three.js renames the nodes it loads: dots are dropped, spaces become
@@ -186,6 +173,48 @@ function value(objectName, propPath, fallback) {
   return v === undefined ? fallback : v;
 }
 
+/* ══ the colour ═════════════════════════════════════════════════════════
+   The reference does not tone map at the end of the chain: every material
+   fits its own colour with ACES and hands it on in display space. We do
+   the same, inside the material, or the picture would be washed flat. */
+function patchTone(mat) {
+  if (!mat || !mat.isMeshStandardMaterial) return;
+  const prev = mat.onBeforeCompile;
+  mat.onBeforeCompile = (shader, renderer) => {
+    if (prev) prev(shader, renderer);
+    shader.fragmentShader = shader.fragmentShader
+      .replace('void main() {', `
+        uniform float mtExposure;
+        uniform float uBake;
+        vec3 mtAces(vec3 x){ const float a=2.51,b=0.03,c=2.43,d=0.59,e=0.14;
+          return clamp((x*(a*x+b))/(x*(c*x+d)+e),0.0,1.0); }
+        void main() {`)
+      .replace('#include <opaque_fragment>', `
+        #ifdef USE_LIGHTMAP
+          float mtL = texture2D( lightMap, vLightMapUv ).r;
+          outgoingLight *= vec3( ( 1.0 - uBake ) + uBake * mtL );
+        #endif
+        outgoingLight = mtAces(outgoingLight * mtExposure);
+        outgoingLight = pow(outgoingLight, vec3(1.0/2.2));
+        #include <opaque_fragment>`);
+    shader.uniforms.mtExposure = { value: EXPOSURE };
+    shader.uniforms.uBake = { value: 0 };
+    mat.userData.shader = shader;
+  };
+  mat.customProgramCacheKey = () => 'mt-tone-bake';
+  mat.needsUpdate = true;
+}
+
+/* The reference's rooms are lit by their own probe; where that light is
+   strong the bake does not touch the colour, where it is weak the bake
+   masks everything the probe does not reach. The probe of each room tells
+   us which is which. */
+const ROOM_LIGHT = [1.414, 0.266, 1.043, 4.765, 0.509, 0.327, 1.018];
+const bakeStrength = (i) => {
+  const k = 1 - (ROOM_LIGHT[Math.max(0, Math.min(6, i))] || 0) / 1.4;
+  return Math.max(0, Math.min(1, k)) * BKE;
+};
+
 /* ══ the set ════════════════════════════════════════════════════════════
    The rooms are lit by their own baked light: an irradiance map in the red
    channel, collapsed to luminance and warmed to the light the club has. */
@@ -202,12 +231,12 @@ async function warmLightmap(url) {
   ctx.drawImage(img, 0, 0);
   const px = ctx.getImageData(0, 0, c.width, c.height);
   const d = px.data;
-  const TINT = [1.0, 0.80, 0.58].map((v, i) => (TINT[i] === undefined ? v : TINT[i]));
+  const warm = [1.0, 0.80, 0.58].map((v, i) => (TINT[i] === undefined ? v : TINT[i]));
   for (let i = 0; i < d.length; i += 4) {
     const l = d[i] / 255;
-    d[i] = 255 * Math.min(1, l * TINT[0]);
-    d[i + 1] = 255 * Math.min(1, l * TINT[1]);
-    d[i + 2] = 255 * Math.min(1, l * TINT[2]);
+    d[i] = 255 * Math.min(1, l * warm[0]);
+    d[i + 1] = 255 * Math.min(1, l * warm[1]);
+    d[i + 2] = 255 * Math.min(1, l * warm[2]);
     d[i + 3] = 255;
   }
   ctx.putImageData(px, 0, 0);
@@ -358,25 +387,19 @@ async function renameTitlePlanes() {
     const u0 = (col * cellW) / CW, u1 = ((col + 1) * cellW) / CW;
     const v0 = (row * cellH) / CH, v1 = ((row + 1) * cellH) / CH;
     const uv = r.p.geometry.attributes.uv;
-    const arr = uv.array;
-    /* the geometry is a trapezoid: match each corner to the corner it was
-       nearest to in the old rectangle */
     for (let i = 0; i < uv.count; i++) {
-      const oldU = (arr[i * 2] - r.u0) / Math.max(1e-6, r.u1 - r.u0);
-      const oldV = (arr[i * 2 + 1] - r.v0) / Math.max(1e-6, r.v1 - r.v0);
-      arr[i * 2] = u0 + oldU * (u1 - u0);
-      arr[i * 2 + 1] = v0 + oldV * (v1 - v0);
+      const x = uv.getX(i), y = uv.getY(i);
+      uv.setXY(i, u0 + (x - r.u0) * (u1 - u0) / Math.max(1e-6, r.u1 - r.u0),
+                   v0 + (y - r.v0) * (v1 - v0) / Math.max(1e-6, r.v1 - r.v0));
     }
     uv.needsUpdate = true;
   };
-
   top.forEach((r, i) => setUV(r, i, 0));
-  bottom.forEach((r, i) => setUV(r, i < lineBottom.length ? i : COLS - 1, 1));
+  bottom.forEach((r, i) => setUV(r, i, 1));
 
   const newTex = new THREE.CanvasTexture(out);
-  newTex.colorSpace = THREE.SRGBColorSpace;
   newTex.flipY = false;
-  newTex.anisotropy = 4;
+  newTex.colorSpace = THREE.SRGBColorSpace;
   newTex.needsUpdate = true;
   for (const p of planes) {
     const m = p.material;
@@ -461,7 +484,10 @@ function buildHaze() {
       uniform float uAlpha; uniform vec3 uColor; varying vec2 vUv;
       void main() {
         if (uAlpha < 0.002) discard;
-        gl_FragColor = vec4(uColor * uAlpha, uAlpha);
+        float r = clamp(length(vUv - vec2(0.5, 0.55)) * 1.9, 0.0, 1.0);
+        float a = uAlpha * pow(1.0 - r, 2.2);
+        if (a < 0.002) discard;
+        gl_FragColor = vec4(uColor * a, a);
       }`,
     transparent: true,
     blending: THREE.AdditiveBlending,
@@ -482,36 +508,6 @@ let haze = null;
 function buildGlows() {
   /* the reference's haloes are volumes of light, not flat discs: each one
      is a sphere of warm air that the camera can stand inside */
-  const material = new THREE.ShaderMaterial({
-    uniforms: {
-      uAlpha: { value: 0 },
-      uColor: { value: new THREE.Color(1, 1, 1) },
-      uFalloff: { value: 1.1 }
-    },
-    vertexShader: `
-      varying vec3 vLocal;
-      void main() {
-        vLocal = position;
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-      }`,
-    fragmentShader: `
-      uniform float uAlpha;
-      uniform vec3 uColor;
-      uniform float uFalloff;
-      varying vec3 vLocal;
-      void main() {
-        float r = clamp(length(vLocal), 0.0, 1.0);
-        float a = pow(1.0 - r, uFalloff) * uAlpha;
-        if (a < 0.002) discard;
-        gl_FragColor = vec4(uColor * a, a);
-      }`,
-    transparent: true,
-    blending: THREE.AdditiveBlending,
-    depthWrite: false,
-    depthTest: false,
-    side: THREE.BackSide,
-    toneMapped: false
-  });
   for (const [name, bag] of Object.entries(statics)) {
     if (!/^glowSphere\d+$/.test(name)) continue;
     const colour = bag.color || { r: 1, g: 1, b: 1 };
@@ -538,6 +534,90 @@ function buildGlows() {
   }
 }
 
+/* The dunes are not sand-coloured: the reference paints them in gold and
+   lets them glitter, so they read as the lit hills of the desert. */
+function dressDunes() {
+  for (const root of [room, chars]) {
+    if (!root) continue;
+    root.traverse((o) => {
+      if (!o.isMesh || !o.material) return;
+      const n = o.material.name || '';
+      if (!/sand|dune/i.test(n)) return;
+      const mats = Array.isArray(o.material) ? o.material : [o.material];
+      for (const m of mats) {
+        m.color = new THREE.Color(0x96862f);
+        m.emissive = new THREE.Color(0x6d5410);
+        m.emissiveIntensity = 1;
+        m.roughness = 1;
+        m.metalness = 0;
+        m.needsUpdate = true;
+      }
+    });
+  }
+}
+
+/* The gold dust hangs in the air of the desert: a warm, loose light the
+   camera moves through. */
+function dressGoldDust() {
+  for (const root of [room, chars]) {
+    if (!root) continue;
+    root.traverse((o) => {
+      if (!o.isMesh || !o.material) return;
+      if (!/goldDust/i.test(o.material.name || '')) return;
+      const mats = Array.isArray(o.material) ? o.material : [o.material];
+      for (const m of mats) {
+        m.transparent = true;
+        m.opacity = 0.4;
+        m.depthWrite = false;
+        m.blending = THREE.AdditiveBlending;
+        m.color = new THREE.Color(0xffb469);
+        m.emissive = new THREE.Color(0xffb469);
+        m.emissiveIntensity = 1;
+        m.needsUpdate = true;
+      }
+    });
+  }
+}
+
+/* The figures do not stand where the file says: the reference walks each
+   group of people into the room it belongs to, so that they travel with
+   the room as it lifts. */
+function placeFigures() {
+  if (!chars || !room) return;
+  const rooms = [];
+  for (let i = 0; i < 7; i++) rooms.push(findNode(room, 'Empty.SC0' + i));
+  const done = [];
+  chars.traverse((g) => {
+    if (!/^T[1-9]/.test(g.name || '')) return;
+    let first = null;
+    g.traverse((p) => { if (!first && p.isMesh) first = p; });
+    if (!first) return;
+    const sc = sceneOf(first);
+    if (sc < 0 || done[sc]) return;
+    const host = rooms[sc];
+    if (!host) return;
+    const v = g.parent;
+    if (!v) return;
+    host.add(v);
+    done[sc] = v;
+    v.position.y = 0;
+    /* The file keeps the figures fifty units below the floor. We stand
+       them on it: the lowest of their feet decides how high they go. */
+    chars.updateMatrixWorld(true);
+    host.updateMatrixWorld(true);
+    const toHost = new THREE.Matrix4().copy(host.matrixWorld).invert();
+    let minY = Infinity;
+    g.traverse((p) => {
+      if (!p.isMesh || !p.geometry) return;
+      if (!p.geometry.boundingBox) p.geometry.computeBoundingBox();
+      const bb = p.geometry.boundingBox.clone().applyMatrix4(
+        new THREE.Matrix4().multiplyMatrices(toHost, p.matrixWorld));
+      minY = Math.min(minY, bb.min.y);
+    });
+    if (isFinite(minY)) v.position.y += -minY;
+  });
+}
+
 /* ══ build ═══════════════════════════════════════════════════════════════ */
 async function build() {
   const { GLTFLoader } = await import('./vendor/GLTFLoader.js');
@@ -552,7 +632,8 @@ async function build() {
   });
   renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  /* the materials tone map themselves, the way the reference does */
+  renderer.toneMapping = THREE.NoToneMapping;
   renderer.toneMappingExposure = EXPOSURE;
 
   post = makePost(renderer, {});
@@ -560,6 +641,10 @@ async function build() {
 
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0x000000);
+  /* the warm air of the rooms: the reference's own glow, and what the
+     silhouettes of the people stand against */
+  roomAir = new THREE.HemisphereLight(0xffd9b0, 0x30231a, 0.42);
+  scene.add(roomAir);
   camera = new THREE.PerspectiveCamera(46.4, innerWidth / innerHeight, 0.05, 1000);
   scene.add(camera);
 
@@ -620,6 +705,7 @@ async function build() {
         (root === chars && WATCH_STAND.test(o.name));
       if (!gone) return;
       o.visible = false;
+      o.userData.gone = true;
       if (o.isMesh && o.material) {
         const mats = Array.isArray(o.material) ? o.material : [o.material];
         for (const m of mats) m.visible = false;
@@ -651,10 +737,17 @@ async function build() {
         const i = sceneOf(o);
         if (i >= 0 && o.geometry.attributes.uv1 && lightmaps[i]) {
           m.lightMap = lightmaps[i];
-          m.lightMapIntensity = LMI;
+          m.lightMapIntensity = 0;      /* the bake masks the colour, it is not light */
+          m.userData.useBake = true;
+          if (!bakeMaterials.includes(m)) bakeMaterials.push(m);
         }
         m.envMapIntensity = 0.5;
+        /* The reference's own loader leaves metalness at zero unless the
+           file says otherwise; the glTF default of one would turn every
+           wall into a mirror and leave it with no diffuse light at all. */
+        if (m.isMeshStandardMaterial && !/^watch/i.test(m.name || '')) m.metalness = 0;
         if (m.map) { m.map.anisotropy = 4; m.map.channel = 0; }
+        patchTone(m);
         m.needsUpdate = true;
       }
     });
@@ -677,7 +770,12 @@ async function build() {
   /* the floor takes the light of whichever room is up */
   for (const m of floorMeshes) {
     const mats = Array.isArray(m.material) ? m.material : [m.material];
-    for (const mat of mats) { mat.lightMap = lightmaps[0] || null; mat.lightMapIntensity = LMI * 0.42; }
+    for (const mat of mats) {
+      mat.lightMap = lightmaps[0] || null;
+      mat.lightMapIntensity = 0;
+      mat.userData.useBake = true;
+      if (!bakeMaterials.includes(mat)) bakeMaterials.push(mat);
+    }
   }
 
   /* the light decal that opens the room */
@@ -702,7 +800,9 @@ async function build() {
         return new THREE.Vector3(...(c ? c.rgb : [0, 0, 0]));
       });
       const probe = new THREE.LightProbe(sh);
-      probe.intensity = 0.55;
+      /* the reference lights its rooms with the probe's irradiance itself:
+         three.js divides the diffuse by pi, so we put the pi back */
+      probe.intensity = Math.PI;
       probe.visible = false;
       scene.add(probe);
       probes.push(probe);
@@ -710,15 +810,24 @@ async function build() {
   }
   progress(0.9);
 
-  new EXRLoader().load('/webgl/textures/cubemaps/SC00_oct.exr', (t) => {
-    t.mapping = THREE.EquirectangularReflectionMapping;
-    scene.environment = t;
-    scene.environmentIntensity = 0.22;
-  });
+  /* each room keeps its own sky of light; we swap it as we walk through */
+  for (let i = 0; i < 7; i++) {
+    new EXRLoader().load(`/webgl/textures/cubemaps/SC0${i}_oct.exr`, (t) => {
+      t.mapping = THREE.EquirectangularReflectionMapping;
+      envMaps[i] = t;
+      if (i === envRoom) {
+        scene.environment = t;
+        scene.environmentIntensity = ENVI;
+      }
+    });
+  }
 
   buildLightDecal();
   buildGlows();
   buildHaze();
+  dressGoldDust();
+  dressDunes();
+  placeFigures();
 
   /* our name in the opening room */
   try { await renameTitlePlanes(); } catch (e) { console.warn('[room] title planes', e); }
@@ -727,6 +836,7 @@ async function build() {
   buildNav();
   applyChapter(CHAPTER === null ? 0 : CHAPTER, true);
   window.__MT__ = { THREE, scene, camera, room, chars, post, roomMixer, roomAnim,
+    __value: (o, p, f) => value(o, p, f),
     get clock() { return clock; }, set clock(v) { clock = v; } };
   window.__MT_READY__ = true;
 }
@@ -764,11 +874,21 @@ function applyChapter(index) {
 }
 
 /* ══ the clock ═══════════════════════════════════════════════════════════ */
+function scrollSpan() {
+  return Math.max(1, document.documentElement.scrollHeight - innerHeight);
+}
+
+function scrollToTime(t, smooth) {
+  const y = (t / timelineLength) * scrollSpan();
+  scrollTo({ top: y, behavior: smooth === false ? 'auto' : 'smooth' });
+}
+
 function goTo(index) {
   const i = Math.max(0, Math.min(CHAPTERS.length - 1, index));
   clock = SCENE_TIMES[i];
   applyChapter(i);
   lastChapter = i;
+  if (CHAPTER === null && AT === null) scrollToTime(clock);
 }
 
 function step(delta) {
@@ -791,6 +911,7 @@ function applyVisibility() {
     let vis = true;
     if (opacity !== undefined) vis = opacity > 0.02;
     for (const m of meshes) {
+      if (m.userData.gone) continue;
       m.visible = vis;
       if (!vis) continue;
       const mats = Array.isArray(m.material) ? m.material : [m.material];
@@ -818,13 +939,28 @@ function applyVisibility() {
 
   /* the light that opens the room */
   const density = value('lightDecal0', '["density"]', 2.2);
-  if (lightDecalMaterial) lightDecalMaterial.uniforms.uAlpha.value = Math.min(1.4, (density / 2.2) * DECAL);
+  if (lightDecalMaterial) {
+    lightDecalMaterial.uniforms.uAlpha.value = Math.min(0.7, (density / 2.2) * DECAL);
+    if (lightDecal) lightDecal.visible = density > 0.001;
+  }
 
-  /* the glow blobs */
+  /* the glow blobs: the reference's volumes of light, which fade as we walk
+     into them so that they never wash the picture out */
   for (const g of glowSprites) {
+    const bag = statics[g.name] || {};
     const a = value(g.name, '["alpha"]', 0);
-    g.sprite.material.opacity = a * GLOW;
-    g.sprite.visible = a > 0.004;
+    const sc2 = bag.scale || { x: 15, y: 15, z: 15 };
+    const p = bag.position || {};
+    const col = bag.color || { r: 1, g: 1, b: 1 };
+    const sp = g.sprite;
+    sp.position.set(p.x || 0, p.y || 0, p.z || 0);
+    sp.scale.set(sc2.x || 15, sc2.y || 15, 1);
+    sp.material.color.setRGB(col.r, col.g, col.b);
+    const d = camera.position.distanceTo(sp.position);
+    const r = Math.max(1e-3, (sc2.x || 15) * 0.5);
+    const near = Math.min(1, d / (r * 0.85));
+    sp.material.opacity = a * near * GLOW;
+    sp.visible = sp.material.opacity > 0.003;
   }
 }
 
@@ -861,6 +997,38 @@ function collectSceneNodes() {
   }
 }
 
+/* The clip lifts each room into place as we reach it. Three.js reads the
+   camera's samples but not the rooms', so we read them ourselves: the very
+   same keyframes, the very same times. */
+const SCENE_TRACKS = [];
+
+function bindSceneTracks() {
+  SCENE_TRACKS.length = 0;
+  if (!roomAnim) return;
+  for (let i = 0; i < 7; i++) {
+    const track = roomAnim.tracks.find((t) => t.name === 'EmptySC0' + i + '.position');
+    const node = findNode(room, 'Empty.SC0' + i);
+    if (!track || !node) continue;
+    SCENE_TRACKS.push({ track, node });
+  }
+}
+
+function applySceneTracks(t) {
+  for (const { track, node } of SCENE_TRACKS) {
+    const times = track.times, values = track.values, stride = track.getValueSize();
+    const n = times.length;
+    if (!n) continue;
+    let i = 0;
+    while (i < n - 2 && t >= times[i + 1]) i++;
+    const t0 = times[i], t1 = times[i + 1];
+    const k = t1 > t0 ? Math.min(1, Math.max(0, (t - t0) / (t1 - t0))) : 0;
+    for (let j = 0; j < stride; j++) {
+      const a = values[i * stride + j], b = values[(i + 1) * stride + j];
+      node.position.setComponent(j, a + (b - a) * k);
+    }
+  }
+}
+
 let lastTime = performance.now();
 function frame(now) {
   requestAnimationFrame(frame);
@@ -869,14 +1037,23 @@ function frame(now) {
 
   if (!scene) return;
 
-  if (!STILL && !REDUCED) {
-    clock += dt;
-    if (clock > timelineLength) clock -= timelineLength;
+  if (STILL || AT !== null) {
+    /* held on a moment, for stills */
+  } else if (CHAPTER !== null) {
+    clock = SCENE_TIMES[CHAPTER];
+  } else {
+    /* the page is the timeline: the camera follows the scroll */
+    const wanted = (scrollY / scrollSpan()) * timelineLength;
+    const ease = REDUCED ? 1 : 1 - Math.pow(0.0025, dt);
+    clock += (wanted - clock) * ease;
+    if (clock < 0) clock = 0;
+    if (clock > timelineLength) clock = timelineLength;
   }
 
   /* the room's own clip: the rooms lift, the camera climbs */
   if (roomMixer && roomAnim) {
     roomMixer.setTime(Math.min(clock, roomDuration));
+    applySceneTracks(Math.min(clock, roomDuration));
   }
   for (const [r, c] of SCENE_NODES) {
     if (r && c) c.position.y = r.position.y;
@@ -911,22 +1088,23 @@ function frame(now) {
   /* the volumes of light we are standing in wash over the whole frame */
   if (haze) {
     let a = 0;
-    const c = new THREE.Color(0, 0, 0);
+    const c2 = new THREE.Color(0, 0, 0);
     for (const g of glowSprites) {
       const alpha = value(g.name, '["alpha"]', 0);
       if (alpha <= 0) continue;
-      const sc = (statics[g.name] && statics[g.name].scale) || { x: 15, y: 15, z: 15 };
-      const r = (sc.x || 15);
+      const bag = statics[g.name] || {};
+      const sc2 = bag.scale || { x: 15, y: 15, z: 15 };
+      const r = (sc2.x || 15);
       const d = camera.position.distanceTo(g.sprite.position);
       if (d >= r) continue;
       const k = (1 - d / r) * alpha * GLOW * 0.55;
       if (k <= 0) continue;
       a += k;
-      const col = (statics[g.name] && statics[g.name].color) || { r: 1, g: 1, b: 1 };
-      c.r += col.r * k; c.g += col.g * k; c.b += col.b * k;
+      const col = bag.color || { r: 1, g: 1, b: 1 };
+      c2.r += col.r * k; c2.g += col.g * k; c2.b += col.b * k;
     }
-    haze.material.uniforms.uAlpha.value = Math.min(1, a);
-    haze.material.uniforms.uColor.value.set(c.r, c.g, c.b).multiplyScalar(1 / Math.max(1e-6, a));
+    haze.material.uniforms.uAlpha.value = Math.min(0.22, a * 0.09);
+    haze.material.uniforms.uColor.value.set(c2.r, c2.g, c2.b).multiplyScalar(1 / Math.max(1e-6, a));
   }
 
   /* the floor is lit by the room we are standing in */
@@ -936,6 +1114,22 @@ function frame(now) {
     for (const m of floorMeshes) {
       const mats = Array.isArray(m.material) ? m.material : [m.material];
       for (const mat of mats) { mat.lightMap = lightmaps[lp] || null; mat.needsUpdate = true; }
+    }
+  }
+
+  /* the bake masks the colour of the room we are standing in */
+  const bk = bakeStrength(current);
+  for (const m of bakeMaterials) {
+    const sh = m.userData.shader;
+    if (sh && sh.uniforms.uBake) sh.uniforms.uBake.value = bk;
+  }
+
+  /* the sky of light of the room we stand in */
+  if (current !== envRoom) {
+    envRoom = current;
+    if (envMaps[current]) {
+      scene.environment = envMaps[current];
+      scene.environmentIntensity = ENVI;
     }
   }
 
@@ -975,15 +1169,6 @@ function bindInput() {
     else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'PageUp') { step(-1); e.preventDefault(); }
     else if (e.key === ' ') { step(1); e.preventDefault(); }
   });
-
-  let wheelLock = 0;
-  addEventListener('wheel', (e) => {
-    const now = performance.now();
-    if (now - wheelLock < 700) return;
-    if (Math.abs(e.deltaX) < 18 && Math.abs(e.deltaY) < 18) return;
-    wheelLock = now;
-    step((e.deltaX || e.deltaY) > 0 ? 1 : -1);
-  }, { passive: true });
 
   el.explore.addEventListener('click', () => step(1));
   el.scroll.addEventListener('click', () => goTo(1));
@@ -1053,8 +1238,10 @@ function resize() {
   }
 
   collectSceneNodes();
+  bindSceneTracks();
   if (AT !== null) clock = AT;
   else if (CHAPTER !== null) clock = SCENE_TIMES[CHAPTER];
+  else { scrollTo(0, 0); }
   el.loader.classList.add('shown');
   setTimeout(() => el.loader.classList.add('mainLoader--hidden'), 900);
 
