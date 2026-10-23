@@ -1,0 +1,3 @@
+precision highp float;
+#define GLSLIFY 1
+uniform sampler2D tMap;uniform vec2 uAngles;in vec2 vUv;out vec4 FragColor;vec2 octahedralProjection(in vec3 dir){dir/=dot(vec3(1.0,1.0,1.0),abs(dir));vec2 rev=abs(dir.zx)-vec2(1.0,1.0);vec2 neg=vec2(dir.x<0.0 ? rev.x :-rev.x,dir.z<0.0 ? rev.y :-rev.y);vec2 uv=dir.y<0.0 ? neg : dir.xz;return uv*0.5+0.5;}mat2 rotate2D(float angle){float s=sin(angle);float c=cos(angle);return mat2(c,-s,s,c);}void main(){vec2 uv=vUv;uv.y=1.0-uv.y;vec3 p=vec3(2.0*uv-1.0,1.0);p.xz=rotate2D(uAngles.x)*p.xz;p.yz=rotate2D(uAngles.y)*p.yz;vec4 col=texture(tMap,octahedralProjection(normalize(p)));FragColor=col;}

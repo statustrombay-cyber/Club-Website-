@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a0806">
+<title>Mindful Tattva</title>
+<meta name="description" content="Mindful Tattva — a room for the mind. A scroll-driven walk through seven chapters of light, rooms and people.">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/app.css">
+</head>
+<body class="homePage">
+
+  <!-- the room -->
+  <canvas id="gl"></canvas>
+
+  <!-- the loader: one number, and the line that opens it -->
+  <div id="loader" class="mainLoader">
+    <div class="mainLoader__wrapper">
+      <div class="mainLoader__baseline">
+        <div>A room for the mind.</div>
+        <div>A club for the curious.</div>
+        <div>Mindful Tattva.</div>
+      </div>
+    </div>
+    <div class="mainLoader__progress" id="loaderProgress">00</div>
+  </div>
+
+  <!-- the header: SOUND on the left, the wordmark in the middle -->
+  <header class="siteHeader">
+    <button type="button" class="soundButton soundButton--white" id="soundButton" aria-pressed="false">
+      <span class="soundButton__label">Sound</span>
+    </button>
+    <div class="homePage__logo">Mindful Tattva</div>
+  </header>
+
+  <!-- the chapter title, set below the wordmark -->
+  <div class="homePage__topWrapper">
+    <div class="sceneTitle sceneTitle--wrap" id="sceneTitle">
+      <div class="sceneTitle__track">
+        <div class="sceneTitle__layer sceneTitle__layer--base" id="sceneTitleLayer">
+          <div class="sceneTitle__inner"><p id="sceneTitleText"></p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- the opening room: the line under it, and the circle that invites the first chapter -->
+  <div class="homePage__bottomWrapper homePage__bottomWrapper--intro" id="introWrapper">
+    <div class="homePage__baseline" id="baseline"></div>
+    <button type="button" class="scrollButton" id="scrollButton" aria-label="Scroll to first section">
+      <span class="scrollButton__circle">
+        <span class="scrollButton__arrows">
+          <svg class="scrollButton__arrow scrollButton__arrow--base" width="7" height="13" viewBox="24 21 7 13" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M27.5 21.5L27.5 33.5M27.5 33.5L30.5 30.5479M27.5 33.5L24.5 30.5479" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <svg class="scrollButton__arrow scrollButton__arrow--hover" width="7" height="13" viewBox="24 21 7 13" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M27.5 21.5L27.5 33.5M27.5 33.5L30.5 30.5479M27.5 33.5L24.5 30.5479" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+      </span>
+    </button>
+  </div>
+
+  <!-- EXPLORE, where the reference puts it -->
+  <div class="homePage__bottomWrapper homePage__bottomWrapper--explore">
+    <button type="button" class="underlineButton underlineButton--narrowLine underlineButton--white homePage__exploreButton" id="exploreButton">
+      <span class="underlineButton__label"><span class="label">Explore</span></span>
+    </button>
+  </div>
+
+  <!-- the chapter dots -->
+  <nav class="sideNavIndicationElt" id="sideNav" aria-label="Chapters"></nav>
+
+  <noscript><p class="fallback">Mindful Tattva needs JavaScript and WebGL.</p></noscript>
+
+  <script type="module" src="/assets/app.js"></script>
+</body>
+</html>

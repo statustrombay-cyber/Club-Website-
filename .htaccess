@@ -1,82 +1,55 @@
 # Mindful Tattva · Apache configuration
 # --------------------------------------------------------------------------
-# Everything except real files and the uploads folder is handled by index.php.
+# A single static page and the room it loads. No backend, no database, no
+# framework: everything the visitor sees is already on disk.
 
 Options -Indexes
-DirectoryIndex index.php index.html
+DirectoryIndex index.html
 
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
 
-  # Private things first. These rules must sit above the "existing file"
-  # pass-through below, otherwise a real file on disk would be served before
-  # they are ever reached.
-  # dot files (.gitignore, .htaccess, .git)
+  # Dot files (.gitignore, .htaccess, .git) are never served.
   RewriteRule (^|/)\. - [F,L]
-  # backend code, templates, content, tooling
-  RewriteRule ^(app|views|data|tools)/ - [F,L]
-  RewriteRule ^(README|package(-lock)?\.json|composer\.(json|lock)) - [F,L]
-  # notes, dev scripts, backups
+
+  # Notes and tooling are not part of the site.
+  RewriteRule ^(README|package(-lock)?\.json|\.gitattributes) - [F,L]
   RewriteRule \.(md|mjs|log|lock|tmp|sql|bak|example)$ - [F,L]
 
-  # Never execute scripts that arrive through the uploads folder: they are only
-  # ever served as images or PDFs. (See uploads/.htaccess for the same rule.)
-  RewriteRule ^uploads/.*\.(php|phtml|phar|cgi|pl|py|sh|html|htm)$ - [F,L]
-
-  # Send existing files and folders (assets, uploads, favicon …) straight out.
+  # Real files (the page, the stylesheet, the room, the fonts) go straight
+  # out; everything else is the one page.
   RewriteCond %{REQUEST_FILENAME} -f [OR]
   RewriteCond %{REQUEST_FILENAME} -d
   RewriteRule ^ - [L]
 
-  # Everything else is a route: /gallery, /calendar, /awareness, /dashboard, /api/…
-  RewriteRule ^ index.php [L]
+  RewriteRule ^ index.html [L]
 </IfModule>
 
 <IfModule mod_headers.c>
   Header set X-Content-Type-Options "nosniff"
   Header set Referrer-Policy "strict-origin-when-cross-origin"
-
-  # Pages are written fresh from the club's own content every time they are
-  # asked for, so a browser must never hold an old one: the club edits words,
-  # events and passes from the dashboard, and a student should never be shown
-  # yesterday's page (or yesterday's styles, which travel inside the page).
-  # The files under assets/ keep their own long cache below.
-  <FilesMatch "\.(php|html?)$">
-    Header set Cache-Control "no-cache, must-revalidate"
-  </FilesMatch>
 </IfModule>
 
-# Protect the private data folder and the app folder.
-<IfModule mod_authz_core.c>
-  <FilesMatch "\.(json|lock|log|tmp)$">
-    Require all denied
-  </FilesMatch>
-</IfModule>
-
-# The home page's herd: Apache must hand these out as video, and support the
-# slice requests the browser makes while playing.
+# The room's file types.
 <IfModule mod_mime.c>
-  AddType application/wasm .wasm
   AddType model/gltf-binary .glb
-  AddType image/ktx2 .ktx2
-  AddType audio/mpeg .mp3
+  AddType application/wasm .wasm
   AddType image/webp .webp
-  AddType image/png .png
-  AddType video/mp4 .mp4 .m4v
-  AddType video/webm .webm
-  AddType video/quicktime .mov
+  AddType image/svg+xml .svg
+  AddType audio/wav .wav
+  AddType application/json .json
 </IfModule>
 
 <IfModule mod_expires.c>
   ExpiresActive On
-  ExpiresByType video/mp4 "access plus 30 days"
-  ExpiresByType image/jpeg "access plus 30 days"
-  ExpiresByType image/png "access plus 30 days"
+  # The room is heavy: let the browser keep it.
+  ExpiresByType model/gltf-binary "access plus 30 days"
+  ExpiresByType application/wasm "access plus 30 days"
   ExpiresByType image/webp "access plus 30 days"
   ExpiresByType image/svg+xml "access plus 30 days"
-  # ...but a page is never stale: an expiry in the past means the browser asks
-  # again, and gets the club's latest words.
+  ExpiresByType audio/wav "access plus 30 days"
+  # The page itself is never stale.
   ExpiresByType text/html "access plus 0 seconds"
   ExpiresByType text/css "access plus 7 days"
   ExpiresByType application/javascript "access plus 7 days"

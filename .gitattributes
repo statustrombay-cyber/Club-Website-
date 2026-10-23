@@ -1,33 +1,63 @@
-# Recordings are design references, never part of GitHub source ZIP downloads.
+# ---------------------------------------------------------------------------
+# Mindful Tattva — what GitHub must NOT put in the "Download ZIP" archive.
+#
+# The archive a visitor downloads has to be the working website and nothing
+# else: the page, the room, the fonts, the sound. Every reference dump, every
+# recording, every tool and every stray archive is kept out of the export
+# while staying in the history of the repository.
+# ---------------------------------------------------------------------------
+
+# Recordings and design references.
 screen-*.mp4 export-ignore
-/tools/references/*.mp4 export-ignore
-
-# Never export local rollback archives or uploaded root recordings.
-/.rollback/ export-ignore
 /*.mp4 export-ignore
-
-# Any re-uploaded reference dumps must stay out of source/deployment exports.
+/tools/references/*.mp4 export-ignore
 /part_* export-ignore
 
-/university*.html export-ignore
-
-# Uploaded reference archives are never deployable runtime files.
+# Local rollback folders and uploaded archives.
+/.rollback/ export-ignore
 /*.zip export-ignore
+/*.rar export-ignore
+/*.7z export-ignore
 
-# GitHub Download ZIP is also the existing-site upload: keep dev tooling out.
-# Source/build tools remain in Git; production uses the prebuilt scene.
+# Development tooling: it stays in Git, it never ships.
 /tools/ export-ignore
 /package.json export-ignore
 /package-lock.json export-ignore
+/yarn.lock export-ignore
 
-# Never overwrite live club records/settings when extracting a full GitHub ZIP.
-# Keep data/.htaccess in the archive so the private folder stays protected.
+# Notes.
+/README.md export-ignore
+*.md export-ignore
+
+# The uploaded study references that were recovered from the club's history.
+/cartier-part-* export-ignore
+/cartierfile*.rar export-ignore
+/cartier* export-ignore
+/cartier/ export-ignore
+/reference* export-ignore
+/*.glb export-ignore
+/*.html export-ignore
+
+# Private club data must never be overwritten by an extraction.
 /data/site.json export-ignore
 /data/config.php export-ignore
+/app/ export-ignore
+/views/ export-ignore
+/uploads/ export-ignore
 
-# Cartier uploads are untouched study references, not club runtime assets.
-/cartier-part-* export-ignore
-/*.glb export-ignore
+# Keep the scripts that make the room readable.
+*.js text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+*.json text eol=lf
+*.glsl text eol=lf
+*.md text eol=lf
 
-# New reference-only RAR parts must not add 69 MB to the website upload.
-/cartierfile*.rar export-ignore
+# The heavy room files are binary.
+*.glb binary
+*.wav binary
+*.woff2 binary
+*.webp binary
+*.exr binary
+*.png binary
+*.jpg binary
