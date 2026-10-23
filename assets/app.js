@@ -90,6 +90,7 @@ const bakeMaterials = [];
 let envRoom = 0;
 let activeProbe = -1;
 let roomAir = null;
+let currentScene = 0;
 let floorRoom = -1;
 
 /* three.js renames the nodes it loads: dots are dropped, spaces become
@@ -273,8 +274,22 @@ const GROUP_PATTERNS = {
   stairs:    /stair/i,
   screen:    /screen/i,
   images:    /image/i,
-  bench:     /bench/i
+  bench:     /bench/i,
+  font:      /fontplane/i,
+  decal:     /decal/i
 };
+
+/* the props that hang at the root of the file belong to a room all the
+   same; this is where we are told which */
+const OUTSIDE_OWNER = [
+  [/^GEO_Cloud/i, 1],
+  [/^GEO_Cylinder/i, 1],
+  [/^GEO_bg/i, 1],
+  [/^GEO_BackCliffs/i, 2],
+  [/^GEO_CliffScreen/i, 2],
+  [/dunes/i, 1],
+  [/^GEO_Ground/i, 0]
+];
 
 function buildVisibilityGroups() {
   visibilityGroups.clear();
@@ -286,11 +301,24 @@ function buildVisibilityGroups() {
     if (!root) continue;
     root.traverse((o) => {
       if (!o.isMesh) return;
-      const sc = sceneOf(o);
-      if (sc < 0) return;
       const name = o.name || '';
+      const mm = Array.isArray(o.material) ? o.material[0] : o.material;
+      const matName = (mm && mm.name) || '';
+      /* which room owns this piece: the tree it hangs from, or the room
+         its own name and its material carry */
+      let sc = sceneOf(o);
+      if (sc < 0) {
+        const hint = /sc0(\d)/i.exec(name + ' ' + matName);
+        if (hint) sc = +hint[1];
+      }
+      if (sc < 0) {
+        for (const [re, owner] of OUTSIDE_OWNER) {
+          if (re.test(name) || re.test(matName)) { sc = owner; break; }
+        }
+      }
+      if (sc < 0) return;
       for (const [key, re] of Object.entries(GROUP_PATTERNS)) {
-        if (!re.test(name)) continue;
+        if (!re.test(name) && !re.test(matName)) continue;
         add(`sc${String(sc).padStart(2, '0')}_${key}`, o);
         break;
       }
@@ -317,7 +345,16 @@ async function renameTitlePlanes() {
   if (titlePlanesDone) return;
   const planes = [];
   room.traverse((o) => {
-    if (/^SC00_FontPlane/i.test(o.name || '') && o.isMesh) planes.push(o);
+    if (/^SC00_FontPlane/i.test(o.name || '') && o.isMesh) {
+      planes.push(o);
+      const mm2 = Array.isArray(o.material) ? o.material[0] : o.material;
+      if (mm2) {
+        /* the reference's name glows softly; it is not a flare */
+        if (mm2.emissiveIntensity > 1.1) mm2.emissiveIntensity = 1.0;
+        mm2.emissive = new THREE.Color(0xffd9b0);
+        mm2.needsUpdate = true;
+      }
+    }
   });
   if (!planes.length) return;
 
@@ -536,6 +573,45 @@ function buildGlows() {
 
 /* The dunes are not sand-coloured: the reference paints them in gold and
    lets them glitter, so they read as the lit hills of the desert. */
+function dressOutside() {
+  for (const root of [room, chars]) {
+    if (!root) continue;
+    root.traverse((o) => {
+      if (!o.isMesh || !o.material) return;
+      const n = o.material.name || '';
+      const mats = Array.isArray(o.material) ? o.material : [o.material];
+      for (const m of mats) {
+        if (/cloud/i.test(n)) {
+          if (m.emissiveIntensity > 1.4) m.emissiveIntensity = 1.2;
+          m.emissive = new THREE.Color(0xffe0bb);
+          m.needsUpdate = true;
+        }
+        if (/BackCliffs/i.test(n)) {
+          m.emissive = new THREE.Color(0x241f10);
+          m.emissiveIntensity = 1;
+          m.needsUpdate = true;
+        }
+      }
+    });
+  }
+}
+
+function dressPillars() {
+  for (const root of [room, chars]) {
+    if (!root) continue;
+    root.traverse((o) => {
+      if (!o.isMesh || !o.material) return;
+      const n = o.material.name || '';
+      if (!/cylinder--(gold|silver)/i.test(n)) return;
+      const mats = Array.isArray(o.material) ? o.material : [o.material];
+      for (const m of mats) {
+        if (m.emissiveIntensity > 1.2) m.emissiveIntensity = 1.1;
+        m.needsUpdate = true;
+      }
+    });
+  }
+}
+
 function dressDunes() {
   for (const root of [room, chars]) {
     if (!root) continue;
@@ -544,6 +620,7 @@ function dressDunes() {
       const n = o.material.name || '';
       if (!/sand|dune/i.test(n)) return;
       const mats = Array.isArray(o.material) ? o.material : [o.material];
+      desertProps.dunes.push(o);
       for (const m of mats) {
         m.color = new THREE.Color(0x96862f);
         m.emissive = new THREE.Color(0x6d5410);
@@ -558,6 +635,8 @@ function dressDunes() {
 
 /* The gold dust hangs in the air of the desert: a warm, loose light the
    camera moves through. */
+const desertProps = { dust: [], dunes: [], sky: [] };
+
 function dressGoldDust() {
   for (const root of [room, chars]) {
     if (!root) continue;
@@ -565,13 +644,14 @@ function dressGoldDust() {
       if (!o.isMesh || !o.material) return;
       if (!/goldDust/i.test(o.material.name || '')) return;
       const mats = Array.isArray(o.material) ? o.material : [o.material];
+      desertProps.dust.push(o);
       for (const m of mats) {
         m.transparent = true;
-        m.opacity = 0.4;
+        m.opacity = 0.14;
         m.depthWrite = false;
         m.blending = THREE.AdditiveBlending;
         m.color = new THREE.Color(0xffb469);
-        m.emissive = new THREE.Color(0xffb469);
+        m.emissive = new THREE.Color(0x6a3f14);
         m.emissiveIntensity = 1;
         m.needsUpdate = true;
       }
@@ -643,7 +723,7 @@ async function build() {
   scene.background = new THREE.Color(0x000000);
   /* the warm air of the rooms: the reference's own glow, and what the
      silhouettes of the people stand against */
-  roomAir = new THREE.HemisphereLight(0xffd9b0, 0x30231a, 0.42);
+  roomAir = new THREE.HemisphereLight(0xffd9b0, 0x30231a, 0.16);
   scene.add(roomAir);
   camera = new THREE.PerspectiveCamera(46.4, innerWidth / innerHeight, 0.05, 1000);
   scene.add(camera);
@@ -827,6 +907,8 @@ async function build() {
   buildHaze();
   dressGoldDust();
   dressDunes();
+  dressPillars();
+  dressOutside();
   placeFigures();
 
   /* our name in the opening room */
@@ -910,6 +992,13 @@ function applyVisibility() {
     const dark = value('objectsVisibility', `["${parts[0]}","${parts[1]}","dark"]`, undefined);
     let vis = true;
     if (opacity !== undefined) vis = opacity > 0.02;
+    /* a set piece belongs to its own room: it is only there when we are
+       standing in that room, the way the reference keeps its rooms apart */
+    const owner = /^sc0(\d)_/.exec(id);
+    if (owner) {
+      const sc = parseInt(owner[1], 10);
+      if (sc !== currentScene) vis = false;
+    }
     for (const m of meshes) {
       if (m.userData.gone) continue;
       m.visible = vis;
@@ -954,12 +1043,12 @@ function applyVisibility() {
     const col = bag.color || { r: 1, g: 1, b: 1 };
     const sp = g.sprite;
     sp.position.set(p.x || 0, p.y || 0, p.z || 0);
-    sp.scale.set(sc2.x || 15, sc2.y || 15, 1);
+    sp.scale.set((sc2.x || 15) * 0.5, (sc2.y || 15) * 0.5, 1);
     sp.material.color.setRGB(col.r, col.g, col.b);
     const d = camera.position.distanceTo(sp.position);
-    const r = Math.max(1e-3, (sc2.x || 15) * 0.5);
+    const r = Math.max(1e-3, (sc2.x || 15) * 0.25);
     const near = Math.min(1, d / (r * 0.85));
-    sp.material.opacity = a * near * GLOW;
+    sp.material.opacity = Math.min(0.34, a * near * GLOW);
     sp.visible = sp.material.opacity > 0.003;
   }
 }
@@ -1065,6 +1154,7 @@ function frame(now) {
 
   /* which chapter are we on? the timeline says */
   const current = Math.round(value('currentScene', '["in"]', 0));
+  currentScene = current;
   const c = Math.max(0, Math.min(CHAPTERS.length - 1, current));
   if (c !== lastChapter) {
     lastChapter = c;
@@ -1103,7 +1193,7 @@ function frame(now) {
       const col = bag.color || { r: 1, g: 1, b: 1 };
       c2.r += col.r * k; c2.g += col.g * k; c2.b += col.b * k;
     }
-    haze.material.uniforms.uAlpha.value = Math.min(0.22, a * 0.09);
+    haze.material.uniforms.uAlpha.value = Math.min(0.14, a * 0.09);
     haze.material.uniforms.uColor.value.set(c2.r, c2.g, c2.b).multiplyScalar(1 / Math.max(1e-6, a));
   }
 
@@ -1123,6 +1213,13 @@ function frame(now) {
     const sh = m.userData.shader;
     if (sh && sh.uniforms.uBake) sh.uniforms.uBake.value = bk;
   }
+
+  /* the desert belongs to the desert: its dust, its dunes and its sky are
+     only there when we are in it */
+  const inDesert = (current === 1 || current === 2);
+  for (const o of desertProps.dust) o.visible = inDesert;
+  for (const o of desertProps.dunes) o.visible = (current === 1);
+  for (const o of desertProps.sky) o.visible = inDesert;
 
   /* the sky of light of the room we stand in */
   if (current !== envRoom) {

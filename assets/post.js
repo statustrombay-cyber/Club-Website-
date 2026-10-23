@@ -123,7 +123,13 @@ void main() {
     totalSpectrum += spectrum;
     stp += 1.0 / 5.0;
   }
-  color /= totalSpectrum;
+  // the spectrum of the reference is a warm ramp; when it is missing the
+  // picture must still come through untouched
+  if (dot(totalSpectrum, vec3(1.0)) < 0.0005) {
+    color = texture2D(tMap, uv).rgb;
+  } else {
+    color /= totalSpectrum;
+  }
 
   // the motion the reference leaves on the cuts
   if (uBlur > 0.001) {
