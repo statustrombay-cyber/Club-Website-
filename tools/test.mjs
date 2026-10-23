@@ -2037,6 +2037,17 @@ ok('offscreen decoration pauses without collapsing document flow or hiding readi
 ok('the bounded intro has composited space travel rather than a JS particle renderer',
   appCss.includes('introSpaceTravel 5.25s linear both') && appCss.includes('splashAway .45s ease 4.8s forwards'));
 
+ok('action flights freeze the original click point while fields retain live tracking',
+  appJs.includes("const landed = kind === 'action' ? trip.end : destination(node, kind)") && appJs.includes("event.detail > 0 ? {x:event.clientX,y:event.clientY}") && appJs.includes("trip.kind === 'action' ? trip.end"));
+ok('dragging is scoped to the photo grip with captured primary pointers and cancellation',
+  appJs.includes('grip.setPointerCapture(event.pointerId)') && appJs.includes("['pointerup','pointercancel','lostpointercapture']") && appJs.includes("if (!event.isPrimary || event.button !== 0 || drag) return") && appCss.includes('pointer-events:auto; touch-action:none'));
+ok('drag release restores the current perch or focused field without replacing native actions',
+  appJs.includes("launch(desiredDark ? 'leave' : 'release')") && appJs.includes("document.activeElement === activeField && !desiredDark") && appJs.includes("if (node.tagName === 'SUMMARY') { butterflyDive(node,point); return; }"));
+ok('the native menu wrapper has a real right-aligned mobile flex box and no desktop slot',
+  appCss.includes('.mobile-nav-toggle { display:none; }') && appCss.includes('flex:0 0 44px; margin-inline-start:auto') && appCss.includes('.mobile-nav-toggle[open] + .nav-links { display:flex; }'));
+ok('menu close semantics and keyboard butterfly movement are accessible',
+  appJs.includes("button.setAttribute('aria-expanded',String(menu.open))") && appJs.includes("if (event.key === 'Escape' || event.key === 'Home')") && layoutSource.includes('class="butterfly-grip" aria-label="Move butterfly'));
+
 console.log('\n— actual dashboard renderer and upload regressions —');
 {
   const { runInNewContext } = await import('node:vm');

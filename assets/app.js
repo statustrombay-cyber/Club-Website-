@@ -360,6 +360,16 @@
     if (window.location.hash) align(window.location.hash);
   }
 
+  function setupNavigation() {
+    const menu=$('.mobile-nav-toggle'), button=$('#menuButton');
+    if(!menu||!button)return;
+    function sync(){button.setAttribute('aria-expanded',String(menu.open));button.setAttribute('aria-label',menu.open?'Close main navigation':'Main navigation');}
+    menu.addEventListener('toggle',sync);sync();
+    document.addEventListener('keydown',function(event){if(event.key==='Escape'&&menu.open){menu.open=false;sync();button.focus();}});
+    document.addEventListener('click',function(event){if(menu.open&&!event.target.closest('.nav')){menu.open=false;sync();}});
+    window.matchMedia('(max-width:1100px)').addEventListener?.('change',function(event){if(!event.matches){menu.open=false;sync();}});
+  }
+
   function setupScrollUi() {
     const toTop = $('#toTop');
     if (!toTop) return;
@@ -756,7 +766,7 @@
     let x = 0, y = 0, angle = 0, vx = 0, vy = 0, tilt = 0;
     let target = null, needsMeasure = true, desiredDark = false, committedDark = false, darkSince = 0;
     let lastScroll = window.scrollY || 0, scrollTimer = 0;
-    let interaction = null, activeField = null, photoScale = 1, flapTimer = 0;
+    let interaction = null, activeField = null, photoScale = 1, flapTimer = 0, drag = null, suppressDragClick = false;
     function measure(now) {
       const bounds = header.getBoundingClientRect();
       const width = butterfly.offsetWidth;
@@ -771,6 +781,7 @@
       needsMeasure = false;
     }
     function render() {
+      if (butterfly.dataset && butterfly.dataset.butterflyState !== state) butterfly.dataset.butterflyState = state;
       butterfly.style.setProperty('--butterfly-size', photoScale.toFixed(3));
       butterfly.style.transform = 'translate3d(' + x.toFixed(2) + 'px,' + y.toFixed(2) + 'px,0) rotate(' + angle.toFixed(2) + 'deg)';
     }
@@ -779,51 +790,54 @@
     }
     function launch(kind) {
       const end = kind === 'leave' ? { x: -target.width - 100, y: target.y + 5 } : { x: target.x, y: target.y };
-      const duration = kind === 'entry' ? 6400 : Math.max(kind === 'leave' ? 2800 : 3400, Math.abs(end.x - x) * 3.4);
+      const duration = kind === 'entry' ? 6400 : (kind === 'release' || kind === 'return-action') ? clamp(500 + Math.hypot(end.x-x, end.y-y)*.5, 650, 1000) : Math.max(kind === 'leave' ? 2800 : 3400, Math.abs(end.x - x) * 3.4);
       // A continuous tangent survives reversals; no cancelled animation can
       // restore an old CSS pose or switch the butterfly's opacity mid-flight.
       const reach = Math.min(380, duration * .22);
       flight = { kind: kind, elapsed: 0, duration: duration,
         start: { x: x, y: y, angle: angle },
-        c1: kind === 'entry' ? { x: x - window.innerWidth * .06, y: window.innerHeight * .55 } : { x: x + vx * reach, y: y + vy * reach },
+        c1: (kind === 'release' || kind === 'return-action') ? {x:clamp(x+vx*reach,0,window.innerWidth-target.width),y:clamp(y+vy*reach,0,window.innerHeight-butterfly.offsetHeight)} : kind === 'entry' ? { x: x - window.innerWidth * .06, y: window.innerHeight * .55 } : { x: x + vx * reach, y: y + vy * reach },
         c2: { x: kind === 'leave' ? end.x + 70 : end.x + 20, y: kind === 'entry' ? end.y + window.innerHeight * .18 : end.y - 18 }, end: end };
-      state = kind === 'leave' ? 'leaving' : 'entering';
+      state = kind === 'leave' ? 'leaving' : kind === 'return-action' ? 'returning-action' : 'entering';
       butterfly.classList.remove('butterfly-away');
       butterfly.classList.add('butterfly-arrived', 'butterfly-flying');
       schedule();
     }
-    function destination(node, kind) {
+    function destination(node, kind, point) {
       const box = node.getBoundingClientRect(), w = butterfly.offsetWidth, h = butterfly.offsetHeight;
       const scale = kind === 'field' ? (window.innerWidth < 600 ? .38 : .42) : .66;
-      const cx = kind === 'field' ? Math.max(w * scale / 2 + 2, box.left - w * scale / 2 - 5) : clamp(box.left + box.width / 2, w * scale / 2, window.innerWidth - w * scale / 2);
-      const cy = kind === 'field' ? clamp(box.top + Math.min(box.height, 48) / 2, h / 2, window.innerHeight - h / 2) : clamp(box.top + box.height / 2, h / 2, window.innerHeight - h / 2);
+      const cx = kind === 'field' ? Math.max(w * scale / 2 + 2, box.left - w * scale / 2 - 5) : clamp(point ? point.x : box.left + box.width / 2, w * scale / 2, window.innerWidth - w * scale / 2);
+      const cy = kind === 'field' ? clamp(box.top + Math.min(box.height, 48) / 2, h / 2, window.innerHeight - h / 2) : clamp(point ? point.y : box.top + box.height / 2, h * scale / 2, window.innerHeight - h * scale / 2);
       return { x: cx - w / 2, y: cy - h / 2, scale: scale };
     }
-    function moveTo(node, kind) {
+    function moveTo(node, kind, point) {
+      if (drag) return Promise.resolve();
       if (!node || !node.isConnected || reduced()) return Promise.resolve();
       if (interaction) interaction.cancel();
       measure(performance.now());
       if (state === 'waiting') { x = Math.max(0, node.getBoundingClientRect().left - 100); y = window.innerHeight + 80; }
       flight = null; state = 'interacting';
-      const end = destination(node, kind), from = { x: x, y: y, angle: angle, scale: photoScale };
+      const end = destination(node, kind, point), from = { x: x, y: y, angle: angle, scale: photoScale };
       const duration = clamp(280 + Math.hypot(end.x - x, end.y - y) * .11, 320, 500);
       butterfly.classList.add('butterfly-arrived', 'butterfly-flying');
       butterfly.classList.remove('butterfly-away');
       return new Promise(function (resolve) {
         let timer;
-        const trip = { node: node, kind: kind, from: from, duration: duration, elapsed: 0, cancel: function () {
+        const trip = { node: node, kind: kind, end: end, from: from, duration: duration, elapsed: 0, cancel: function () {
           clearTimeout(timer); if (interaction === trip) interaction = null; resolve();
         }, finish: function () {
           clearTimeout(timer);
           if (interaction !== trip) { resolve(); return; }
-          const landed = destination(node, kind);
+          // Actions land at the captured viewport point, even if a menu closes
+          // or an anchor scrolls. Fields alone track their live screen position.
+          const landed = kind === 'action' ? trip.end : destination(node, kind);
           x = landed.x; y = landed.y; photoScale = landed.scale; angle = 0;
           interaction = null; state = kind === 'field' ? 'companion' : 'perched';
           render();
           if (kind === 'action') {
-            document.dispatchEvent(new CustomEvent('mt:butterfly-hit', { detail: { target: node } }));
+            document.dispatchEvent(new CustomEvent('mt:butterfly-hit', { detail: { target: node, point: {x:x+butterfly.offsetWidth/2,y:y+butterfly.offsetHeight/2} } }));
             if (activeField && activeField.isConnected && document.activeElement === activeField) moveTo(activeField, 'field');
-            else { measure(performance.now()); launch('return'); }
+            else { measure(performance.now()); launch('return-action'); }
           } else butterfly.classList.remove('butterfly-flying');
           resolve();
         } };
@@ -833,16 +847,17 @@
         schedule();
       });
     }
-    butterflyDive = function (node) { return moveTo(node, 'action'); };
+    butterflyDive = function (node, point) { return moveTo(node, 'action', point); };
     function formField(node) {
       return node && node.matches && node.matches('input:not([type="hidden"]):not([type="submit"]):not([type="checkbox"]):not([type="radio"]), textarea, select') && !node.closest('.honeypot') && node.closest('form.club-form, form.register-form, form.proof-form');
     }
     document.addEventListener('focusin', function (event) {
       if (!formField(event.target)) return;
       activeField = event.target;
-      if (!interaction || interaction.kind !== 'action') moveTo(activeField, 'field');
+      if (!drag && (!interaction || interaction.kind !== 'action')) moveTo(activeField, 'field');
     });
     function companionVisibility() {
+      if (drag) return;
       if (!activeField) {
         const focused = document.activeElement;
         if (formField(focused)) {
@@ -880,20 +895,81 @@
     }
     document.addEventListener('input', flutter);
     document.addEventListener('keydown', function (event) { if (event.key === 'Backspace' || event.key === 'Delete') flutter(event); });
+    // Only the butterfly's small visible grip receives pointer input. The
+    // viewport flight layer remains click-through over links and form fields.
+    const grip = butterfly.querySelector?.('.butterfly-grip');
+    function releaseDrag() {
+      if (!drag) return;
+      const previous = drag; drag = null;
+      if(previous.id!==null)suppressDragClick=true;
+      butterfly.classList.remove('butterfly-dragging');
+      if (previous.id !== null && grip?.hasPointerCapture(previous.id)) grip.releasePointerCapture(previous.id);
+      measure(performance.now()); lastFrame = 0;
+      if (activeField?.isConnected && document.activeElement === activeField && !desiredDark) moveTo(activeField, 'field');
+      else launch(desiredDark ? 'leave' : 'release');
+    }
+    function beginDrag(id, clientX, clientY) {
+      if (drag) return false;
+      if (interaction) interaction.cancel();
+      flight = null; vx = 0; vy = 0; lastFrame = 0;
+      drag = {id:id, x:clientX, y:clientY, offsetX:clientX-x-butterfly.offsetWidth/2, offsetY:clientY-y-butterfly.offsetHeight/2};
+      state = 'dragging'; butterfly.classList.remove('butterfly-away');
+      butterfly.classList.add('butterfly-arrived','butterfly-flying','butterfly-dragging');
+      render(); schedule(); return true;
+    }
+    if (grip) {
+      grip.addEventListener('pointerdown', function (event) {
+        if (!event.isPrimary || event.button !== 0 || drag) return;
+        event.preventDefault(); event.stopPropagation();
+        if (beginDrag(event.pointerId,event.clientX,event.clientY)) grip.setPointerCapture(event.pointerId);
+      });
+      grip.addEventListener('pointermove', function (event) {
+        if (!drag || drag.id !== event.pointerId) return;
+        event.preventDefault(); drag.x = event.clientX; drag.y = event.clientY; schedule();
+      });
+      function endPointer(event) { if (drag && drag.id === event.pointerId) releaseDrag(); }
+      ['pointerup','pointercancel','lostpointercapture'].forEach(name=>grip.addEventListener(name,endPointer));
+      grip.addEventListener('click', function (event) { event.preventDefault(); event.stopPropagation(); });
+      grip.addEventListener('dragstart', event=>event.preventDefault());
+      grip.addEventListener('keydown', function (event) {
+        const directions = {ArrowLeft:[-24,0],ArrowRight:[24,0],ArrowUp:[0,-24],ArrowDown:[0,24]};
+        if (event.key === 'Escape' || event.key === 'Home') { event.preventDefault(); releaseDrag(); return; }
+        if (!directions[event.key]) return;
+        event.preventDefault(); event.stopPropagation();
+        if (!drag) beginDrag(null,x+butterfly.offsetWidth/2,y+butterfly.offsetHeight/2);
+        if (drag.id !== null) return;
+        drag.x += directions[event.key][0]; drag.y += directions[event.key][1]; schedule();
+      });
+      grip.addEventListener('blur', ()=>{if(drag?.id===null)releaseDrag();});
+      window.addEventListener('blur', releaseDrag);
+    }
+    // Consume only the compatibility click belonging to the ended drag. A new
+    // real press clears this immediately, so the next button tap is never lost.
+    window.addEventListener('pointerdown',()=>{suppressDragClick=false;},{capture:true,passive:true});
     const replay = new WeakSet();
     let actionTicket = 0;
     document.addEventListener('click', function (event) {
-      const node = event.target.closest && event.target.closest('a[href], button');
-      if (!node || replay.has(node) || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || reduced() || node.disabled || node.closest('[data-no-butterfly]')) return;
+      if(suppressDragClick&&event.detail>0){suppressDragClick=false;event.preventDefault();event.stopImmediatePropagation();return;}
+      if (document.documentElement.classList?.contains('intro-cover') || document.body.classList.contains('is-black-chapter') || document.body.classList.contains('story-immersive') || drag || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || reduced() || event.target.closest?.('.nav-butterfly,[data-no-butterfly],.mind-story')) return;
+      const node = event.target.closest && event.target.closest('a[href], button, summary');
+      const point = event.detail > 0 ? {x:event.clientX,y:event.clientY} : null;
+      if (!node) {
+        // Plain page taps are visual feedback only; never swallow selection,
+        // field focus, file pickers, media controls or the browser's action.
+        if (point && !event.target.closest?.('input,textarea,select,label,video,iframe') && !window.getSelection?.()?.toString()) moveTo(event.target,'action',point);
+        return;
+      }
+      if (replay.has(node) || node.disabled) return;
+      if (node.tagName === 'SUMMARY') { butterflyDive(node,point); return; }
       if (node.tagName === 'A') {
         const url = new URL(node.href, location.href);
-        // Downloads, external links, modifier clicks and named browsing contexts retain native semantics.
+        // Native navigation/downloads/modifiers must never wait for decoration.
         if (node.hasAttribute('download') || node.target && node.target !== '_self' || url.origin !== location.origin || !/^https?:$/.test(url.protocol)) return;
-        butterflyDive(node); return;
+        butterflyDive(node,point); return;
       } else if (node.type === 'submit' || node.hasAttribute('data-print')) return;
       event.preventDefault(); event.stopImmediatePropagation();
       const ticket = ++actionTicket;
-      butterflyDive(node).then(function () {
+      butterflyDive(node,point).then(function () {
         if (ticket !== actionTicket || !node.isConnected) return;
         replay.add(node);
         try { node.click(); } finally { replay.delete(node); }
@@ -905,6 +981,19 @@
       const dt = lastFrame ? clamp(now - lastFrame, 0, 160) : 16;
       lastFrame = now;
       if (needsMeasure || !target) measure(now);
+      if (drag) {
+        if (desiredDark) { releaseDrag(); return; }
+        const oldX=x, oldY=y, follow=reduced()?1:1-Math.exp(-dt/28);
+        photoScale += (1-photoScale)*follow;
+        const w=butterfly.offsetWidth,h=butterfly.offsetHeight;
+        const endX=clamp(drag.x-drag.offsetX,w/2,window.innerWidth-w/2)-w/2;
+        const endY=clamp(drag.y-drag.offsetY,h/2,window.innerHeight-h/2)-h/2;
+        x+=(endX-x)*follow; y+=(endY-y)*follow;
+        vx=(x-oldX)/Math.max(1,dt); vy=(y-oldY)/Math.max(1,dt);
+        angle+=(clamp(vx*12,-16,16)-angle)*follow; render();
+        if(Math.abs(x-endX)+Math.abs(y-endY)+Math.abs(1-photoScale)>.1)schedule();
+        return;
+      }
       if (reduced()) {
         flight = null; committedDark = desiredDark; state = desiredDark ? 'away' : 'perched';
         x = target.x; y = target.y; angle = 0;
@@ -912,7 +1001,7 @@
         butterfly.classList.remove('butterfly-flying'); render(); lastFrame = 0; return;
       }
       if (interaction) {
-        const trip = interaction, end = destination(trip.node, trip.kind);
+        const trip = interaction, end = trip.kind === 'action' ? trip.end : destination(trip.node, trip.kind);
         trip.elapsed += dt;
         const t = clamp(trip.elapsed / trip.duration, 0, 1), u = clamp((t - .12) / .88, 0, 1);
         const ease = u * u * (3 - 2 * u), arc = Math.sin(Math.PI * u);
@@ -1003,7 +1092,7 @@
       const observer = new ResizeObserver(function () { needsMeasure = true; schedule(); });
       observer.observe(document.body); observer.observe(header);
     }
-    document.addEventListener('visibilitychange', function () { lastFrame = 0; schedule(); });
+    document.addEventListener('visibilitychange', function () { if(document.hidden)releaseDrag();lastFrame = 0; schedule(); });
   }
 
   /* Two fast-start encodes; the untouched master is retained for the club.
@@ -1146,6 +1235,7 @@
     setupForms();
     setupAnchorNavigation();
     setupScrollUi();
+    setupNavigation();
     setupDriftField();
     setupLiveUpdates();
   }

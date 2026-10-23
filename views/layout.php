@@ -128,12 +128,13 @@ $nav = [
     </video>
   </div>
 
-  <?php /* Viewport flight layer: it never changes brand/menu layout or intercepts a click. */ ?>
-  <span class="nav-butterfly" aria-hidden="true">
+  <?php /* Viewport flight layer; only the small butterfly grip receives drag input. */ ?>
+  <span class="nav-butterfly">
     <span class="butterfly-flight">
-      <img class="butterfly-wing wing-left" src="/assets/img/butterfly-flight.png" alt="" width="626" height="428" decoding="async">
-      <img class="butterfly-wing wing-right" src="/assets/img/butterfly-flight.png" alt="" width="626" height="428" decoding="async">
-      <img class="butterfly-body" src="/assets/img/butterfly-flight.png" alt="" width="626" height="428" decoding="async">
+      <img class="butterfly-wing wing-left" src="/assets/img/butterfly-flight.png" alt="" width="626" height="428" decoding="async" draggable="false">
+      <img class="butterfly-wing wing-right" src="/assets/img/butterfly-flight.png" alt="" width="626" height="428" decoding="async" draggable="false">
+      <button type="button" class="butterfly-grip" aria-label="Move butterfly: drag, or use arrow keys. Escape returns it." title="Drag me; release to return"></button>
+      <img class="butterfly-body" src="/assets/img/butterfly-flight.png" alt="" width="626" height="428" decoding="async" draggable="false">
     </span>
   </span>
 
@@ -159,7 +160,7 @@ $nav = [
           <span class="brand-name" id="brandName"><?= e($clubName) ?></span>
         </a>
         <details class="mobile-nav-toggle">
-          <summary class="menu-button" id="menuButton" aria-label="Main navigation" aria-controls="navLinks" onkeydown="if(event.key==='Escape')this.parentElement.open=false">☰</summary>
+          <summary class="menu-button" id="menuButton" aria-label="Main navigation" aria-controls="navLinks" onkeydown="if(event.key==='Escape')this.parentElement.open=false"><span class="menu-icon" aria-hidden="true"><i></i><i></i><i></i></span></summary>
         </details>
         <nav class="nav-links" id="navLinks" aria-label="Main">
           <?php foreach ($nav as [$href, $label, $class]): ?>

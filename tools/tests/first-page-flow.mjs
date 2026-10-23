@@ -16,6 +16,7 @@ try{
   // Deliberately hang optional warmup: the splash MUST NOT await its response.
   await p.route('**/*scene-asset=engine',()=>{});
   await p.goto(base+'/',{waitUntil:'domcontentloaded'});
+  await p.mouse.click(20,210);assert.ok(await p.locator('.nav-butterfly').evaluate(e=>!e.classList.contains('butterfly-arrived')),'tapping the splash never starts a hidden click flight or cancels the authored entrance');
   await p.waitForTimeout(1100);
   const first=await p.locator('.splash').evaluate(e=>({stars:getComputedStyle(e,'::before').transform,hidden:e.hidden,time:performance.now()}));
   await p.waitForTimeout(450);

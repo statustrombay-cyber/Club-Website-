@@ -167,7 +167,7 @@ body.is-scrolled .nav:before { background: rgba(255,250,241,.62); box-shadow: 0 
 .nav-action:hover, .solid-button:hover { background: var(--plum-deep); box-shadow: 0 12px 22px rgba(78,49,85,.26); }
 .outline-button:hover { border-color: var(--terracotta-ink); color: var(--terracotta-ink); }
 .menu-button { display: none; border: 0; background: transparent; color: var(--plum); font-size: 1.4rem; }
-.mobile-nav-toggle { display: contents; }
+.mobile-nav-toggle { display:none; }
 .mobile-nav-toggle > summary { list-style: none; cursor: pointer; }
 .mobile-nav-toggle > summary::-webkit-details-marker { display: none; }
 
@@ -1363,7 +1363,7 @@ html.photo-frame-open { overflow: hidden; }
 
 /* printing a pass should give exactly the pass */
 @media print {
-  .bubble-field, .drift-field, .announcement, .event-banner, .nav-wrap, .footer, .gold-thread,
+  .bubble-field, .drift-field, .announcement, .event-banner, .nav-wrap, .nav-butterfly, .footer, .gold-thread,
   .read-progress, .to-top, .values-marquee,
   .pass-actions, .pass-note, .club-panel, .btn-row { display: none !important; }
   .pass-shell { padding: 0; background: #fff; }
@@ -2039,3 +2039,34 @@ body.is-black-chapter .bubble-field, body.is-black-chapter .drift-field { visibi
 .splash { animation:splashAway .45s ease 4.8s forwards; }
 .splash-letter-ring { animation-duration:1.15s; }
 @media (prefers-reduced-motion:reduce) { .splash::before { animation:none; will-change:auto; } }
+
+/* A real details wrapper, not display:contents: the native generated details
+   content box used to become a third flex item and push the summary to centre. */
+@media (max-width:1100px) {
+  .nav .brand { min-width:0; }
+  .mobile-nav-toggle { display:block; flex:0 0 44px; margin-inline-start:auto; }
+  .mobile-nav-toggle > .menu-button { display:grid; place-items:center; width:44px; height:44px; padding:0; }
+  .nav-links { top:100%; left:0; right:0; max-height:calc(100dvh - 100px); overscroll-behavior:contain; }
+  .mobile-nav-toggle[open] + .nav-links { display:flex; }
+}
+.menu-icon { display:grid; gap:5px; width:24px; }
+.menu-icon i { display:block; width:24px; height:2px; background:currentColor; border-radius:2px; transition:transform .18s ease,opacity .18s ease; }
+.mobile-nav-toggle[open] .menu-icon i:nth-child(1) { transform:translateY(7px) rotate(45deg); }
+.mobile-nav-toggle[open] .menu-icon i:nth-child(2) { opacity:0; }
+.mobile-nav-toggle[open] .menu-icon i:nth-child(3) { transform:translateY(-7px) rotate(-45deg); }
+/* The full flight plane stays click-through. The grip follows the actual scaled
+   photo so it cannot become a full-size invisible box over a form/menu. */
+.nav-butterfly .butterfly-flight img { pointer-events:none; user-select:none; -webkit-user-drag:none; }
+.butterfly-grip { position:absolute; inset:0; z-index:2; display:block; border:0; border-radius:50%; padding:0; background:transparent; cursor:grab; pointer-events:auto; touch-action:none; user-select:none; -webkit-user-select:none; }
+.butterfly-grip:focus-visible { outline:2px solid #7655c4; outline-offset:3px; }
+.nav-butterfly:not(.butterfly-arrived) .butterfly-grip,
+.nav-butterfly[data-butterfly-state="interacting"] .butterfly-grip,
+.nav-butterfly[data-butterfly-state="returning-action"] .butterfly-grip { pointer-events:none; }
+.nav-butterfly:not(.butterfly-arrived) .butterfly-grip { visibility:hidden; }
+.nav-butterfly.butterfly-dragging .butterfly-grip { cursor:grabbing; }
+.nav-butterfly.butterfly-dragging .wing-left { animation:photoWingLeft .22s ease-in-out infinite; }
+.nav-butterfly.butterfly-dragging .wing-right { animation:photoWingBeat .22s ease-in-out infinite; }
+@media (prefers-reduced-motion:reduce) {
+ .menu-icon i { transition:none; }
+ .nav-butterfly.butterfly-dragging .wing-left, .nav-butterfly.butterfly-dragging .wing-right { animation:none; }
+}
