@@ -88,6 +88,7 @@ uniform float uLensDistortion;
 uniform float uLensDistortionMax;
 uniform float uDark;
 uniform float uBlur;
+uniform float uPlain;
 varying vec2 vUv;
 
 float hash12(vec2 p) {
@@ -130,6 +131,7 @@ void main() {
   } else {
     color /= totalSpectrum;
   }
+  if (uPlain > 0.5) color = texture2D(tMap, uv).rgb;
 
   // the motion the reference leaves on the cuts
   if (uBlur > 0.001) {
@@ -159,9 +161,9 @@ void main() {
 
 export function makePost(renderer, opts = {}) {
   const cfg = Object.assign({
-    threshold: 0.348758,
-    knee: 0.47636217,
-    bloomIntensity: 0.6,
+    threshold: 0.72,
+    knee: 0.42,
+    bloomIntensity: 0.26,
     chromaShiftRadius: 3.0,
     chromaShiftStrength: 0.025,
     vignetteRadius: 2.0,
@@ -221,7 +223,8 @@ export function makePost(renderer, opts = {}) {
       uLensDistortion: { value: 1 },
       uLensDistortionMax: { value: cfg.lensDistortionMax },
       uDark: { value: 0 },
-      uBlur: { value: 0 }
+      uBlur: { value: 0 },
+      uPlain: { value: 0 }
     },
     vertexShader: VERT, fragmentShader: FILM, depthTest: false, depthWrite: false
   });
@@ -282,6 +285,8 @@ export function makePost(renderer, opts = {}) {
     render: renderFinal,
     setSize,
     uniforms: filmMat.uniforms,
-    config: cfg
+    config: cfg,
+    sceneRT,
+    bloomRT
   };
 }

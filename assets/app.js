@@ -16,7 +16,7 @@ const CHAPTER = PARAMS.has('chapter') ? parseInt(PARAMS.get('chapter'), 10) : nu
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const AT = PARAMS.has('t') ? parseFloat(PARAMS.get('t')) : null;
 const num = (k, d) => (PARAMS.has(k) ? parseFloat(PARAMS.get(k)) : d);
-const EXPOSURE = num('exp', 1.0);
+const EXPOSURE = num('exp', 0.85);
 const LMI = num('lmi', 2.2);
 const DECAL = num('decal', 0.3);
 const GLOW = num('glow', 1.0);
@@ -24,8 +24,10 @@ const FOV = num('fov', 0);          // vertical fov override
 const HFOV = num('hfov', 0);        // horizontal fov override
 const TINT = (PARAMS.get('tint') || '1,0.97,0.92').split(',').map(Number);
 const LMFLIP = num('lmflip', 0);
-const ENVI = num('env', 0.55);      // how much of the room's own sky of light
+const ENVI = num('env', 0.35);      // how much of the room's own sky of light
 const BKE = num('bke', 1.0);       // how hard the bake masks the colour
+const PROBE = num('probe', 0.7);    // the strength of the room's own light
+const NOPOST = num('nopost', 0) > 0.5; // draw the room straight to the canvas
 
 /* ── the chapters ──────────────────────────────────────────────────────────
    Cartier's own scene list, in its own order. The opening room is ours:
@@ -195,6 +197,9 @@ function patchTone(mat) {
           float mtL = texture2D( lightMap, vLightMapUv ).r;
           outgoingLight *= vec3( ( 1.0 - uBake ) + uBake * mtL );
         #endif
+        /* a negative light would turn into a NaN under the root, and one
+           NaN is enough to wash the whole picture out */
+        outgoingLight = max(outgoingLight, vec3(0.0));
         outgoingLight = mtAces(outgoingLight * mtExposure);
         outgoingLight = pow(outgoingLight, vec3(1.0/2.2));
         #include <opaque_fragment>`);
@@ -647,7 +652,7 @@ function dressGoldDust() {
       desertProps.dust.push(o);
       for (const m of mats) {
         m.transparent = true;
-        m.opacity = 0.14;
+        m.opacity = 0.09;
         m.depthWrite = false;
         m.blending = THREE.AdditiveBlending;
         m.color = new THREE.Color(0xffb469);
@@ -775,7 +780,7 @@ async function build() {
      watch: the stands they sit on, their reflections, the photographs of
      the collection, and the room's own camera that watched them. The people,
      the tables and the rooms stay. */
-  const NO_WATCH = /^(WATCH|watch_bg|Panthere|Camera_fixed_watches|Emptypodcast_CTA|SC06_Image)/i;
+  const NO_WATCH = /(WATCH|watch_bg|Panthere|Camera_fixed_watches|Emptypodcast_CTA|SC06_Image)/i;
   const WATCH_STAND = /^(MIRROR_)?assets/i;
   for (const root of [room, chars]) {
     if (!root) continue;
@@ -882,7 +887,7 @@ async function build() {
       const probe = new THREE.LightProbe(sh);
       /* the reference lights its rooms with the probe's irradiance itself:
          three.js divides the diffuse by pi, so we put the pi back */
-      probe.intensity = Math.PI;
+      probe.intensity = PROBE;
       probe.visible = false;
       scene.add(probe);
       probes.push(probe);
@@ -917,7 +922,7 @@ async function build() {
   progress(1);
   buildNav();
   applyChapter(CHAPTER === null ? 0 : CHAPTER, true);
-  window.__MT__ = { THREE, scene, camera, room, chars, post, roomMixer, roomAnim,
+  window.__MT__ = { THREE, scene, camera, room, chars, post, roomMixer, roomAnim, renderer,
     __value: (o, p, f) => value(o, p, f),
     get clock() { return clock; }, set clock(v) { clock = v; } };
   window.__MT_READY__ = true;
@@ -1237,7 +1242,13 @@ function frame(now) {
     activeProbe = p;
   }
 
-  post.render(scene, camera, dt);
+  if (NOPOST) {
+    renderer.setRenderTarget(null);
+    renderer.clear();
+    renderer.render(scene, camera);
+  } else {
+    post.render(scene, camera, dt);
+  }
 }
 
 /* ══ input ══════════════════════════════════════════════════════════════ */
