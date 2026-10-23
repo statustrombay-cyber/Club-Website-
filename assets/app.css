@@ -8,41 +8,11 @@
    ========================================================================== */
 
 /* ── the reference's display faces ───────────────────────────────────────
-   FancyCutPro and BrilliantCutPro are Cartier's own typefaces. They are
-   kept here so the page matches the reference pixel for pixel; the OFL
-   fallbacks (Bodoni Moda, Inter) take over if the woff2 files are absent. */
-@font-face {
-  font-display: swap;
-  font-family: FancyCutProWW2026;
-  font-style: normal;
-  font-weight: 300;
-  src: url("/assets/fonts/fancyCutPro-Light.woff2") format("woff2");
-}
-@font-face {
-  font-display: swap;
-  font-family: BrilliantCutProWW2026;
-  font-style: normal;
-  font-weight: 500;
-  src: url("/assets/fonts/brilliantCutPro-Light.woff2") format("woff2");
-}
-@font-face {
-  font-display: swap;
-  font-family: "Bodoni Moda";
-  font-style: normal;
-  font-weight: 400;
-  src: url("/assets/fonts/bodoni-moda-latin.woff2") format("woff2");
-}
-@font-face {
-  font-display: swap;
-  font-family: Inter;
-  font-style: normal;
-  font-weight: 400;
-  src: url("/assets/fonts/inter-latin-regular.woff2") format("woff2");
-}
-
+   The house typefaces of the original are Cartier's own, so we do not
+   carry them: the machine's own serif and grotesque take their place. */
 :root {
-  --display: FancyCutProWW2026, "Bodoni Moda", "Times New Roman", serif;
-  --ui: BrilliantCutProWW2026, Inter, "Helvetica Neue", Arial, sans-serif;
+  --display: "Bodoni Moda", Didot, "Times New Roman", Georgia, serif;
+  --ui: Inter, "Helvetica Neue", "Segoe UI", Arial, sans-serif;
   --ink: #fff;
   --forced-dark: 0;
 }
@@ -250,17 +220,18 @@ body { height: 760vh; overflow-x: hidden; }
   color: #fff;
   flex: 0 1 auto;
   font-family: var(--display);
-  font-size: 6vh;
+  font-size: clamp(20px, 5.4vh, 56px);
   font-weight: 300;
   letter-spacing: 0;
-  line-height: 1;
+  line-height: 1.05;
+  overflow-wrap: break-word;
   text-align: center;
   text-transform: uppercase;
-  width: min(100%, 9em);
+  width: min(100%, 12em);
 }
 .sceneTitle__inner p { margin: 0; }
-@media (min-height: 1200px) { .sceneTitle__inner { font-size: 72px; } }
-@media (max-height: 660px) { .sceneTitle__inner { font-size: 39.6px; } }
+@media (min-height: 1200px) { .sceneTitle__inner { font-size: clamp(40px, 5.4vh, 72px); } }
+@media (max-height: 660px) { .sceneTitle__inner { font-size: clamp(17px, 4.4vh, 34px); } }
 .sceneTitle__layer.intro .sceneTitle__inner {
   font-family: var(--display);
   font-size: 8.8888888889vw;
@@ -296,16 +267,16 @@ body { height: 760vh; overflow-x: hidden; }
 .homePage__bottomWrapper--explore { z-index: 11; }
 .homePage__baseline {
   font-family: var(--display);
-  font-size: 1.6666666667vw;
+  font-size: clamp(9px, 1.6666666667vw, 24px);
   font-weight: 300;
-  letter-spacing: 0;
-  line-height: 1.15;
-  max-width: 10em;
+  letter-spacing: .02em;
+  line-height: 1.35;
+  max-width: 24em;
   text-align: center;
   text-transform: uppercase;
 }
 @media (min-width: 2160px) { .homePage__baseline { font-size: 36px; } }
-@media (max-width: 1440px) { .homePage__baseline { font-size: 24px; } }
+@media (max-width: 1440px) { .homePage__baseline { font-size: clamp(9px, 2.2vw, 16px); } }
 .homePage__exploreButton { margin-bottom: 9px; pointer-events: auto; }
 .homePage__exploreButton--off { display: none; }
 .scrollButton--off { display: none; }

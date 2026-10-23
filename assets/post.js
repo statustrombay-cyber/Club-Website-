@@ -1,39 +1,37 @@
-/* ==========================================================================
-   Mindful Tattva — the film look, taken from the reference's own pipeline
-   --------------------------------------------------------------------------
-   Rebuilt from the site's bundled shaders:
+/* ════════════════════════════════════════════════════════════════════════
+   The film.  Our own pass: a bloom that only touches what is really
+   bright, the warm curve of the room, the grain, the vignette and the
+   small colour fringe the lens leaves at the edge of the picture.
 
-     bloomPrepass   luma filter, threshold 0.348758, knee 0.47636217
-     bloom          separable blur, composited with a screen blend at 0.6
-     composite      spectrum-sampled chroma shift (0.025, radius 3),
-                    lens distortion 0.04, vignette (radius 2, bias 0.5),
-                    grain 0.025, ordered dither
-
-   Two more uniforms come straight off the timeline: uDark is the loop's
-   forced fade to black, uBlur is the motion blur the reference leaves on
-   the cuts.
-
-   Everything runs in display space, like the original: no HDR exposure heroics.
-   ========================================================================== */
+   Everything is drawn here — there is not one image file in this file.
+   ════════════════════════════════════════════════════════════════════════ */
 
 import * as THREE from './vendor/three.module.js';
 
 const VERT = /* glsl */`
 varying vec2 vUv;
-void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }
-`;
+void main() {
+  vUv = uv;
+  gl_Position = vec4(position.xy, 0.0, 1.0);
+}`;
+
+/* the room's own curve: the light is filmic, then it is put back to gamma */
+const ACES = /* glsl */`
+vec3 mtAces(vec3 x) {
+  const float a = 2.51, b = 0.03, c = 2.43, d = 0.59, e = 0.14;
+  return clamp((x * (a * x + b)) / (x * (c * x + d) + e), 0.0, 1.0);
+}`;
 
 const PREPASS = /* glsl */`
 uniform sampler2D tMap;
 uniform vec2 uLumafilterParams;
 varying vec2 vUv;
-float luma(vec3 c) { return dot(c, vec3(0.299, 0.587, 0.114)); }
 void main() {
   vec4 col = texture2D(tMap, vUv);
-  float a = smoothstep(uLumafilterParams.x, uLumafilterParams.x + uLumafilterParams.y, luma(col.xyz));
-  gl_FragColor = mix(vec4(0.0, 0.0, 0.0, 1.0), col, a);
-}
-`;
+  float luma = dot(col.rgb, vec3(0.2126, 0.7152, 0.0722));
+  float k = smoothstep(uLumafilterParams.x, uLumafilterParams.x + uLumafilterParams.y, luma);
+  gl_FragColor = vec4(col.rgb * k, 1.0);
+}`;
 
 const BLUR = /* glsl */`
 uniform sampler2D tMap;
@@ -47,128 +45,84 @@ void main() {
   s += texture2D(tMap, vUv + o * 3.2308) * 0.070270;
   s += texture2D(tMap, vUv - o * 3.2308) * 0.070270;
   gl_FragColor = s;
-}
-`;
+}`;
 
-const BLOOM = /* glsl */`
-uniform sampler2D tMap;
-uniform sampler2D tBloom;
-uniform float uTime;
-uniform float uBloomIntensity;
-varying vec2 vUv;
-vec3 screenBlend(vec3 a, vec3 b) { return 1.0 - ((1.0 - a) * (1.0 - b)); }
-vec4 hash42(vec2 p) {
-  vec4 p4 = fract(vec4(p.xyxy) * vec4(.1031, .1030, .0973, .1099));
-  p4 += dot(p4, p4.wzxy + 33.33);
-  return fract((p4.xxyz + p4.yzzw) * p4.zywx);
-}
-void main() {
-  vec4 col = texture2D(tMap, vUv);
-  vec4 bloom = texture2D(tBloom, vUv);
-  col.rgb = screenBlend(col.rgb, bloom.rgb * uBloomIntensity);
-  vec4 h1 = hash42(gl_FragCoord.xy + fract(uTime) * 1300.0);
-  vec4 h2 = hash42(gl_FragCoord.yx + fract(uTime + 0.3123) * 1300.0);
-  col.rgb += (h1.rgb + (h2.rgb - 1.0)) / 255.0;
-  gl_FragColor = col;
-}
-`;
-
-/* their first composite pass, verbatim in behaviour */
 const FILM = /* glsl */`
 uniform sampler2D tMap;
-uniform sampler2D tLight;
-uniform sampler2D tSpectrum;
-uniform sampler2D tBlueNoise;
+uniform sampler2D tBloom;
+uniform sampler2D tNoise;
 uniform float uTime;
-uniform float uChromaShiftStrength;
-uniform float uChromaShiftRadius;
-uniform float uVignetteRadius;
-uniform float uVignetteBias;
-uniform float uLensDistortion;
-uniform float uLensDistortionMax;
-uniform float uDark;
-uniform float uBlur;
-uniform float uPlain;
+uniform float uBloom;
+uniform float uExposure;
+uniform float uGrain;
+uniform float uVignette;
+uniform float uChroma;
 varying vec2 vUv;
+${ACES}
 
 float hash12(vec2 p) {
-  vec3 p3 = fract(vec3(p.xyx) * .1031);
+  vec3 p3 = fract(vec3(p.xyx) * 0.1031);
   p3 += dot(p3, p3.yzx + 33.33);
   return fract((p3.x + p3.y) * p3.z);
 }
-vec3 dither(vec3 color, float t) {
-  vec2 p = floor(gl_FragCoord.xy);
-  float n = hash12(p + fract(t));
-  return color + (n - 0.5) / 255.0;
-}
 
 void main() {
-  vec3 color = vec3(0.0);
-  vec2 dir = 2.0 * vUv - 1.0;
-  float dist = dot(dir, dir);
-  vec2 uv = vUv;
-  uv += -dir * smoothstep(0.0, 1.0, dist * 0.5) * uLensDistortionMax * uLensDistortion;
+  vec2 dir = vUv - 0.5;
+  float r2 = dot(dir, dir);
 
-  vec3 blueNoise = texture2D(tBlueNoise, (gl_FragCoord.xy + fract(uTime * 10.0) * 10000.0) / 256.0).xyz;
-  float lightMask = texture2D(tLight, vUv).y;
-  float rgbShiftAmount = mix(uChromaShiftStrength * 0.5, uChromaShiftStrength, lightMask * 5.0);
-  rgbShiftAmount *= 1.0 - smoothstep(uChromaShiftRadius, 0.0, dist);
+  // the small colour the lens leaves at the edge of the picture
+  float amount = uChroma * smoothstep(0.02, 0.25, r2);
+  vec3 base;
+  base.r = texture2D(tMap, vUv + dir * amount).r;
+  base.g = texture2D(tMap, vUv).g;
+  base.b = texture2D(tMap, vUv - dir * amount).b;
 
-  vec3 totalSpectrum = vec3(0.0);
-  float stp = 0.0;
-  for (float i = 0.0; i < 5.0; i++) {
-    vec3 spectrum = texture2D(tSpectrum, vec2(stp, 0.5)).xyz;
-    float offsetScale = mix(-rgbShiftAmount, rgbShiftAmount, stp + blueNoise.z * 0.1);
-    vec2 offset = blueNoise.xy * offsetScale;
-    color += texture2D(tMap, uv + offset).rgb * spectrum;
-    totalSpectrum += spectrum;
-    stp += 1.0 / 5.0;
+  vec3 bloom = texture2D(tBloom, vUv).rgb;
+  vec3 col = base + bloom * uBloom;
+
+  col = mtAces(col * uExposure);
+  col = pow(max(col, vec3(0.0)), vec3(1.0 / 2.2));
+
+  // the grain of the film
+  vec2 noise = texture2D(tNoise, (gl_FragCoord.xy + vec2(fract(uTime) * 71.0)) / 256.0).rg;
+  col += (noise.r - 0.5) * uGrain;
+
+  // the vignette
+  float vig = smoothstep(0.95, 0.18, r2 * 2.0);
+  col *= mix(1.0, vig, 0.75);
+
+  gl_FragColor = vec4(col, 1.0);
+}`;
+
+/* our own noise, drawn once */
+function noiseTexture() {
+  const c = document.createElement('canvas');
+  c.width = 256; c.height = 256;
+  const g = c.getContext('2d');
+  const img = g.createImageData(256, 256);
+  for (let i = 0; i < img.data.length; i += 4) {
+    img.data[i] = Math.random() * 255;
+    img.data[i + 1] = Math.random() * 255;
+    img.data[i + 2] = Math.random() * 255;
+    img.data[i + 3] = 255;
   }
-  // the spectrum of the reference is a warm ramp; when it is missing the
-  // picture must still come through untouched
-  if (dot(totalSpectrum, vec3(1.0)) < 0.0005) {
-    color = texture2D(tMap, uv).rgb;
-  } else {
-    color /= totalSpectrum;
-  }
-  if (uPlain > 0.5) color = texture2D(tMap, uv).rgb;
-
-  // the motion the reference leaves on the cuts
-  if (uBlur > 0.001) {
-    vec2 step = vec2(uBlur * 0.012, uBlur * 0.004);
-    vec3 smeared = color;
-    smeared += texture2D(tMap, uv + step).rgb;
-    smeared += texture2D(tMap, uv - step).rgb;
-    smeared += texture2D(tMap, uv + step * 2.0).rgb;
-    smeared += texture2D(tMap, uv - step * 2.0).rgb;
-    color = mix(color, smeared / 5.0, clamp(uBlur, 0.0, 1.0));
-  }
-
-  float grain = hash12(gl_FragCoord.xy + fract(uTime) * 100.0);
-  color += (grain - 0.5) * 0.025;
-
-  float vignette = smoothstep(uVignetteRadius, 0.0, dist);
-  vignette = mix(vignette, 1.0, uVignetteBias);
-  color = mix(vec3(0.0), color, vignette);
-  color = dither(color, uTime);
-
-  // the loop's fade to black
-  color *= (1.0 - clamp(uDark, 0.0, 1.0));
-
-  gl_FragColor = vec4(color, 1.0);
+  g.putImageData(img, 0, 0);
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.minFilter = t.magFilter = THREE.NearestFilter;
+  t.colorSpace = THREE.NoColorSpace;
+  return t;
 }
-`;
 
 export function makePost(renderer, opts = {}) {
   const cfg = Object.assign({
-    threshold: 0.72,
-    knee: 0.42,
-    bloomIntensity: 0.26,
-    chromaShiftRadius: 3.0,
-    chromaShiftStrength: 0.025,
-    vignetteRadius: 2.0,
-    vignetteBias: 0.5,
-    lensDistortionMax: 0.04
+    threshold: 0.85,
+    knee: 0.35,
+    bloomIntensity: 0.55,
+    exposure: 1.0,
+    grain: 0.035,
+    vignette: 1.0,
+    chroma: 0.0035
   }, opts);
 
   const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2));
@@ -176,62 +130,42 @@ export function makePost(renderer, opts = {}) {
   quadScene.add(quad);
   const quadCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
-  const rtOpts = { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, depthBuffer: false, stencilBuffer: false };
+  const rtOpts = {
+    minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter,
+    depthBuffer: false, stencilBuffer: false
+  };
   const sceneRT = new THREE.WebGLRenderTarget(2, 2, Object.assign({ depthBuffer: true }, rtOpts));
   const prepassRT = new THREE.WebGLRenderTarget(2, 2, rtOpts);
   const blurA = new THREE.WebGLRenderTarget(2, 2, rtOpts);
   const blurB = new THREE.WebGLRenderTarget(2, 2, rtOpts);
   const bloomRT = new THREE.WebGLRenderTarget(2, 2, rtOpts);
-
-  const tex = (path) => {
-    const t = new THREE.TextureLoader().load(path);
-    t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping;
-    t.minFilter = t.magFilter = THREE.LinearFilter;
-    t.colorSpace = THREE.NoColorSpace;
-    return t;
-  };
-  const spectrumTex = tex('/webgl/global/misc/spectrum.png');
-  const blueNoiseTex = tex('/webgl/global/noises/bluenoise256.png');
-  blueNoiseTex.wrapS = blueNoiseTex.wrapT = THREE.RepeatWrapping;
+  sceneRT.texture.colorSpace = THREE.LinearSRGBColorSpace;
 
   const prepassMat = new THREE.ShaderMaterial({
-    uniforms: { tMap: { value: sceneRT.texture }, uLumafilterParams: { value: new THREE.Vector2(cfg.threshold, cfg.knee) } },
+    uniforms: {
+      tMap: { value: sceneRT.texture },
+      uLumafilterParams: { value: new THREE.Vector2(cfg.threshold, cfg.knee) }
+    },
     vertexShader: VERT, fragmentShader: PREPASS, depthTest: false, depthWrite: false
   });
   const blurMat = new THREE.ShaderMaterial({
     uniforms: { tMap: { value: null }, uDir: { value: new THREE.Vector2() } },
     vertexShader: VERT, fragmentShader: BLUR, depthTest: false, depthWrite: false
   });
-  const bloomMat = new THREE.ShaderMaterial({
-    uniforms: {
-      tMap: { value: sceneRT.texture }, tBloom: { value: bloomRT.texture },
-      uTime: { value: 0 }, uBloomIntensity: { value: cfg.bloomIntensity }
-    },
-    vertexShader: VERT, fragmentShader: BLOOM, depthTest: false, depthWrite: false
-  });
   const filmMat = new THREE.ShaderMaterial({
     uniforms: {
-      tMap: { value: bloomRT.texture },
-      tLight: { value: null },
-      tSpectrum: { value: spectrumTex },
-      tBlueNoise: { value: blueNoiseTex },
+      tMap: { value: sceneRT.texture },
+      tBloom: { value: bloomRT.texture },
+      tNoise: { value: noiseTexture() },
       uTime: { value: 0 },
-      uChromaShiftStrength: { value: cfg.chromaShiftStrength },
-      uChromaShiftRadius: { value: cfg.chromaShiftRadius },
-      uVignetteRadius: { value: cfg.vignetteRadius },
-      uVignetteBias: { value: cfg.vignetteBias },
-      uLensDistortion: { value: 1 },
-      uLensDistortionMax: { value: cfg.lensDistortionMax },
-      uDark: { value: 0 },
-      uBlur: { value: 0 },
-      uPlain: { value: 0 }
+      uBloom: { value: cfg.bloomIntensity },
+      uExposure: { value: cfg.exposure },
+      uGrain: { value: cfg.grain },
+      uVignette: { value: cfg.vignette },
+      uChroma: { value: cfg.chroma }
     },
     vertexShader: VERT, fragmentShader: FILM, depthTest: false, depthWrite: false
   });
-
-  // a black "light" buffer: the reference feeds its light pass in here
-  const darkRT = new THREE.WebGLRenderTarget(2, 2, rtOpts);
-  filmMat.uniforms.tLight.value = darkRT.texture;
 
   function setSize(w, h) {
     const pr = renderer.getPixelRatio();
@@ -242,7 +176,6 @@ export function makePost(renderer, opts = {}) {
     blurA.setSize(hw, hh);
     blurB.setSize(hw, hh);
     bloomRT.setSize(W, H);
-    darkRT.setSize(4, 4);
   }
 
   const pass = (mat, target) => {
@@ -251,10 +184,8 @@ export function makePost(renderer, opts = {}) {
     renderer.render(quadScene, quadCam);
   };
 
-  function renderFinal(scene, camera, dt) {
-    const time = (filmMat.uniforms.uTime.value + (dt || 0)) % 1000;
-    filmMat.uniforms.uTime.value = time;
-    bloomMat.uniforms.uTime.value = time;
+  function render(scene, camera, dt) {
+    filmMat.uniforms.uTime.value = (filmMat.uniforms.uTime.value + (dt || 0)) % 1000;
 
     renderer.setRenderTarget(sceneRT);
     renderer.clear();
@@ -275,18 +206,9 @@ export function makePost(renderer, opts = {}) {
     blurMat.uniforms.uDir.value.set(0, ty * 3.5);
     pass(blurMat, bloomRT);
 
-    pass(bloomMat, blurB);                       // screen blend
-    filmMat.uniforms.tMap.value = blurB.texture; // grain, chroma, vignette
     pass(filmMat, null);
     renderer.setRenderTarget(null);
   }
 
-  return {
-    render: renderFinal,
-    setSize,
-    uniforms: filmMat.uniforms,
-    config: cfg,
-    sceneRT,
-    bloomRT
-  };
+  return { render, setSize, uniforms: filmMat.uniforms, config: cfg, sceneRT, bloomRT };
 }
