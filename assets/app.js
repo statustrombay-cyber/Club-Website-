@@ -606,17 +606,23 @@ async function build() {
     }
   }
 
-  /* the watches, and everything that only exists to show a watch, goes */
-  const NO_WATCH = /^(WATCH|watch_bg|Panthere|Camera fixed watches|Emptypodcast_CTA|TAILORED_CRAFTS|THE_EYE|SHAPING_MOVEMENT|MANUFACTURE)/i;
+  /* The watches go — and with them everything that only exists to show a
+     watch: the stands they sit on, their reflections, the photographs of
+     the collection, and the room's own camera that watched them. The people,
+     the tables and the rooms stay. */
+  const NO_WATCH = /^(WATCH|watch_bg|Panthere|Camera_fixed_watches|Emptypodcast_CTA|SC06_Image)/i;
+  const WATCH_STAND = /^(MIRROR_)?assets/i;
   for (const root of [room, chars]) {
     if (!root) continue;
     root.traverse((o) => {
-      if (o.name && NO_WATCH.test(o.name)) {
-        o.visible = false;
-        if (o.isMesh && o.material) {
-          const mats = Array.isArray(o.material) ? o.material : [o.material];
-          for (const m of mats) m.visible = false;
-        }
+      if (!o.name) return;
+      const gone = NO_WATCH.test(o.name) ||
+        (root === chars && WATCH_STAND.test(o.name));
+      if (!gone) return;
+      o.visible = false;
+      if (o.isMesh && o.material) {
+        const mats = Array.isArray(o.material) ? o.material : [o.material];
+        for (const m of mats) m.visible = false;
       }
     });
   }
