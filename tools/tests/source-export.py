@@ -22,7 +22,7 @@ with tarfile.open(fileobj=io.BytesIO(archive)) as tar:
                  'scene-assets.php', 'app/scene-assets.php', 'app/scene-manifest.php',
                  'views/public/scene-check.php', 'assets/story.js', 'app/club-content.php', 'uploads/club-logo-test.jpg']:
         assert name in members, f'Required runtime file absent: {name}'
-    for name in ['data/site.json', 'data/config.php', 'package.json', 'package-lock.json']:
+    for name in ['data/site.json', 'data/config.php', 'package.json', 'package-lock.json', '.gitignore', '.gitattributes']:
         assert name not in members, f'Live settings or dev-only file exported: {name}'
     assert not any(n.startswith('tools/') for n in members), 'Development source exported'
     assert not any(n.lower().endswith(('.zip','.rar')) for n in members), 'Reference archive exported'

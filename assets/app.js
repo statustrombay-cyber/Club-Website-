@@ -689,14 +689,59 @@
       document.body.classList.add('intro-revealed');
       window.dispatchEvent(new CustomEvent('mt:intro-ready'));
     };
-    if (!splash || reduced() || window.location.hash.length > 1) { finish(); return; }
+    if (!splash || reduced() || window.location.hash.length > 1 ||
+        window.getComputedStyle && window.getComputedStyle(splash).visibility === 'hidden') { finish(); return; }
     const shell = $('.site-shell');
     if (shell) shell.inert = true;
     document.body.classList.add('intro-pending');
     splash.addEventListener('animationend', function (event) {
       if (event.target === splash && event.animationName === 'splashAway') finish();
     });
-    window.setTimeout(finish, 6500);
+    // A late script must not start another 6.5-second hold after CSS finished.
+    // The deadline belongs to this page visit, not to JS download completion.
+    const remaining = Math.max(0, 6500 - (window.__mtIntroStarted ? Date.now() - window.__mtIntroStarted : 0));
+    window.setTimeout(finish, remaining);
+  }
+
+  /* Network-only warmup: never evaluate the 3D bundle, start a decoder or
+     block the intro. One low-priority request after the first-screen media is
+     buffered. Slow/Data Saver connections spend bandwidth on the page instead. */
+  function setupIntroWarmup() {
+    const cover = document.documentElement;
+    const connection = navigator.connection;
+    if (!cover.classList.contains('intro-cover') || reduced() ||
+        connection && (connection.saveData || /(^|-)2g|3g/.test(connection.effectiveType || ''))) return;
+    const video = $('#heroVideo');
+    let attempted = false, controller = null, timeout = 0;
+    function stop() { clearTimeout(timeout); if (controller) controller.abort(); }
+    function warm() {
+      if (attempted || !cover.classList.contains('intro-cover') || document.hidden || !video || video.readyState < 2) return;
+      // Fonts and poster/first frame win; no competing bulk texture downloads.
+      if (document.fonts && document.fonts.status !== 'loaded') return;
+      attempted = true; controller = new AbortController();
+      timeout = window.setTimeout(stop, 1800);
+      fetch('/index.php?scene-asset=engine', {priority:'low', credentials:'same-origin', signal:controller.signal})
+        .then(response => { if (response.ok) return response.arrayBuffer(); })
+        .catch(function () { /* optional cache warmup is never a scene error */ })
+        .finally(function () { clearTimeout(timeout); controller = null; });
+    }
+    // Wait for the paint-heavy ring bloom before even this passive download.
+    window.setTimeout(warm, 1600);
+    video?.addEventListener('loadeddata', () => window.setTimeout(warm, 1600), {once:true});
+    window.addEventListener('mt:intro-ready', stop, {once:true});
+    document.addEventListener('visibilitychange', () => { if (document.hidden) stop(); });
+  }
+
+  /* Pause only decorative timelines outside the reading window. Keep normal
+     document geometry: content-visibility/contain-layout breaks sticky scenes. */
+  function setupMotionBudget() {
+    if (!('IntersectionObserver' in window)) return;
+    const observer = new IntersectionObserver(function (entries) {
+      entries.forEach(entry => { entry.target.dataset.motionState = entry.isIntersecting ? 'active' : 'idle'; });
+    }, {rootMargin:'300px 0px'});
+    $$('main > section, main > div, .footer').forEach(function (node) {
+      if (!node.classList.contains('mind-story') && !node.classList.contains('brand-chapter')) observer.observe(node);
+    });
   }
 
   /* A single fixed photographic butterfly is independent of the menu layout.
@@ -967,6 +1012,23 @@
     const video = $('#heroVideo');
     if (!video) return;
     const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    // Stable largest viewport: mobile toolbar changes must not resize/crop the
+    // hardware video layer on every scroll. Only grow, or reset on width change.
+    const media = $('.hero-media');
+    let mediaWidth = 0, mediaHeight = 0;
+    function sizeMedia() {
+      if (!media?.style) return;
+      const width = document.documentElement.clientWidth;
+      const height = Math.ceil(Math.max(innerHeight, window.visualViewport?.height || 0));
+      mediaHeight = width !== mediaWidth ? height : Math.max(mediaHeight, height); mediaWidth = width;
+      const value = mediaHeight + 'px';
+      if (media.style.getPropertyValue('--hero-viewport-height') !== value) media.style.setProperty('--hero-viewport-height', value);
+    }
+    sizeMedia(); window.addEventListener('resize', sizeMedia, {passive:true});
+    window.visualViewport?.addEventListener('resize', sizeMedia, {passive:true});
+    function introCovered() { return document.documentElement?.classList.contains('intro-cover'); }
+    // Buffer a first frame behind the intro, not a continuously decoded movie.
+    video.autoplay = false;
     const allowed = !reduced() && !(connection && connection.saveData);
     let resumeAt = 0;
     let recoveryUsed = false;
@@ -980,7 +1042,7 @@
     function drop() { video.hidden = true; pause(); }
     function pause() { try { video.pause(); } catch (error) { /* already stopped */ } }
     function play() {
-      if (!allowed || document.hidden || video.hidden || coveredByStory()) return;
+      if (!allowed || document.hidden || video.hidden || coveredByStory() || introCovered()) return;
       const attempt = video.play();
       if (attempt && attempt.catch) attempt.catch(function () { /* retry on a gesture */ });
     }
@@ -988,6 +1050,8 @@
     const mobile = window.matchMedia('(max-width: 900px)').matches || (connection && /(^|-)2g|3g/.test(connection.effectiveType || ''));
     const wantedSource = mobile ? video.dataset.mobileSrc : video.dataset.desktopSrc;
     if (!video.currentSrc || !video.currentSrc.split('?')[0].endsWith(wantedSource)) video.src = wantedSource;
+    if (introCovered()) pause();
+    window.addEventListener('mt:intro-ready', play, {once:true});
     video.preload = 'auto';
     video.muted = true;
     video.playsInline = true;
@@ -1011,7 +1075,7 @@
     video.addEventListener('stalled', function () { /* let the browser buffer */ });
     window.setInterval(function () {
       if (document.hidden || video.hidden || video.error) return;
-      if (coveredByStory()) { pause(); lastAdvance = Date.now(); return; }
+      if (coveredByStory() || introCovered()) { pause(); lastAdvance = Date.now(); return; }
       const clock = video.currentTime;
       if (Math.abs(clock - lastClock) > 0.02) {
         lastClock = clock; lastAdvance = Date.now();
@@ -1075,6 +1139,8 @@
     setupReveal();
     setupPortraits();
     setupHeroVideo();
+    setupIntroWarmup();
+    setupMotionBudget();
     setupPhotoFrame();
     setupGalleryStage();
     setupForms();

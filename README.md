@@ -63,7 +63,11 @@ password from the settings panel (or set the environment variable
 needed.** PHP serves the prebuilt files; the visitor's browser runs the animation.
 Use the normal GitHub **Code → Download ZIP** workflow; no second/nested ZIP is
 needed. The current fixes are on branch **`arena/24a1daf8-club-website`** (PR #5,
-not merged into `main`). Select that branch before downloading.
+not merged into `main`). Select that branch before downloading. The ZIP contains
+only the deployable website and its instructions—not the uploaded Cartier/RAR/ZIP
+references, development tools, package manifests, or repository housekeeping files.
+GitHub adds one outer repository folder automatically; upload the **contents** of
+that folder, not the folder itself.
 
 1. Back up the existing website through your hosting file manager first.
 2. In InfinityFree, check **Accounts → your account → Domains → your domain →

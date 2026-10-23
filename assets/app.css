@@ -1999,3 +1999,43 @@ body.is-black-chapter .to-top { opacity:0 !important; visibility:hidden !importa
 .brand-chapter .brand-chapter-stage { top:0; height:100vh; height:100lvh; min-height:100dvh; background:none; }
 @media (prefers-reduced-motion:reduce) { .brand-chapter .brand-chapter-stage { height:auto; min-height:0; } }
 html.no-js .brand-chapter .brand-chapter-stage { height:auto; min-height:0; }
+
+/* The first page uses ONE stable composited media plane. inset:0 previously
+   resized the video on every browser-toolbar change, exposing/re-cropping its
+   lower edge during fast native scrolling. No scroll-time layer reparenting. */
+.hero-media {
+  inset:0 0 auto; height:var(--hero-viewport-height,100lvh); min-height:100vh;
+  overflow:hidden; isolation:isolate; contain:paint; transform:translateZ(0);
+  background:#403634;
+}
+/* Radial gradients already feather these lights. A second animated 48px blur
+   adds multiple full-screen filter passes without adding useful detail. */
+.drift-field .drift-blob { filter:none; }
+/* Rotating labels should not re-blur the moving movie beneath them. */
+.psi-quote { backdrop-filter:none; -webkit-backdrop-filter:none; }
+@media (max-width:900px) {
+  .about-note, .club-form, .contact-card, .vision-card {
+    backdrop-filter:none; -webkit-backdrop-filter:none;
+  }
+}
+[data-motion-state="idle"], [data-motion-state="idle"] *,
+[data-motion-state="idle"]::before, [data-motion-state="idle"]::after,
+[data-motion-state="idle"] *::before, [data-motion-state="idle"] *::after {
+  animation-play-state:paused !important;
+}
+body.intro-pending .bubble-field *, body.intro-pending .drift-field *,
+body.is-black-chapter .bubble-field *, body.is-black-chapter .drift-field * {
+  animation-play-state:paused !important;
+}
+body.is-black-chapter .bubble-field, body.is-black-chapter .drift-field { visibility:hidden; }
+/* One cached star image moves in the compositor: space-like forward travel,
+   not a JS particle loop competing with the real ring/ink animation. */
+.splash::before { animation:introSpaceTravel 5.25s linear both; will-change:transform; }
+@keyframes introSpaceTravel {
+  from { transform:scale(1) translate3d(0,0,0); }
+  to { transform:scale(1.65) translate3d(0,-3%,0); }
+}
+/* All letter contours settle before this bounded exit; never await downloads. */
+.splash { animation:splashAway .45s ease 4.8s forwards; }
+.splash-letter-ring { animation-duration:1.15s; }
+@media (prefers-reduced-motion:reduce) { .splash::before { animation:none; will-change:auto; } }

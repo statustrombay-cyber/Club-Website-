@@ -54,7 +54,7 @@ $nav = [
   <title><?= e($fullTitle) ?></title>
   <meta name="description" content="<?= e(mb_substr($description, 0, 180)) ?>">
   <meta name="theme-color" content="#403634">
-  <?php if ($splash): ?><script>if (!location.hash) { document.documentElement.classList.add('intro-cover'); document.querySelector('meta[name="theme-color"]').content='#09090b'; }</script><?php endif; ?>
+  <?php if ($splash): ?><script>if (!location.hash) { window.__mtIntroStarted=Date.now(); document.documentElement.classList.add('intro-cover'); document.querySelector('meta[name="theme-color"]').content='#09090b'; }</script><?php endif; ?>
   <meta name="color-scheme" content="light">
   <link rel="icon" href="/assets/img/favicon-48.png" sizes="48x48" type="image/png">
   <link rel="icon" href="/assets/img/favicon-32.png" sizes="32x32" type="image/png">
@@ -65,6 +65,8 @@ $nav = [
   <meta property="og:title" content="<?= e($fullTitle) ?>">
   <meta property="og:description" content="<?= e(mb_substr($description, 0, 180)) ?>">
   <meta property="og:image" content="<?= e($logo) ?>">
+  <link rel="preload" href="/assets/fonts/inter-latin-regular.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/media/horses-running-poster.jpg" as="image" fetchpriority="high">
   <link rel="stylesheet" href="/assets/app.css">
   <?php if ($splash): ?>
     <link rel="stylesheet" href="/assets/story.css">
@@ -116,7 +118,7 @@ $nav = [
            scrolls and every block reads through a thin film of its own paper.
            It is never dark and never in front of a word. */ ?>
   <div class="hero-media" aria-hidden="true">
-    <img class="hero-still" id="heroStill" src="/assets/media/horses-running-poster.jpg" alt="" decoding="async">
+    <img class="hero-still" id="heroStill" src="/assets/media/horses-running-poster.jpg" alt="" decoding="async" fetchpriority="high">
     <video class="hero-video" id="heroVideo" muted loop playsinline autoplay preload="auto" data-desktop-src="/assets/media/horses-desktop.mp4" data-mobile-src="/assets/media/horses-mobile.mp4"
            poster="/assets/media/horses-running-poster.jpg" tabindex="-1">
       <source src="/assets/media/horses-mobile.mp4" media="(prefers-reduced-motion: no-preference) and (max-width: 900px)" type="video/mp4">

@@ -1599,7 +1599,7 @@ ok('it reveals the site on its own, with no JavaScript needed',
 ok('the entrance settles and hands off to the page and butterfly',
   round37Css.includes('@keyframes pigmentDraw') && navLayout.includes("/motion/intro-word.svg") && !navLayout.includes('textLength=')
   && appJs.includes("window.dispatchEvent(new CustomEvent('mt:intro-ready'))")
-  && appJs.includes('window.setTimeout(finish, 6500)'));
+  && appJs.includes('window.setTimeout(finish, remaining)'));
 ok('normal tapping, keys and scrolling never dismiss the timed intro',
   !appJs.includes("splash.addEventListener('click', away)")
   && !appJs.includes("window.addEventListener('touchstart', away")
@@ -1886,7 +1886,7 @@ ok('the splash brush paints filled contours, with a violet lead rather than stri
   const { runInNewContext } = await import('node:vm');
   const begin = appJs.indexOf('function setupSplash()');
   const end = appJs.indexOf('function setupButterfly()', begin);
-  for (const mode of ['animation', 'locked', 'fallback', 'reduced', 'no-splash', 'anchor']) {
+  for (const mode of ['animation', 'locked', 'fallback', 'reduced', 'no-splash', 'anchor', 'late']) {
     const classes = new Set(), handlers = {}, timers = {};
     let notifications = 0;
     const classList = { add: name => classes.add(name), remove: name => classes.delete(name), contains: name => classes.has(name) };
@@ -1896,7 +1896,7 @@ ok('the splash brush paints filled contours, with a violet lead rather than stri
       reduced: () => mode === 'reduced', CustomEvent: class { constructor(type) { this.type = type; } },
       document: { body: { classList }, documentElement: { classList } },
       window: {
-        location: {hash:mode==='anchor'?'#join':''},
+        location: {hash:mode==='anchor'?'#join':''}, __mtIntroStarted: mode==='late'?Date.now()-7000:0,
         dispatchEvent: event => { if (event.type === 'mt:intro-ready') notifications++; },
         addEventListener: (name, fn) => { handlers[name] = fn; },
         setTimeout: (fn, ms) => { timers[ms] = fn; }
@@ -1909,6 +1909,7 @@ ok('the splash brush paints filled contours, with a violet lead rather than stri
       ok('no input listeners are attached to skip the intro',!handlers.click&&!handlers.keydown&&!handlers.wheel&&!handlers.touchstart&&notifications===0);
       timers[6500]();
     } else if (mode === 'fallback') timers[6500]();
+    else if (mode === 'late') timers[0]();
     ok('splash exits once via ' + mode + ' and reveals the site',
       notifications === 1 && !classes.has('intro-pending') && classes.has('intro-revealed')
       && (mode === 'no-splash' || splash.hidden));
@@ -2024,6 +2025,17 @@ ok('the splash brush paints filled contours, with a violet lead rather than stri
 
 }
 
+
+ok('the first-screen movie has a stable composited largest-viewport plane',
+  appJs.includes('mediaHeight = width !== mediaWidth ? height : Math.max(mediaHeight, height)') && appCss.includes('height:var(--hero-viewport-height,100lvh)') && appCss.includes('contain:paint; transform:translateZ(0)'));
+ok('the splash buffers rather than plays the hidden movie and never waits for a warmup',
+  appJs.includes('video.autoplay = false') && appJs.includes('coveredByStory() || introCovered()') && appJs.includes("window.addEventListener('mt:intro-ready', play, {once:true})") && appJs.includes('window.setTimeout(stop, 1800)'));
+ok('optional intro warmup is network-only and respects constrained connections',
+  appJs.includes("fetch('/index.php?scene-asset=engine', {priority:'low'") && appJs.includes("connection.saveData || /(^|-)2g|3g/") && appJs.includes('response.arrayBuffer()'));
+ok('offscreen decoration pauses without collapsing document flow or hiding reading content',
+  appJs.includes('function setupMotionBudget()') && appJs.includes("!node.classList.contains('mind-story')") && appCss.includes('[data-motion-state="idle"] *::after') && appCss.includes('.drift-field .drift-blob { filter:none; }'));
+ok('the bounded intro has composited space travel rather than a JS particle renderer',
+  appCss.includes('introSpaceTravel 5.25s linear both') && appCss.includes('splashAway .45s ease 4.8s forwards'));
 
 console.log('\n— actual dashboard renderer and upload regressions —');
 {

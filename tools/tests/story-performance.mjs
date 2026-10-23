@@ -9,7 +9,7 @@ try{
  const p=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true});p.on('pageerror',e=>report.errors.push(e.message));
  await p.addInitScript(()=>{window.__draws=0;window.__tasks=[];for(const name of ['drawElements','drawArrays']){const fn=WebGL2RenderingContext.prototype[name];WebGL2RenderingContext.prototype[name]=function(...args){__draws++;return fn.apply(this,args)};}new PerformanceObserver(l=>__tasks.push(...l.getEntries().map(e=>({start:e.startTime,duration:e.duration})))).observe({type:'longtask',buffered:true});});
  await p.goto(base+'/');await p.waitForFunction(()=>document.body.classList.contains('intro-revealed'));await p.waitForTimeout(1800);
- check(await p.evaluate(()=>!window.MTStory3D&&!performance.getEntriesByType('resource').some(e=>e.name.includes('scene-asset=engine'))),'hero/splash does not download or execute the WebGL engine');
+ check(await p.evaluate(()=>!window.MTStory3D&&!performance.getEntriesByType('resource').some(e=>/scene-asset=(?:basis-wasm|draco-wasm|hand-model)/.test(e.name))),'hero/splash may cache engine bytes but never executes the engine or downloads decoders/models');
  check(await p.evaluate(()=>__draws===0&&document.querySelectorAll('video').length===1),'hero has no hidden story GL work or second video decoder');
  check(await p.evaluate(()=>(()=>{const urls=[...document.querySelectorAll('[data-wire-object]')].map(e=>new URL(e.dataset.atlasSrc,location.href).href);return urls.length===3&&!performance.getEntriesByType('resource').some(e=>urls.includes(e.name));})()),'large rotating-wire atlas downloads wait for chapter approach');
  report.heroLongTasks=await p.evaluate(()=>__tasks);
