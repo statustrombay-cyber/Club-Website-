@@ -58,6 +58,12 @@ for (const [rel, absSource] of files) {
     await php.writeFile(target, fs.readFileSync(absSource, 'utf8'));
   }
 }
+// The checked-in sample's real registration deadline must not make isolated
+// form/PDF tests expire with the calendar. Change only this virtual test store.
+const testStore = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/site.json'), 'utf8'));
+const testWelcome = testStore.events?.find(event => event.id === 'event-welcome-circle');
+if (testWelcome) testWelcome.closesAt = '';
+await php.writeFile('/site/data/site.json', JSON.stringify(testStore));
 console.log('mirrored ' + files.length + ' files into the PHP runtime');
 
 /* ---------------------------------------------------------------- runner */
@@ -1975,7 +1981,7 @@ ok('the splash brush paints filled contours, with a violet lead rather than stri
       const before = pose(); dark = false; scroll(0); advance(350);
       const after = pose();
       ok('interrupted departure steers from its current pose without teleporting', !classes.has('butterfly-away') && Math.hypot(after[0] - before[0], after[1] - before[1]) < 100);
-      advance(4500); dark = true; scroll(1500); advance(4500);
+      advance(4500); dark = true; scroll(1500); advance(5000);
       ok('opacity changes only after the butterfly has fully flown left out of view', classes.has('butterfly-away') && pose()[0] <= -182);
     }
     dark = false; scroll(0); advance(4500);

@@ -1994,7 +1994,6 @@ body.intro-pending .site-shell * { animation-play-state:paused !important; }
 /* Do not leave the header's dark glass rectangle or floating controls over
    the rings, Manifest lettering, or closing dark chapter. */
 body.is-black-chapter .nav-wrap,
-body.is-black-chapter .nav-butterfly,
 body.is-black-chapter .to-top { opacity:0 !important; visibility:hidden !important; pointer-events:none !important; }
 .brand-chapter .brand-chapter-stage { top:0; height:100vh; height:100lvh; min-height:100dvh; background:none; }
 @media (prefers-reduced-motion:reduce) { .brand-chapter .brand-chapter-stage { height:auto; min-height:0; } }

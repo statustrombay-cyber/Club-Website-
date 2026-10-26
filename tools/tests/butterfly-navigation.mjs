@@ -62,8 +62,8 @@ try{
   }
   report.interactions.push({width,dragPoints:points,returned,clickHit:hit,plainHit:plain});await p.close();
  }
- // Real registration fields retain a small left-side companion and typing.
- const form=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true});form.on('pageerror',e=>report.errors.push(e.message));await form.goto(base+'/register?event=event-welcome-circle');
+ // Real membership fields (independent of event deadlines) retain a small left-side companion and typing.
+ const form=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true});form.on('pageerror',e=>report.errors.push(e.message));await form.goto(base+'/#join');
  const field=form.locator('input[name="name"]').first();await field.scrollIntoViewIfNeeded();await field.focus();await waitState(form,'companion');
  const relative=await field.evaluate(e=>{const a=e.getBoundingClientRect(),b=document.querySelector('.butterfly-flight').getBoundingClientRect();return{field:a.toJSON(),photo:b.toJSON()};});assert.ok(relative.photo.right<=relative.field.left+2,'companion photo remains to the LEFT of focused input');
  await field.fill('Riya Sharma');assert.equal(await field.inputValue(),'Riya Sharma');await form.keyboard.press('Backspace');assert.ok(await form.locator('.nav-butterfly').evaluate(e=>e.classList.contains('butterfly-typing')));

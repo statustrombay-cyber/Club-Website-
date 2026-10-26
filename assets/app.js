@@ -789,15 +789,15 @@
       if (!frame && state !== 'waiting' && !document.hidden) frame = window.requestAnimationFrame(tick);
     }
     function launch(kind) {
-      const end = kind === 'leave' ? { x: -target.width - 100, y: target.y + 5 } : { x: target.x, y: target.y };
-      const duration = kind === 'entry' ? 6400 : (kind === 'release' || kind === 'return-action') ? clamp(500 + Math.hypot(end.x-x, end.y-y)*.5, 650, 1000) : Math.max(kind === 'leave' ? 2800 : 3400, Math.abs(end.x - x) * 3.4);
+      const end = kind === 'leave' ? { x: -target.width - 100, y: -butterfly.offsetHeight - 60 } : { x: target.x, y: target.y };
+      const duration = kind === 'entry' ? 6400 : (kind === 'release' || kind === 'return-action') ? clamp(500 + Math.hypot(end.x-x, end.y-y)*.5, 650, 1000) : Math.max(kind === 'leave' ? 4200 : 3400, Math.abs(end.x - x) * 3.4);
       // A continuous tangent survives reversals; no cancelled animation can
       // restore an old CSS pose or switch the butterfly's opacity mid-flight.
       const reach = Math.min(380, duration * .22);
       flight = { kind: kind, elapsed: 0, duration: duration,
         start: { x: x, y: y, angle: angle },
-        c1: (kind === 'release' || kind === 'return-action') ? {x:clamp(x+vx*reach,0,window.innerWidth-target.width),y:clamp(y+vy*reach,0,window.innerHeight-butterfly.offsetHeight)} : kind === 'entry' ? { x: x - window.innerWidth * .06, y: window.innerHeight * .55 } : { x: x + vx * reach, y: y + vy * reach },
-        c2: { x: kind === 'leave' ? end.x + 70 : end.x + 20, y: kind === 'entry' ? end.y + window.innerHeight * .18 : end.y - 18 }, end: end };
+        c1: kind === 'leave' ? {x:clamp(x+window.innerWidth*.24,100,window.innerWidth-target.width),y:Math.max(110,Math.min(window.innerHeight*.28,y+150))} : (kind === 'release' || kind === 'return-action') ? {x:clamp(x+vx*reach,0,window.innerWidth-target.width),y:clamp(y+vy*reach,0,window.innerHeight-butterfly.offsetHeight)} : kind === 'entry' ? { x: x - window.innerWidth * .06, y: window.innerHeight * .55 } : { x: x + vx * reach, y: y + vy * reach },
+        c2: kind === 'leave' ? {x:Math.max(40,x*.35),y:Math.max(35,window.innerHeight*.12)} : { x: end.x + 20, y: kind === 'entry' ? end.y + window.innerHeight * .18 : end.y - 18 }, end: end };
       state = kind === 'leave' ? 'leaving' : kind === 'return-action' ? 'returning-action' : 'entering';
       butterfly.classList.remove('butterfly-away');
       butterfly.classList.add('butterfly-arrived', 'butterfly-flying');
