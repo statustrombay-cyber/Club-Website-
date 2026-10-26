@@ -772,6 +772,8 @@
       const width = butterfly.offsetWidth;
       const progress = clamp((window.scrollY || 0) / Math.max(1, document.documentElement.scrollHeight - window.innerHeight), 0, 1);
       target = { x: 10 + progress * Math.max(0, window.innerWidth - width - (window.innerWidth <= 1100 ? 84 : 32)), y: Math.max(4, (bounds.top || 0) + 12 - butterfly.offsetHeight), width: width };
+      const navBox=header.querySelector?.('.nav')?.getBoundingClientRect();
+      if(navBox&&target.x+width>navBox.left&&target.x<navBox.right)target.y=Math.max(4,bounds.bottom+8);
       const dark = $$('.black-chapter, .tv-chapter').some(function (section) {
         if (section.parentElement && section.parentElement.dataset.storyPhase === 'herd') return false;
         const box = section.getBoundingClientRect();
@@ -790,6 +792,8 @@
       if (!frame && state !== 'waiting' && !document.hidden) frame = window.requestAnimationFrame(tick);
     }
     function launch(kind) {
+      if(kind!=='entry'&&desiredDark)kind='leave';
+      if(kind==='leave')committedDark=true;else if(!desiredDark)committedDark=false;
       const end = kind === 'leave' ? { x: -target.width - 100, y: -butterfly.offsetHeight - 60 } : { x: target.x, y: target.y };
       const duration = kind === 'entry' ? 6400 : (kind === 'release' || kind === 'return-action') ? clamp(500 + Math.hypot(end.x-x, end.y-y)*.5, 650, 1000) : Math.max(kind === 'leave' ? 4200 : 3400, Math.abs(end.x - x) * 3.4);
       // A continuous tangent survives reversals; no cancelled animation can
@@ -816,6 +820,7 @@
       if (!node || !node.isConnected || reduced()) return Promise.resolve();
       if (interaction) interaction.cancel();
       measure(performance.now());
+      if(desiredDark){if(kind==='field')activeField=null;if(state!=='away'&&state!=='leaving')launch('leave');return Promise.resolve();}
       if (state === 'waiting') { x = Math.max(0, node.getBoundingClientRect().left - 100); y = window.innerHeight + 80; }
       flight = null; state = 'interacting';
       const end = destination(node, kind, point), from = { x: x, y: y, angle: angle, scale: photoScale };
@@ -979,9 +984,15 @@
     function tick(now) {
       frame = 0;
       if (document.hidden || state === 'waiting') { lastFrame = 0; return; }
-      const dt = lastFrame ? clamp(now - lastFrame, 0, 160) : 16;
+      const elapsedDt = lastFrame ? clamp(now - lastFrame, 0, 1000) : 16;
+      const dt = Math.min(64,elapsedDt);
       lastFrame = now;
       if (needsMeasure || !target) measure(now);
+      // Dark transitions outrank a retained field/click trip. Otherwise the
+      // companion branch returns early forever and pins the photo mid-screen.
+      if((desiredDark&&(interaction||state==='companion')) || (interaction&&interaction.node.isConnected===false)){
+        if(interaction)interaction.cancel();activeField=null;launch(desiredDark?'leave':'return');
+      }
       if (drag) {
         if (desiredDark) { releaseDrag(); return; }
         const oldX=x, oldY=y, follow=reduced()?1:1-Math.exp(-dt/28);
@@ -1003,7 +1014,7 @@
       }
       if (interaction) {
         const trip = interaction, end = trip.kind === 'action' ? trip.end : destination(trip.node, trip.kind);
-        trip.elapsed += dt;
+        trip.elapsed += elapsedDt;
         const t = clamp(trip.elapsed / trip.duration, 0, 1), u = clamp((t - .12) / .88, 0, 1);
         const ease = u * u * (3 - 2 * u), arc = Math.sin(Math.PI * u);
         x = trip.from.x + (end.x - trip.from.x) * ease;
@@ -1032,7 +1043,7 @@
       }
       const oldX = x, oldY = y;
       if (flight) {
-        flight.elapsed += dt;
+        flight.elapsed += elapsedDt;
         const t = clamp(flight.elapsed / flight.duration, 0, 1);
         const u = t * t * (3 - 2 * t), v = 1 - u;
         if (flight.kind !== 'leave') {
@@ -1093,98 +1104,87 @@
       const observer = new ResizeObserver(function () { needsMeasure = true; schedule(); });
       observer.observe(document.body); observer.observe(header);
     }
-    document.addEventListener('visibilitychange', function () { if(document.hidden)releaseDrag();lastFrame = 0; schedule(); });
+    document.addEventListener('visibilitychange', function () { if(document.hidden){window.cancelAnimationFrame(frame);frame=0;releaseDrag();}lastFrame=0;needsMeasure=true;schedule(); });
+    window.addEventListener('pageshow',function(){lastFrame=0;needsMeasure=true;schedule();});
   }
 
   /* Two fast-start encodes; the untouched master is retained for the club.
      Buffering is not repaired by repeatedly seeking or reloading the file. */
-  /* Three clean, reference-derived keyframes form a native-scroll camera move.
-     No wheel/touch hijacking, autoplay, remote CDN or new application framework. */
+  /* Dense reference frames on a WebGL plane: the camera, body and hand are
+     those in the recording, not an invented three-pose slideshow. */
   function setupCinematicChapters() {
     const opening=$('.flower-prologue'), chapter=$('.tv-chapter');
     if(!opening||!chapter)return;
-    const frames=$$('.flower-frame',opening), copy=$$('.flower-copy > *',opening), person=$('.tv-person',chapter), sprite=$('.tv-sprite',chapter);
     const clamp=(n,a=0,b=1)=>Math.max(a,Math.min(b,n));
-    const smooth=n=>{n=clamp(n);return n*n*(3-2*n);};
+    const motionAllowed=()=>!reduced()&&!navigator.connection?.saveData;
+    const cards=$('.flower-hand-cards',opening);
+    function handCopy(position){const amount=clamp((position/4-17)/7);cards.style.opacity=String(amount);cards.setAttribute('aria-hidden',String(amount<.05));}
+    const film=motionAllowed()?window.MTFrameSequence?.create($('.flower-canvas',opening),{manifest:'/assets/media/flower-sequence/manifest.json',count:157,onFrame:handCopy}):null;
     let viewportWidth=0,viewportHeight=innerHeight,frame=0,last=0,progress=0,target=0,horse=null;
     function size(){
       const width=document.documentElement.clientWidth;
       viewportHeight=width!==viewportWidth?Math.ceil(Math.max(innerHeight,window.visualViewport?.height||0)):Math.max(viewportHeight,Math.ceil(innerHeight));
       viewportWidth=width;opening.style.setProperty('--flower-height',viewportHeight+'px');
-      opening.style.setProperty('--flower-ui-bottom',Math.max(0,viewportHeight-Math.ceil(window.visualViewport?.height||innerHeight))+'px');update();
+      const scale=Math.max(width/640,viewportHeight/478);cards.style.width=Math.min(width,300*scale)+'px';cards.style.height=158*scale+'px';cards.style.top=((viewportHeight-478*scale)/2+162*scale)+'px';update();
     }
     function render(now){
       frame=0;if(document.hidden){last=0;return;}
       const dt=last?Math.min(64,now-last):16;last=now;
-      progress+=(target-progress)*(reduced()?1:1-Math.exp(-dt/85));
+      progress+=(target-progress)*(reduced()?1:1-Math.exp(-dt/95));
       if(Math.abs(target-progress)<.0003)progress=target;
-      const p=reduced()?0:progress,unfold=smooth((p-.12)/.24),hand=smooth((p-.36)/.22);
-      frames[0].style.opacity=String(1-unfold);frames[0].style.transform='scale('+(1+p*.32)+')';
-      frames[1].style.opacity=String(unfold*(1-hand));frames[1].style.transform='translate3d('+((1-unfold)*4)+'%,0,0) scale('+(1.12-p*.12)+')';
-      frames[2].style.opacity=String(hand);frames[2].style.transform='scale('+(1+smooth((p-.45)/.55)*.28)+')';
-      opening.style.setProperty('--flower-shade',String(reduced()?.86:smooth((p-.38)/.22)*.84));
-      copy.forEach((node,index)=>{
-        const amount=reduced()?1:smooth((p-(.57+index*.06))/.14);
-        node.style.opacity=String(amount);node.style.transform='translate3d(0,'+((1-amount)*20)+'px,0) scale('+(0.92+amount*.08)+')';
-        node.inert=amount<.9;node.setAttribute('aria-hidden',String(amount<.01));
-      });
-      opening.dataset.flowerProgress=p.toFixed(4);
+      const p=progress;
+      // Slow the recorded face→shoulder camera move, then continue to the palm.
+      const source=p<.12?p/.12*10:p<.55?10+(p-.12)/.43*7:17+(p-.55)/.45*22;
+      film?.setFrame(source*4);opening.dataset.flowerProgress=p.toFixed(4);
       if(progress!==target)frame=requestAnimationFrame(render);else last=0;
     }
     function update(){
-      const bounds=opening.getBoundingClientRect();
+      const bounds=opening.getBoundingClientRect(),covered=document.documentElement.classList.contains('intro-cover');
       target=clamp(-bounds.top/Math.max(1,opening.offsetHeight-viewportHeight));
       document.body.classList.toggle('flower-active',bounds.bottom>85&&bounds.top<viewportHeight);
-      const nextHorse=chapter.getBoundingClientRect().bottom<=0;
+      // Start the herd at the end of the girl camera track, not after the TV.
+      const nextHorse=bounds.bottom<=viewportHeight+1;
       if(horse!==nextHorse){horse=nextHorse;document.body.classList.toggle('horse-era',horse);window.dispatchEvent(new CustomEvent('mt:horse-era',{detail:{active:horse}}));}
+      film?.setActive(bounds.bottom>0&&bounds.top<viewportHeight&&!covered&&motionAllowed());
       if(!frame&&!document.hidden)frame=requestAnimationFrame(render);
     }
     window.addEventListener('scroll',update,{passive:true});window.addEventListener('resize',size,{passive:true});
-    window.visualViewport?.addEventListener('resize',size,{passive:true});size();
+    window.visualViewport?.addEventListener('resize',size,{passive:true});window.addEventListener('mt:intro-ready',update);size();
 
-    // Actual isolated frames from animated (46).webp, not a generic icon/model.
-    let ready=false,active=false,tvFrame=0,current=37,wanted=37,lastPaint=-1,previousX=null,neutralTilt=null;
-    const sheets=[];
-    function paintTv(){
-      tvFrame=0;if(document.hidden||!active||!ready)return;
-      current+=(wanted-current)*.22;
-      if(Math.abs(wanted-current)<.04)current=wanted;
-      const index=Math.round(current),sheet=Math.floor(index/25),tile=index%25;
-      if(index!==lastPaint){sprite.style.backgroundImage='url("/assets/media/tv-man-atlas-'+sheet+'.webp")';sprite.style.backgroundPosition=((tile%5)*25)+'% '+(Math.floor(tile/5)*25)+'%';sprite.dataset.frame=String(index);lastPaint=index;}
-      if(current!==wanted)tvFrame=requestAnimationFrame(paintTv);
-    }
-    function scheduleTv(){if(active&&ready&&!tvFrame&&!document.hidden)tvFrame=requestAnimationFrame(paintTv);}
+    let tv=null,active=false,wanted=37,previousX=null,neutralTilt=null;
     function loadTv(){
-      if(chapter.dataset.tvLoading)return;
-      if(reduced()||navigator.connection?.saveData){chapter.dataset.tvLoading='static';return;}
-      chapter.dataset.tvLoading='true';
-      Promise.all([0,1,2].map(index=>{const image=new Image();sheets.push(image);image.src='/assets/media/tv-man-atlas-'+index+'.webp';return image.decode();}))
-      .then(()=>{ready=true;chapter.classList.add('tv-ready');scheduleTv();})
-      .catch(()=>{chapter.dataset.tvLoading='fallback';}); // clean still remains
+      if(tv||!motionAllowed())return;
+      tv=window.MTFrameSequence?.create($('.tv-canvas',chapter),{manifest:'/assets/media/tv-sequence/manifest.json',count:75});
+      tv?.setFrame(wanted);tv?.setActive(active);
     }
+    const observe=()=>{
+      const bounds=chapter.getBoundingClientRect();
+      active=bounds.top<innerHeight&&bounds.bottom>0;
+      if(active){loadTv();tv?.setActive(true);}else tv?.setActive(false);
+      const covered=bounds.top<=1&&bounds.bottom>=innerHeight-1;
+      const changed=document.body.classList.contains('tv-covered')!==covered;
+      document.body.classList.toggle('tv-covered',covered);
+      if(changed)window.dispatchEvent(new CustomEvent('mt:horse-era'));
+    };
     if('IntersectionObserver'in window){
       const near=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting)){loadTv();near.disconnect();}},{rootMargin:'700px'});near.observe(chapter);
-      const visible=new IntersectionObserver(entries=>{active=entries[0].isIntersecting;previousX=null;neutralTilt=null;if(active)scheduleTv();else if(tvFrame){cancelAnimationFrame(tvFrame);tvFrame=0;}});visible.observe(chapter);
-    }else{active=true;loadTv();}
+    }
+    window.addEventListener('scroll',observe,{passive:true});window.addEventListener('resize',observe,{passive:true});observe();
     window.addEventListener('pointermove',event=>{
-      if(!active||reduced()){previousX=null;return;}
+      if(!active||!motionAllowed()){previousX=null;return;}
       if(previousX!==null)wanted=clamp(wanted+(event.clientX-previousX)/innerWidth*.8*74,0,74);
-      previousX=event.clientX;
-      const y=clamp(event.clientY/innerHeight,0,1)-.5;
-      person.style.setProperty('--tv-nod',(-y*4).toFixed(2)+'deg');scheduleTv();
+      previousX=event.clientX;tv?.setFrame(wanted);
     },{passive:true});
     window.addEventListener('pointerdown',event=>{previousX=event.clientX;},{passive:true});
     window.addEventListener('pointerup',()=>{previousX=null;},{passive:true});
-    // Permission is never requested here. Safari only supplies these events if
-    // permission was granted previously; pointer/touch works regardless.
     window.addEventListener('deviceorientation',event=>{
-      if(!active||reduced()||!Number.isFinite(event.gamma))return;
+      if(!active||!motionAllowed()||!Number.isFinite(event.gamma))return;
       if(neutralTilt===null)neutralTilt=event.gamma;
-      wanted=clamp(37+(event.gamma-neutralTilt)/35*37,0,74);scheduleTv();
+      wanted=clamp(37+(event.gamma-neutralTilt)/35*37,0,74);tv?.setFrame(wanted);
     },{passive:true});
     document.addEventListener('visibilitychange',()=>{
-      if(document.hidden){cancelAnimationFrame(frame);frame=0;last=0;cancelAnimationFrame(tvFrame);tvFrame=0;}
-      else{update();scheduleTv();}
+      if(document.hidden){cancelAnimationFrame(frame);frame=0;last=0;film?.setActive(false);tv?.setActive(false);}
+      else{update();observe();}
     });
   }
 
@@ -1219,8 +1219,8 @@
       const story = $('.mind-story');
       return document.body.classList.contains('story-immersive') && story?.dataset.storyCovered !== 'false';
     }
-    const gated = video.dataset.afterTv === 'true';
-    function beforeHorse() { return gated && !document.body.classList.contains('horse-era'); }
+    const gated = video.dataset.afterFlower === 'true';
+    function beforeHorse() { return gated && (!document.body.classList.contains('horse-era') || document.body.classList.contains('tv-covered')); }
     function drop() { video.hidden = true; pause(); }
     function pause() { try { video.pause(); } catch (error) { /* already stopped */ } }
     function play() {

@@ -43,11 +43,18 @@ $phone      = trim((string) ($site['clubPhone'] ?? ''));
 <section class="hero hero-with-video flower-prologue" id="top-section" aria-label="A flower unfolds into the club's story">
   <div class="flower-stage">
     <div class="flower-film" aria-hidden="true">
-      <img class="flower-frame flower-portrait" src="/assets/media/flower-portrait.webp" alt="" width="1376" height="768" fetchpriority="high" decoding="async">
-      <img class="flower-frame flower-unfold" src="/assets/media/flower-unfold.webp" alt="" width="1376" height="768" decoding="async">
-      <img class="flower-frame flower-hand" src="/assets/media/flower-hand.webp" alt="" width="1376" height="768" decoding="async">
+      <img class="flower-poster" src="/assets/media/flower-poster.webp" alt="" width="960" height="717" fetchpriority="high" decoding="async">
+      <canvas class="flower-canvas" aria-hidden="true"></canvas>
     </div>
-    <div class="flower-shade" aria-hidden="true"></div>
+    <div class="flower-hand-cards" aria-hidden="true">
+      <article><h2>Notice</h2><p>Meet your inner world.<br>Make room for curiosity.</p></article>
+      <article><h2>Connect</h2><p>Listen with care.<br>Find your people.</p></article>
+      <article><h2>Grow</h2><p>Carry kindness forward.<br>One small step at a time.</p></article>
+    </div>
+    <div class="visually-hidden"><p>The camera moves from the flower woman's face to her extended hand.</p><p>Notice. Connect. Grow.</p></div>
+  </div>
+</section>
+<section class="section flower-introduction" id="club-intro">
     <div class="container hero-grid">
     <div class="flower-copy">
       <div class="eyebrow" id="heroEyebrow"><?= e((string) ($site['eyebrow'] ?? '')) ?></div>
@@ -63,7 +70,6 @@ $phone      = trim((string) ($site['clubPhone'] ?? ''));
       </div>
     </div>
     </div>
-  </div>
 </section>
 
 <?php
@@ -129,8 +135,8 @@ $clubWords = ['mind', 'body', 'connection', 'curiosity', 'growth', 'community', 
   <span id="psychology" aria-hidden="true"></span>
   <div class="tv-character" role="img" aria-label="An interactive vintage computer-headed companion in a grey jacket. Its gaze follows horizontal movement.">
     <div class="tv-person">
-      <img class="tv-poster" src="/assets/media/tv-man-poster.webp" alt="" width="405" height="374" loading="lazy" decoding="async">
-      <div class="tv-sprite" aria-hidden="true"></div>
+      <img class="tv-poster" src="/assets/media/tv-man-poster.webp" alt="" width="405" height="384" loading="lazy" decoding="async">
+      <canvas class="tv-canvas" aria-hidden="true"></canvas>
     </div>
   </div>
   <div class="tv-content">

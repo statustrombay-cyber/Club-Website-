@@ -1257,8 +1257,8 @@ ok('the slideshow piles every photo in order and turns by itself',
   /const slides = \(readJson\('gallery-data'\)\.slides \|\| \[\]\)/.test(appJs)
   && /slides\.length < 2\) return;/.test(appJs) && /go\(index \+ 1\); \}, 4800\)/.test(appJs));
 
-ok('home defers the muted looping herd until after the TV chapter',
-  /<video[^>]*id="heroVideo"[^>]*muted[^>]*loop[^>]*playsinline[^>]*preload="none"[^>]*data-after-tv="true"/.test(homeAlbums.body)
+ok('home defers the muted looping herd until the flower camera completes',
+  /<video[^>]*id="heroVideo"[^>]*muted[^>]*loop[^>]*playsinline[^>]*preload="none"[^>]*data-after-flower="true"/.test(homeAlbums.body)
   && homeAlbums.body.includes('data-desktop-src="/assets/media/horses-desktop.mp4"')
   && homeAlbums.body.includes('id="heroStill"'));
 ok('the herd runs behind every public page',
@@ -1464,11 +1464,11 @@ ok('the lens navigation anchor still exists at the new chapter', mindPage.body.i
 ok('the club keeps Notice, Connect and Grow cards before the story',
   ['Notice','Connect','Grow'].every(label=>round37Home.includes('<h3>'+label+'</h3>')));
 ok('flower frames are local, clean assets, not a foreign website embed',
-  ['flower-portrait.webp','flower-unfold.webp','flower-hand.webp'].every(name=>mindPage.body.includes(name)) && !round37Home.includes('mainframe.co'));
-ok('the TV has its own background and bounded, isolated frame atlases',
-  round37Home.includes('class="tv-sprite"') && appJs.includes('tile=index%25') && appJs.includes('video.dataset.afterTv'));
-ok('first-page content follows the extended hand rather than autoplay',
-  appJs.includes('(p-(.57+index*.06))/.14') && appJs.includes('function setupCinematicChapters()'));
+  ['flower-poster.webp','class="flower-canvas"','class="flower-hand-cards"'].every(name=>mindPage.body.includes(name)) && !round37Home.includes('mainframe.co'));
+ok('the full TV footage uses opaque frames rather than a polygon cutout',
+  round37Home.includes('class="tv-canvas"') && appJs.includes('/tv-sequence/manifest.json') && appJs.includes('video.dataset.afterFlower'));
+ok('the recorded hand precedes the immediate horse-backed club introduction',
+  round37Home.indexOf('id="club-intro"')>round37Home.indexOf('class="flower-canvas"') && appJs.includes('const nextHorse=bounds.bottom<=viewportHeight+1'));
 ok('TV pointer/touch scrubbing and already-permitted gyro need no permission prompt',
   appJs.includes("window.addEventListener('deviceorientation'") && appJs.includes('*.8*74') && !appJs.includes('DeviceOrientationEvent.requestPermission'));
 ok('the graph keeps its real leader paths beside the TV',mindPage.body.includes('id="happinessCurve"') && mindPage.body.includes('id="happinessViceCurve"'));

@@ -66,12 +66,13 @@ $nav = [
   <meta property="og:description" content="<?= e(mb_substr($description, 0, 180)) ?>">
   <meta property="og:image" content="<?= e($logo) ?>">
   <link rel="preload" href="/assets/fonts/inter-latin-regular.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" href="<?= $splash ? '/assets/media/flower-portrait.webp' : '/assets/media/horses-running-poster.jpg' ?>" as="image" fetchpriority="high">
+  <link rel="preload" href="<?= $splash ? '/assets/media/flower-poster.webp' : '/assets/media/horses-running-poster.jpg' ?>" as="image" fetchpriority="high">
   <link rel="stylesheet" href="/assets/app.css">
   <?php if ($splash): ?>
     <link rel="stylesheet" href="/assets/story.css">
     <script src="/assets/audio.js" defer></script>
     <script src="/assets/story.js" defer></script>
+    <script src="/assets/sequence-player.js" defer></script>
   <?php endif; ?>
 </head>
 <body class="<?= e($bodyClass) ?>">
@@ -120,7 +121,7 @@ $nav = [
            It is never dark and never in front of a word. */ ?>
   <div class="hero-media" aria-hidden="true">
     <img class="hero-still" id="heroStill" src="/assets/media/horses-running-poster.jpg" alt="" decoding="async" fetchpriority="high">
-    <video class="hero-video" id="heroVideo" muted loop playsinline <?= $splash ? 'preload="none" data-after-tv="true"' : 'autoplay preload="auto"' ?> data-desktop-src="/assets/media/horses-desktop.mp4" data-mobile-src="/assets/media/horses-mobile.mp4"
+    <video class="hero-video" id="heroVideo" muted loop playsinline <?= $splash ? 'preload="none" data-after-flower="true"' : 'autoplay preload="auto"' ?> data-desktop-src="/assets/media/horses-desktop.mp4" data-mobile-src="/assets/media/horses-mobile.mp4"
            poster="/assets/media/horses-running-poster.jpg" tabindex="-1">
       <?php if (!$splash): ?>
       <source src="/assets/media/horses-mobile.mp4" media="(prefers-reduced-motion: no-preference) and (max-width: 900px)" type="video/mp4">

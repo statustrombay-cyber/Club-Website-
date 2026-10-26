@@ -2171,3 +2171,34 @@ html.no-js .page-home .hero-media { opacity:1; visibility:visible; }
   .flower-copy .display { font-size:clamp(1.75rem,4vw,3.4rem); }
   .flower-copy .hero-actions { margin-top:12px; }
 }
+
+/* The source camera/hand movement now lives in a dense WebGL frame sequence. */
+.flower-poster, .flower-canvas { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center; }
+.flower-canvas, .tv-canvas { opacity:0; display:block; pointer-events:none; }
+.flower-shade { display:none; }
+.visually-hidden { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+.page-home .flower-introduction { min-height:100svh; display:flex; align-items:center; padding:120px 0 70px; }
+.flower-introduction .hero-grid { display:block; }
+.flower-introduction .flower-copy { max-width:740px; color:var(--ink); }
+html.js .flower-introduction .flower-copy > * { opacity:1; transform:none; }
+.flower-introduction .flower-copy .display { color:var(--plum); }
+.flower-introduction .flower-copy .display em { color:var(--terracotta-ink); }
+.flower-introduction .hero-copy, .flower-introduction .flower-copy .eyebrow,
+.flower-introduction .flower-copy .hero-meta, .flower-introduction .flower-copy .hero-meta strong,
+.flower-introduction .flower-copy .hero-meta span { color:var(--ink-soft); }
+.flower-introduction .flower-copy .outline-button { color:var(--plum); border-color:var(--plum); background:#fffaef66; }
+.tv-person { aspect-ratio:405/384; transform:none; }
+.tv-canvas { position:absolute; inset:0; width:100%; height:100%; }
+/* Only the OUTER recording edges feather into grey; the CRT and person are
+   fully opaque RGB footage, with no polygon, hull, chroma-key or alpha holes. */
+.tv-person { mask-image:linear-gradient(90deg,transparent,#000 7%,#000 94%,transparent); }
+.tv-poster { aspect-ratio:405/384; object-fit:cover; }
+@media(max-width:700px){ .flower-introduction .flower-copy .display { font-size:clamp(2.2rem,8.7vw,3.7rem); } }
+@media(prefers-reduced-motion:reduce){ .page-home .flower-prologue,.flower-stage { height:100svh; min-height:0; padding:0; } }
+html.no-js .page-home .flower-prologue,html.no-js .flower-stage { height:100svh; min-height:0; padding:0; }
+.flower-hand-cards { position:absolute; left:50%; transform:translateX(-50%); z-index:2; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:clamp(4px,.7vw,10px); opacity:0; pointer-events:none; background:#55454f; }
+.flower-hand-cards article { display:flex; flex-direction:column; justify-content:flex-end; min-width:0; padding:clamp(8px,1.1vw,18px); background:#55454f; border:1px solid #85747b; color:#fff0ed; }
+.flower-hand-cards h2 { font:400 clamp(15px,1.85vw,27px)/1.2 var(--font-display); margin:0 0 10px; }
+.flower-hand-cards p { font-size:clamp(10px,.98vw,15px); line-height:1.5; margin:0; }
+.page-home .site-shell main > section.tv-chapter { background:#b0b0ae !important; }
+.tv-person { mask-image:linear-gradient(90deg,transparent,#000 7%,#000 94%,transparent),linear-gradient(180deg,transparent,#000 4%,#000 98%,transparent); mask-composite:intersect; }

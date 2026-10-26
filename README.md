@@ -15,28 +15,41 @@ installation steps.
 
 ## Current home-page sequence (26 October 2026)
 
-After the retained welcome paint, the opening is a clean flower portrait, an
-extended hand and a scroll-driven zoom reveal of the club's own copy. The
-original WebGL story follows the brand interlude. A separate grey TV-head
-companion scene sits beside the happiness chart; the old lens wheel/logo is
-removed. Only after that companion scene does the unchanged horse background
-start, continuing behind the later sections, forms and footer. Scrolling back
-into the companion or opening hides and pauses the horse again.
+After the retained welcome paint, scroll follows the **actual woman, camera
+pan and extending hand from `animated (96).webp`**, not three AI stills. The
+usable camera/hand portion (source frames 0–39) is expanded into 157 dense
+bidirectional optical-flow samples; a native-scroll WebGL player interpolates
+adjacent textures. Notice / Connect / Grow become responsive, readable cards
+above the recorded palm. The unchanged horse background **starts immediately
+at the flower sequence's end**, behind the following club introduction. It
+pauses again when scrolling back into the flower, or under the full TV scene.
+The brand interlude and original WebGL story remain after the introduction.
 
-The three flower images are **AI-cleaned, reference-derived keyframes**, not a
-recovered higher-resolution version of the original recording or a new rigged
-3D film. The TV character is isolated from the supplied `animated (46).webp`,
-using only clean recorded poses and three bounded local sprite atlases. Its
-frames respond to mouse movement, horizontal touch and orientation events that
-the browser already permits. No additional gyro permission prompt is added;
-iOS sensor behavior depends on its existing permission. Reduced motion and
-no-JavaScript visitors retain readable content and a static character.
+The TV companion beside the happiness chart uses **all 75 recorded frames of
+`animated (46).webp`**, with the complete CRT casing and opaque original
+background. There is no segmented cutout or sprite atlas. Mouse, horizontal
+touch and orientation events already permitted by the browser scrub its poses;
+no new gyro permission prompt or control is added. The old lens wheel/logo
+remains removed. The butterfly now cancels retained-field/pending-action trips
+before leaving dark scenes, and its perch clears the header's controls.
 
-The standalone butterfly corner fix / **pre-remodel rollback checkpoint is
-`8e37e6f`**. Previous designs remain in Git history, not duplicated inside the
-website download. The uploaded reference WebPs, tools, rollback archives and
-private live settings are excluded from GitHub's deployment ZIP. Runtime media
-is already built; hosting does not need React, Vite, Python or a new build step.
+These are cleaned recording-derived frames, **not a recovered rigged 3D model**.
+The source has no distinct eye-opening pass; none is invented. Optical flow
+adds intermediate samples, not original detail beyond the 640px recording.
+Foreign UI/cursors are locally repaired/relabelled; unrelated agency outro
+frames are not replayed. The player bounds decoded images to 20 per sequence,
+limits concurrent requests to four, stops offscreen/hidden work and retains
+posters during loading or GPU loss. A Canvas2D fallback, reduced-motion and
+no-JavaScript readable/static presentation remain available.
+
+The **pre-sequence correction checkpoint is `b3dd776`**; the earlier standalone
+butterfly / pre-remodel checkpoint is `8e37e6f`. Prior designs remain in Git
+history, not duplicated inside the website download. Uploaded reference WebPs,
+tools, rollback archives and private live settings are excluded from the
+GitHub deployment ZIP. Runtime media is already built; hosting needs no React,
+Vite, Python or new build step. See
+[the current validation report](tools/tests/reports/recorded-sequences-2026-10-26.md)
+for tested behavior and limitations.
 
 ---
 

@@ -26,8 +26,12 @@ with tarfile.open(fileobj=io.BytesIO(archive)) as tar:
         assert name not in members, f'Live settings or dev-only file exported: {name}'
     assert not any(n.startswith('tools/') for n in members), 'Development source exported'
     assert not any('/' not in n and re.match(r'animated.*\.webp$', n, re.I) for n in members), 'Uploaded reference screen recording exported'
-    for name in ['flower-portrait','flower-unfold','flower-hand','tv-man-poster','tv-man-atlas-0','tv-man-atlas-1','tv-man-atlas-2']:
-        assert f'assets/media/{name}.webp' in members, f'Current cinematic runtime media absent: {name}'
+    for name in ['assets/media/flower-poster.webp','assets/media/tv-man-poster.webp',
+                 'assets/media/flower-sequence/manifest.json','assets/media/tv-sequence/manifest.json','assets/sequence-player.js']:
+        assert name in members, f'Current frame runtime absent: {name}'
+    for folder,count in [('flower-sequence',157),('tv-sequence',75)]:
+        for frame in range(count):assert f'assets/media/{folder}/{frame:04}.webp' in members
+    assert 'assets/media/flower-portrait.webp' not in members, 'Superseded AI frame exported'
     assert not any(n.lower().endswith(('.zip','.rar')) for n in members), 'Reference archive exported'
     assert not any(re.fullmatch(r'cartier-part-\d{3}', n) or ('/' not in n and n.lower().endswith('.glb')) for n in members), 'Cartier study uploads exported into the club runtime'
     for suffix, size in [('running', 9938593), ('desktop', 3831086), ('mobile', 1894350)]:
