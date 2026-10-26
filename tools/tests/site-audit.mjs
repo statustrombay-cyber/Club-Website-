@@ -17,6 +17,11 @@ try{for(const width of [1440,390]){
   const start=Date.now();const response=await page.goto(base+route,{waitUntil:'domcontentloaded'});assert.equal(response.status(),200);
   const item={width,route,errors};
   const video=page.locator('#heroVideo');
+  if(route==='/'){
+   await page.waitForFunction(()=>document.body.classList.contains('intro-revealed'));
+   assert.ok(await video.evaluate(e=>e.paused&&!e.currentSrc),'flowers, not horses, open home');
+   await page.locator('.tv-chapter').evaluate(e=>scrollTo({top:e.getBoundingClientRect().bottom+scrollY+5,behavior:'instant'}));
+  }
   await page.waitForFunction(()=>document.querySelector('#heroVideo').currentTime>.15,null,{timeout:15000});
   item.firstVideoFrameMs=await page.evaluate(()=>Math.round(performance.now()));
   const before=await video.evaluate(e=>e.currentTime);await page.waitForTimeout(700);
@@ -45,8 +50,8 @@ try{for(const width of [1440,390]){
     if(progress===.994){assert.ok(state.paperProgress>.98);assert.ok(state.paperClearance>2,'all paper centres have passed the camera with a full sheet-size clearance');}
     await page.screenshot({path:`${dest}/${width}-story-${progress}.png`});item.phases.push(state);
    }
-   await page.locator('.story-track').evaluate(e=>scrollTo({top:e.getBoundingClientRect().bottom+scrollY+10,behavior:'instant'}));
-   await page.waitForFunction(()=>!document.querySelector('#heroVideo').paused);const t=await video.evaluate(e=>e.currentTime);await page.waitForTimeout(700);assert.ok(await video.evaluate((e,t)=>e.currentTime>t+.1,t),'horse keeps moving after the story');
+   await page.locator('.tv-chapter').evaluate(e=>scrollTo({top:e.getBoundingClientRect().bottom+scrollY+10,behavior:'instant'}));
+   await page.waitForFunction(()=>!document.querySelector('#heroVideo').paused);const t=await video.evaluate(e=>e.currentTime);await page.waitForTimeout(700);assert.ok(await video.evaluate((e,t)=>e.currentTime>t+.1,t),'horse keeps moving after the story AND the TV chapter');
    await page.screenshot({path:`${dest}/${width}-horse-exit.png`});
    // Real navigation starts on this same click, not a delayed synthetic replay.
    await page.locator('.footer').scrollIntoViewIfNeeded();
@@ -56,14 +61,14 @@ try{for(const width of [1440,390]){
   }else{
    if(route==='/calendar'){
     assert.equal(await page.locator('.calendar-month').count(),12);
-    assert.ok(await page.locator('.calendar-month a[href="/register?event=event-welcome-circle"]').count()>0);
+    assert.ok(await page.locator('.calendar-event').count()>0,'published sample is listed even after its deadline');
+    const openRegistration=page.locator('.calendar-month a[href="/register?event=event-welcome-circle"]');
     const gaps=await page.locator('.calendar-chip').evaluate(e=>({top:e.getBoundingClientRect().top-e.closest('.calendar-content').previousElementSibling.getBoundingClientRect().bottom,bottom:e.nextElementSibling.getBoundingClientRect().top-e.getBoundingClientRect().bottom}));
     assert.ok(gaps.top>=30&&gaps.bottom>=16,'calendar chip has breathing room above and below');
-    await page.locator('.calendar-month a[href="/register?event=event-welcome-circle"]').scrollIntoViewIfNeeded();
+    await page.locator('.calendar-event').first().scrollIntoViewIfNeeded();
     assert.ok(await page.locator('.calendar-month').evaluateAll(nodes=>nodes.every(e=>e.getBoundingClientRect().right<=innerWidth+1&&e.getBoundingClientRect().left>=-1)),'all twelve month boxes fit after the sample is scrolled into view');
-    await page.locator('.calendar-month a[href="/register?event=event-welcome-circle"]').click();
-    await page.waitForURL(/\/register\?event=/);
-    assert.ok(await page.locator('input[name="email"]').isEditable());
+    if(await openRegistration.count()){await openRegistration.click();await page.waitForURL(/\/register\?event=/);assert.ok(await page.locator('input[name="email"]').isEditable());}
+    else {await page.goto(base+'/register?event=event-welcome-circle');assert.equal(await page.locator('input[name="email"]').count(),0,'expired sample cannot register');assert.match(await page.locator('main').innerText(),/closed|ended/i);}
     await page.goto(base+'/calendar');
    }
    if(route==='/members')assert.match(await page.locator('#members').innerText(),/Tanisha[\s\S]*Mohd Shafiq/);

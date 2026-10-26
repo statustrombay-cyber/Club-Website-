@@ -13,6 +13,31 @@ For **InfinityFree uploads**, follow [Full GitHub ZIP upload](#full-github-zip-u
 below. The `npm` commands in the local-development section are **not** hosting
 installation steps.
 
+## Current home-page sequence (26 October 2026)
+
+After the retained welcome paint, the opening is a clean flower portrait, an
+extended hand and a scroll-driven zoom reveal of the club's own copy. The
+original WebGL story follows the brand interlude. A separate grey TV-head
+companion scene sits beside the happiness chart; the old lens wheel/logo is
+removed. Only after that companion scene does the unchanged horse background
+start, continuing behind the later sections, forms and footer. Scrolling back
+into the companion or opening hides and pauses the horse again.
+
+The three flower images are **AI-cleaned, reference-derived keyframes**, not a
+recovered higher-resolution version of the original recording or a new rigged
+3D film. The TV character is isolated from the supplied `animated (46).webp`,
+using only clean recorded poses and three bounded local sprite atlases. Its
+frames respond to mouse movement, horizontal touch and orientation events that
+the browser already permits. No additional gyro permission prompt is added;
+iOS sensor behavior depends on its existing permission. Reduced motion and
+no-JavaScript visitors retain readable content and a static character.
+
+The standalone butterfly corner fix / **pre-remodel rollback checkpoint is
+`8e37e6f`**. Previous designs remain in Git history, not duplicated inside the
+website download. The uploaded reference WebPs, tools, rollback archives and
+private live settings are excluded from GitHub's deployment ZIP. Runtime media
+is already built; hosting does not need React, Vite, Python or a new build step.
+
 ---
 
 ## Running it

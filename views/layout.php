@@ -66,7 +66,7 @@ $nav = [
   <meta property="og:description" content="<?= e(mb_substr($description, 0, 180)) ?>">
   <meta property="og:image" content="<?= e($logo) ?>">
   <link rel="preload" href="/assets/fonts/inter-latin-regular.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" href="/assets/media/horses-running-poster.jpg" as="image" fetchpriority="high">
+  <link rel="preload" href="<?= $splash ? '/assets/media/flower-portrait.webp' : '/assets/media/horses-running-poster.jpg' ?>" as="image" fetchpriority="high">
   <link rel="stylesheet" href="/assets/app.css">
   <?php if ($splash): ?>
     <link rel="stylesheet" href="/assets/story.css">
@@ -113,16 +113,19 @@ $nav = [
   </div>
 
   <?php /* The club's horses, behind every public page. A still frame is always
-           there and the compressed clip plays over it — muted, in a loop —
+           there; home defers the clip until AFTER the TV companion. Elsewhere
+           the compressed clip plays over it — muted, in a loop —
            pinned to the window, so the herd keeps running while the visitor
            scrolls and every block reads through a thin film of its own paper.
            It is never dark and never in front of a word. */ ?>
   <div class="hero-media" aria-hidden="true">
     <img class="hero-still" id="heroStill" src="/assets/media/horses-running-poster.jpg" alt="" decoding="async" fetchpriority="high">
-    <video class="hero-video" id="heroVideo" muted loop playsinline autoplay preload="auto" data-desktop-src="/assets/media/horses-desktop.mp4" data-mobile-src="/assets/media/horses-mobile.mp4"
+    <video class="hero-video" id="heroVideo" muted loop playsinline <?= $splash ? 'preload="none" data-after-tv="true"' : 'autoplay preload="auto"' ?> data-desktop-src="/assets/media/horses-desktop.mp4" data-mobile-src="/assets/media/horses-mobile.mp4"
            poster="/assets/media/horses-running-poster.jpg" tabindex="-1">
+      <?php if (!$splash): ?>
       <source src="/assets/media/horses-mobile.mp4" media="(prefers-reduced-motion: no-preference) and (max-width: 900px)" type="video/mp4">
       <source src="/assets/media/horses-desktop.mp4" media="(prefers-reduced-motion: no-preference)" type="video/mp4">
+      <?php endif; ?>
       <?php /* The 1440px master stays in assets; the player selects one lighter
                fast-start rendition before making any media request. */ ?>
     </video>

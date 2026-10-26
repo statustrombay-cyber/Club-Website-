@@ -772,10 +772,11 @@
       const width = butterfly.offsetWidth;
       const progress = clamp((window.scrollY || 0) / Math.max(1, document.documentElement.scrollHeight - window.innerHeight), 0, 1);
       target = { x: 10 + progress * Math.max(0, window.innerWidth - width - (window.innerWidth <= 1100 ? 84 : 32)), y: Math.max(4, (bounds.top || 0) + 12 - butterfly.offsetHeight), width: width };
-      const dark = $$('.black-chapter').some(function (section) {
+      const dark = $$('.black-chapter, .tv-chapter').some(function (section) {
         if (section.parentElement && section.parentElement.dataset.storyPhase === 'herd') return false;
         const box = section.getBoundingClientRect();
-        return box.top <= bounds.bottom + 1 && box.bottom > bounds.bottom;
+        const threshold = section.matches?.('.tv-chapter') ? window.innerHeight : bounds.bottom + 1;
+        return box.top <= threshold && box.bottom > bounds.bottom;
       });
       if (dark !== desiredDark) { desiredDark = dark; darkSince = now; }
       needsMeasure = false;
@@ -950,7 +951,7 @@
     let actionTicket = 0;
     document.addEventListener('click', function (event) {
       if(suppressDragClick&&event.detail>0){suppressDragClick=false;event.preventDefault();event.stopImmediatePropagation();return;}
-      if (document.documentElement.classList?.contains('intro-cover') || document.body.classList.contains('is-black-chapter') || document.body.classList.contains('story-immersive') || drag || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || reduced() || event.target.closest?.('.nav-butterfly,[data-no-butterfly],.mind-story')) return;
+      if (document.documentElement.classList?.contains('intro-cover') || document.body.classList.contains('is-black-chapter') || document.body.classList.contains('story-immersive') || desiredDark || drag || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || reduced() || event.target.closest?.('.nav-butterfly,[data-no-butterfly],.mind-story')) return;
       const node = event.target.closest && event.target.closest('a[href], button, summary');
       const point = event.detail > 0 ? {x:event.clientX,y:event.clientY} : null;
       if (!node) {
@@ -1097,6 +1098,96 @@
 
   /* Two fast-start encodes; the untouched master is retained for the club.
      Buffering is not repaired by repeatedly seeking or reloading the file. */
+  /* Three clean, reference-derived keyframes form a native-scroll camera move.
+     No wheel/touch hijacking, autoplay, remote CDN or new application framework. */
+  function setupCinematicChapters() {
+    const opening=$('.flower-prologue'), chapter=$('.tv-chapter');
+    if(!opening||!chapter)return;
+    const frames=$$('.flower-frame',opening), copy=$$('.flower-copy > *',opening), person=$('.tv-person',chapter), sprite=$('.tv-sprite',chapter);
+    const clamp=(n,a=0,b=1)=>Math.max(a,Math.min(b,n));
+    const smooth=n=>{n=clamp(n);return n*n*(3-2*n);};
+    let viewportWidth=0,viewportHeight=innerHeight,frame=0,last=0,progress=0,target=0,horse=null;
+    function size(){
+      const width=document.documentElement.clientWidth;
+      viewportHeight=width!==viewportWidth?Math.ceil(Math.max(innerHeight,window.visualViewport?.height||0)):Math.max(viewportHeight,Math.ceil(innerHeight));
+      viewportWidth=width;opening.style.setProperty('--flower-height',viewportHeight+'px');
+      opening.style.setProperty('--flower-ui-bottom',Math.max(0,viewportHeight-Math.ceil(window.visualViewport?.height||innerHeight))+'px');update();
+    }
+    function render(now){
+      frame=0;if(document.hidden){last=0;return;}
+      const dt=last?Math.min(64,now-last):16;last=now;
+      progress+=(target-progress)*(reduced()?1:1-Math.exp(-dt/85));
+      if(Math.abs(target-progress)<.0003)progress=target;
+      const p=reduced()?0:progress,unfold=smooth((p-.12)/.24),hand=smooth((p-.36)/.22);
+      frames[0].style.opacity=String(1-unfold);frames[0].style.transform='scale('+(1+p*.32)+')';
+      frames[1].style.opacity=String(unfold*(1-hand));frames[1].style.transform='translate3d('+((1-unfold)*4)+'%,0,0) scale('+(1.12-p*.12)+')';
+      frames[2].style.opacity=String(hand);frames[2].style.transform='scale('+(1+smooth((p-.45)/.55)*.28)+')';
+      opening.style.setProperty('--flower-shade',String(reduced()?.86:smooth((p-.38)/.22)*.84));
+      copy.forEach((node,index)=>{
+        const amount=reduced()?1:smooth((p-(.57+index*.06))/.14);
+        node.style.opacity=String(amount);node.style.transform='translate3d(0,'+((1-amount)*20)+'px,0) scale('+(0.92+amount*.08)+')';
+        node.inert=amount<.9;node.setAttribute('aria-hidden',String(amount<.01));
+      });
+      opening.dataset.flowerProgress=p.toFixed(4);
+      if(progress!==target)frame=requestAnimationFrame(render);else last=0;
+    }
+    function update(){
+      const bounds=opening.getBoundingClientRect();
+      target=clamp(-bounds.top/Math.max(1,opening.offsetHeight-viewportHeight));
+      document.body.classList.toggle('flower-active',bounds.bottom>85&&bounds.top<viewportHeight);
+      const nextHorse=chapter.getBoundingClientRect().bottom<=0;
+      if(horse!==nextHorse){horse=nextHorse;document.body.classList.toggle('horse-era',horse);window.dispatchEvent(new CustomEvent('mt:horse-era',{detail:{active:horse}}));}
+      if(!frame&&!document.hidden)frame=requestAnimationFrame(render);
+    }
+    window.addEventListener('scroll',update,{passive:true});window.addEventListener('resize',size,{passive:true});
+    window.visualViewport?.addEventListener('resize',size,{passive:true});size();
+
+    // Actual isolated frames from animated (46).webp, not a generic icon/model.
+    let ready=false,active=false,tvFrame=0,current=37,wanted=37,lastPaint=-1,previousX=null,neutralTilt=null;
+    const sheets=[];
+    function paintTv(){
+      tvFrame=0;if(document.hidden||!active||!ready)return;
+      current+=(wanted-current)*.22;
+      if(Math.abs(wanted-current)<.04)current=wanted;
+      const index=Math.round(current),sheet=Math.floor(index/25),tile=index%25;
+      if(index!==lastPaint){sprite.style.backgroundImage='url("/assets/media/tv-man-atlas-'+sheet+'.webp")';sprite.style.backgroundPosition=((tile%5)*25)+'% '+(Math.floor(tile/5)*25)+'%';sprite.dataset.frame=String(index);lastPaint=index;}
+      if(current!==wanted)tvFrame=requestAnimationFrame(paintTv);
+    }
+    function scheduleTv(){if(active&&ready&&!tvFrame&&!document.hidden)tvFrame=requestAnimationFrame(paintTv);}
+    function loadTv(){
+      if(chapter.dataset.tvLoading)return;
+      if(reduced()||navigator.connection?.saveData){chapter.dataset.tvLoading='static';return;}
+      chapter.dataset.tvLoading='true';
+      Promise.all([0,1,2].map(index=>{const image=new Image();sheets.push(image);image.src='/assets/media/tv-man-atlas-'+index+'.webp';return image.decode();}))
+      .then(()=>{ready=true;chapter.classList.add('tv-ready');scheduleTv();})
+      .catch(()=>{chapter.dataset.tvLoading='fallback';}); // clean still remains
+    }
+    if('IntersectionObserver'in window){
+      const near=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting)){loadTv();near.disconnect();}},{rootMargin:'700px'});near.observe(chapter);
+      const visible=new IntersectionObserver(entries=>{active=entries[0].isIntersecting;previousX=null;neutralTilt=null;if(active)scheduleTv();else if(tvFrame){cancelAnimationFrame(tvFrame);tvFrame=0;}});visible.observe(chapter);
+    }else{active=true;loadTv();}
+    window.addEventListener('pointermove',event=>{
+      if(!active||reduced()){previousX=null;return;}
+      if(previousX!==null)wanted=clamp(wanted+(event.clientX-previousX)/innerWidth*.8*74,0,74);
+      previousX=event.clientX;
+      const y=clamp(event.clientY/innerHeight,0,1)-.5;
+      person.style.setProperty('--tv-nod',(-y*4).toFixed(2)+'deg');scheduleTv();
+    },{passive:true});
+    window.addEventListener('pointerdown',event=>{previousX=event.clientX;},{passive:true});
+    window.addEventListener('pointerup',()=>{previousX=null;},{passive:true});
+    // Permission is never requested here. Safari only supplies these events if
+    // permission was granted previously; pointer/touch works regardless.
+    window.addEventListener('deviceorientation',event=>{
+      if(!active||reduced()||!Number.isFinite(event.gamma))return;
+      if(neutralTilt===null)neutralTilt=event.gamma;
+      wanted=clamp(37+(event.gamma-neutralTilt)/35*37,0,74);scheduleTv();
+    },{passive:true});
+    document.addEventListener('visibilitychange',()=>{
+      if(document.hidden){cancelAnimationFrame(frame);frame=0;last=0;cancelAnimationFrame(tvFrame);tvFrame=0;}
+      else{update();scheduleTv();}
+    });
+  }
+
   function setupHeroVideo() {
     const video = $('#heroVideo');
     if (!video) return;
@@ -1128,20 +1219,26 @@
       const story = $('.mind-story');
       return document.body.classList.contains('story-immersive') && story?.dataset.storyCovered !== 'false';
     }
+    const gated = video.dataset.afterTv === 'true';
+    function beforeHorse() { return gated && !document.body.classList.contains('horse-era'); }
     function drop() { video.hidden = true; pause(); }
     function pause() { try { video.pause(); } catch (error) { /* already stopped */ } }
     function play() {
-      if (!allowed || document.hidden || video.hidden || coveredByStory() || introCovered()) return;
+      if (!allowed || document.hidden || video.hidden || coveredByStory() || introCovered() || beforeHorse()) return;
       const attempt = video.play();
       if (attempt && attempt.catch) attempt.catch(function () { /* retry on a gesture */ });
     }
     if (!allowed) { drop(); return; }
     const mobile = window.matchMedia('(max-width: 900px)').matches || (connection && /(^|-)2g|3g/.test(connection.effectiveType || ''));
     const wantedSource = mobile ? video.dataset.mobileSrc : video.dataset.desktopSrc;
-    if (!video.currentSrc || !video.currentSrc.split('?')[0].endsWith(wantedSource)) video.src = wantedSource;
+    function selectSource() {
+      if (!video.currentSrc || !video.currentSrc.split('?')[0].endsWith(wantedSource)) video.src = wantedSource;
+      video.preload = 'auto';
+    }
+    if (!beforeHorse()) selectSource();
+    window.addEventListener('mt:horse-era', function () { if (beforeHorse()) pause(); else { selectSource(); play(); } });
     if (introCovered()) pause();
     window.addEventListener('mt:intro-ready', play, {once:true});
-    video.preload = 'auto';
     video.muted = true;
     video.playsInline = true;
     video.addEventListener('error', drop);
@@ -1164,7 +1261,7 @@
     video.addEventListener('stalled', function () { /* let the browser buffer */ });
     window.setInterval(function () {
       if (document.hidden || video.hidden || video.error) return;
-      if (coveredByStory() || introCovered()) { pause(); lastAdvance = Date.now(); return; }
+      if (coveredByStory() || introCovered() || beforeHorse()) { pause(); lastAdvance = Date.now(); return; }
       const clock = video.currentTime;
       if (Math.abs(clock - lastClock) > 0.02) {
         lastClock = clock; lastAdvance = Date.now();
@@ -1188,7 +1285,7 @@
       window.addEventListener(name, play, { once: true, passive: true });
     });
     window.addEventListener('scroll', function () {
-      if (coveredByStory()) { pause(); lastAdvance = Date.now(); }
+      if (coveredByStory() || beforeHorse()) { pause(); lastAdvance = Date.now(); }
       else if (video.paused) play();
     }, { passive: true });
     document.addEventListener('visibilitychange', function () {
@@ -1227,6 +1324,7 @@
     setupCardDeck();
     setupReveal();
     setupPortraits();
+    setupCinematicChapters();
     setupHeroVideo();
     setupIntroWarmup();
     setupMotionBudget();

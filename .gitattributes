@@ -35,3 +35,6 @@ screen-*.mp4 export-ignore
 # Repository housekeeping is not needed inside the website download.
 /.gitignore export-ignore
 /.gitattributes export-ignore
+
+# Uploaded screen recordings are references; only cleaned runtime media deploys.
+/animated*.webp export-ignore
