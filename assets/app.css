@@ -2070,40 +2070,6 @@ body.is-black-chapter .bubble-field, body.is-black-chapter .drift-field { visibi
  .nav-butterfly.butterfly-dragging .wing-left, .nav-butterfly.butterfly-dragging .wing-right { animation:none; }
 }
 
-/* Flower opening → the original WebGL story → computer companion → herd.
-   All scenes keep native scroll and anchor semantics; no fixed white sheets. */
-.page-home .announcement, .page-home .event-banner { display:none; }
-.page-home .nav-wrap { position:fixed; inset:0 0 auto; }
-.page-home .hero-media { opacity:0; visibility:hidden; }
-.page-home.horse-era .hero-media { opacity:1; visibility:visible; }
-.page-home .flower-prologue {
-  position:relative; display:block; height:calc(var(--flower-height,100svh) * 3.8);
-  min-height:0; padding:0; margin:0; overflow:visible; background:#080b0d;
-}
-.flower-stage { position:sticky; top:0; height:var(--flower-height,100svh); overflow:hidden; isolation:isolate; }
-.flower-film, .flower-shade { position:absolute; inset:0; pointer-events:none; }
-.flower-film { background:#080b0d; }
-.flower-frame { position:absolute; inset:0; width:100%; height:100%; max-width:none; object-fit:cover; object-position:56% center; will-change:transform,opacity; }
-.flower-unfold, .flower-hand { opacity:0; }
-.flower-unfold { object-position:68% center; }
-.flower-hand { object-position:52% center; transform-origin:36% 60%; }
-.flower-shade { z-index:1; background:linear-gradient(90deg,rgba(12,8,15,var(--flower-shade,0)) 0%,rgba(12,8,15,0) 90%); }
-.flower-stage .hero-grid { position:absolute; bottom:calc(7% + var(--flower-ui-bottom,0px)); left:0; right:0; display:block; z-index:2; }
-.flower-copy { max-width:680px; color:#fff7f0; }
-.flower-copy .display { font-size:clamp(2.6rem,5.2vw,5.2rem); line-height:1.04; color:inherit; }
-.flower-copy .display em { color:#f4c4d6; }
-.flower-copy .hero-copy, .flower-copy .eyebrow, .flower-copy .hero-meta { color:#f4e7e9; }
-.flower-copy .hero-meta { border-color:#ffffff3b; }
-.flower-copy .hero-meta span { color:#e8d6dc; }
-.flower-copy .hero-actions { margin-top:24px; }
-.flower-copy .outline-button { color:#fff4f3; border-color:#e4c3cf; background:#20131c42; }
-.flower-copy > * { transform-origin:left center; }
-html.js .flower-copy > * { opacity:0; }
-.flower-active .nav, .flower-active .brand-name, .flower-active .nav-links, .flower-active .menu-button { color:#fff4ef; }
-.flower-active .nav:before, body.flower-active.is-scrolled .nav:before { background:rgba(12,9,14,.16); border:0; box-shadow:none; }
-.flower-active .mobile-nav-toggle[open] + .nav-links { background:rgba(20,12,23,.96); }
-.page-home .psyche-section { padding-top:24px; padding-bottom:70px; }
-.page-home .psyche-deck { margin-top:0; }
 /* The club's real, unnumbered aspiration chart stays alongside the companion. */
 .site-shell main > .tv-chapter {
   position:relative; display:grid; grid-template-columns:minmax(0,.95fr) minmax(0,1.05fr);
@@ -2126,103 +2092,25 @@ html.js .flower-copy > * { opacity:0; }
 .tv-content .happiness-copy p { font-size:.88rem; margin:0; }
 .tv-content .happiness-chart { width:100%; max-width:570px; padding:0; background:none; border:0; box-shadow:none; }
 .tv-content .happiness-plot { display:block; max-height:280px; }
-@media(max-width:700px) {
-  .flower-stage .hero-grid { bottom:calc(6% + var(--flower-ui-bottom,0px)); }
-  .flower-copy .display { font-size:clamp(2.25rem,8.7vw,3.7rem); }
-  .flower-copy .hero-copy { font-size:.92rem; line-height:1.5; }
-  .flower-copy .hero-meta { gap:12px; margin-top:22px; font-size:.65rem; }
-  .flower-copy .hero-actions { gap:9px; margin-top:20px; }
-  .flower-copy .hero-actions a { padding:12px 16px; font-size:.76rem; }
-  .flower-shade { background:linear-gradient(0deg,rgba(12,8,15,var(--flower-shade,0)) 0%,rgba(12,8,15,0) 100%); }
-  .site-shell main > .tv-chapter { grid-template-columns:1fr; padding:92px 24px 45px; gap:22px; }
-  .tv-character { width:min(100%,370px); margin:0 auto; }
-  .tv-content > h2 { font-size:clamp(2.2rem,9vw,3.8rem); }
-  .tv-content .happiness-plot { max-height:250px; }
-}
-html.no-js .flower-prologue { height:auto; }
-html.no-js .flower-stage { position:relative; height:auto; min-height:100svh; padding:150px 0 70px; }
-html.no-js .flower-stage .hero-grid { position:relative; bottom:auto; }
-html.no-js .flower-shade { background:linear-gradient(90deg,#0b080ce6,#0b080c55); }
-html.no-js .page-home .hero-media { opacity:1; visibility:visible; }
-@media(prefers-reduced-motion:reduce) {
-  .page-home .flower-prologue { height:auto; }
-  .flower-stage { position:relative; height:auto; min-height:100svh; padding:150px 0 70px; }
-  .flower-stage .hero-grid { position:relative; bottom:auto; }
-  html.js .flower-copy > * { opacity:1; }
-  .flower-frame { will-change:auto; }
-  .tv-person { transform:none; }
-}
-@media print { .flower-film, .flower-shade, .tv-character { display:none; } .page-home .flower-prologue, .flower-stage { height:auto; } .flower-stage .hero-grid { position:static; color:#000; } .flower-copy > * { opacity:1 !important; transform:none !important; } }
 
-/* Override legacy multi-:not paper-film selectors on this one solid scene. */
-.page-home .site-shell main > section.tv-chapter { background:#a5a49f !important; }
-.flower-portrait { object-position:50% center; }
-.flower-copy .hero-meta strong { color:#f6e9ef; }
+/* TV-only addition to the restored pre-flower website. */
+.tv-person { aspect-ratio:405/384; transform:none; mask-image:linear-gradient(90deg,transparent,#000 7%,#000 94%,transparent),linear-gradient(180deg,transparent,#000 4%,#000 98%,transparent); mask-composite:intersect; }
+.tv-canvas { position:absolute; inset:0; width:100%; height:100%; opacity:0; display:block; pointer-events:none; }
+.tv-poster { aspect-ratio:405/384; object-fit:cover; }
+.page-home .site-shell main > section.tv-chapter { background:#b0b0ae !important; }
 .tv-content .chart-legend { color:#37313d; }
 .tv-content .happiness-line { stroke:#805298; }
 .tv-content .chart-line-vice-president { stroke:#6550bf; }
-
-/* An away photo is offscreen, and its grip must leave keyboard navigation too. */
-.nav-butterfly.butterfly-away .butterfly-grip { visibility:hidden; pointer-events:none; }
-
-@media(max-height:700px) {
-  .flower-copy .hero-meta { display:none; }
-  .flower-copy .hero-copy { font-size:.85rem; line-height:1.4; }
-  .flower-copy .display { font-size:clamp(1.75rem,4vw,3.4rem); }
-  .flower-copy .hero-actions { margin-top:12px; }
+@media(max-width:700px) {
+ .site-shell main > .tv-chapter { grid-template-columns:1fr; padding:92px 24px 45px; gap:22px; }
+ .tv-character { width:min(100%,370px); margin:0 auto; }
+ .tv-content > h2 { font-size:clamp(2.2rem,9vw,3.8rem); }
+ .tv-content .happiness-plot { max-height:250px; }
 }
-
-/* The source camera/hand movement now lives in a dense WebGL frame sequence. */
-.flower-poster, .flower-canvas { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center; }
-.flower-canvas, .tv-canvas { opacity:0; display:block; pointer-events:none; }
-.flower-shade { display:none; }
-.visually-hidden { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
-.page-home .flower-introduction { min-height:100svh; display:flex; align-items:center; padding:120px 0 70px; }
-.flower-introduction .hero-grid { display:block; }
-.flower-introduction .flower-copy { max-width:740px; color:var(--ink); }
-html.js .flower-introduction .flower-copy > * { opacity:1; transform:none; }
-.flower-introduction .flower-copy .display { color:var(--plum); }
-.flower-introduction .flower-copy .display em { color:var(--terracotta-ink); }
-.flower-introduction .hero-copy, .flower-introduction .flower-copy .eyebrow,
-.flower-introduction .flower-copy .hero-meta, .flower-introduction .flower-copy .hero-meta strong,
-.flower-introduction .flower-copy .hero-meta span { color:var(--ink-soft); }
-.flower-introduction .flower-copy .outline-button { color:var(--plum); border-color:var(--plum); background:#fffaef66; }
-.tv-person { aspect-ratio:405/384; transform:none; }
-.tv-canvas { position:absolute; inset:0; width:100%; height:100%; }
-/* Only the OUTER recording edges feather into grey; the CRT and person are
-   fully opaque RGB footage, with no polygon, hull, chroma-key or alpha holes. */
-.tv-person { mask-image:linear-gradient(90deg,transparent,#000 7%,#000 94%,transparent); }
-.tv-poster { aspect-ratio:405/384; object-fit:cover; }
-@media(max-width:700px){ .flower-introduction .flower-copy .display { font-size:clamp(2.2rem,8.7vw,3.7rem); } }
-@media(prefers-reduced-motion:reduce){ .page-home .flower-prologue,.flower-stage { height:100svh; min-height:0; padding:0; } }
-html.no-js .page-home .flower-prologue,html.no-js .flower-stage { height:100svh; min-height:0; padding:0; }
-.flower-hand-cards { position:absolute; left:50%; transform:translateX(-50%); z-index:2; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:clamp(4px,.7vw,10px); opacity:0; pointer-events:none; background:#55454f; }
-.flower-hand-cards article { display:flex; flex-direction:column; justify-content:flex-end; min-width:0; padding:clamp(8px,1.1vw,18px); background:#55454f; border:1px solid #85747b; color:#fff0ed; }
-.flower-hand-cards h2 { font:400 clamp(15px,1.85vw,27px)/1.2 var(--font-display); margin:0 0 10px; }
-.flower-hand-cards p { font-size:clamp(10px,.98vw,15px); line-height:1.5; margin:0; }
-.page-home .site-shell main > section.tv-chapter { background:#b0b0ae !important; }
-.tv-person { mask-image:linear-gradient(90deg,transparent,#000 7%,#000 94%,transparent),linear-gradient(180deg,transparent,#000 4%,#000 98%,transparent); mask-composite:intersect; }
-
-/* The flower stays pinned even with reduced-motion enabled. Seeking follows
-   deliberate scroll only; no autoplay, scroll trapping or GPU fetch queue. */
-html.js .page-home .flower-prologue { height:calc(var(--flower-height,100svh) * 4.8); }
-html.js .flower-stage { position:sticky; top:0; height:var(--flower-height,100svh); min-height:0; padding:0; }
-.flower-video { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0; pointer-events:none; }
-.flower-film { transform-origin:50% 43%; }
-/* One neutral shadow, not three blurred photographs composited together. */
+.nav-butterfly.butterfly-away .butterfly-grip { visibility:hidden; pointer-events:none; }
 .nav-butterfly { isolation:isolate; mix-blend-mode:normal; }
 .nav-butterfly .butterfly-flight { filter:drop-shadow(0 1px 1px rgba(0,0,0,.3)); }
 .nav-butterfly .butterfly-flight img { filter:none; mix-blend-mode:normal; backface-visibility:hidden; }
 .nav-butterfly .wing-left { clip-path:polygon(0 0,49% 0,49% 100%,0 100%); }
 .nav-butterfly .wing-right { clip-path:polygon(51% 0,100% 0,100% 100%,51% 100%); }
 .nav-butterfly .butterfly-body { clip-path:polygon(47% 18%,53% 18%,53% 70%,47% 70%); }
-
-/* Decoder is never a visible surface: held canvas frames cannot show native
-   play chrome or decoder-black flashes during a fling/reverse seek. */
-.flower-video { width:1px; height:1px; opacity:0 !important; clip-path:inset(50%); overflow:hidden; }
-.flower-video::-webkit-media-controls,
-.flower-video::-webkit-media-controls-enclosure,
-.flower-video::-webkit-media-controls-start-playback-button { display:none !important; -webkit-appearance:none; }
-.flower-hand-cards { background:transparent; }
-.flower-hand-cards article { background:linear-gradient(145deg,#ad9ba6,#8f7d89); border-color:#c4b4be; }
-@media(max-width:700px){ .flower-hand-cards p { min-height:6em; } }

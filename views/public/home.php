@@ -40,24 +40,14 @@ $mapUrl     = 'https://www.google.com/maps/search/?api=1&query=' . urlencode($ad
 $email      = trim((string) ($site['email'] ?? ''));
 $phone      = trim((string) ($site['clubPhone'] ?? ''));
 ?>
-<section class="hero hero-with-video flower-prologue" id="top-section" aria-label="A flower unfolds into the club's story">
-  <div class="flower-stage">
-    <div class="flower-film" aria-hidden="true">
-      <img class="flower-poster" src="/assets/media/flower-poster.webp?v=<?= (int) @filemtime(MT_ASSETS . '/media/flower-poster.webp') ?>" alt="" width="1280" height="956" fetchpriority="high" decoding="async">
-      <video class="flower-video" src="/assets/media/flower-scroll.mp4?v=<?= (int) @filemtime(MT_ASSETS . '/media/flower-scroll.mp4') ?>" muted playsinline preload="auto" disablepictureinpicture disableremoteplayback tabindex="-1" aria-hidden="true" width="1280" height="956" controlslist="nodownload nofullscreen noremoteplayback" x-webkit-airplay="deny"></video>
-      <canvas class="flower-canvas" aria-hidden="true"></canvas>
-    </div>
-    <div class="flower-hand-cards" aria-hidden="true">
-      <article><h2>Notice</h2><p>Meet your inner world.<br>Make room for curiosity.</p></article>
-      <article><h2>Connect</h2><p>Listen with care.<br>Find your people.</p></article>
-      <article><h2>Grow</h2><p>Carry kindness forward.<br>One small step at a time.</p></article>
-    </div>
-    <div class="visually-hidden"><p>The camera moves from the flower woman's face to her extended hand.</p><p>Notice. Connect. Grow.</p></div>
-  </div>
-</section>
-<section class="section flower-introduction" id="club-intro">
-    <div class="container hero-grid">
-    <div class="flower-copy">
+<section class="hero hero-with-video" id="top-section">
+  <?php /* The hero's warm veil: it keeps the words on top of the herd
+           readable, and melts the bottom of the picture (drawn in the layout)
+           into the section that follows. */ ?>
+  <div class="hero-veil" aria-hidden="true"></div>
+  <i class="hero-comet" aria-hidden="true"></i>
+  <div class="container hero-grid">
+    <div class="fade-in">
       <div class="eyebrow" id="heroEyebrow"><?= e((string) ($site['eyebrow'] ?? '')) ?></div>
       <h1 class="display" id="heroTagline"><?= mt_emphasise((string) ($site['tagline'] ?? '')) ?></h1>
       <p class="hero-copy" id="heroIntro"><?= e((string) ($site['intro'] ?? '')) ?></p>
@@ -70,7 +60,17 @@ $phone      = trim((string) ($site['clubPhone'] ?? ''));
         <div><strong>Made with intention</strong><span>student-led, always evolving</span></div>
       </div>
     </div>
+    <div class="hero-art fade-in" aria-label="Abstract Mindful Tattva artwork">
+      <span class="breathe-ring" aria-hidden="true"><i></i></span>
+      <div class="art-card">
+        <div class="art-sun"></div>
+        <div class="art-orbit"></div>
+        <div class="art-copy"><small>mind, body, connection</small><strong>pause<br>and notice.</strong></div>
+      </div>
+      <div class="art-note">You are allowed to take up space.</div>
+      <div class="art-sticker">come as<br>you are</div>
     </div>
+  </div>
 </section>
 
 <?php
@@ -116,7 +116,7 @@ $clubWords = ['mind', 'body', 'connection', 'curiosity', 'growth', 'community', 
   </div>
 </section>
 
-<section class="section psyche-section" aria-label="Notice, connect and grow">
+<section class="section psyche-section">
   <div class="container psyche-deck">
     <div class="psyche-deck-stage">
     <div class="psyche-cards">

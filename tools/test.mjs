@@ -228,7 +228,7 @@ ok('every original section is on the page', ['id="about"', 'id="psychology"', 'i
 ok('the awareness corner is gone (the club’s own wording stays)',
   !home.body.includes('id="awareness"') && !home.body.includes('awareness-stage') && !/\.awareness-[a-z]/.test(home.body) && !home.body.includes('href="/awareness"'));
 ok('no “Content Studio” wording anywhere on the page', !/content studio/i.test(home.body));
-ok('the flower opening retains its editable club quote, not a giant logo', home.body.includes('id="heroTagline"') && home.body.includes('class="hero hero-with-video flower-prologue"') && !home.body.includes('class="reference-emblem"'));
+ok('the restored opening retains its editable club quote and classic art', home.body.includes('id="heroTagline"') && home.body.includes('class="hero hero-with-video"') && !home.body.includes('class="reference-emblem"'));
 ok('the club statistics are printed', home.body.includes('id="statsRow"') && home.body.includes('student-led'));
 ok('the history timeline is written from the store', home.body.includes('timeline-item') && home.body.includes('A small idea with a big heart'));
 ok('the event card offers registration', home.body.includes('/register?event=event-welcome-circle'));
@@ -1257,8 +1257,8 @@ ok('the slideshow piles every photo in order and turns by itself',
   /const slides = \(readJson\('gallery-data'\)\.slides \|\| \[\]\)/.test(appJs)
   && /slides\.length < 2\) return;/.test(appJs) && /go\(index \+ 1\); \}, 4800\)/.test(appJs));
 
-ok('home defers the muted looping herd until the flower camera completes',
-  /<video[^>]*id="heroVideo"[^>]*muted[^>]*loop[^>]*playsinline[^>]*preload="none"[^>]*data-after-flower="true"/.test(homeAlbums.body)
+ok('home restores the original muted looping herd without a flower gate',
+  /<video[^>]*id="heroVideo"[^>]*muted[^>]*loop[^>]*playsinline[^>]*autoplay[^>]*preload="auto"/.test(homeAlbums.body)
   && homeAlbums.body.includes('data-desktop-src="/assets/media/horses-desktop.mp4"')
   && homeAlbums.body.includes('id="heroStill"'));
 ok('the herd runs behind every public page',
@@ -1453,7 +1453,7 @@ ok('no line inside a tile is jammed against the one above it',
 ok('a team card has room too', /\.team-card \{[^}]*gap: 12px/.test(round37Css));
 ok('the register tiles under the events are separated', /\.register-list \{ display: grid; gap: 12px/.test(round37Css));
 
-console.log('\n— flower opening and the post-story TV companion —');
+console.log('\n— restored opening and retained TV companion —');
 const round37Home = fs.readFileSync(path.join(ROOT, 'views/public/home.php'), 'utf8');
 const mindPage = await get('/');
 ok('the old lens wheel and central logo are removed from home markup',
@@ -1463,14 +1463,14 @@ ok('the layer heading lives with the TV man, after the WebGL story',
 ok('the lens navigation anchor still exists at the new chapter', mindPage.body.includes('id="psychology"') && mindPage.body.includes('id="mind"'));
 ok('the club keeps Notice, Connect and Grow cards before the story',
   ['Notice','Connect','Grow'].every(label=>round37Home.includes('<h3>'+label+'</h3>')));
-ok('flower video and its fallback are local assets, not a foreign website embed',
-  ['flower-scroll.mp4','class="flower-video"','class="flower-canvas"','class="flower-hand-cards"'].every(name=>mindPage.body.includes(name)) && !round37Home.includes('mainframe.co'));
+ok('the classic horse hero is restored without any flower scene',
+  round37Home.includes('class="hero hero-with-video"') && !round37Home.includes('flower-') && round37Home.includes('class="hero-art fade-in"'));
 ok('the full TV footage uses opaque frames rather than a polygon cutout',
-  round37Home.includes('class="tv-canvas"') && appJs.includes('/tv-sequence/manifest.json') && appJs.includes('video.dataset.afterFlower'));
-ok('the recorded hand precedes the immediate horse-backed club introduction',
-  round37Home.indexOf('id="club-intro"')>round37Home.indexOf('class="flower-canvas"') && appJs.includes('const nextHorse=bounds.bottom<=viewportHeight+1'));
-ok('TV pointer/touch scrubbing and already-permitted gyro need no permission prompt',
-  appJs.includes("window.addEventListener('deviceorientation'") && appJs.includes('*.8*74') && !appJs.includes('DeviceOrientationEvent.requestPermission'));
+  round37Home.includes('class="tv-canvas"') && appJs.includes('/tv-sequence/manifest.json') && !appJs.includes('video.dataset.afterFlower'));
+ok('horses use the pre-flower player without a delayed scene gate',
+  !appJs.includes('beforeHorse()') && appJs.includes('function coveredByStory()'));
+ok('TV cursor and permitted gyro directly control recorded poses without new prompts',
+  appJs.includes("window.addEventListener('deviceorientation'") && appJs.includes('event.clientX/innerWidth*74') && !appJs.includes('DeviceOrientationEvent.requestPermission'));
 ok('the graph keeps its real leader paths beside the TV',mindPage.body.includes('id="happinessCurve"') && mindPage.body.includes('id="happinessViceCurve"'));
 
 console.log('\n— experimental name and seven-ring scroll chapter —');

@@ -774,10 +774,10 @@
       target = { x: 10 + progress * Math.max(0, window.innerWidth - width - (window.innerWidth <= 1100 ? 84 : 32)), y: Math.max(4, (bounds.top || 0) + 12 - butterfly.offsetHeight), width: width };
       const navBox=header.querySelector?.('.nav')?.getBoundingClientRect();
       if(navBox&&target.x+width>navBox.left&&target.x<navBox.right)target.y=Math.max(4,bounds.bottom+8);
-      const dark = $$('.black-chapter, .tv-chapter').some(function (section) {
+      const dark = $$('.black-chapter').some(function (section) {
         if (section.parentElement && section.parentElement.dataset.storyPhase === 'herd') return false;
         const box = section.getBoundingClientRect();
-        const threshold = section.matches?.('.tv-chapter') ? window.innerHeight : bounds.bottom + 1;
+        const threshold = bounds.bottom + 1;
         return box.top <= threshold && box.bottom > bounds.bottom;
       });
       if (dark !== desiredDark) { desiredDark = dark; darkSince = now; }
@@ -794,8 +794,9 @@
     function launch(kind) {
       if(kind!=='entry'&&desiredDark)kind='leave';
       if(kind==='leave')committedDark=true;else if(!desiredDark)committedDark=false;
+      if(kind==='tv-return'){x=-target.width-8;y=target.y+12;vx=0;vy=0;}
       const end = kind === 'leave' ? { x: -target.width - 100, y: -butterfly.offsetHeight - 60 } : { x: target.x, y: target.y };
-      const duration = kind === 'entry' ? 6400 : (kind === 'release' || kind === 'return-action') ? clamp(500 + Math.hypot(end.x-x, end.y-y)*.5, 650, 1000) : Math.max(kind === 'leave' ? 4200 : 3400, Math.abs(end.x - x) * 3.4);
+      const duration = kind === 'tv-return' ? 650 : kind === 'entry' ? 6400 : (kind === 'release' || kind === 'return-action') ? clamp(500 + Math.hypot(end.x-x, end.y-y)*.5, 650, 1000) : Math.max(kind === 'leave' ? 4200 : 3400, Math.abs(end.x - x) * 3.4);
       // A continuous tangent survives reversals; no cancelled animation can
       // restore an old CSS pose or switch the butterfly's opacity mid-flight.
       const reach = Math.min(380, duration * .22);
@@ -990,12 +991,12 @@
       if (needsMeasure || !target) measure(now);
       // Dark transitions outrank a retained field/click trip. Otherwise the
       // companion branch returns early forever and pins the photo mid-screen.
-      if((desiredDark&&(interaction||state==='companion')) || (interaction&&interaction.node.isConnected===false)){
+      if((desiredDark&&(interaction||state==='companion')) || (interaction&&interaction.node.isConnected===false)||(activeField&&activeField.isConnected===false)){
         if(interaction)interaction.cancel();activeField=null;launch(desiredDark?'leave':'return');
       }
       if (drag) {
         if (desiredDark) { releaseDrag(); return; }
-        const oldX=x, oldY=y, follow=reduced()?1:1-Math.exp(-dt/28);
+        const oldX=x, oldY=y, follow=1; // A held grip follows the latest input, not a lagging spring.
         photoScale += (1-photoScale)*follow;
         const w=butterfly.offsetWidth,h=butterfly.offsetHeight;
         const endX=clamp(drag.x-drag.offsetX,w/2,window.innerWidth-w/2)-w/2;
@@ -1037,9 +1038,11 @@
       }
       photoScale += (1 - photoScale) * (1 - Math.exp(-dt / 240));
       // Brief crossings during a fast scroll never trigger a disappearance.
-      if (desiredDark !== committedDark && now - darkSince >= 320) {
+      const tvBox=$('.tv-chapter')?.getBoundingClientRect();
+      const tvReturn=!desiredDark&&tvBox&&tvBox.top<window.innerHeight&&tvBox.bottom>0;
+      if (desiredDark !== committedDark && (tvReturn||now - darkSince >= 320)) {
         committedDark = desiredDark;
-        launch(desiredDark ? 'leave' : 'return');
+        launch(desiredDark ? 'leave' : tvReturn?'tv-return':'return');
       }
       const oldX = x, oldY = y;
       if (flight) {
@@ -1106,129 +1109,54 @@
     }
     document.addEventListener('visibilitychange', function () { if(document.hidden){window.cancelAnimationFrame(frame);frame=0;releaseDrag();}lastFrame=0;needsMeasure=true;schedule(); });
     window.addEventListener('pageshow',function(){lastFrame=0;needsMeasure=true;schedule();});
+    if('MutationObserver' in window){
+      const targets=new MutationObserver(function(){
+        if((interaction&&interaction.node.isConnected===false)||(activeField&&activeField.isConnected===false)){needsMeasure=true;schedule();}
+      });
+      targets.observe(document.body,{childList:true,subtree:true});
+    }
+
   }
 
   /* Two fast-start encodes; the untouched master is retained for the club.
      Buffering is not repaired by repeatedly seeking or reloading the file. */
-  /* Dense reference frames on a WebGL plane: the camera, body and hand are
-     those in the recording, not an invented three-pose slideshow. */
-  function setupCinematicChapters() {
-    const opening=$('.flower-prologue'), chapter=$('.tv-chapter');
-    if(!opening||!chapter)return;
-    const clamp=(n,a=0,b=1)=>Math.max(a,Math.min(b,n));
-    const motionAllowed=()=>!reduced()&&!navigator.connection?.saveData;
-    const cards=$('.flower-hand-cards',opening);
-    function handCopy(position){const amount=clamp((position/4-17)/7);cards.style.opacity=String(amount);cards.setAttribute('aria-hidden',String(amount<.05));}
-    // User-driven seeking is not autoplay. Do not disable it for Data Saver or
-    // collapse its track for reduced motion; omit easing/extra zoom instead.
-    const movie=$('.flower-video',opening),filmLayer=$('.flower-film',opening),screen=$('.flower-canvas',opening);
-    const buffer=document.createElement('canvas');let context=null,hasFrame=false;
-    movie.controls=false;movie.removeAttribute('controls');
-    let film=null,desiredTime=0,videoFailed=false,decodeTimer=0;
-    function fallback(){
-      if(film)return;videoFailed=true;clearTimeout(decodeTimer);movie.style.opacity='0';
-      film=window.MTFrameSequence?.create($('.flower-canvas',opening),{manifest:'/assets/media/flower-sequence/manifest.json?v=card-clean-20261027',count:157,initialFrame:desiredTime*48,onFrame:handCopy});update();
+  /* The retained TV is direct-input media, independent of the old hero/herd.
+     No permission prompt: sensor events require browser/OS authorization. */
+  function setupTvCompanion(){
+    const chapter=$('.tv-chapter');if(!chapter)return;
+    const clamp=n=>Math.max(0,Math.min(74,n));
+    let player=null,active=false,wanted=37,touch=null,pointerUntil=0;
+    function load(){
+      if(player)return;
+      player=window.MTFrameSequence?.create($('.tv-canvas',chapter),{manifest:'/assets/media/tv-sequence/manifest.json',count:75,initialFrame:wanted});
+      player?.setFrame(wanted);player?.setActive(active);
     }
-    function seekMovie(){
-      if(videoFailed||!movie||!Number.isFinite(movie.duration)||movie.seeking)return;
-      const time=clamp(desiredTime,0,Math.max(0,movie.duration-1/60));
-      if(Math.abs(movie.currentTime-time)>1/48){try{movie.currentTime=time;clearTimeout(decodeTimer);decodeTimer=setTimeout(()=>{if(movie.seeking)fallback();},4000);}catch(_){fallback();}}
-    }
-    // The video is a decoder only. Commit a completed frame to a persistent
-    // canvas: seeking never exposes a black decoder surface or native play UI.
-    function paintMovie(){
-      if(videoFailed||movie.readyState<2||movie.seeking||!movie.videoWidth)return;
-      context=context||screen.getContext('2d',{alpha:false});if(!context){fallback();return;}
-      if(buffer.width!==movie.videoWidth||buffer.height!==movie.videoHeight){buffer.width=movie.videoWidth;buffer.height=movie.videoHeight;}
-      try{buffer.getContext('2d',{alpha:false}).drawImage(movie,0,0);}catch(_){return;}
-      const width=Math.max(1,screen.clientWidth),height=Math.max(1,screen.clientHeight);
-      const dpr=Math.min(devicePixelRatio||1,1.5,Math.sqrt(2200000/(width*height)));
-      const w=Math.round(width*dpr),h=Math.round(height*dpr),scale=Math.max(w/buffer.width,h/buffer.height);
-      if(screen.width!==w||screen.height!==h){screen.width=w;screen.height=h;}
-      context.drawImage(buffer,(w-buffer.width*scale)/2,(h-buffer.height*scale)/2,buffer.width*scale,buffer.height*scale);
-      screen.style.opacity='1';screen.dataset.renderer='video2d';screen.dataset.sequenceReady='true';hasFrame=true;
-      movie.dataset.videoReady='true';movie.dataset.displayedFrame=(movie.currentTime*48).toFixed(2);
-      screen.dataset.displayedFrame=movie.dataset.displayedFrame;handCopy(movie.currentTime*48);
-    }
-    function presented(){
-      clearTimeout(decodeTimer);if(videoFailed)return;
-      paintMovie();seekMovie();
-    }
-    movie.addEventListener('loadedmetadata',seekMovie);
-    movie.addEventListener('loadeddata',presented);
-    movie.addEventListener('seeked',presented);
-    movie.addEventListener('error',fallback);
-    let viewportWidth=0,viewportHeight=innerHeight,frame=0,last=0,progress=0,target=0,horse=null;
-    function size(){
-      const width=document.documentElement.clientWidth;
-      viewportHeight=width!==viewportWidth?Math.ceil(Math.max(innerHeight,window.visualViewport?.height||0)):Math.max(viewportHeight,Math.ceil(innerHeight));
-      viewportWidth=width;opening.style.setProperty('--flower-height',viewportHeight+'px');
-      const scale=Math.max(width/640,viewportHeight/478);cards.style.width=Math.min(width,300*scale)+'px';cards.style.height=158*scale+'px';cards.style.top=((viewportHeight-478*scale)/2+162*scale)+'px';if(hasFrame)paintMovie();update();
-    }
-    function render(now){
-      frame=0;if(document.hidden){last=0;return;}
-      const dt=last?Math.min(64,now-last):16;last=now;
-      progress+=(target-progress)*(reduced()?1:1-Math.exp(-dt/95));
-      if(Math.abs(target-progress)<.0003)progress=target;
-      const p=progress;
-      // Explicit close-in zoom first, then the original camera/hand footage.
-      const source=p<.16?p/.16: p<.55?1+(p-.16)/.39*16:17+(p-.55)/.45*22;
-      const zoom=reduced()?1:p<.16?1+p/.16*.16:1+.16*(1-clamp((p-.16)/.39));
-      filmLayer.style.transform='scale('+zoom.toFixed(4)+')';
-      desiredTime=source/12;movie.dataset.targetFrame=(source*4).toFixed(2);seekMovie();
-      film?.setFrame(source*4);opening.dataset.flowerProgress=p.toFixed(4);
-      if(progress!==target)frame=requestAnimationFrame(render);else last=0;
-    }
-    function update(){
-      const bounds=opening.getBoundingClientRect(),covered=document.documentElement.classList.contains('intro-cover');
-      target=clamp(-bounds.top/Math.max(1,opening.offsetHeight-viewportHeight));
-      document.body.classList.toggle('flower-active',bounds.bottom>85&&bounds.top<viewportHeight);
-      // Start the herd at the end of the girl camera track, not after the TV.
-      const nextHorse=bounds.bottom<=viewportHeight+1;
-      if(horse!==nextHorse){horse=nextHorse;document.body.classList.toggle('horse-era',horse);window.dispatchEvent(new CustomEvent('mt:horse-era',{detail:{active:horse}}));}
-      film?.setActive(bounds.bottom>0&&bounds.top<viewportHeight&&!covered);
-      if(!frame&&!document.hidden)frame=requestAnimationFrame(render);
-    }
-    window.addEventListener('scroll',update,{passive:true});window.addEventListener('resize',size,{passive:true});
-    window.visualViewport?.addEventListener('resize',size,{passive:true});window.addEventListener('mt:intro-ready',update);size();
-    if(movie.error||!movie.canPlayType('video/mp4; codecs="avc1.42E01E"'))fallback();
-    else if(movie.readyState>=2)presented();else seekMovie();
-
-    let tv=null,active=false,wanted=37,previousX=null,neutralTilt=null;
-    function loadTv(){
-      if(tv||!motionAllowed())return;
-      tv=window.MTFrameSequence?.create($('.tv-canvas',chapter),{manifest:'/assets/media/tv-sequence/manifest.json',count:75});
-      tv?.setFrame(wanted);tv?.setActive(active);
-    }
-    const observe=()=>{
-      const bounds=chapter.getBoundingClientRect();
-      active=bounds.top<innerHeight&&bounds.bottom>0;
-      if(active){loadTv();tv?.setActive(true);}else tv?.setActive(false);
-      const covered=bounds.top<=1&&bounds.bottom>=innerHeight-1;
-      const changed=document.body.classList.contains('tv-covered')!==covered;
-      document.body.classList.toggle('tv-covered',covered);
-      if(changed)window.dispatchEvent(new CustomEvent('mt:horse-era'));
-    };
-    if('IntersectionObserver'in window){
-      const near=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting)){loadTv();near.disconnect();}},{rootMargin:'700px'});near.observe(chapter);
-    }
-    window.addEventListener('scroll',observe,{passive:true});window.addEventListener('resize',observe,{passive:true});observe();
+    function set(value,input){wanted=clamp(value);chapter.dataset.tvInput=input;chapter.dataset.tvTarget=wanted.toFixed(2);if(active){load();player?.setFrame(wanted);}}
+    function observe(){const b=chapter.getBoundingClientRect();active=b.top<innerHeight&&b.bottom>0&&!document.hidden;if(active){load();player?.setActive(true);}else{player?.setActive(false);touch=null;}}
+    window.addEventListener('scroll',observe,{passive:true});window.addEventListener('resize',observe,{passive:true});
+    document.addEventListener('visibilitychange',observe);
+    if('IntersectionObserver'in window){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){load();io.disconnect();}},{rootMargin:'400px'});io.observe(chapter);}
     window.addEventListener('pointermove',event=>{
-      if(!active||!motionAllowed()){previousX=null;return;}
-      if(previousX!==null)wanted=clamp(wanted+(event.clientX-previousX)/innerWidth*.8*74,0,74);
-      previousX=event.clientX;tv?.setFrame(wanted);
+      if(!active)return;
+      if(event.pointerType==='touch'){
+        if(!touch||touch.id!==event.pointerId)return;
+        const dx=event.clientX-touch.x;if(Math.abs(dx)<6)return;
+        pointerUntil=performance.now()+650;set(touch.frame+dx/innerWidth*74,'touch');
+      }else{pointerUntil=performance.now()+650;set(event.clientX/innerWidth*74,'pointer');}
     },{passive:true});
-    window.addEventListener('pointerdown',event=>{previousX=event.clientX;},{passive:true});
-    window.addEventListener('pointerup',()=>{previousX=null;},{passive:true});
-    window.addEventListener('deviceorientation',event=>{
-      if(!active||!motionAllowed()||!Number.isFinite(event.gamma))return;
-      if(neutralTilt===null)neutralTilt=event.gamma;
-      wanted=clamp(37+(event.gamma-neutralTilt)/35*37,0,74);tv?.setFrame(wanted);
-    },{passive:true});
-    document.addEventListener('visibilitychange',()=>{
-      if(document.hidden){cancelAnimationFrame(frame);frame=0;last=0;film?.setActive(false);tv?.setActive(false);}
-      else{update();observe();}
-    });
+    chapter.addEventListener('pointerdown',event=>{if(event.pointerType==='touch')touch={id:event.pointerId,x:event.clientX,frame:wanted};},{passive:true});
+    ['pointerup','pointercancel'].forEach(name=>window.addEventListener(name,()=>{touch=null;},{passive:true}));
+    function orientation(event){
+      if(!active||performance.now()<pointerUntil)return;
+      const angle=((screen.orientation?.angle??window.orientation??0)+360)%360;
+      const reading=angle===90||angle===270?event.beta:event.gamma;
+      if(!Number.isFinite(reading))return;
+      const horizontal=angle===90||angle===180?-reading:reading;
+      set(37+Math.max(-1,Math.min(1,horizontal/25))*37,'gyro');
+    }
+    window.addEventListener('deviceorientation',orientation,{passive:true});
+    window.addEventListener('deviceorientationabsolute',orientation,{passive:true});
+    observe();
   }
 
   function setupHeroVideo() {
@@ -1262,26 +1190,20 @@
       const story = $('.mind-story');
       return document.body.classList.contains('story-immersive') && story?.dataset.storyCovered !== 'false';
     }
-    const gated = video.dataset.afterFlower === 'true';
-    function beforeHorse() { return gated && (!document.body.classList.contains('horse-era') || document.body.classList.contains('tv-covered')); }
     function drop() { video.hidden = true; pause(); }
     function pause() { try { video.pause(); } catch (error) { /* already stopped */ } }
     function play() {
-      if (!allowed || document.hidden || video.hidden || coveredByStory() || introCovered() || beforeHorse()) return;
+      if (!allowed || document.hidden || video.hidden || coveredByStory() || introCovered()) return;
       const attempt = video.play();
       if (attempt && attempt.catch) attempt.catch(function () { /* retry on a gesture */ });
     }
     if (!allowed) { drop(); return; }
     const mobile = window.matchMedia('(max-width: 900px)').matches || (connection && /(^|-)2g|3g/.test(connection.effectiveType || ''));
     const wantedSource = mobile ? video.dataset.mobileSrc : video.dataset.desktopSrc;
-    function selectSource() {
-      if (!video.currentSrc || !video.currentSrc.split('?')[0].endsWith(wantedSource)) video.src = wantedSource;
-      video.preload = 'auto';
-    }
-    if (!beforeHorse()) selectSource();
-    window.addEventListener('mt:horse-era', function () { if (beforeHorse()) pause(); else { selectSource(); play(); } });
+    if (!video.currentSrc || !video.currentSrc.split('?')[0].endsWith(wantedSource)) video.src = wantedSource;
     if (introCovered()) pause();
     window.addEventListener('mt:intro-ready', play, {once:true});
+    video.preload = 'auto';
     video.muted = true;
     video.playsInline = true;
     video.addEventListener('error', drop);
@@ -1304,7 +1226,7 @@
     video.addEventListener('stalled', function () { /* let the browser buffer */ });
     window.setInterval(function () {
       if (document.hidden || video.hidden || video.error) return;
-      if (coveredByStory() || introCovered() || beforeHorse()) { pause(); lastAdvance = Date.now(); return; }
+      if (coveredByStory() || introCovered()) { pause(); lastAdvance = Date.now(); return; }
       const clock = video.currentTime;
       if (Math.abs(clock - lastClock) > 0.02) {
         lastClock = clock; lastAdvance = Date.now();
@@ -1328,7 +1250,7 @@
       window.addEventListener(name, play, { once: true, passive: true });
     });
     window.addEventListener('scroll', function () {
-      if (coveredByStory() || beforeHorse()) { pause(); lastAdvance = Date.now(); }
+      if (coveredByStory()) { pause(); lastAdvance = Date.now(); }
       else if (video.paused) play();
     }, { passive: true });
     document.addEventListener('visibilitychange', function () {
@@ -1367,7 +1289,7 @@
     setupCardDeck();
     setupReveal();
     setupPortraits();
-    setupCinematicChapters();
+    setupTvCompanion();
     setupHeroVideo();
     setupIntroWarmup();
     setupMotionBudget();

@@ -29,8 +29,8 @@ try{
   const revealedMs=await p.evaluate(()=>performance.now());assert.ok(revealedMs<7000,'the intro exits without waiting for a hanging warmup');
   assert.equal(await p.locator('.site-shell').evaluate(e=>e.inert),false);
   assert.ok(requests.length<=1&&requests.every(u=>u.endsWith('scene-asset=engine')),'at most one passive bundle request; no model/decoder/texture bulk loading');
-  assert.ok(await p.locator('#heroVideo').evaluate(v=>v.paused&&!v.currentSrc),'horse stays deferred behind the flower opening');
-  assert.ok(await p.locator('.flower-poster').evaluate(e=>e.complete&&e.naturalWidth>=960),'the clean flower image is decoded at the first screen');
+  await p.waitForFunction(()=>{const v=document.querySelector('#heroVideo');return !v.paused&&v.currentTime>.1;},null,{timeout:10000});
+  assert.equal(await p.locator('.flower-prologue').count(),0);
   assert.equal(await p.locator('.drift-blob').first().evaluate(e=>getComputedStyle(e).filter),'none');
   assert.equal(await p.locator('.psi-quote').count(),0,'the removed lens wheel does not return');
   const geometry=[];let largest=844;

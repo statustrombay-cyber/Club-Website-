@@ -13,5 +13,9 @@ try{for(const width of[390,1440]){
  await p.evaluate(()=>{document.querySelector('#test-field-form').remove();const button=document.createElement('button');button.id='test-action';button.textContent='Test action';button.style.cssText='position:fixed;left:90px;top:260px;z-index:4';window.__actions=0;button.addEventListener('click',()=>__actions++);document.body.append(button);});
  await p.locator('#test-action').click();await dark();await p.waitForFunction(()=>document.querySelector('.nav-butterfly').dataset.butterflyState==='away',null,{timeout:6500});assert.equal(await p.evaluate(()=>__actions),1,'interrupted decorative flight never loses or duplicates the real button action');
  await p.waitForTimeout(800);assert.equal(await p.locator('.nav-butterfly').getAttribute('data-butterfly-state'),'away','the old 620ms action timer cannot pull it back into a dark scene');await paper();
+ await p.evaluate(()=>{const f=document.createElement('form');f.className='club-form';f.id='removed-target-form';f.style.cssText='position:fixed;left:90px;top:210px;width:210px';f.innerHTML='<input id="removed-target">';document.body.append(f);f.querySelector('input').focus();});
+ await p.waitForFunction(()=>document.querySelector('.nav-butterfly').dataset.butterflyState==='companion');
+ await p.locator('#removed-target-form').evaluate(e=>e.remove());
+ await p.waitForFunction(()=>document.querySelector('.nav-butterfly').dataset.butterflyState==='perched',null,{timeout:6000});
  await p.evaluate(()=>{const end=performance.now()+500;while(performance.now()<end){};dispatchEvent(new Event('pageshow'));});await p.waitForTimeout(300);assert.ok(await p.locator('.nav-butterfly').evaluate(e=>!e.style.transform.includes('NaN')));assert.deepEqual(errors,[]);console.log(JSON.stringify({width,retainedField:'recovered',pendingClick:'recovered',errors}));await p.close();
 }}finally{await b.close();}

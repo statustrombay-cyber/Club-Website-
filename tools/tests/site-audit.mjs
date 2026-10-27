@@ -19,8 +19,7 @@ try{for(const width of [1440,390]){
   const video=page.locator('#heroVideo');
   if(route==='/'){
    await page.waitForFunction(()=>document.body.classList.contains('intro-revealed'));
-   assert.ok(await video.evaluate(e=>e.paused&&!e.currentSrc),'flowers, not horses, open home');
-   await page.locator('.tv-chapter').evaluate(e=>scrollTo({top:e.getBoundingClientRect().bottom+scrollY+5,behavior:'instant'}));
+   assert.equal(await page.locator('.flower-prologue').count(),0,'classic hero restored');
   }
   await page.waitForFunction(()=>document.querySelector('#heroVideo').currentTime>.15,null,{timeout:15000});
   item.firstVideoFrameMs=await page.evaluate(()=>Math.round(performance.now()));

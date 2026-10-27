@@ -5,7 +5,7 @@ from pathlib import Path
 import hashlib,json
 from PIL import Image
 ROOT=Path(__file__).resolve().parents[2]
-for folder,reference,count,size in [('flower-sequence','animated (96).webp',157,(960,717)),('tv-sequence','animated (46).webp',75,(405,384))]:
+for folder,reference,count,size in [('tv-sequence','animated (46).webp',75,(405,384))]:
     root=ROOT/'assets/media'/folder
     manifest=json.loads((root/'manifest.json').read_text())
     assert manifest['count']==count
@@ -19,5 +19,4 @@ for folder,reference,count,size in [('flower-sequence','animated (96).webp',157,
     if folder=='tv-sequence':
         assert manifest['sourceFrames']==75 and manifest['alpha'] is False
         assert count==Image.open(ROOT/reference).n_frames,'Never hold/drop character poses'
-    else:assert manifest['usedSourceFrames']==[0,39] and manifest['interpolation']=='bidirectional-optical-flow-4x'
     print(folder,':',count,'frames, original-source hash verified, full RGB, dimensions PASS')

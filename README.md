@@ -13,53 +13,43 @@ For **InfinityFree uploads**, follow [Full GitHub ZIP upload](#full-github-zip-u
 below. The `npm` commands in the local-development section are **not** hosting
 installation steps.
 
-## Current home-page sequence (27 October 2026)
+## Current home-page sequence — restored 27 October 2026
 
-After the retained welcome paint, the flower follows the original recording's
-camera/hand movement with an explicit opening scroll-in zoom. Its **200-frame,
-60fps, 1280×956 video is enhanced with ESPCN 2× neural super-resolution**.
-Motion-compensated interpolation smooths the original 40 usable frames; this
-is not a newly generated woman or recovered original detail. The fast-start
-H264 file has a short six-frame seek interval and stays below the hosting limit.
+The **pre-flower opening from checkpoint `8e37e6f` is restored**: original
+horse-backed hero/artwork/quote, announcement/banner behavior, welcome paint,
+brand choreography and story. The hero markup and horse playback function are
+byte-compared to that checkpoint in browser regression tooling. The story,
+audio/choreography sources and all three original horse MP4s also match it.
 
-The native video is now an **invisible decoder**, not a visible player. A
-persistent canvas commits completed frames and holds the last good image during
-fast/reverse seeks, avoiding decoder-black flashes and native play overlays.
-Recorded billboard/arrow UI is fully removed, not dimmed with a blurred mask.
-Video and fallback footers are blank: Notice / Connect / Grow text is drawn
-**once, by HTML**, with responsive readable cards and no dark parent slab.
+**The flower girl is removed**, including her video, posters, generated frames,
+AI metadata and obsolete builders/tests. The full TV man remains alongside the
+happiness chart after the story, replacing the old lens wheel. It retains all
+75 opaque recorded frames and the complete CRT, not a cutout or alpha matte.
 
-The 4.8-viewport sticky track remains intact in reduced-motion/Data Saver.
-Reduced motion omits extra zoom/easing; seeking follows deliberate scroll,
-never autoplay. The horse background starts immediately after the flower.
-The original WebGL story and full TV scene remain unchanged. Media-error
-fallback starts near the latest requested frame, not back at frame zero.
-Updated media/styles/scripts use revisioned URLs in the deployment.
+The butterfly returns promptly after the story (a short 650ms re-entry instead
+of the ordinary long return) and **does not leave merely because TV is visible**.
+The original dark closing/brand exits remain. Held mouse/finger dragging tracks
+the latest input without a delayed spring; canceled/disconnected field/action
+targets recover, with removal observation and hidden-tab/page-return handling.
 
-The TV companion beside the happiness chart uses **all 75 recorded frames of
-`animated (46).webp`**, with the complete CRT casing and opaque original
-background. There is no segmented cutout or sprite atlas. Mouse, horizontal
-touch and orientation events already permitted by the browser scrub its poses;
-no new gyro permission prompt or control is added. The old lens wheel/logo
-remains removed. The butterfly now cancels retained-field/pending-action trips
-before leaving dark scenes, and its perch clears the header's controls.
+The TV's first mouse movement maps absolute cursor position to its full pose
+range. Touch uses horizontal displacement without stealing vertical scroll.
+Gyro maps actual tilt, handles portrait/landscape and ignores invalid readings;
+brief cursor priority prevents two input sources fighting. Reduced-motion and
+Data Saver no longer silently disable this explicit interaction. There are no
+new permission buttons/prompts. **Real gyro events still require browser/OS
+sensor permission**; missing permission cannot be bypassed by JavaScript.
 
-These are enhanced recording-derived frames, **not a recovered rigged 3D
-model**. The source has no distinct eye-opening pass; none is invented. Neural
-upscaling can improve apparent clarity but cannot recover all missing original
-detail. Interpolation can produce local motion artifacts; no universal 60fps
-rendering or physical Safari certification is claimed. Source/UI repair is
-local and unrelated agency outro frames are not replayed. The bounded frame
-fallback and a no-JavaScript static presentation remain available.
+The current regression report is
+[restored opening / TV / butterfly](tools/tests/reports/restored-opening-tv-2026-10-27.md).
+Local headless-browser/simulated sensor results are not a physical Safari or
+production-host guarantee. Runtime is prebuilt; no new hosting build step.
 
-The **pre-polish checkpoint is `5ab6e07`** (earlier video checkpoint `ee833aa`); the earlier standalone
-butterfly / pre-remodel checkpoint is `8e37e6f`. Prior designs remain in Git
-history, not duplicated inside the website download. Uploaded reference WebPs,
-tools, rollback archives and private live settings are excluded from the
-GitHub deployment ZIP. Runtime media is already built; hosting needs no React,
-Vite, Python or new build step. See
-[the current validation report](tools/tests/reports/flower-polish-2026-10-27.md)
-for tested behavior and limitations.
+Rollback before this restoration: **`1772002`**, retained in Git and a private
+archive outside the website. Earlier designs remain in history, not duplicated
+inside the current deployment ZIP. References, backups, development tools and
+private live settings remain export-excluded. Only the authorized PR branch is
+updated; main is not changed or merged.
 
 ---
 
