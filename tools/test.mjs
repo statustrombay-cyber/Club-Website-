@@ -1463,8 +1463,8 @@ ok('the layer heading lives with the TV man, after the WebGL story',
 ok('the lens navigation anchor still exists at the new chapter', mindPage.body.includes('id="psychology"') && mindPage.body.includes('id="mind"'));
 ok('the club keeps Notice, Connect and Grow cards before the story',
   ['Notice','Connect','Grow'].every(label=>round37Home.includes('<h3>'+label+'</h3>')));
-ok('flower frames are local, clean assets, not a foreign website embed',
-  ['flower-poster.webp','class="flower-canvas"','class="flower-hand-cards"'].every(name=>mindPage.body.includes(name)) && !round37Home.includes('mainframe.co'));
+ok('flower video and its fallback are local assets, not a foreign website embed',
+  ['flower-scroll.mp4','class="flower-video"','class="flower-canvas"','class="flower-hand-cards"'].every(name=>mindPage.body.includes(name)) && !round37Home.includes('mainframe.co'));
 ok('the full TV footage uses opaque frames rather than a polygon cutout',
   round37Home.includes('class="tv-canvas"') && appJs.includes('/tv-sequence/manifest.json') && appJs.includes('video.dataset.afterFlower'));
 ok('the recorded hand precedes the immediate horse-backed club introduction',

@@ -1119,7 +1119,28 @@
     const motionAllowed=()=>!reduced()&&!navigator.connection?.saveData;
     const cards=$('.flower-hand-cards',opening);
     function handCopy(position){const amount=clamp((position/4-17)/7);cards.style.opacity=String(amount);cards.setAttribute('aria-hidden',String(amount<.05));}
-    const film=motionAllowed()?window.MTFrameSequence?.create($('.flower-canvas',opening),{manifest:'/assets/media/flower-sequence/manifest.json',count:157,onFrame:handCopy}):null;
+    // User-driven seeking is not autoplay. Do not disable it for Data Saver or
+    // collapse its track for reduced motion; omit easing/extra zoom instead.
+    const movie=$('.flower-video',opening),filmLayer=$('.flower-film',opening);
+    let film=null,desiredTime=0,videoFailed=false,decodeTimer=0;
+    function fallback(){
+      if(film)return;videoFailed=true;clearTimeout(decodeTimer);movie.style.opacity='0';
+      film=window.MTFrameSequence?.create($('.flower-canvas',opening),{manifest:'/assets/media/flower-sequence/manifest.json',count:157,onFrame:handCopy});update();
+    }
+    function seekMovie(){
+      if(videoFailed||!movie||!Number.isFinite(movie.duration)||movie.seeking)return;
+      const time=clamp(desiredTime,0,Math.max(0,movie.duration-1/12));
+      if(Math.abs(movie.currentTime-time)>1/48){try{movie.currentTime=time;clearTimeout(decodeTimer);decodeTimer=setTimeout(()=>{if(movie.seeking)fallback();},4000);}catch(_){fallback();}}
+    }
+    function presented(){
+      clearTimeout(decodeTimer);if(videoFailed)return;
+      if(movie.readyState>=2){movie.style.opacity='1';movie.dataset.videoReady='true';movie.dataset.displayedFrame=(movie.currentTime*48).toFixed(2);handCopy(movie.currentTime*48);}
+      seekMovie();
+    }
+    movie.addEventListener('loadedmetadata',seekMovie);
+    movie.addEventListener('loadeddata',presented);
+    movie.addEventListener('seeked',presented);
+    movie.addEventListener('error',fallback);
     let viewportWidth=0,viewportHeight=innerHeight,frame=0,last=0,progress=0,target=0,horse=null;
     function size(){
       const width=document.documentElement.clientWidth;
@@ -1133,8 +1154,11 @@
       progress+=(target-progress)*(reduced()?1:1-Math.exp(-dt/95));
       if(Math.abs(target-progress)<.0003)progress=target;
       const p=progress;
-      // Slow the recorded face→shoulder camera move, then continue to the palm.
-      const source=p<.12?p/.12*10:p<.55?10+(p-.12)/.43*7:17+(p-.55)/.45*22;
+      // Explicit close-in zoom first, then the original camera/hand footage.
+      const source=p<.16?p/.16: p<.55?1+(p-.16)/.39*16:17+(p-.55)/.45*22;
+      const zoom=reduced()?1:p<.16?1+p/.16*.16:1+.16*(1-clamp((p-.16)/.39));
+      filmLayer.style.transform='scale('+zoom.toFixed(4)+')';
+      desiredTime=source/12;movie.dataset.targetFrame=(source*4).toFixed(2);seekMovie();
       film?.setFrame(source*4);opening.dataset.flowerProgress=p.toFixed(4);
       if(progress!==target)frame=requestAnimationFrame(render);else last=0;
     }
@@ -1145,11 +1169,13 @@
       // Start the herd at the end of the girl camera track, not after the TV.
       const nextHorse=bounds.bottom<=viewportHeight+1;
       if(horse!==nextHorse){horse=nextHorse;document.body.classList.toggle('horse-era',horse);window.dispatchEvent(new CustomEvent('mt:horse-era',{detail:{active:horse}}));}
-      film?.setActive(bounds.bottom>0&&bounds.top<viewportHeight&&!covered&&motionAllowed());
+      film?.setActive(bounds.bottom>0&&bounds.top<viewportHeight&&!covered);
       if(!frame&&!document.hidden)frame=requestAnimationFrame(render);
     }
     window.addEventListener('scroll',update,{passive:true});window.addEventListener('resize',size,{passive:true});
     window.visualViewport?.addEventListener('resize',size,{passive:true});window.addEventListener('mt:intro-ready',update);size();
+    if(movie.error||!movie.canPlayType('video/mp4; codecs="avc1.42E01E"'))fallback();
+    else if(movie.readyState>=2)presented();else seekMovie();
 
     let tv=null,active=false,wanted=37,previousX=null,neutralTilt=null;
     function loadTv(){

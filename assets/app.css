@@ -2202,3 +2202,17 @@ html.no-js .page-home .flower-prologue,html.no-js .flower-stage { height:100svh;
 .flower-hand-cards p { font-size:clamp(10px,.98vw,15px); line-height:1.5; margin:0; }
 .page-home .site-shell main > section.tv-chapter { background:#b0b0ae !important; }
 .tv-person { mask-image:linear-gradient(90deg,transparent,#000 7%,#000 94%,transparent),linear-gradient(180deg,transparent,#000 4%,#000 98%,transparent); mask-composite:intersect; }
+
+/* The flower stays pinned even with reduced-motion enabled. Seeking follows
+   deliberate scroll only; no autoplay, scroll trapping or GPU fetch queue. */
+html.js .page-home .flower-prologue { height:calc(var(--flower-height,100svh) * 4.8); }
+html.js .flower-stage { position:sticky; top:0; height:var(--flower-height,100svh); min-height:0; padding:0; }
+.flower-video { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0; pointer-events:none; }
+.flower-film { transform-origin:50% 43%; }
+/* One neutral shadow, not three blurred photographs composited together. */
+.nav-butterfly { isolation:isolate; mix-blend-mode:normal; }
+.nav-butterfly .butterfly-flight { filter:drop-shadow(0 1px 1px rgba(0,0,0,.3)); }
+.nav-butterfly .butterfly-flight img { filter:none; mix-blend-mode:normal; backface-visibility:hidden; }
+.nav-butterfly .wing-left { clip-path:polygon(0 0,49% 0,49% 100%,0 100%); }
+.nav-butterfly .wing-right { clip-path:polygon(51% 0,100% 0,100% 100%,51% 100%); }
+.nav-butterfly .butterfly-body { clip-path:polygon(47% 18%,53% 18%,53% 70%,47% 70%); }

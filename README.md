@@ -13,17 +13,24 @@ For **InfinityFree uploads**, follow [Full GitHub ZIP upload](#full-github-zip-u
 below. The `npm` commands in the local-development section are **not** hosting
 installation steps.
 
-## Current home-page sequence (26 October 2026)
+## Current home-page sequence (27 October 2026)
 
-After the retained welcome paint, scroll follows the **actual woman, camera
-pan and extending hand from `animated (96).webp`**, not three AI stills. The
-usable camera/hand portion (source frames 0–39) is expanded into 157 dense
-bidirectional optical-flow samples; a native-scroll WebGL player interpolates
-adjacent textures. Notice / Connect / Grow become responsive, readable cards
-above the recorded palm. The unchanged horse background **starts immediately
-at the flower sequence's end**, behind the following club introduction. It
-pauses again when scrolling back into the flower, or under the full TV scene.
-The brand interlude and original WebGL story remain after the introduction.
+After the retained welcome paint, the flower is a **native seekable H264 video
+made from the original 40 recorded camera/hand frames** of `animated (96).webp`.
+There is an explicit close-in zoom as scrolling starts, followed by the
+recorded camera pan and extending hand. No synthesized optical-flow images
+or adjacent-frame blending are used in primary playback. The single 1.7 MB
+fast-start file has every frame independently seekable, avoiding a queue of
+hundreds of image requests. Normal wheel/touch scrolling stays pinned through
+4.8 viewport heights, including Data Saver and reduced-motion settings.
+Reduced motion removes extra zoom/easing; the video seeks only with deliberate
+scroll, never autoplay. Notice / Connect / Grow remain readable palm cards.
+The horse background starts immediately at the flower sequence's end.
+
+The old 157-frame WebGL player is now only a media-error/unsupported-codec
+fallback, not the primary flower display. The original WebGL story remains
+unchanged. The butterfly's three overlapping image shadows are replaced by
+one small neutral shadow, with non-overlapping wings and normal color blending.
 
 The TV companion beside the happiness chart uses **all 75 recorded frames of
 `animated (46).webp`**, with the complete CRT casing and opaque original
@@ -34,21 +41,20 @@ remains removed. The butterfly now cancels retained-field/pending-action trips
 before leaving dark scenes, and its perch clears the header's controls.
 
 These are cleaned recording-derived frames, **not a recovered rigged 3D model**.
-The source has no distinct eye-opening pass; none is invented. Optical flow
-adds intermediate samples, not original detail beyond the 640px recording.
+The source has no distinct eye-opening pass; none is invented. The primary video retains the original 640px frames; no higher-resolution
+detail is claimed. Optical flow remains only in the media-error fallback.
 Foreign UI/cursors are locally repaired/relabelled; unrelated agency outro
 frames are not replayed. The player bounds decoded images to 20 per sequence,
 limits concurrent requests to four, stops offscreen/hidden work and retains
-posters during loading or GPU loss. A Canvas2D fallback, reduced-motion and
-no-JavaScript readable/static presentation remain available.
+posters during loading or GPU loss. A Canvas2D media-error fallback and no-JavaScript static presentation remain available.
 
-The **pre-sequence correction checkpoint is `b3dd776`**; the earlier standalone
+The **pre-video correction checkpoint is `ee833aa`** (earlier sequence checkpoint `b3dd776`); the earlier standalone
 butterfly / pre-remodel checkpoint is `8e37e6f`. Prior designs remain in Git
 history, not duplicated inside the website download. Uploaded reference WebPs,
 tools, rollback archives and private live settings are excluded from the
 GitHub deployment ZIP. Runtime media is already built; hosting needs no React,
 Vite, Python or new build step. See
-[the current validation report](tools/tests/reports/recorded-sequences-2026-10-26.md)
+[the current validation report](tools/tests/reports/flower-native-video-2026-10-27.md)
 for tested behavior and limitations.
 
 ---
