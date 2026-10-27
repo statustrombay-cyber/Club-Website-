@@ -25,11 +25,6 @@ with tarfile.open(fileobj=io.BytesIO(archive)) as tar:
     for name in ['data/site.json', 'data/config.php', 'package.json', 'package-lock.json', '.gitignore', '.gitattributes']:
         assert name not in members, f'Live settings or dev-only file exported: {name}'
     assert not any(n.startswith('tools/') for n in members), 'Development source exported'
-    assert not any('/' not in n and re.match(r'animated.*\.webp$', n, re.I) for n in members), 'Uploaded reference screen recording exported'
-    for name in ['assets/media/tv-man-poster.webp','assets/media/tv-sequence/manifest.json','assets/sequence-player.js']:
-        assert name in members, f'Retained TV runtime absent: {name}'
-    for frame in range(75):assert f'assets/media/tv-sequence/{frame:04}.webp' in members
-    assert not any(n.startswith('assets/media/flower-') for n in members), 'Removed flower media exported'
     assert not any(n.lower().endswith(('.zip','.rar')) for n in members), 'Reference archive exported'
     assert not any(re.fullmatch(r'cartier-part-\d{3}', n) or ('/' not in n and n.lower().endswith('.glb')) for n in members), 'Cartier study uploads exported into the club runtime'
     for suffix, size in [('running', 9938593), ('desktop', 3831086), ('mobile', 1894350)]:

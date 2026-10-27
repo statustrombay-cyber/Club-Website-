@@ -116,7 +116,36 @@ $clubWords = ['mind', 'body', 'connection', 'curiosity', 'growth', 'community', 
   </div>
 </section>
 
-<section class="section psyche-section">
+<section class="section psyche-section" id="mind">
+  <?php /* The club's own stage: their logo held in a big round lens at the
+           centre, with four words of the mind riding a wheel around it like a
+           ferris wheel — the wheel turns, the words travel and never tip over,
+           so every one of them can be read at every moment. The words are real
+           text, the turning is CSS only, and it stops for anyone who asks for
+           less motion. */ ?>
+  <span id="psychology" aria-hidden="true"></span>
+  <div class="container psyche-grid">
+    <div class="psyche-copy">
+      <div class="eyebrow">Mind</div>
+      <h2 class="display">Every mind has more than one layer.</h2>
+      <p>Mindful Tattva makes space for the questions beneath the surface: what we notice, what we carry
+        and how connection changes the story.</p>
+      <div class="psi-focus-note"><span></span><strong>slow down — look inward — stay curious</strong></div>
+    </div>
+    <div class="psi-stage" role="img" aria-label="The Mindful Tattva logo at the centre of a turning wheel that carries three words around it: unconscious, subconscious, conscious.">
+      <div class="psi-stage-glow" aria-hidden="true"></div>
+      <div class="psi-quotes" aria-hidden="true">
+        <span class="psi-quote psi-quote-one">unconscious</span>
+        <span class="psi-quote psi-quote-two">subconscious</span>
+        <span class="psi-quote psi-quote-three">conscious</span>
+      </div>
+      <div class="psi-core">
+        <img src="<?= e(mt_safe_image($site['logoImage'] ?? '') ?: '/assets/photos/mt-club-logo.jpg') ?>"
+             alt="<?= e((string) ($site['clubName'] ?? 'Mindful Tattva')) ?> logo" loading="lazy" decoding="async">
+      </div>
+    </div>
+  </div>
+
   <div class="container psyche-deck">
     <div class="psyche-deck-stage">
     <div class="psyche-cards">
@@ -132,20 +161,9 @@ $clubWords = ['mind', 'body', 'connection', 'curiosity', 'growth', 'community', 
 
 <?php require __DIR__ . '/mind-story.php'; ?>
 
-<section class="happiness-section tv-chapter" id="mind" aria-labelledby="tvHeading">
-  <span id="psychology" aria-hidden="true"></span>
-  <div class="tv-character" role="img" aria-label="An interactive vintage computer-headed companion in a grey jacket. Its gaze follows horizontal movement.">
-    <div class="tv-person">
-      <img class="tv-poster" src="/assets/media/tv-man-poster.webp" alt="" width="405" height="384" loading="lazy" decoding="async">
-      <canvas class="tv-canvas" aria-hidden="true"></canvas>
-    </div>
-  </div>
-  <div class="tv-content">
-    <h2 id="tvHeading">Every mind has more than one layer.</h2>
-    <p>Mindful Tattva makes space for the questions beneath the surface: what we notice, what we carry and how connection changes the story.</p>
-    <div class="happiness-copy"><h3 id="happinessHeading">Club happiness index</h3><p>Making space for a happier campus, one conversation at a time.</p></div>
-    <?= mt_happiness_graph($db) ?>
-  </div>
+<section class="happiness-section" aria-labelledby="happinessHeading">
+  <div class="happiness-copy"><div class="eyebrow">Connection · belonging · growth</div><h2 id="happinessHeading">Club happiness index</h2><p>Making space for a happier campus, one conversation at a time.</p></div>
+  <?= mt_happiness_graph($db) ?>
 </section>
 
 <section class="section details-section" id="details">

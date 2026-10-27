@@ -228,7 +228,7 @@ ok('every original section is on the page', ['id="about"', 'id="psychology"', 'i
 ok('the awareness corner is gone (the club’s own wording stays)',
   !home.body.includes('id="awareness"') && !home.body.includes('awareness-stage') && !/\.awareness-[a-z]/.test(home.body) && !home.body.includes('href="/awareness"'));
 ok('no “Content Studio” wording anywhere on the page', !/content studio/i.test(home.body));
-ok('the restored opening retains its editable club quote and classic art', home.body.includes('id="heroTagline"') && home.body.includes('class="hero hero-with-video"') && !home.body.includes('class="reference-emblem"'));
+ok('the original light hero keeps its large editable quote, not a giant logo', home.body.includes('id="heroTagline"') && home.body.includes('class="hero hero-with-video"') && !home.body.includes('class="reference-emblem"'));
 ok('the club statistics are printed', home.body.includes('id="statsRow"') && home.body.includes('student-led'));
 ok('the history timeline is written from the store', home.body.includes('timeline-item') && home.body.includes('A small idea with a big heart'));
 ok('the event card offers registration', home.body.includes('/register?event=event-welcome-circle'));
@@ -1257,8 +1257,8 @@ ok('the slideshow piles every photo in order and turns by itself',
   /const slides = \(readJson\('gallery-data'\)\.slides \|\| \[\]\)/.test(appJs)
   && /slides\.length < 2\) return;/.test(appJs) && /go\(index \+ 1\); \}, 4800\)/.test(appJs));
 
-ok('home restores the original muted looping herd without a flower gate',
-  /<video[^>]*id="heroVideo"[^>]*muted[^>]*loop[^>]*playsinline[^>]*autoplay[^>]*preload="auto"/.test(homeAlbums.body)
+ok('the front page plays the herd, muted and looping, behind everything',
+  /<video[^>]*id="heroVideo"[^>]*muted[^>]*loop[^>]*playsinline[^>]*autoplay/.test(homeAlbums.body)
   && homeAlbums.body.includes('data-desktop-src="/assets/media/horses-desktop.mp4"')
   && homeAlbums.body.includes('id="heroStill"'));
 ok('the herd runs behind every public page',
@@ -1453,25 +1453,105 @@ ok('no line inside a tile is jammed against the one above it',
 ok('a team card has room too', /\.team-card \{[^}]*gap: 12px/.test(round37Css));
 ok('the register tiles under the events are separated', /\.register-list \{ display: grid; gap: 12px/.test(round37Css));
 
-console.log('\n— restored opening and retained TV companion —');
+console.log('\n— the Mind wheel: three big words round the club\'s logo —');
 const round37Home = fs.readFileSync(path.join(ROOT, 'views/public/home.php'), 'utf8');
+const mindSection = round37Home.slice(round37Home.indexOf('class="section psyche-section" id="mind"'), round37Home.indexOf('<section class="section details-section"'));
+ok('the club\'s turning section is named Mind', /class="section psyche-section" id="mind"/.test(round37Home)
+  && mindSection.includes('>Mind<'));
+ok('the club logo sits at the centre of the lens, and the psi sign is gone',
+  mindSection.includes('class="psi-core"') && mindSection.includes("mt_safe_image($site['logoImage']")
+  && mindSection.includes("'/assets/photos/mt-club-logo.jpg'") && !mindSection.includes('Ψ'));
+ok('no label crowds the lens', !mindSection.includes('mind in motion') && !/\.psi-core small/.test(round37Css));
+const mindWords = ['unconscious', 'subconscious', 'conscious'];
+ok('the wheel carries the three words, and "mind" is off it',
+  mindWords.every((word) => new RegExp('psi-quote-[a-z]+">' + word + '<').test(mindSection))
+  && (mindSection.match(/class="psi-quote psi-quote-/g) || []).length === 3
+  && !/>mind</.test(mindSection));
+ok('the words are far bigger than they were', /\.psi-quote \{[^}]*font-size: clamp\(\.72rem, 4\.2cqw, 1\.45rem\)/.test(round37Css));
+ok('the lens is smaller, so the words and the logo read as one drawing',
+  /\.psi-core \{[^}]*width: 28%/.test(round37Css) && /\.psi-core \{ width: 26%; \}/.test(round37Css));
+ok('each word is one line, and can never wrap onto a second',
+  /\.psi-quote \{[^}]*white-space: nowrap/.test(round37Css));
+ok('three words sit evenly round the wheel, a third apart',
+  /\.psi-quote-one\s+\{ top: calc\(50% - 33%\);\s+left: 50%; \}/.test(round37Css)
+  && /\.psi-quote-two\s+\{ top: calc\(50% \+ 16\.5%\); left: calc\(50% \+ 28\.58%\); \}/.test(round37Css)
+  && /\.psi-quote-three\s+\{ top: calc\(50% \+ 16\.5%\); left: calc\(50% - 28\.58%\); \}/.test(round37Css));
+ok('the wheel turns and never stops', /\.psi-quotes \{[^}]*animation: quoteSpin 32s linear infinite/.test(round37Css)
+  && /@keyframes quoteSpin \{ to \{ transform: rotate\(360deg\); \} \}/.test(round37Css));
+ok('every word rides round and stays the right way up — never inverted',
+  /\.psi-quote \{[^}]*animation: quoteHold 4s linear infinite/.test(round37Css)
+  && /@keyframes quoteHold \{[^}]*rotate\(0deg\)[\s\S]{0,80}?rotate\(-360deg\)/.test(round37Css));
+{
+  const wheel = Number((round37Css.match(/quoteSpin (\d+(?:\.\d+)?)s/) || [])[1]);
+  const word = Number((round37Css.match(/quoteHold (\d+(?:\.\d+)?)s/) || [])[1]);
+  ok('the wheel and the words are locked together, to the second',
+    Number.isFinite(wheel) && Number.isFinite(word) && Math.abs(wheel / word - Math.round(wheel / word)) < 1e-9,
+    wheel + 's / ' + word + 's');
+}
+ok('the club\'s logo floats, and the hub keeps its own slow turn',
+  /\.psi-core \{[^}]*psiCoreFloat/.test(round37Css) && /\.psi-stage-glow \{[^}]*psiPulse/.test(round37Css)
+  && /@keyframes axisSpin \{/.test(round37Css) && /@keyframes axisSpinReverse \{/.test(round37Css));
+ok('the stage is a square, so every word rides one true circle',
+  /\.psi-stage \{[^}]*aspect-ratio: 1 \/ 1/.test(round37Css));
+ok('with less motion the wheel stands still, the words upright in place',
+  /prefers-reduced-motion: reduce\)[\s\S]{0,160}\.psi-quotes[\s\S]{0,200}?animation: none/.test(round37Css)
+  && /\.psi-quote \{ animation: none; transform: translate\(-50%, -50%\); \}/.test(round37Css));
+ok('the Mind section keeps the club\'s own copy',
+  mindSection.includes('Every mind has more than one layer.') && mindSection.includes('slow down — look inward — stay curious'));
+ok('the Mind section keeps its own cards', (mindSection.match(/class="psyche-card /g) || []).length === 3);
+
+/* The drawing's arithmetic, worked the way the browser works it: for every
+   screen from a small phone to a wide desktop, the longest word must clear the
+   lens and stay inside the wheel. The numbers are read out of the stylesheet,
+   so this check moves with the design instead of freezing today's numbers. */
+{
+  const num = (re, src) => Number((src.match(re) || [])[1]);
+  const ring = num(/\.psi-quote-one\s+\{ top: calc\(50% - ([\d.]+)%\)/, round37Css) / 100;
+  const wide = {
+    core: num(/\.psi-core \{[\s\S]{0,300}?width: ([\d.]+)%/, round37Css) / 100,
+    font: num(/\.psi-quote \{[\s\S]{0,400}?clamp\(([\d.]+)rem, ([\d.]+)cqw, ([\d.]+)rem\)/, round37Css),
+  };
+  const wideFloor = num(/\.psi-quote \{[\s\S]{0,400}?clamp\(([\d.]+)rem,/, round37Css);
+  const wideCqw = num(/\.psi-quote \{[\s\S]{0,400}?rem, ([\d.]+)cqw/, round37Css);
+  const wideCap = num(/\.psi-quote \{[\s\S]{0,400}?cqw, ([\d.]+)rem\)/, round37Css);
+  const phoneRule = (round37Css.match(/@media \(max-width: 560px\) \{[\s\S]*?\n\}/) || [''])[0];
+  const phoneCore = num(/\.psi-core \{ width: ([\d.]+)%; \}/, phoneRule) / 100;
+  const phoneFloor = num(/clamp\(([\d.]+)rem,/, phoneRule);
+  const phoneCqw = num(/rem, ([\d.]+)cqw/, phoneRule);
+  const phoneCap = num(/cqw, ([\d.]+)rem\)/, phoneRule);
+  ok('the stylesheet gives the drawing every number this check needs',
+    ring > 0 && wide.core > 0 && phoneCore > 0 && wideCqw > 0 && phoneCqw > 0,
+    [ring, wide.core, phoneCore, wideCqw, phoneCqw].join(' '));
+  let tightest = { clear: Infinity, where: '' };
+  let furthest = { outer: 0, where: '' };
+  for (let viewport = 320; viewport <= 1500; viewport += 10) {
+    const stage = Math.min(560, viewport - 48);
+    const phone = viewport <= 560;
+    const floor = (phone ? phoneFloor : wideFloor) * 16;
+    const cqw = phone ? phoneCqw : wideCqw;
+    const cap = (phone ? phoneCap : wideCap) * 16;
+    const font = Math.min(cap, Math.max(floor, cqw / 100 * stage));
+    const padX = phone ? Math.max(5, 0.019 * stage) : Math.max(6, 0.021 * stage);
+    const padY = phone ? Math.max(5, 0.012 * stage) : Math.max(6, 0.013 * stage);
+    const core = (phone ? phoneCore : wide.core) * stage;
+    const longest = Math.max(...mindWords.map((word) => word.length));
+    const width = longest * 0.58 * font + 2 * padX;   // 0.58em a letter: an over-estimate, on purpose
+    const height = font + 2 * padY;
+    const reach = Math.hypot(width / 2, height / 2);
+    const clear = ring * stage - reach - core / 2;
+    const outer = (ring * stage + reach) / stage * 100;
+    if (clear < tightest.clear) tightest = { clear, where: 'a ' + viewport + 'px screen' };
+    if (outer > furthest.outer) furthest = { outer, where: 'a ' + viewport + 'px screen' };
+  }
+  ok('no word on the wheel can ever touch the club\'s logo', tightest.clear > 2,
+    'tightest gap ' + tightest.clear.toFixed(1) + 'px on ' + tightest.where);
+  ok('and no word ever leaves the wheel', furthest.outer <= 50.2,
+    'furthest reach ' + furthest.outer.toFixed(1) + '% on ' + furthest.where);
+}
 const mindPage = await get('/');
-ok('the old lens wheel and central logo are removed from home markup',
-  !round37Home.includes('class="psi-core"') && !round37Home.includes('class="psi-quotes"') && !round37Home.includes('class="psi-stage"'));
-ok('the layer heading lives with the TV man, after the WebGL story',
-  round37Home.indexOf('class="happiness-section tv-chapter"') > round37Home.indexOf("require __DIR__ . '/mind-story.php'") && round37Home.includes('Every mind has more than one layer.'));
-ok('the lens navigation anchor still exists at the new chapter', mindPage.body.includes('id="psychology"') && mindPage.body.includes('id="mind"'));
-ok('the club keeps Notice, Connect and Grow cards before the story',
-  ['Notice','Connect','Grow'].every(label=>round37Home.includes('<h3>'+label+'</h3>')));
-ok('the classic horse hero is restored without any flower scene',
-  round37Home.includes('class="hero hero-with-video"') && !round37Home.includes('flower-') && round37Home.includes('class="hero-art fade-in"'));
-ok('the full TV footage uses opaque frames rather than a polygon cutout',
-  round37Home.includes('class="tv-canvas"') && appJs.includes('/tv-sequence/manifest.json') && !appJs.includes('video.dataset.afterFlower'));
-ok('horses use the pre-flower player without a delayed scene gate',
-  !appJs.includes('beforeHorse()') && appJs.includes('function coveredByStory()'));
-ok('TV cursor and permitted gyro directly control recorded poses without new prompts',
-  appJs.includes("window.addEventListener('deviceorientation'") && appJs.includes('event.clientX/innerWidth*74') && !appJs.includes('DeviceOrientationEvent.requestPermission'));
-ok('the graph keeps its real leader paths beside the TV',mindPage.body.includes('id="happinessCurve"') && mindPage.body.includes('id="happinessViceCurve"'));
+ok('the Mind section renders whole on the live page',
+  mindPage.body.includes('psi-stage') && mindPage.body.includes('subconscious') && mindPage.body.includes('quoteHold')
+  && !mindPage.body.includes('mind in motion'));
 
 console.log('\n— experimental name and seven-ring scroll chapter —');
 const paintSource = fs.readFileSync(path.join(ROOT, 'assets/motion/intro-word.svg'), 'utf8');
@@ -2128,7 +2208,7 @@ const storyCss = fs.readFileSync(path.join(ROOT, 'assets/story.css'), 'utf8');
 const storyView = fs.readFileSync(path.join(ROOT, 'views/public/mind-story.php'), 'utf8');
 const hdReference = JSON.parse(fs.readFileSync(path.join(ROOT, 'tools/references/zero-hd-manifest.json'), 'utf8'));
 ok('the psychology sequence is inserted after the working wire chapter',
-  home.body.indexOf('id="human-story"') > home.body.indexOf('class="brand-chapter') && home.body.indexOf('id="human-story"') < home.body.indexOf('class="happiness-section tv-chapter"'));
+  home.body.indexOf('id="human-story"') > home.body.indexOf('class="brand-chapter') && home.body.indexOf('id="human-story"') < home.body.indexOf('class="happiness-section"'));
 ok('the story runtime is inlined and initialises after markup exists',
   home.body.includes('function startStory()') && storySource.includes("document.addEventListener('DOMContentLoaded',startStory") && !home.body.includes('src="/assets/story.js"'));
 ok('the glass keeps its qualifier and primary-source citations',

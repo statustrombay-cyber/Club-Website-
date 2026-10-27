@@ -772,13 +772,10 @@
       const width = butterfly.offsetWidth;
       const progress = clamp((window.scrollY || 0) / Math.max(1, document.documentElement.scrollHeight - window.innerHeight), 0, 1);
       target = { x: 10 + progress * Math.max(0, window.innerWidth - width - (window.innerWidth <= 1100 ? 84 : 32)), y: Math.max(4, (bounds.top || 0) + 12 - butterfly.offsetHeight), width: width };
-      const navBox=header.querySelector?.('.nav')?.getBoundingClientRect();
-      if(navBox&&target.x+width>navBox.left&&target.x<navBox.right)target.y=Math.max(4,bounds.bottom+8);
       const dark = $$('.black-chapter').some(function (section) {
         if (section.parentElement && section.parentElement.dataset.storyPhase === 'herd') return false;
         const box = section.getBoundingClientRect();
-        const threshold = bounds.bottom + 1;
-        return box.top <= threshold && box.bottom > bounds.bottom;
+        return box.top <= bounds.bottom + 1 && box.bottom > bounds.bottom;
       });
       if (dark !== desiredDark) { desiredDark = dark; darkSince = now; }
       needsMeasure = false;
@@ -792,11 +789,8 @@
       if (!frame && state !== 'waiting' && !document.hidden) frame = window.requestAnimationFrame(tick);
     }
     function launch(kind) {
-      if(kind!=='entry'&&desiredDark)kind='leave';
-      if(kind==='leave')committedDark=true;else if(!desiredDark)committedDark=false;
-      if(kind==='tv-return'){x=-target.width-8;y=target.y+12;vx=0;vy=0;}
       const end = kind === 'leave' ? { x: -target.width - 100, y: -butterfly.offsetHeight - 60 } : { x: target.x, y: target.y };
-      const duration = kind === 'tv-return' ? 650 : kind === 'entry' ? 6400 : (kind === 'release' || kind === 'return-action') ? clamp(500 + Math.hypot(end.x-x, end.y-y)*.5, 650, 1000) : Math.max(kind === 'leave' ? 4200 : 3400, Math.abs(end.x - x) * 3.4);
+      const duration = kind === 'entry' ? 6400 : (kind === 'release' || kind === 'return-action') ? clamp(500 + Math.hypot(end.x-x, end.y-y)*.5, 650, 1000) : Math.max(kind === 'leave' ? 4200 : 3400, Math.abs(end.x - x) * 3.4);
       // A continuous tangent survives reversals; no cancelled animation can
       // restore an old CSS pose or switch the butterfly's opacity mid-flight.
       const reach = Math.min(380, duration * .22);
@@ -821,7 +815,6 @@
       if (!node || !node.isConnected || reduced()) return Promise.resolve();
       if (interaction) interaction.cancel();
       measure(performance.now());
-      if(desiredDark){if(kind==='field')activeField=null;if(state!=='away'&&state!=='leaving')launch('leave');return Promise.resolve();}
       if (state === 'waiting') { x = Math.max(0, node.getBoundingClientRect().left - 100); y = window.innerHeight + 80; }
       flight = null; state = 'interacting';
       const end = destination(node, kind, point), from = { x: x, y: y, angle: angle, scale: photoScale };
@@ -957,7 +950,7 @@
     let actionTicket = 0;
     document.addEventListener('click', function (event) {
       if(suppressDragClick&&event.detail>0){suppressDragClick=false;event.preventDefault();event.stopImmediatePropagation();return;}
-      if (document.documentElement.classList?.contains('intro-cover') || document.body.classList.contains('is-black-chapter') || document.body.classList.contains('story-immersive') || desiredDark || drag || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || reduced() || event.target.closest?.('.nav-butterfly,[data-no-butterfly],.mind-story')) return;
+      if (document.documentElement.classList?.contains('intro-cover') || document.body.classList.contains('is-black-chapter') || document.body.classList.contains('story-immersive') || drag || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || reduced() || event.target.closest?.('.nav-butterfly,[data-no-butterfly],.mind-story')) return;
       const node = event.target.closest && event.target.closest('a[href], button, summary');
       const point = event.detail > 0 ? {x:event.clientX,y:event.clientY} : null;
       if (!node) {
@@ -985,18 +978,12 @@
     function tick(now) {
       frame = 0;
       if (document.hidden || state === 'waiting') { lastFrame = 0; return; }
-      const elapsedDt = lastFrame ? clamp(now - lastFrame, 0, 1000) : 16;
-      const dt = Math.min(64,elapsedDt);
+      const dt = lastFrame ? clamp(now - lastFrame, 0, 160) : 16;
       lastFrame = now;
       if (needsMeasure || !target) measure(now);
-      // Dark transitions outrank a retained field/click trip. Otherwise the
-      // companion branch returns early forever and pins the photo mid-screen.
-      if((desiredDark&&(interaction||state==='companion')) || (interaction&&interaction.node.isConnected===false)||(activeField&&activeField.isConnected===false)){
-        if(interaction)interaction.cancel();activeField=null;launch(desiredDark?'leave':'return');
-      }
       if (drag) {
         if (desiredDark) { releaseDrag(); return; }
-        const oldX=x, oldY=y, follow=1; // A held grip follows the latest input, not a lagging spring.
+        const oldX=x, oldY=y, follow=reduced()?1:1-Math.exp(-dt/28);
         photoScale += (1-photoScale)*follow;
         const w=butterfly.offsetWidth,h=butterfly.offsetHeight;
         const endX=clamp(drag.x-drag.offsetX,w/2,window.innerWidth-w/2)-w/2;
@@ -1015,7 +1002,7 @@
       }
       if (interaction) {
         const trip = interaction, end = trip.kind === 'action' ? trip.end : destination(trip.node, trip.kind);
-        trip.elapsed += elapsedDt;
+        trip.elapsed += dt;
         const t = clamp(trip.elapsed / trip.duration, 0, 1), u = clamp((t - .12) / .88, 0, 1);
         const ease = u * u * (3 - 2 * u), arc = Math.sin(Math.PI * u);
         x = trip.from.x + (end.x - trip.from.x) * ease;
@@ -1038,15 +1025,13 @@
       }
       photoScale += (1 - photoScale) * (1 - Math.exp(-dt / 240));
       // Brief crossings during a fast scroll never trigger a disappearance.
-      const tvBox=$('.tv-chapter')?.getBoundingClientRect();
-      const tvReturn=!desiredDark&&tvBox&&tvBox.top<window.innerHeight&&tvBox.bottom>0;
-      if (desiredDark !== committedDark && (tvReturn||now - darkSince >= 320)) {
+      if (desiredDark !== committedDark && now - darkSince >= 320) {
         committedDark = desiredDark;
-        launch(desiredDark ? 'leave' : tvReturn?'tv-return':'return');
+        launch(desiredDark ? 'leave' : 'return');
       }
       const oldX = x, oldY = y;
       if (flight) {
-        flight.elapsed += elapsedDt;
+        flight.elapsed += dt;
         const t = clamp(flight.elapsed / flight.duration, 0, 1);
         const u = t * t * (3 - 2 * t), v = 1 - u;
         if (flight.kind !== 'leave') {
@@ -1107,58 +1092,11 @@
       const observer = new ResizeObserver(function () { needsMeasure = true; schedule(); });
       observer.observe(document.body); observer.observe(header);
     }
-    document.addEventListener('visibilitychange', function () { if(document.hidden){window.cancelAnimationFrame(frame);frame=0;releaseDrag();}lastFrame=0;needsMeasure=true;schedule(); });
-    window.addEventListener('pageshow',function(){lastFrame=0;needsMeasure=true;schedule();});
-    if('MutationObserver' in window){
-      const targets=new MutationObserver(function(){
-        if((interaction&&interaction.node.isConnected===false)||(activeField&&activeField.isConnected===false)){needsMeasure=true;schedule();}
-      });
-      targets.observe(document.body,{childList:true,subtree:true});
-    }
-
+    document.addEventListener('visibilitychange', function () { if(document.hidden)releaseDrag();lastFrame = 0; schedule(); });
   }
 
   /* Two fast-start encodes; the untouched master is retained for the club.
      Buffering is not repaired by repeatedly seeking or reloading the file. */
-  /* The retained TV is direct-input media, independent of the old hero/herd.
-     No permission prompt: sensor events require browser/OS authorization. */
-  function setupTvCompanion(){
-    const chapter=$('.tv-chapter');if(!chapter)return;
-    const clamp=n=>Math.max(0,Math.min(74,n));
-    let player=null,active=false,wanted=37,touch=null,pointerUntil=0;
-    function load(){
-      if(player)return;
-      player=window.MTFrameSequence?.create($('.tv-canvas',chapter),{manifest:'/assets/media/tv-sequence/manifest.json',count:75,initialFrame:wanted});
-      player?.setFrame(wanted);player?.setActive(active);
-    }
-    function set(value,input){wanted=clamp(value);chapter.dataset.tvInput=input;chapter.dataset.tvTarget=wanted.toFixed(2);if(active){load();player?.setFrame(wanted);}}
-    function observe(){const b=chapter.getBoundingClientRect();active=b.top<innerHeight&&b.bottom>0&&!document.hidden;if(active){load();player?.setActive(true);}else{player?.setActive(false);touch=null;}}
-    window.addEventListener('scroll',observe,{passive:true});window.addEventListener('resize',observe,{passive:true});
-    document.addEventListener('visibilitychange',observe);
-    if('IntersectionObserver'in window){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){load();io.disconnect();}},{rootMargin:'400px'});io.observe(chapter);}
-    window.addEventListener('pointermove',event=>{
-      if(!active)return;
-      if(event.pointerType==='touch'){
-        if(!touch||touch.id!==event.pointerId)return;
-        const dx=event.clientX-touch.x;if(Math.abs(dx)<6)return;
-        pointerUntil=performance.now()+650;set(touch.frame+dx/innerWidth*74,'touch');
-      }else{pointerUntil=performance.now()+650;set(event.clientX/innerWidth*74,'pointer');}
-    },{passive:true});
-    chapter.addEventListener('pointerdown',event=>{if(event.pointerType==='touch')touch={id:event.pointerId,x:event.clientX,frame:wanted};},{passive:true});
-    ['pointerup','pointercancel'].forEach(name=>window.addEventListener(name,()=>{touch=null;},{passive:true}));
-    function orientation(event){
-      if(!active||performance.now()<pointerUntil)return;
-      const angle=((screen.orientation?.angle??window.orientation??0)+360)%360;
-      const reading=angle===90||angle===270?event.beta:event.gamma;
-      if(!Number.isFinite(reading))return;
-      const horizontal=angle===90||angle===180?-reading:reading;
-      set(37+Math.max(-1,Math.min(1,horizontal/25))*37,'gyro');
-    }
-    window.addEventListener('deviceorientation',orientation,{passive:true});
-    window.addEventListener('deviceorientationabsolute',orientation,{passive:true});
-    observe();
-  }
-
   function setupHeroVideo() {
     const video = $('#heroVideo');
     if (!video) return;
@@ -1289,7 +1227,6 @@
     setupCardDeck();
     setupReveal();
     setupPortraits();
-    setupTvCompanion();
     setupHeroVideo();
     setupIntroWarmup();
     setupMotionBudget();

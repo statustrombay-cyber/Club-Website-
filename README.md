@@ -13,44 +13,6 @@ For **InfinityFree uploads**, follow [Full GitHub ZIP upload](#full-github-zip-u
 below. The `npm` commands in the local-development section are **not** hosting
 installation steps.
 
-## Current home-page sequence — restored 27 October 2026
-
-The **pre-flower opening from checkpoint `8e37e6f` is restored**: original
-horse-backed hero/artwork/quote, announcement/banner behavior, welcome paint,
-brand choreography and story. The hero markup and horse playback function are
-byte-compared to that checkpoint in browser regression tooling. The story,
-audio/choreography sources and all three original horse MP4s also match it.
-
-**The flower girl is removed**, including her video, posters, generated frames,
-AI metadata and obsolete builders/tests. The full TV man remains alongside the
-happiness chart after the story, replacing the old lens wheel. It retains all
-75 opaque recorded frames and the complete CRT, not a cutout or alpha matte.
-
-The butterfly returns promptly after the story (a short 650ms re-entry instead
-of the ordinary long return) and **does not leave merely because TV is visible**.
-The original dark closing/brand exits remain. Held mouse/finger dragging tracks
-the latest input without a delayed spring; canceled/disconnected field/action
-targets recover, with removal observation and hidden-tab/page-return handling.
-
-The TV's first mouse movement maps absolute cursor position to its full pose
-range. Touch uses horizontal displacement without stealing vertical scroll.
-Gyro maps actual tilt, handles portrait/landscape and ignores invalid readings;
-brief cursor priority prevents two input sources fighting. Reduced-motion and
-Data Saver no longer silently disable this explicit interaction. There are no
-new permission buttons/prompts. **Real gyro events still require browser/OS
-sensor permission**; missing permission cannot be bypassed by JavaScript.
-
-The current regression report is
-[restored opening / TV / butterfly](tools/tests/reports/restored-opening-tv-2026-10-27.md).
-Local headless-browser/simulated sensor results are not a physical Safari or
-production-host guarantee. Runtime is prebuilt; no new hosting build step.
-
-Rollback before this restoration: **`1772002`**, retained in Git and a private
-archive outside the website. Earlier designs remain in history, not duplicated
-inside the current deployment ZIP. References, backups, development tools and
-private live settings remain export-excluded. Only the authorized PR branch is
-updated; main is not changed or merged.
-
 ---
 
 ## Running it

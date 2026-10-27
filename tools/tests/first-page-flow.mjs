@@ -30,9 +30,8 @@ try{
   assert.equal(await p.locator('.site-shell').evaluate(e=>e.inert),false);
   assert.ok(requests.length<=1&&requests.every(u=>u.endsWith('scene-asset=engine')),'at most one passive bundle request; no model/decoder/texture bulk loading');
   await p.waitForFunction(()=>{const v=document.querySelector('#heroVideo');return !v.paused&&v.currentTime>.1;},null,{timeout:10000});
-  assert.equal(await p.locator('.flower-prologue').count(),0);
   assert.equal(await p.locator('.drift-blob').first().evaluate(e=>getComputedStyle(e).filter),'none');
-  assert.equal(await p.locator('.psi-quote').count(),0,'the removed lens wheel does not return');
+  assert.equal(await p.locator('.psi-quote').first().evaluate(e=>getComputedStyle(e).backdropFilter),'none');
   const geometry=[];let largest=844;
   for(const h of [754,928,754,844]){
    await p.setViewportSize({width,height:h});await p.waitForTimeout(80);largest=Math.max(largest,h);
@@ -79,7 +78,7 @@ try{
   body=body.replace(/<script\b([^>]*)>([\s\S]*?)<\/script>/g,(all,attrs,code)=>code.includes('function setupSplash()')?'<script'+attrs+' src="/assets/app.js"></script>':all);
   await route.fulfill({response,body});
  });
- await late.route('**/assets/app.js*',async r=>{await new Promise(resolve=>setTimeout(resolve,6000));await r.continue();});
+ await late.route('**/assets/app.js',async r=>{await new Promise(resolve=>setTimeout(resolve,6000));await r.continue();});
  await late.goto(base+'/',{waitUntil:'domcontentloaded'});
  await late.waitForFunction(()=>document.body.classList.contains('intro-revealed'),null,{timeout:1500});
  const lateReady=await late.evaluate(()=>({time:performance.now(),inert:document.querySelector('.site-shell').inert,cover:document.documentElement.classList.contains('intro-cover')}));

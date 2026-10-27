@@ -1,9 +1,0 @@
-{
-  "count": 75,
-  "width": 405,
-  "height": 384,
-  "pattern": "/assets/media/tv-sequence/{frame}.webp",
-  "sourceFrames": 75,
-  "alpha": false,
-  "sourceSha256": "1b6d3b3409b1344e7546d7c3ae383cda7789113c688ed6432daaa6a008a5a708"
-}
