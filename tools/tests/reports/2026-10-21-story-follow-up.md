@@ -1,0 +1,33 @@
+# Story follow-up: lag, permitted gyro, audio and black bands
+
+## Recovery and branch investigation
+
+Recovered the **complete original upload** from `838239e:Club website Hand glass broken.zip.zip` outside the deployment tree at `/home/user/reference-study/recheck-20261021/`. ZIP size **5,883,617 bytes**, SHA-256 `c72259cb8836666fafbfebc6823d2dfb761322c5fdceb052ca563ca70c0b065a`; all **72 entries / 55 files** extracted, CRC test passed. Re-read the original scene source and inventoried every recovered file. **All 24 original files currently copied into the runtime are byte-identical** to this archive, including audio, hand/camera/fracture/shard models, original degree/banknote atlases and decoders. The derived club fact/editorial/welcome textures remain intentional adaptations. There was no justification for replacing them with source advertisements or loading the source homepage/HUD/analytics and unrelated garden assets. Full recovery is retained for inspection without adding a deploy ZIP or extra runtime downloads.
+
+Compared `eec5440` with the newer branch's `d6ae174` / `8258b02`, and retained the previous `36cc600` context/asset-delivery repair:
+
+- `8258b02` introduced `.mind-story.story-enhanced::after` with a **full viewport of black**, opaque herd underpaint and coverage through that spacer. This was not a missing asset. Removed the spacer, restored transparency at the real end, and resume the underlying herd before it becomes visible. Existing viewport tests incorrectly asserted that the black hold was desirable; they now check the real chapter boundary, resumed video and absence of the extra box.
+- The rings/Manifest stage retained `100svh` sizing. A collapsed mobile toolbar can leave a band below that small-viewport stage. Use `100dvh` with the existing header clearance; retain no-JS/reduced-motion auto-height layouts.
+- The early shared-context change had interacted with the captured Howler sample-rate reset (previous repair). Keep the live context and original PHP-served MP3s. Remaining activation problem: consent was gated on a tap **inside the story**, not the ordinary earlier tap. Accept early release/click activation on touch devices, including hybrid-pointer devices and legacy touchstart audio unlock. Do not reject native DeviceOrientation on an unsupported Generic Sensor policy-feature name; let the native API enforce its own policy. No new custom controls.
+- A separate inherited bug was not specific to the newer branch: `dt=0` under reduced-motion preferences also reached the camera rig. Valid permitted sensor events were received but applied **zero interpolation**. In a before/after browser comparison using the **same input and reduced-motion preference**, `36cc600` reported `gyro:true` but rendered-camera offset **0**; repaired offset was **0.11132163145577212**. Preserve frozen idle motion, but allow deliberate tilt. Real sensor input also takes priority over pointer fallback.
+- Start the original chapter ambience at visible entry, including reverse entry; do not depend on an already-spent fracture flag. Preserve one-shot impact, burn and actual exit silence. Where supported, scope Safari's audio session to `playback` inside the chapter and restore its previous type afterward. This API branch is mocked in automated testing, not a physical silent-switch test.
+
+## Performance work without replacing the glass/story
+
+- No engine preload/parse, model decode, large rotating-wire atlas decode or WebGL initialization over the splash/hero. Warm on approach to the chapter instead, with reserved track geometry and the original bounded retry/fallback.
+- Compile the two recovered glass passes asynchronously and yield between them. Preserve their original meshes, materials, camera path, upward flight, portrait fit, readable fact overlays and no-fracture-on-reverse behaviour.
+- Prefetch the story video **paused**, not by playing and immediately aborting it (which armed a later gesture retry). Stop hidden/offscreen video and GL work; pause the herd behind an opaque story on desktop too, then resume it for the exit. Do not animate offscreen ring transforms on ordinary page scrolling.
+- Reduce backing-store pixel ratio for sustained slow frames, including severely slow frames, down to a floor of 1 CSS pixel per pixel. No low-resolution editorial substitution: full 4096px atlas and all **16 papers / 6 shreds** remain. No universal FPS claim; software rendering is not representative of a physical phone GPU.
+
+## Verification and artifacts
+
+Artifacts, full recovery inventory and screenshots stay outside the project under `recheck-20261021/`.
+
+- Application/backend/pass/security suite: **759 passed, 0 failed**, plus lint.
+- Strict-activation browser/DSP checks: **19 passed**. Taps occur on the ordinary page **before** the engine/story, with 48 kHz and a deliberately pending first resume; actual ambient DSP signal, exactly one glass start, burn start, gyro-applied render-camera offsets in glass/paper with reduced idle motion, suspended-context resume, no reverse impact replay, silent DSP exit, session restoration and refusal handling. Sensor/permission events are simulated, explicitly not physical hardware proof.
+- Work-budget checks: **11 passed**. No engine request/GL drawing/second video over hero, no warmed offscreen draws, no hidden-video restart on later hero taps, Manifest bottom aligned at 928/754/844px, slow-frame backing-store adaptation exercised with controlled callback delays while preserving original scene objects and print.
+- Rendered detail/navigation/HiDPI, **157 source-scene assertions**, warm/reverse/smoothness and viewport/touch/wheel regressions passed at mobile and desktop sizes. Actual Manifest, glass and herd exit screenshots inspected; no appended black exit sheet.
+- Public rendered audit passed on **home, calendar, members and gallery at both widths**, including horse playback, leadership/contact content, complete paper traversal, direct registration/navigation, gallery expansion/escape and no horizontal overflow or page errors.
+- Cold phase-skipping, normal/403/error-page loader delivery, printed-atlas integrity and GitHub-equivalent source export are checked separately before publication.
+
+The deployed public URL and a physical device/browser were not supplied. Automated permission outcomes, injected orientation and Safari audio-session stubs cannot certify OS sensor delivery or speaker output on that device. Browser activation and parent-frame sensor/autoplay policies still apply; the code must not treat a permission flag alone as proof of working gyro/audio.

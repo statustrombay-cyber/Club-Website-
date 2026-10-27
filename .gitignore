@@ -12,7 +12,21 @@ data/tmp-uploads/
 # uploads are part of the site content, but local test files are not
 uploads/**/preview-*
 
+# deploy bundles are built on demand, never committed
+deploy-bundle*.zip
+
 # editor / OS noise
 .DS_Store
 Thumbs.db
 *.swp
+
+# Screen recordings are studied outside the website, never shipped.
+/screen-*.mp4
+/tools/references/*.mp4
+
+# Rollback archive stays local; uploaded root videos are references.
+/.rollback/
+/*.mp4
+
+# One-time public-content recovery lock (never deploy runtime locks).
+data/.store.lock

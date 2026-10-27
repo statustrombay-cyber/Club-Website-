@@ -1,46 +1,63 @@
 <?php
 /**
- * Public photo gallery.
+ * The event gallery — the club's photo album.
  *
- * @var array $site
- * @var array $db
+ * The first photo and the whole archive are written by PHP, so the page is
+ * complete before any script runs; the script only takes over the stage after.
+ *
+ * @var array $db    Whole content store.
+ * @var array $site  Club copy.
  */
-$site    = $site ?? [];
-$db      = $db ?? mt_db();
-$gallery = array_values(array_filter($db['gallery'] ?? [], static fn($item) => mt_safe_image($item['image'] ?? '') !== ''));
-$events  = array_values(array_unique(array_filter(array_map(static fn($item) => trim((string) ($item['event'] ?? '')), $gallery))));
-?>
+$photos = mt_sorted(mt_gallery_photos($db['gallery'] ?? []));
 
-<section class="cal-hero">
+/* The club's photos, in the order the club set: order 1 first, order 2 next.
+   There are no categories any more — a photo is just a photo with a caption,
+   so the gallery is one strip and the club decides what leads it. The same
+   list is what the stage turns through. */
+$slides = mt_gallery_slides($db['gallery'] ?? []);
+?>
+<section class="gallery-hero">
   <div class="container">
-    <span class="eyebrow">Mindful Tattva · photo album</span>
-    <h1 class="display">A scrapbook of <em style="color:var(--terracotta);font-style:normal">small moments.</em></h1>
-    <p class="lede">Workshops, circles, campus conversations and the quiet pauses in between. Click any photo to open it in the full-frame viewer.</p>
+    <div class="eyebrow" style="color:#f0b287">Mindful Tattva / event gallery</div>
+    <h1 class="display">A scrapbook of <em>small moments.</em></h1>
+    <p>As the club grows, workshops, circles, campus conversations and shared pauses will find their way here.</p>
   </div>
 </section>
 
-<section class="section section-tight" id="gallery">
-  <div class="container" data-gallery-toolbar>
-    <div class="gallery-toolbar">
-      <div class="chip-row" data-render="gallery-filters">
-        <span class="chip is-active"><?= count($gallery) ?> photo<?= count($gallery) === 1 ? '' : 's' ?></span>
-      </div>
-      <label class="chip" style="display:flex;align-items:center;gap:8px;cursor:text">
-        <span aria-hidden="true">⌕</span>
-        <input data-gallery-search type="search" placeholder="Search captions" aria-label="Search photos"
-               style="border:0;background:transparent;outline:none;width:170px;font-size:.82rem">
-      </label>
+<section class="gallery-shell" id="gallery">
+  <div class="container">
+    <div class="gallery-showcase">
+      <?= mt_gallery_stage($slides) ?>
+      <aside class="gallery-side-note">
+        <div>
+          <div class="eyebrow">Keep the thread</div>
+          <h2>Every gathering leaves a trace.</h2>
+          <p>Photos are added by the club team, so this page turns into a living archive of the
+            people, ideas and moments that shape Mindful Tattva.</p>
+        </div>
+        <div class="mini-psi">Ψ</div>
+      </aside>
     </div>
 
-    <div class="gallery-grid" data-render="gallery">
-      <?php if ($gallery): ?>
-        <?php foreach ($gallery as $index => $item): ?><?= mt_gallery_card($item, $index) ?><?php endforeach; ?>
+    <div class="gallery-archive">
+      <div class="gallery-archive-head">
+        <div><div class="eyebrow">The archive</div><h2>Look back,<br>feel forward.</h2></div>
+        <p><?= e((string) ($site['galleryIntro'] ?? 'Photos and captions added by the club appear here automatically.')) ?></p>
+      </div>
+      <?php if ($slides): ?>
+        <div class="archive-grid" id="archiveGrid">
+          <?php foreach ($photos as $photo): ?>
+            <?= mt_archive_card($photo) ?>
+          <?php endforeach; ?>
+        </div>
       <?php else: ?>
-        <div class="empty-state">
-          <strong>The album is warming up.</strong>
-          <p>As soon as the club team uploads event photos from the dashboard, they will appear here in full frame.</p>
+        <div class="archive-grid">
+          <?= mt_gallery_empty('No photos yet.', 'The first photo the club uploads will begin the album.') ?>
         </div>
       <?php endif; ?>
     </div>
   </div>
 </section>
+
+<?= mt_photo_frame() ?>
+<?= mt_gallery_data($slides) ?>
