@@ -15,22 +15,26 @@ installation steps.
 
 ## Current home-page sequence (27 October 2026)
 
-After the retained welcome paint, the flower is a **native seekable H264 video
-made from the original 40 recorded camera/hand frames** of `animated (96).webp`.
-There is an explicit close-in zoom as scrolling starts, followed by the
-recorded camera pan and extending hand. No synthesized optical-flow images
-or adjacent-frame blending are used in primary playback. The single 1.7 MB
-fast-start file has every frame independently seekable, avoiding a queue of
-hundreds of image requests. Normal wheel/touch scrolling stays pinned through
-4.8 viewport heights, including Data Saver and reduced-motion settings.
-Reduced motion removes extra zoom/easing; the video seeks only with deliberate
-scroll, never autoplay. Notice / Connect / Grow remain readable palm cards.
-The horse background starts immediately at the flower sequence's end.
+After the retained welcome paint, the flower follows the original recording's
+camera/hand movement with an explicit opening scroll-in zoom. Its **200-frame,
+60fps, 1280×956 video is enhanced with ESPCN 2× neural super-resolution**.
+Motion-compensated interpolation smooths the original 40 usable frames; this
+is not a newly generated woman or recovered original detail. The fast-start
+H264 file has a short six-frame seek interval and stays below the hosting limit.
 
-The old 157-frame WebGL player is now only a media-error/unsupported-codec
-fallback, not the primary flower display. The original WebGL story remains
-unchanged. The butterfly's three overlapping image shadows are replaced by
-one small neutral shadow, with non-overlapping wings and normal color blending.
+The native video is now an **invisible decoder**, not a visible player. A
+persistent canvas commits completed frames and holds the last good image during
+fast/reverse seeks, avoiding decoder-black flashes and native play overlays.
+Recorded billboard/arrow UI is fully removed, not dimmed with a blurred mask.
+Video and fallback footers are blank: Notice / Connect / Grow text is drawn
+**once, by HTML**, with responsive readable cards and no dark parent slab.
+
+The 4.8-viewport sticky track remains intact in reduced-motion/Data Saver.
+Reduced motion omits extra zoom/easing; seeking follows deliberate scroll,
+never autoplay. The horse background starts immediately after the flower.
+The original WebGL story and full TV scene remain unchanged. Media-error
+fallback starts near the latest requested frame, not back at frame zero.
+Updated media/styles/scripts use revisioned URLs in the deployment.
 
 The TV companion beside the happiness chart uses **all 75 recorded frames of
 `animated (46).webp`**, with the complete CRT casing and opaque original
@@ -40,21 +44,21 @@ no new gyro permission prompt or control is added. The old lens wheel/logo
 remains removed. The butterfly now cancels retained-field/pending-action trips
 before leaving dark scenes, and its perch clears the header's controls.
 
-These are cleaned recording-derived frames, **not a recovered rigged 3D model**.
-The source has no distinct eye-opening pass; none is invented. The primary video retains the original 640px frames; no higher-resolution
-detail is claimed. Optical flow remains only in the media-error fallback.
-Foreign UI/cursors are locally repaired/relabelled; unrelated agency outro
-frames are not replayed. The player bounds decoded images to 20 per sequence,
-limits concurrent requests to four, stops offscreen/hidden work and retains
-posters during loading or GPU loss. A Canvas2D media-error fallback and no-JavaScript static presentation remain available.
+These are enhanced recording-derived frames, **not a recovered rigged 3D
+model**. The source has no distinct eye-opening pass; none is invented. Neural
+upscaling can improve apparent clarity but cannot recover all missing original
+detail. Interpolation can produce local motion artifacts; no universal 60fps
+rendering or physical Safari certification is claimed. Source/UI repair is
+local and unrelated agency outro frames are not replayed. The bounded frame
+fallback and a no-JavaScript static presentation remain available.
 
-The **pre-video correction checkpoint is `ee833aa`** (earlier sequence checkpoint `b3dd776`); the earlier standalone
+The **pre-polish checkpoint is `5ab6e07`** (earlier video checkpoint `ee833aa`); the earlier standalone
 butterfly / pre-remodel checkpoint is `8e37e6f`. Prior designs remain in Git
 history, not duplicated inside the website download. Uploaded reference WebPs,
 tools, rollback archives and private live settings are excluded from the
 GitHub deployment ZIP. Runtime media is already built; hosting needs no React,
 Vite, Python or new build step. See
-[the current validation report](tools/tests/reports/flower-native-video-2026-10-27.md)
+[the current validation report](tools/tests/reports/flower-polish-2026-10-27.md)
 for tested behavior and limitations.
 
 ---

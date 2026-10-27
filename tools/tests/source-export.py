@@ -26,7 +26,7 @@ with tarfile.open(fileobj=io.BytesIO(archive)) as tar:
         assert name not in members, f'Live settings or dev-only file exported: {name}'
     assert not any(n.startswith('tools/') for n in members), 'Development source exported'
     assert not any('/' not in n and re.match(r'animated.*\.webp$', n, re.I) for n in members), 'Uploaded reference screen recording exported'
-    for name in ['assets/media/flower-poster.webp','assets/media/flower-scroll.mp4','assets/media/tv-man-poster.webp',
+    for name in ['assets/media/flower-poster.webp','assets/media/flower-scroll.mp4','assets/media/flower-enhancement.json','assets/media/tv-man-poster.webp',
                  'assets/media/flower-sequence/manifest.json','assets/media/tv-sequence/manifest.json','assets/sequence-player.js']:
         assert name in members, f'Current frame runtime absent: {name}'
     for folder,count in [('flower-sequence',157),('tv-sequence',75)]:

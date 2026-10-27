@@ -11,7 +11,7 @@ try{
   p.on('pageerror',e=>errors.push(e.message));p.on('request',r=>{if(/horses-.*\.mp4/.test(r.url()))horse.push(r.url());});
   await p.route('**/*scene-asset=engine',()=>{});await p.goto(base+'/#top-section');
   await p.waitForFunction(()=>document.querySelector('.flower-video').dataset.videoReady==='true');
-  assert.ok(await p.locator('.flower-video').evaluate(e=>e.readyState>=2&&e.paused&&e.videoWidth===640));
+  assert.ok(await p.locator('.flower-video').evaluate(e=>e.readyState>=2&&e.paused&&e.videoWidth===1280));
   assert.equal(await p.locator('.flower-stage #heroTagline').count(),0,'no headline overlays the first face');assert.deepEqual(horse,[]);
   if(width<=1100){await p.locator('#menuButton').click();assert.ok(await p.locator('#navLinks').isVisible());await p.keyboard.press('Escape');}
   const first=await p.screenshot();if(dest)fs.writeFileSync(`${dest}/sequence-start-${width}.png`,first);
@@ -28,7 +28,7 @@ try{
   // Rapid reversals must finish at the newest request, not a stale fetch result.
   for(const value of [.75,.15,.85,.25])await p.locator('.flower-prologue').evaluate((e,n)=>scrollTo(0,(e.offsetHeight-innerHeight)*n),value);
   await jump(p,.25);assert.ok(await p.locator('#heroVideo').evaluate(e=>e.paused));assert.equal(await p.locator('.hero-media').evaluate(e=>getComputedStyle(e).visibility),'hidden');
-  assert.equal(await p.locator('.flower-canvas').getAttribute('data-renderer'),null,'normal flower playback has no WebGL frame queue');
+  assert.equal(await p.locator('.flower-canvas').getAttribute('data-renderer'),'video2d','normal flower presentation is held canvas, not an exposed decoder');
   await jump(p,.5);if(dest)await p.screenshot({path:`${dest}/camera-mid-${width}.png`});
   await p.locator('.tv-chapter').evaluate(e=>scrollTo(0,e.getBoundingClientRect().top+scrollY+2));
   await p.waitForFunction(()=>document.querySelector('.tv-canvas').dataset.sequenceReady==='true');
@@ -45,7 +45,7 @@ try{
  for(const mode of ['nojs','reduced','noWebGL']){
   const p=await browser.newPage({viewport:{width:390,height:844},javaScriptEnabled:mode!=='nojs',reducedMotion:mode==='reduced'?'reduce':'no-preference'});
   if(mode==='noWebGL')await p.addInitScript(()=>{const get=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(name,...args){return /webgl/.test(name)?null:get.call(this,name,...args);};});
-  await p.goto(base+'/#top-section');assert.ok(await p.locator('.flower-poster').evaluate(e=>e.complete&&e.naturalWidth===960));
+  await p.goto(base+'/#top-section');assert.ok(await p.locator('.flower-poster').evaluate(e=>e.complete&&e.naturalWidth===1280));
   await p.locator('#club-intro').scrollIntoViewIfNeeded();assert.ok(await p.locator('#heroTagline').isVisible());
   if(mode==='noWebGL'){await p.evaluate(()=>scrollTo(0,0));await p.waitForFunction(()=>document.querySelector('.flower-video').dataset.videoReady==='true');}
   await p.close();

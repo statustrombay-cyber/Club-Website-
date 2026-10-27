@@ -66,13 +66,13 @@ $nav = [
   <meta property="og:description" content="<?= e(mb_substr($description, 0, 180)) ?>">
   <meta property="og:image" content="<?= e($logo) ?>">
   <link rel="preload" href="/assets/fonts/inter-latin-regular.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" href="<?= $splash ? '/assets/media/flower-poster.webp' : '/assets/media/horses-running-poster.jpg' ?>" as="image" fetchpriority="high">
-  <link rel="stylesheet" href="/assets/app.css">
+  <link rel="preload" href="<?= $splash ? '/assets/media/flower-poster.webp?v=' . (int) @filemtime(MT_ASSETS . '/media/flower-poster.webp') : '/assets/media/horses-running-poster.jpg' ?>" as="image" fetchpriority="high">
+  <link rel="stylesheet" href="/assets/app.css?v=<?= (int) @filemtime(MT_ASSETS . '/app.css') ?>">
   <?php if ($splash): ?>
     <link rel="stylesheet" href="/assets/story.css">
     <script src="/assets/audio.js" defer></script>
     <script src="/assets/story.js" defer></script>
-    <script src="/assets/sequence-player.js" defer></script>
+    <script src="/assets/sequence-player.js?v=<?= (int) @filemtime(MT_ASSETS . '/sequence-player.js') ?>" defer></script>
   <?php endif; ?>
 </head>
 <body class="<?= e($bodyClass) ?>">
@@ -216,6 +216,6 @@ $nav = [
   ) ?></script>
   <!-- If this file never arrives, the "js" class is dropped again: the reveal
        animations only hide content under html.js, so nothing can get stuck. -->
-  <script src="/assets/app.js" onerror="document.documentElement.classList.remove('js')"></script>
+  <script src="/assets/app.js?v=<?= (int) @filemtime(MT_ASSETS . '/app.js') ?>" onerror="document.documentElement.classList.remove('js')"></script>
 </body>
 </html>

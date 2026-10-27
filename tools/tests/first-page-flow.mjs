@@ -79,7 +79,7 @@ try{
   body=body.replace(/<script\b([^>]*)>([\s\S]*?)<\/script>/g,(all,attrs,code)=>code.includes('function setupSplash()')?'<script'+attrs+' src="/assets/app.js"></script>':all);
   await route.fulfill({response,body});
  });
- await late.route('**/assets/app.js',async r=>{await new Promise(resolve=>setTimeout(resolve,6000));await r.continue();});
+ await late.route('**/assets/app.js*',async r=>{await new Promise(resolve=>setTimeout(resolve,6000));await r.continue();});
  await late.goto(base+'/',{waitUntil:'domcontentloaded'});
  await late.waitForFunction(()=>document.body.classList.contains('intro-revealed'),null,{timeout:1500});
  const lateReady=await late.evaluate(()=>({time:performance.now(),inert:document.querySelector('.site-shell').inert,cover:document.documentElement.classList.contains('intro-cover')}));

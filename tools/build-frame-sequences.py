@@ -43,24 +43,27 @@ def flower_clean(rgb,i,template):
     mask[10:39,8:95]=255;mask[10:40,450:630]=255
     rgb=cv2.inpaint(rgb,mask,5,cv2.INPAINT_TELEA)
     im=Image.fromarray(rgb)
-    if i<=12:
+    if i<=16:
         # The foreign site's opaque bottom-left intro card cannot be recovered.
         # Feather it into the original dark floral corner, without a new face.
-        a=Image.new('L',im.size);ImageDraw.Draw(a).rectangle((0,315,213,478),fill=255)
-        a=a.filter(ImageFilter.GaussianBlur(20))
+        # Full opacity over ALL of the baked billboard + purple arrow;
+        # feather OUTSIDE it. Blurring a rectangular mask leaves text/arrow
+        # ghosts inside its edges and looks like a black box while scrubbing.
+        yy,xx=np.mgrid[0:478,0:640].astype('float32')
+        ax=np.clip((303-xx)/85,0,1);ay=np.clip((yy-260)/50,0,1)
+        ax=ax*ax*(3-2*ax);ay=ay*ay*(3-2*ay)
+        amount=1 if i<=12 else (17-i)/5
+        a=Image.fromarray(np.rint(ax*ay*255*amount).astype('uint8'))
         im=Image.composite(Image.new('RGB',im.size,(4,5,6)),im,a)
-    if i>=14:
-        # Preserve the recorded hand and card geometry, replace only card copy.
-        opacity=min(1,max(0,(i-17)/7))
-        if opacity:
-            layer=Image.new('RGBA',im.size);d=ImageDraw.Draw(layer)
-            for x,title,lines in [(172,'Notice',['Meet your inner world.','Make room for curiosity.']),
-                                  (272,'Connect',['Listen with care.','Find your people.']),
-                                  (372,'Grow',['Carry kindness forward.','One small step at a time.'])]:
-                d.rectangle((x,166,x+94,316),fill=(83,69,78,int(255*opacity)))
-                d.text((x+6,270),title,font=font(12),fill=(255,243,243,int(255*opacity)))
-                for row,line in enumerate(lines):d.text((x+6,288+row*10),line,font=font(6),fill=(244,228,234,int(255*opacity)))
-            im=Image.alpha_composite(im.convert('RGBA'),layer).convert('RGB')
+    if i>=17:
+        # Exactly ONE typography owner: DOM. Repair recorded card footers
+        # with their own clean edge color, keeping the recorded panels/icons.
+        pix=np.array(im)
+        for x in [172,272,372]:
+            for y in range(265,315):
+                color=np.median(pix[y,x+89:x+94],axis=0).astype('uint8')
+                pix[y,x+3:x+94]=color
+        im=Image.fromarray(pix)
     return np.array(im)
 
 def save_frame(rgb,path):
@@ -91,7 +94,7 @@ def build():
             save_frame(out,directory/f'{count:04}.webp');count+=1
     save_frame(clean[-1],directory/f'{count:04}.webp');count+=1
     save_frame(clean[0],OUT/'flower-poster.webp')
-    manifest={'count':count,'width':960,'height':717,'pattern':'/assets/media/flower-sequence/{frame}.webp','sourceFrames':75,'usedSourceFrames':[0,39],'interpolation':'bidirectional-optical-flow-4x','sourceSha256':hashlib.sha256((ROOT/'animated (96).webp').read_bytes()).hexdigest()}
+    manifest={'count':count,'width':960,'height':717,'pattern':'/assets/media/flower-sequence/{frame}.webp?v=card-clean-20261027','sourceFrames':75,'usedSourceFrames':[0,39],'interpolation':'bidirectional-optical-flow-4x','sourceSha256':hashlib.sha256((ROOT/'animated (96).webp').read_bytes()).hexdigest()}
     (directory/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
 
     directory=OUT/'tv-sequence';directory.mkdir(exist_ok=True)

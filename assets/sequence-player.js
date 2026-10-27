@@ -5,7 +5,7 @@
  window.MTFrameSequence={create};
  function create(canvas,options){
   if(!canvas)return null;
-  const cache=new Map(),jobs=new Map(),failures=new Map();let manifest=null,wanted=0,current=0,active=false,raf=0,last=0,renderer=null,lost=false,disposed=false,painted=false;
+  const cache=new Map(),jobs=new Map(),failures=new Map();let manifest=null,wanted=Number(options.initialFrame)||0,current=wanted,active=false,raf=0,last=0,renderer=null,lost=false,disposed=false,painted=false;
   function shader(gl,type,source){const s=gl.createShader(type);gl.shaderSource(s,source);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw Error(gl.getShaderInfoLog(s));return s;}
   function init(){
    try{

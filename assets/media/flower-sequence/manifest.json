@@ -2,7 +2,7 @@
   "count": 157,
   "width": 960,
   "height": 717,
-  "pattern": "/assets/media/flower-sequence/{frame}.webp",
+  "pattern": "/assets/media/flower-sequence/{frame}.webp?v=card-clean-20261027",
   "sourceFrames": 75,
   "usedSourceFrames": [
     0,

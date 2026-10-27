@@ -43,8 +43,8 @@ $phone      = trim((string) ($site['clubPhone'] ?? ''));
 <section class="hero hero-with-video flower-prologue" id="top-section" aria-label="A flower unfolds into the club's story">
   <div class="flower-stage">
     <div class="flower-film" aria-hidden="true">
-      <img class="flower-poster" src="/assets/media/flower-poster.webp" alt="" width="960" height="717" fetchpriority="high" decoding="async">
-      <video class="flower-video" src="/assets/media/flower-scroll.mp4" muted playsinline preload="auto" disablepictureinpicture disableremoteplayback tabindex="-1" aria-hidden="true" width="640" height="478"></video>
+      <img class="flower-poster" src="/assets/media/flower-poster.webp?v=<?= (int) @filemtime(MT_ASSETS . '/media/flower-poster.webp') ?>" alt="" width="1280" height="956" fetchpriority="high" decoding="async">
+      <video class="flower-video" src="/assets/media/flower-scroll.mp4?v=<?= (int) @filemtime(MT_ASSETS . '/media/flower-scroll.mp4') ?>" muted playsinline preload="auto" disablepictureinpicture disableremoteplayback tabindex="-1" aria-hidden="true" width="1280" height="956" controlslist="nodownload nofullscreen noremoteplayback" x-webkit-airplay="deny"></video>
       <canvas class="flower-canvas" aria-hidden="true"></canvas>
     </div>
     <div class="flower-hand-cards" aria-hidden="true">

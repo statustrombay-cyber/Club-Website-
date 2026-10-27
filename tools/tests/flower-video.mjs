@@ -19,13 +19,19 @@ try{for(const width of[390,1440])for(const mode of['normal','reduced','saveData'
   assert.ok(await p.locator('.flower-stage').evaluate(e=>Math.abs(e.getBoundingClientRect().top)<2));
   if(dest)await p.screenshot({path:`${dest}/flower-${width}-${mode}-${value}.png`});
  }
+ // Sample the actual painted pixels while force-scrolling/reversing.
+ await p.evaluate(()=>{window.__filmSamples=[];let n=0;function sample(){const c=document.querySelector('.flower-canvas');if(c.dataset.renderer==='video2d'&&c.width){const a=c.getContext('2d').getImageData(0,0,c.width,c.height).data;let sum=0,k=0;for(let i=0;i<a.length;i+=4096){sum+=a[i]+a[i+1]+a[i+2];k++;}__filmSamples.push(sum/k);}if(++n<75)requestAnimationFrame(sample);}sample();});
+ for(const dy of[600,-400,800,-650,450]){await p.mouse.wheel(0,dy);await p.waitForTimeout(80);}
+ await p.waitForTimeout(1400);assert.ok(await p.evaluate(()=>__filmSamples.length>20&&Math.min(...__filmSamples)>20),'no black decoded surface is exposed even during forced scroll');
+ assert.deepEqual(await p.locator('.flower-hand-cards h2').allTextContents(),['Notice','Connect','Grow']);
+ assert.ok(await p.locator('.flower-video').evaluate(e=>!e.controls&&getComputedStyle(e).opacity==='0'&&e.getBoundingClientRect().width<=2),'native play chrome cannot be visible');
  assert.equal(await p.locator('.wing-left').evaluate(e=>getComputedStyle(e).filter),'none');assert.equal(await p.locator('.wing-right').evaluate(e=>getComputedStyle(e).filter),'none');
  if(width<600){const c=await p.context().newCDPSession(p),before=await p.evaluate(()=>scrollY);await c.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:250,y:650,id:1}]});await c.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:250,y:300,id:1}]});await c.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await p.waitForTimeout(700);assert.ok(await p.evaluate(y=>scrollY>y,before));}
  await p.locator('#club-intro').evaluate(e=>scrollTo(0,e.getBoundingClientRect().top+scrollY));await p.waitForTimeout(500);assert.ok(await p.evaluate(()=>document.body.classList.contains('horse-era')));assert.deepEqual(errors,[]);
  console.log(JSON.stringify({width,mode,decoder:'native H264',wheel:'pinned/zooming',reverse:'passed',errors}));await p.close();
 }
  const p=await b.newPage({viewport:{width:390,height:900}});
- await p.route('**/flower-scroll.mp4',route=>route.abort());await p.goto(base+'/#top-section');
+ await p.route('**/flower-scroll.mp4*',route=>route.abort());await p.goto(base+'/#top-section');
  await p.waitForFunction(()=>document.querySelector('.flower-canvas').dataset.sequenceReady==='true');
  await p.mouse.wheel(0,450);await p.waitForFunction(()=>Number(document.querySelector('.flower-canvas').dataset.displayedFrame)>1);
  assert.ok(await p.locator('.flower-stage').evaluate(e=>Math.abs(e.getBoundingClientRect().top)<2));

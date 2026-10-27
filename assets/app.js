@@ -1121,21 +1121,38 @@
     function handCopy(position){const amount=clamp((position/4-17)/7);cards.style.opacity=String(amount);cards.setAttribute('aria-hidden',String(amount<.05));}
     // User-driven seeking is not autoplay. Do not disable it for Data Saver or
     // collapse its track for reduced motion; omit easing/extra zoom instead.
-    const movie=$('.flower-video',opening),filmLayer=$('.flower-film',opening);
+    const movie=$('.flower-video',opening),filmLayer=$('.flower-film',opening),screen=$('.flower-canvas',opening);
+    const buffer=document.createElement('canvas');let context=null,hasFrame=false;
+    movie.controls=false;movie.removeAttribute('controls');
     let film=null,desiredTime=0,videoFailed=false,decodeTimer=0;
     function fallback(){
       if(film)return;videoFailed=true;clearTimeout(decodeTimer);movie.style.opacity='0';
-      film=window.MTFrameSequence?.create($('.flower-canvas',opening),{manifest:'/assets/media/flower-sequence/manifest.json',count:157,onFrame:handCopy});update();
+      film=window.MTFrameSequence?.create($('.flower-canvas',opening),{manifest:'/assets/media/flower-sequence/manifest.json?v=card-clean-20261027',count:157,initialFrame:desiredTime*48,onFrame:handCopy});update();
     }
     function seekMovie(){
       if(videoFailed||!movie||!Number.isFinite(movie.duration)||movie.seeking)return;
-      const time=clamp(desiredTime,0,Math.max(0,movie.duration-1/12));
+      const time=clamp(desiredTime,0,Math.max(0,movie.duration-1/60));
       if(Math.abs(movie.currentTime-time)>1/48){try{movie.currentTime=time;clearTimeout(decodeTimer);decodeTimer=setTimeout(()=>{if(movie.seeking)fallback();},4000);}catch(_){fallback();}}
+    }
+    // The video is a decoder only. Commit a completed frame to a persistent
+    // canvas: seeking never exposes a black decoder surface or native play UI.
+    function paintMovie(){
+      if(videoFailed||movie.readyState<2||movie.seeking||!movie.videoWidth)return;
+      context=context||screen.getContext('2d',{alpha:false});if(!context){fallback();return;}
+      if(buffer.width!==movie.videoWidth||buffer.height!==movie.videoHeight){buffer.width=movie.videoWidth;buffer.height=movie.videoHeight;}
+      try{buffer.getContext('2d',{alpha:false}).drawImage(movie,0,0);}catch(_){return;}
+      const width=Math.max(1,screen.clientWidth),height=Math.max(1,screen.clientHeight);
+      const dpr=Math.min(devicePixelRatio||1,1.5,Math.sqrt(2200000/(width*height)));
+      const w=Math.round(width*dpr),h=Math.round(height*dpr),scale=Math.max(w/buffer.width,h/buffer.height);
+      if(screen.width!==w||screen.height!==h){screen.width=w;screen.height=h;}
+      context.drawImage(buffer,(w-buffer.width*scale)/2,(h-buffer.height*scale)/2,buffer.width*scale,buffer.height*scale);
+      screen.style.opacity='1';screen.dataset.renderer='video2d';screen.dataset.sequenceReady='true';hasFrame=true;
+      movie.dataset.videoReady='true';movie.dataset.displayedFrame=(movie.currentTime*48).toFixed(2);
+      screen.dataset.displayedFrame=movie.dataset.displayedFrame;handCopy(movie.currentTime*48);
     }
     function presented(){
       clearTimeout(decodeTimer);if(videoFailed)return;
-      if(movie.readyState>=2){movie.style.opacity='1';movie.dataset.videoReady='true';movie.dataset.displayedFrame=(movie.currentTime*48).toFixed(2);handCopy(movie.currentTime*48);}
-      seekMovie();
+      paintMovie();seekMovie();
     }
     movie.addEventListener('loadedmetadata',seekMovie);
     movie.addEventListener('loadeddata',presented);
@@ -1146,7 +1163,7 @@
       const width=document.documentElement.clientWidth;
       viewportHeight=width!==viewportWidth?Math.ceil(Math.max(innerHeight,window.visualViewport?.height||0)):Math.max(viewportHeight,Math.ceil(innerHeight));
       viewportWidth=width;opening.style.setProperty('--flower-height',viewportHeight+'px');
-      const scale=Math.max(width/640,viewportHeight/478);cards.style.width=Math.min(width,300*scale)+'px';cards.style.height=158*scale+'px';cards.style.top=((viewportHeight-478*scale)/2+162*scale)+'px';update();
+      const scale=Math.max(width/640,viewportHeight/478);cards.style.width=Math.min(width,300*scale)+'px';cards.style.height=158*scale+'px';cards.style.top=((viewportHeight-478*scale)/2+162*scale)+'px';if(hasFrame)paintMovie();update();
     }
     function render(now){
       frame=0;if(document.hidden){last=0;return;}
